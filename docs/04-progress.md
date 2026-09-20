@@ -11,7 +11,7 @@ Probleme, externe Abhängigkeiten, nächster Schritt.
 
 | Schritt | Phase                    | Status   |
 | ------- | ------------------------ | -------- |
-| 01      | Projekt-Fundament        | 🔄 laufend |
+| 01      | Projekt-Fundament        | ✅ abgeschlossen |
 | 02      | Designsystem             | ⬜ geplant |
 | 03      | Öffentliche Website      | ⬜ geplant |
 | 04      | Datenbank & Auth         | ⬜ geplant |
