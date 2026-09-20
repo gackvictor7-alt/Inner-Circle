@@ -1,0 +1,69 @@
+@import "tailwindcss";
+
+/*
+ * INNER CIRCLE – Foundation design tokens (STEP 01)
+ * The full design system (typography scale, component library, motion)
+ * is implemented in STEP 02. These tokens establish the brand color
+ * foundation from the product specification and the light/dark mechanism.
+ */
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-border: var(--border);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+}
+
+@theme {
+  /* STEP 01: system font stack; final typeface chosen in STEP 02. */
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  /* Brand foundation (spec §15.2) */
+  --color-midnight-950: #0b0f16;
+  --color-midnight-900: #10151e;
+  --color-midnight-800: #1a2230;
+  --color-midnight-700: #252f42;
+
+  --color-paper-50: #f7f8fa;
+  --color-paper-100: #eef0f4;
+  --color-paper-200: #e2e6ec;
+
+  --color-electric-400: #6b94f8;
+  --color-electric-500: #366cf5;
+  --color-electric-600: #2a56d6;
+  --color-electric-700: #2143ab;
+
+  --color-champagne-300: #e8d3a8;
+  --color-champagne-400: #d9bc8a;
+  --color-champagne-500: #c2a26e;
+}
+
+:root {
+  --background: #f7f8fa;
+  --foreground: #10151e;
+  --surface: #ffffff;
+  --surface-muted: #eef0f4;
+  --border: #e2e6ec;
+  color-scheme: light;
+}
+
+.dark {
+  --background: #0b0f16;
+  --foreground: #f7f8fa;
+  --surface: #10151e;
+  --surface-muted: #1a2230;
+  --border: #252f42;
+  color-scheme: dark;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}
