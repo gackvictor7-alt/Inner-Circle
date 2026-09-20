@@ -14,15 +14,22 @@ Abnahmekriterien.**
 - **Abnahme:** `npm run build` + `npm run lint` grün; Startseite zeigt
   Statusseite auf DE/EN, Theme-Umschalter persistent, keine DB nötig.
 
-## Schritt 02 – Designsystem
+## Schritt 02 – Designsystem ✅ (überarbeitet durch Freigabe 2026-09-20)
 
-- **Ziel:** Konsistente visuelle Grundlage für alle Bereiche.
-- **Kernlieferung:** Farbpaletten (light/dark), Typografie, Spacing,
-  UI-Primitiven (Button, Input, Card, Modal, Badge, Avatar, Tabs,
-  Navigation, Bottom-Bar), Storybook-ähnliche Übersichtseite `/design`.
+- **Ziel:** Konsistente visuelle Grundlage für alle Bereiche **plus** neue
+  öffentliche Marken- & Produktpräsentation (vom Auftraggeber zusammengelegt).
+- **Kernlieferung:** Farb-/Design-Tokens (light/dark), Typografie (Inter,
+  self-hosted), Spacing, UI-Primitiven (Button, Input, Card, Badge, Dialog,
+  Dropdown, Tabs, Toast, Progress, Rating, Avatar, Icons), Navigation
+  (Desktop + Mobile-Menü), Übersichtseite `/design`; neue öffentliche
+  Startseite (Hero, Möglichkeiten, Trust & Reputation, Events, Membership,
+  Footer) und echte Unterseiten: `/network`, `/business-deals`,
+  `/investments`, `/marketplace`, `/events`, `/membership`, `/login`,
+  `/register`, rechtliche Platzhalter.
 - **Abhängigkeiten:** 01.
 - **Abnahme:** Alle Primitiven in beiden Modi + responsiv nutzbar;
-  Reduced-Motion respektiert; kein Hardcodetext (i18n).
+  Reduced-Motion respektiert; kein Hardcodetext (i18n); alle Routen
+  erreichbar; Build/Lint grün.
 
 ## Schritt 03 – Öffentliche Website
 

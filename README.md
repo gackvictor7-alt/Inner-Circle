@@ -4,8 +4,10 @@ Digitales Business-Ökosystem: Netzwerk, Geschäfte, Wissen,
 Kapitalzugang und Erlebnisse in einer Plattform.
 **Leitprinzip: Zugang schafft Chancen.**
 
-> Stand: **Schritt 01 – Projekt-Fundament**.
-> Die Startseite ist eine technische Statusseite, kein finales Design.
+> Stand: **Schritt 02 – Designsystem & öffentliche Website**.
+> Die Startseite ist die hochwertige öffentliche Marken- und
+> Produktpräsentation; nicht aktivierte Funktionen sind als
+> „Demnächst verfügbar“ gekennzeichnet.
 > Verbindliche Spezifikation: [`docs/`](docs/00-overview.md).
 
 ## Schnellstart
@@ -24,10 +26,12 @@ Umgebungsvariablen: `.env.example` nach `.env.local` kopieren
 
 ## Struktur
 
-- `src/app/` – Next.js App Router (Routen, Layouts)
-- `src/components/` – UI-Komponenten (`ui/` ab Schritt 02)
-- `src/domains/` – Fachlogik je Produktbereich (A–J)
+- `src/app/` – Next.js App Router (Routen, Layouts; jede Route mit eigenem
+  Server-Wrapper für Metadaten + Client-Content-Komponente)
+- `src/components/` – `ui/` Designsystem-Komponenten, `site/` Website-Bausteine
+- `src/domains/` – Fachlogik je Produktbereich (A–J, ab Schritt 04+)
 - `src/lib/i18n/` – Zentrale DE/EN-Texte (kein Hardcodetext in Komponenten!)
+- `src/app/fonts/` – Self-hosted Inter (SIL OFL 1.1)
 - `src/lib/auth/`, `src/lib/db/` – Platzhalter bis Schritt 04
 - `docs/` – Produktvision, Architektur, Roadmap, Fortschritt
 

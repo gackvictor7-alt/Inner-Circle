@@ -1,10 +1,16 @@
 @import "tailwindcss";
 
 /*
- * INNER CIRCLE – Foundation design tokens (STEP 01)
- * The full design system (typography scale, component library, motion)
- * is implemented in STEP 02. These tokens establish the brand color
- * foundation from the product specification and the light/dark mechanism.
+ * INNER CIRCLE – Design tokens (STEP 02)
+ *
+ * Brand palette (product spec §15.2):
+ *   Midnight Navy  #10151E  – brand dark, surfaces in dark mode
+ *   Off White      #F7F8FA  – light background
+ *   Electric Blue  #366CF5  – functional accent (interactions, links, CTAs)
+ *   Champagne      #D9BC8A  – subtle luxury accent (exclusivity, awards, events)
+ *
+ * Semantic tokens (background/surface/border/…) switch between light and
+ * dark via CSS variables; brand scales stay static.
  */
 
 @custom-variant dark (&:where(.dark, .dark *));
@@ -12,19 +18,20 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-foreground-muted: var(--foreground-muted);
+  --color-foreground-subtle: var(--foreground-subtle);
   --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
   --color-surface-muted: var(--surface-muted);
   --color-border: var(--border);
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-mono);
+  --color-border-strong: var(--border-strong);
+  --color-ring: var(--ring);
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
 @theme {
-  /* STEP 01: system font stack; final typeface chosen in STEP 02. */
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
-    "Helvetica Neue", Arial, sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  /* Brand foundation (spec §15.2) */
+  /* Brand foundation */
   --color-midnight-950: #0b0f16;
   --color-midnight-900: #10151e;
   --color-midnight-800: #1a2230;
@@ -34,36 +41,176 @@
   --color-paper-100: #eef0f4;
   --color-paper-200: #e2e6ec;
 
+  --color-electric-300: #93b0fa;
   --color-electric-400: #6b94f8;
   --color-electric-500: #366cf5;
   --color-electric-600: #2a56d6;
   --color-electric-700: #2143ab;
 
+  --color-champagne-200: #f0e2c4;
   --color-champagne-300: #e8d3a8;
   --color-champagne-400: #d9bc8a;
   --color-champagne-500: #c2a26e;
+  --color-champagne-600: #a5854f;
+
+  --color-success-500: #10b981;
+  --color-success-600: #059669;
+  --color-danger-500: #ef4444;
+  --color-danger-600: #dc2626;
+
+  /* Radii – slightly softer, premium feel */
+  --radius-xl: 0.875rem;
+  --radius-2xl: 1.25rem;
+  --radius-3xl: 1.75rem;
+
+  /* Elevation */
+  --shadow-card: 0 1px 2px rgb(16 21 30 / 0.05), 0 12px 32px -16px
+    rgb(16 21 30 / 0.18);
+  --shadow-lift: 0 2px 4px rgb(16 21 30 / 0.06), 0 24px 48px -20px
+    rgb(16 21 30 / 0.3);
+  --shadow-pop: 0 24px 64px -24px rgb(11 15 22 / 0.45);
+
+  /* Motion */
+  --ease-emphasized: cubic-bezier(0.25, 1, 0.5, 1);
+  --animate-fade-in: fade-in 0.4s var(--ease-emphasized) both;
+  --animate-fade-up: fade-up 0.7s var(--ease-emphasized) both;
+  --animate-scale-in: scale-in 0.25s var(--ease-emphasized) both;
+  --animate-toast-in: toast-in 0.35s var(--ease-emphasized) both;
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(16px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes scale-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px) scale(0.97);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes toast-in {
+    from {
+      opacity: 0;
+      transform: translateY(12px) scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
 }
 
 :root {
   --background: #f7f8fa;
   --foreground: #10151e;
+  --foreground-muted: rgb(16 21 30 / 0.68);
+  --foreground-subtle: rgb(16 21 30 / 0.5);
   --surface: #ffffff;
+  --surface-raised: #ffffff;
   --surface-muted: #eef0f4;
   --border: #e2e6ec;
+  --border-strong: #c9cfda;
+  --ring: #366cf5;
   color-scheme: light;
 }
 
 .dark {
   --background: #0b0f16;
   --foreground: #f7f8fa;
+  --foreground-muted: rgb(247 248 250 / 0.72);
+  --foreground-subtle: rgb(247 248 250 / 0.52);
   --surface: #10151e;
+  --surface-raised: #161d2b;
   --surface-muted: #1a2230;
   --border: #252f42;
+  --border-strong: #33415e;
+  --ring: #6b94f8;
   color-scheme: dark;
+}
+
+/* ---------- Base ---------- */
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: rgb(54 108 245 / 0.22);
+}
+
+/* Accessible focus ring (keyboard only) */
+:where(a, button, [role="button"], [role="tab"], summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Remove native details marker – FAQ uses a custom chevron */
+summary::-webkit-details-marker {
+  display: none;
+}
+summary {
+  list-style: none;
+}
+
+/* ---------- Scroll reveal (driven by <Reveal/>) ---------- */
+
+.ic-reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition:
+    opacity 0.7s var(--ease-emphasized),
+    transform 0.7s var(--ease-emphasized);
+  will-change: opacity, transform;
+}
+
+.ic-reveal.is-visible {
+  opacity: 1;
+  transform: none;
+  will-change: auto;
+}
+
+/* ---------- Reduced motion ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .ic-reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
 }

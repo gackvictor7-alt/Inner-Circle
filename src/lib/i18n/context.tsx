@@ -88,3 +88,23 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 export function useI18n(): I18nContextValue {
   return useContext(I18nContext);
 }
+
+/**
+ * Keeps the browser tab title + meta description in sync with the selected
+ * locale (the static SSR metadata is German by default; this updates the
+ * document after hydration and whenever the language changes).
+ */
+export function usePageMeta(title: string, description?: string) {
+  useEffect(() => {
+    document.title = title;
+    if (description) {
+      let el = document.querySelector('meta[name="description"]');
+      if (!el) {
+        el = document.createElement("meta");
+        el.setAttribute("name", "description");
+        document.head.appendChild(el);
+      }
+      el.setAttribute("content", description);
+    }
+  }, [title, description]);
+}

@@ -65,12 +65,16 @@ function subscribe(callback: () => void): () => void {
   };
 }
 
-function getSnapshot(): Theme {
-  return readTheme();
+/**
+ * The snapshot includes the resolved system preference, so switching the OS
+ * appearance while in "system" mode re-renders subscribers immediately.
+ */
+function getSnapshot(): string {
+  return `${readTheme()}|${systemIsDark() ? "d" : "l"}`;
 }
 
-function getServerSnapshot(): Theme {
-  return "system";
+function getServerSnapshot(): string {
+  return "system|l";
 }
 
 /**
@@ -83,7 +87,8 @@ export function ThemeInitScript() {
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const theme = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  const snapshot = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  const theme = snapshot.split("|")[0] as Theme;
 
   // Resolved during render; applied to the DOM in an effect (no setState).
   // Server renders "light"; the blocking init script already set the real
@@ -92,8 +97,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     typeof window === "undefined" ? "light" : resolveTheme(theme);
 
   useEffect(() => {
-    applyTheme(resolveTheme(theme));
-  }, [theme]);
+    applyTheme(resolved);
+  }, [resolved]);
 
   const setTheme = useCallback((next: Theme) => {
     try {
