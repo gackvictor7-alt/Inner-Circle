@@ -1,5 +1,64 @@
 # Entwicklungsfortschritt
 
+## Sprint 2.0 – Von der Website zur Plattform (in Arbeit, 2026-09-21)
+
+- **Ziel:** Aus der bestehenden Website die erste wirklich nutzbare Version
+  der Business-Plattform machen (öffentliche Entdeckung → Registrierung →
+  Verifizierung → Interessen → 48-h-Trial → Mitgliedschaft → Mitglieder-
+  bereich inkl. Netzwerk, Chancen, Marketplace, Investments, Events).
+- **Geändert/erstellt (Auszug):**
+  - Plattform-Bereich `src/app/(app)/app/*` mit Dashboard, Netzwerk,
+    Discover (Swipe), Verbindungen, Nachrichten, Mitteilungen, Profil,
+    Einstellungen, Mitgliedskarte, Trust & Performance, Billing sowie den
+    sechs Kernbereichen (Netzwerk, Chancen, Investments, Marketplace &
+    Academy, Jobs & Projekte, Events & Experiences).
+  - Server-Actions (`src/app/actions/*`) für Auth, Netzwerk, Nachrichten,
+    Mitteilungen, Beiträge, Profil, Business und Administration.
+  - Datenbank auf Drizzle/libSQL (48 Tabellen), zentrale Zugriffsschicht
+    (`src/lib/access/*`) mit Level `visitor < free < trial < member < admin`,
+    Trial-Service (48 h, 3 Anfragen, serverseitige Ablaufprüfung),
+    Membership-Service, Stripe-Sandbox-Integration mit signierten Webhooks,
+    Audit-Log, Rate-Limits, Dev-Postausgang.
+  - Admin-Konsole `/admin` (Kennzahlen, Nutzer, Investment-Prüfung,
+    Mitgliedsanträge, Löschanträge).
+  - Mitgliedsantrag (`/app/membership-application`): nur mit bestätigter,
+    aktiver Mitgliedschaft; manuelle Prüfung durch die Administration.
+  - Zentrales i18n erweitert: DE = EN = 1812 Schlüssel, gleiche Struktur,
+    0 fehlende Schlüssel (`npx tsx scripts/check-keys.ts`).
+  - Automatisierte Tests: 39 Tests in `tests/` (Unit + Integration gegen
+    eine Wegwerf-Datenbank), siehe `tests/README.md` und
+    `docs/08-testing.md`.
+- **Funktioniert (verifiziert):**
+  - `npm run build`, `npx tsc --noEmit`, `npm test`, `scripts/check-keys.ts`
+    und `scripts/i18n-audit.ts` laufen grün.
+  - Öffentliche Seiten liefern 200; `/app`, `/admin` und `/verify` sind ohne
+    Session 307 → Login (kein Zugriff ohne Anmeldung).
+  - Mit Testkonten (dev-session) liefern alle Mitgliederseiten 200, inkl.
+    Detailseiten, Checkout-Rückleitungen und öffentlicher Mitgliedskarte.
+  - Nicht-Admin-Konten erhalten auf `/admin*` 307 (Zugriff serverseitig
+    verweigert).
+  - Membership-Lebenszyklus, Trial-Regeln, Verbindungs- und
+    Nachrichten-Autorisierung sind durch Integrationstests abgedeckt.
+- **Fehlgeschlagen / nicht möglich:**
+  - Echter E-Mail-/SMS-Versand, OAuth und Stripe-Livebetrieb: keine
+    Zugangsdaten vorhanden. Alles läuft im klar gekennzeichneten Dev-Modus
+    (Dev-Postausgang, Dev-Mitgliedschaftsaktivierung); benötigte Schlüssel
+    stehen in `docs/07-external-services.md` und `.env.example`.
+  - Browser-/Layout-Prüfung im echten Browser ist in dieser Umgebung nicht
+    möglich (kein Chromium installierbar) – Responsivität wurde über
+    Tailwind-Klassen, Code-Review und manuelle Klickpfade geprüft.
+- **Offen / als Nächstes:**
+  - Abschluss der §67-QA-Checkliste inkl. Mobile 320–430 px.
+  - Fehlende Demo-Avatare (3–6) und finale Bildauswahl.
+  - E2E-Tests für Server-Actions (Registrierung/Login) benötigen eine
+    laufende Instanz und stehen noch aus.
+  - `docs/05-decisions.md`, `docs/09-deployment.md` und der Abschlussbericht
+    werden am Ende des Sprints aktualisiert.
+- **Tests in diesem Schritt:** `npm run build`, `npx tsc --noEmit`,
+  `npm test` (39 Tests), `npx tsx scripts/check-keys.ts` (390 Referenzen),
+  `npx tsx scripts/i18n-audit.ts` (1812 = 1812), HTTP-Smoke über 25 Routen.
+
+
 Wird nach **jeder Phase** aktualisiert: Ergebnis, Dateien, Tests,
 Probleme, externe Abhängigkeiten, nächster Schritt.
 

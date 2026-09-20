@@ -22,13 +22,13 @@ export function RatingStars({
     const fill = Math.max(0, Math.min(1, clamped - (i - 1)));
     return (
       <span key={i} className="relative inline-flex" aria-hidden="true">
-        <StarIcon size={size} className="text-champagne-500/35" />
+        <StarIcon size={size} className="text-sand-500/35" />
         {fill > 0 && (
           <span
             className="absolute inset-0 overflow-hidden"
             style={{ width: `${fill * 100}%` }}
           >
-            <StarIcon size={size} filled className="text-champagne-400" />
+            <StarIcon size={size} filled className="text-sand-400" />
           </span>
         )}
       </span>

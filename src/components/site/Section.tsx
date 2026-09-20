@@ -6,11 +6,11 @@ export function Kicker({
   tone = "electric",
 }: {
   children: ReactNode;
-  tone?: "electric" | "champagne";
+  tone?: "electric" | "sand";
 }) {
   const color =
-    tone === "champagne"
-      ? "text-champagne-600 dark:text-champagne-400"
+    tone === "sand"
+      ? "text-sand-600 dark:text-sand-400"
       : "text-electric-600 dark:text-electric-400";
   return (
     <p className={`text-xs font-bold uppercase tracking-[0.22em] ${color}`}>{children}</p>
@@ -59,7 +59,7 @@ export function SectionHeading({
   kicker?: ReactNode;
   title: ReactNode;
   lead?: ReactNode;
-  tone?: "electric" | "champagne";
+  tone?: "electric" | "sand";
   align?: "center" | "left";
   as?: "h1" | "h2";
 }) {

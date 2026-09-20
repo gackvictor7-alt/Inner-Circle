@@ -18,12 +18,23 @@ interface I18nContextValue {
   locale: Locale;
   setLocale: (locale: Locale) => void;
   t: Dictionary;
+  /** Interpolates {placeholders} in a dictionary string. */
+  tf: (template: string, params?: Record<string, string | number>) => string;
+}
+
+function interpolate(template: string, params?: Record<string, string | number>): string {
+  if (!params) return template;
+  return template.replace(/\{(\w+)\}/g, (match, key: string) => {
+    const value = params[key];
+    return value === undefined ? match : String(value);
+  });
 }
 
 const I18nContext = createContext<I18nContextValue>({
   locale: defaultLocale,
   setLocale: () => {},
   t: dictionaries[defaultLocale],
+  tf: interpolate,
 });
 
 /** Client-only read: stored preference, else browser language, else default. */
@@ -58,11 +69,10 @@ function getServerSnapshot(): Locale {
 }
 
 export function I18nProvider({ children }: { children: ReactNode }) {
-  // Hydration-safe: server renders the default locale, the client
-  // re-reads the stored preference right after hydration (no warning).
+  // Hydration-safe: server renders the default locale, the client re-reads the
+  // stored preference right after hydration.
   const locale = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
-  // DOM-only sync (no setState): keep <html lang> accurate.
   useEffect(() => {
     document.documentElement.lang = locale;
   }, [locale]);
@@ -78,7 +88,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<I18nContextValue>(
-    () => ({ locale, setLocale, t: dictionaries[locale] }),
+    () => ({ locale, setLocale, t: dictionaries[locale], tf: interpolate }),
     [locale, setLocale],
   );
 
@@ -91,8 +101,7 @@ export function useI18n(): I18nContextValue {
 
 /**
  * Keeps the browser tab title + meta description in sync with the selected
- * locale (the static SSR metadata is German by default; this updates the
- * document after hydration and whenever the language changes).
+ * locale (static SSR metadata is German by default).
  */
 export function usePageMeta(title: string, description?: string) {
   useEffect(() => {

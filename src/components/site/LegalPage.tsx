@@ -29,7 +29,7 @@ export function LegalPage({ variant }: { variant: "imprint" | "privacy" | "terms
               </span>
               {content.title}
             </h1>
-            <p className="text-sm font-bold uppercase tracking-[0.16em] text-champagne-600 dark:text-champagne-400">
+            <p className="text-sm font-bold uppercase tracking-[0.16em] text-sand-600 dark:text-sand-400">
               {t.legal.placeholderTitle}
             </p>
             <p className="text-pretty text-base leading-7 text-foreground-muted">

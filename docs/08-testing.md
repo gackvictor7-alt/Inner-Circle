@@ -44,3 +44,27 @@
 
 Testkonten klar als solche kennzeichnen (z. B. `test+…`), niemals als
 echte Mitglieder/Erfolge präsentieren. Keine Produktionsdaten in Tests.
+
+## Automatisierte Tests (Sprint 2.0)
+
+```bash
+npm test            # Vitest, alle Unit- und Integrationstests
+npm run test:watch  # Watch-Modus
+npm run typecheck   # tsc --noEmit
+npm run test:keys   # jede im Code referenzierte i18n-Kodierung existiert in DE + EN
+npm run i18n:audit  # DE/EN-Struktur + Schlüsselzahlen
+```
+
+Aufbau, Umfang und Grenzen stehen in [`tests/README.md`](../tests/README.md):
+
+- **Unit:** Passwort-/Session-Hashing, OTP-Erzeugung, Entitlement-Matrix
+  (Free/Trial/Member/Admin), Pläne (24,99 € / 249,90 €, Jahresvorteil),
+  Trial-Regeln (48 h, 3 Anfragen), DE/EN-Parität der Wörterbücher.
+- **Integration (Wegwerf-Datenbank `.test.db`):** Mitgliedschaft anlegen,
+  Karte ausstellen, Kündigung zum Periodenende, sofortiger Ablauf,
+  Zahlungsfehler, Rechnungs-Idempotenz, Trial-Start/Limit-/Missbrauchsschutz,
+  Webhook-Signaturprüfung, Verbindungs- und Nachrichten-Autorisierung.
+- **Bewusst nicht automatisiert:** alles, was einen Browser braucht
+  (Hamburger-Menü, Theme-Wechsel, Swipe-Gesten, Breakpoints) – dafür gilt
+  weiterhin die manuelle Checkliste; Server-Actions mit Next-Request-Kontext
+  (Registrierung, Login, Anfragen) werden manuell mit den Testkonten geprüft.

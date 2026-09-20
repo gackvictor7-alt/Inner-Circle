@@ -1,25 +1,44 @@
 /**
- * Centralized internationalization dictionaries (STEP 02).
+ * Centralized internationalization dictionaries.
  *
- * Rule (spec §15.10): no hardcoded UI text in components. Every user-facing
- * string lives here (German + English). TypeScript enforces that both
- * locales share the exact same shape (`Dictionary = typeof de`).
+ * Rule: no hardcoded UI text in components. Every user-facing string lives in
+ * this module tree (German + English). TypeScript enforces that both locales
+ * share the exact same shape.
+ *
+ * Namespaces:
+ *   meta/brand/nav/common/home/pages/footer/legal/design  – public website (STEP 02)
+ *   home2/stats/publicNav/legalNotice                     – public website (Sprint 2.0)
+ *   app.*                                                 – platform UI (Sprint 2.0)
+ *     app.nav … app.dev          (core: dict/app-core.ts)
+ *     app.profile … app.trust    (social: dict/app-social.ts)
+ *     app.opportunities … app.admin (business: dict/app-business.ts)
  */
+
+import { appCoreDe, appCoreEn } from "./dict/app-core";
+import { appSocialDe, appSocialEn } from "./dict/app-social";
+import { appBusinessDe, appBusinessEn } from "./dict/app-business";
+import { siteV2De, siteV2En } from "./dict/site-v2";
+
+const appDe = { ...appCoreDe, ...appSocialDe, ...appBusinessDe };
+const appEn = { ...appCoreEn, ...appSocialEn, ...appBusinessEn };
+
+const publicV2De = siteV2De;
+const publicV2En = siteV2En;
 
 export type Locale = "de" | "en";
 
 export const locales: Locale[] = ["de", "en"];
 export const defaultLocale: Locale = "de";
 
-const de = {
+const siteDe = {
   meta: {
-    title: "INNER CIRCLE – Die Business-Community für Unternehmer, Investoren & Creator",
+    title: "INNER CIRCLE – Netzwerk, Chancen und Wissen für Unternehmer, Investoren & Creator",
     description:
-      "INNER CIRCLE verbindet ambitionierte Menschen, Unternehmer, Investoren und Creator – für Kontakte, Geschäftschancen, Wissen und besondere Events.",
+      "INNER CIRCLE verbindet ambitionierte Menschen, Unternehmer, Investoren und Creator – für echte Geschäftskontakte, Chancen, Wissen, Kapitalzugang und besondere Erlebnisse.",
   },
   brand: {
     name: "INNER CIRCLE",
-    tagline: "Die exklusive Business-Community",
+    tagline: "Netzwerk für Unternehmer, Investoren & Creator",
   },
   nav: {
     home: "Start",
@@ -691,17 +710,17 @@ const de = {
   },
 };
 
-export type Dictionary = typeof de;
+export type SiteDictionary = typeof siteDe;
 
-const en: Dictionary = {
+const siteEnRaw: SiteDictionary = {
   meta: {
-    title: "INNER CIRCLE – The business community for founders, investors & creators",
+    title: "INNER CIRCLE – Network, opportunities and knowledge for founders, investors & creators",
     description:
-      "INNER CIRCLE connects ambitious people, founders, investors and creators – for contacts, business opportunities, knowledge and exceptional events.",
+      "INNER CIRCLE connects ambitious people, founders, investors and creators – for real business contacts, opportunities, knowledge, capital access and remarkable experiences.",
   },
   brand: {
     name: "INNER CIRCLE",
-    tagline: "The exclusive business community",
+    tagline: "Network for founders, investors & creators",
   },
   nav: {
     home: "Home",
@@ -1370,5 +1389,12 @@ const en: Dictionary = {
     ],
   },
 };
+
+const de = { ...siteDe, ...publicV2De, app: appDe };
+
+/** Fully merged dictionary type (public site + Sprint 2.0 namespaces). */
+export type Dictionary = typeof de;
+
+const en: Dictionary = { ...siteEnRaw, ...publicV2En, app: appEn };
 
 export const dictionaries: Record<Locale, Dictionary> = { de, en };

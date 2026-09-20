@@ -366,3 +366,264 @@ export function TagIcon(props: IconProps) {
     </svg>
   );
 }
+
+/* ---------- Sprint 2.0 additions (platform UI) ---------- */
+
+type P = { size?: number; className?: string; strokeWidth?: number };
+
+const px = (size = 20) => ({
+  width: size,
+  height: size,
+  viewBox: "0 0 24 24",
+  fill: "none" as const,
+  stroke: "currentColor",
+  strokeLinecap: "round" as const,
+  strokeLinejoin: "round" as const,
+});
+
+export function PlusIcon({ size, className, strokeWidth = 1.8 }: P & { strokeWidth?: number }) {
+  return (
+    <svg {...px(size)} strokeWidth={strokeWidth} className={className} aria-hidden="true">
+      <path d="M12 5v14M5 12h14" />
+    </svg>
+  );
+}
+
+export function SendIcon({ size, className, strokeWidth = 1.8 }: P) {
+  return (
+    <svg {...px(size)} strokeWidth={strokeWidth} className={className} aria-hidden="true">
+      <path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7Z" />
+    </svg>
+  );
+}
+
+export function HeartIcon({ size, className, strokeWidth = 1.8 }: P) {
+  return (
+    <svg {...px(size)} strokeWidth={strokeWidth} className={className} aria-hidden="true">
+      <path d="M20.8 5.6a5.5 5.5 0 0 0-7.8 0L12 6.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l8.8 8.8 8.8-8.8a5.5 5.5 0 0 0 0-7.8Z" />
+    </svg>
+  );
+}
+
+export function ArrowLeftIcon({ size, className, strokeWidth = 1.8 }: P) {
+  return (
+    <svg {...px(size)} strokeWidth={strokeWidth} className={className} aria-hidden="true">
+      <path d="M19 12H5M12 19l-7-7 7-7" />
+    </svg>
+  );
+}
+
+export function FilterIcon({ size, className, strokeWidth = 1.8 }: P) {
+  return (
+    <svg {...px(size)} strokeWidth={strokeWidth} className={className} aria-hidden="true">
+      <path d="M3 5h18M6 12h12M10 19h4" />
+    </svg>
+  );
+}
+
+export function MoreIcon({ size, className, strokeWidth = 1.8 }: P) {
+  return (
+    <svg {...px(size)} strokeWidth={strokeWidth} className={className} aria-hidden="true">
+      <circle cx="5" cy="12" r="1.4" />
+      <circle cx="12" cy="12" r="1.4" />
+      <circle cx="19" cy="12" r="1.4" />
+    </svg>
+  );
+}
+
+export function UserPlusIcon({ size, className, strokeWidth = 1.8 }: P) {
+  return (
+    <svg {...px(size)} strokeWidth={strokeWidth} className={className} aria-hidden="true">
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M19 8v6M22 11h-6" />
+    </svg>
+  );
+}
+
+export function CheckCheckIcon({ size, className, strokeWidth = 1.8 }: P) {
+  return (
+    <svg {...px(size)} strokeWidth={strokeWidth} className={className} aria-hidden="true">
+      <path d="M18 6 7 17l-4-4M22 8l-7.5 7.5" />
+    </svg>
+  );
+}
+
+export function ExternalLinkIcon({ size, className, strokeWidth = 1.8 }: P) {
+  return (
+    <svg {...px(size)} strokeWidth={strokeWidth} className={className} aria-hidden="true">
+      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+      <path d="M15 3h6v6M10 14 21 3" />
+    </svg>
+  );
+}
+
+export function ImageIcon({ size, className, strokeWidth = 1.8 }: P) {
+  return (
+    <svg {...px(size)} strokeWidth={strokeWidth} className={className} aria-hidden="true">
+      <rect x="3" y="3" width="18" height="18" rx="3" />
+      <circle cx="9" cy="9" r="2" />
+      <path d="m21 15-4.5-4.5L7 21" />
+    </svg>
+  );
+}
+
+export function PencilIcon({ size, className, strokeWidth = 1.8 }: P) {
+  return (
+    <svg {...px(size)} strokeWidth={strokeWidth} className={className} aria-hidden="true">
+      <path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+    </svg>
+  );
+}
+
+export function TrashIcon({ size, className, strokeWidth = 1.8 }: P) {
+  return (
+    <svg {...px(size)} strokeWidth={strokeWidth} className={className} aria-hidden="true">
+      <path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6" />
+    </svg>
+  );
+}
+
+export function FlagIcon({ size, className, strokeWidth = 1.8 }: P) {
+  return (
+    <svg {...px(size)} strokeWidth={strokeWidth} className={className} aria-hidden="true">
+      <path d="M4 22V4M4 4h13l-1.5 4L17 12H4" />
+    </svg>
+  );
+}
+
+export function BanIcon({ size, className, strokeWidth = 1.8 }: P) {
+  return (
+    <svg {...px(size)} strokeWidth={strokeWidth} className={className} aria-hidden="true">
+      <circle cx="12" cy="12" r="9" />
+      <path d="m5.6 5.6 12.8 12.8" />
+    </svg>
+  );
+}
+
+export function BellIcon({ size, className, strokeWidth = 1.8 }: P) {
+  return (
+    <svg {...px(size)} strokeWidth={strokeWidth} className={className} aria-hidden="true">
+      <path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+      <path d="M13.7 21a2 2 0 0 1-3.4 0" />
+    </svg>
+  );
+}
+
+export function PhoneIcon({ size, className, strokeWidth = 1.8 }: P) {
+  return (
+    <svg {...px(size)} strokeWidth={strokeWidth} className={className} aria-hidden="true">
+      <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.2-1.2a2 2 0 0 1 2.1-.5c.9.3 1.9.6 2.9.7a2 2 0 0 1 1.7 2Z" />
+    </svg>
+  );
+}
+
+export function MapPinIcon({ size, className, strokeWidth = 1.8 }: P) {
+  return (
+    <svg {...px(size)} strokeWidth={strokeWidth} className={className} aria-hidden="true">
+      <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+      <circle cx="12" cy="10" r="3" />
+    </svg>
+  );
+}
+
+export function TrendingUpIcon({ size, className, strokeWidth = 1.8 }: P) {
+  return (
+    <svg {...px(size)} strokeWidth={strokeWidth} className={className} aria-hidden="true">
+      <path d="m3 17 6-6 4 4 8-8" />
+      <path d="M21 7h-5v5" />
+    </svg>
+  );
+}
+
+export function LogOutIcon({ size, className, strokeWidth = 1.8 }: P) {
+  return (
+    <svg {...px(size)} strokeWidth={strokeWidth} className={className} aria-hidden="true">
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
+    </svg>
+  );
+}
+
+export function SettingsIcon({ size, className, strokeWidth = 1.8 }: P) {
+  return (
+    <svg {...px(size)} strokeWidth={strokeWidth} className={className} aria-hidden="true">
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2V21a2 2 0 1 1-4 0v-.1A1.7 1.7 0 0 0 7 19.4a1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 3 15H3a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 4.6 7a1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 9 3h.1a2 2 0 1 1 4 0v.1A1.7 1.7 0 0 0 17 4.6a1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1A1.7 1.7 0 0 0 21 9v.1a2 2 0 1 1 0 4H21a1.7 1.7 0 0 0-1.6 1Z" />
+    </svg>
+  );
+}
+
+export function ShareIcon({ size, className, strokeWidth = 1.8 }: P) {
+  return (
+    <svg {...px(size)} strokeWidth={strokeWidth} className={className} aria-hidden="true">
+      <path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7" />
+      <path d="M12 16V3M8 7l4-4 4 4" />
+    </svg>
+  );
+}
+
+export function WalletIcon({ size, className, strokeWidth = 1.8 }: P) {
+  return (
+    <svg {...px(size)} strokeWidth={strokeWidth} className={className} aria-hidden="true">
+      <path d="M20 12V8a2 2 0 0 0-2-2H5a2 2 0 0 1 0-4h13v4" />
+      <path d="M3 6v12a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4" />
+      <path d="M16 12h5v4h-5a2 2 0 0 1 0-4Z" />
+    </svg>
+  );
+}
+
+export function TicketIcon({ size, className, strokeWidth = 1.8 }: P) {
+  return (
+    <svg {...px(size)} strokeWidth={strokeWidth} className={className} aria-hidden="true">
+      <path d="M3 9V7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2a2 2 0 0 0 0 6v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-6Z" />
+      <path d="M13 5v14" />
+    </svg>
+  );
+}
+
+export function GridIcon({ size, className, strokeWidth = 1.8 }: P) {
+  return (
+    <svg {...px(size)} strokeWidth={strokeWidth} className={className} aria-hidden="true">
+      <rect x="3" y="3" width="7" height="7" rx="2" />
+      <rect x="14" y="3" width="7" height="7" rx="2" />
+      <rect x="3" y="14" width="7" height="7" rx="2" />
+      <rect x="14" y="14" width="7" height="7" rx="2" />
+    </svg>
+  );
+}
+
+export function ClockIcon({ size, className, strokeWidth = 1.8 }: P) {
+  return (
+    <svg {...px(size)} strokeWidth={strokeWidth} className={className} aria-hidden="true">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3 2" />
+    </svg>
+  );
+}
+
+export function CopyIcon({ size, className, strokeWidth = 1.8 }: P) {
+  return (
+    <svg {...px(size)} strokeWidth={strokeWidth} className={className} aria-hidden="true">
+      <rect x="9" y="9" width="12" height="12" rx="2" />
+      <path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1" />
+    </svg>
+  );
+}
+
+export function ThumbsUpIcon({ size, className, strokeWidth = 1.8 }: P) {
+  return (
+    <svg {...px(size)} strokeWidth={strokeWidth} className={className} aria-hidden="true">
+      <path d="M7 10v11H4a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1h3Z" />
+      <path d="M7 10l4-6a2 2 0 0 1 3.6 1.7L14 10h5a2 2 0 0 1 2 2.4l-1.4 7A2 2 0 0 1 17.6 21H7" />
+    </svg>
+  );
+}
+
+export function HouseIcon({ size, className, strokeWidth = 1.8 }: P) {
+  return (
+    <svg {...px(size)} strokeWidth={strokeWidth} className={className} aria-hidden="true">
+      <path d="M3.5 10.5 12 3.5l8.5 7" />
+      <path d="M5.5 9.5V20a1 1 0 0 0 1 1H10v-5.5h4V21h3.5a1 1 0 0 0 1-1V9.5" />
+    </svg>
+  );
+}

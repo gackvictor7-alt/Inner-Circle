@@ -21,13 +21,13 @@ export function ComingSoonPanel({
     <Card className="p-6 sm:p-10">
       <div className="flex flex-col items-start gap-6 sm:flex-row sm:gap-10">
         <div className="flex max-w-sm flex-col items-start gap-4">
-          <span className="rounded-full bg-champagne-400/15 p-3 text-champagne-600 dark:text-champagne-300">
+          <span className="rounded-full bg-sand-400/15 p-3 text-sand-600 dark:text-sand-300">
             <HourglassIcon size={22} />
           </span>
           <div>
             <h2 className="text-xl font-bold tracking-tight">{title}</h2>
             <div className="mt-3">
-              <Badge variant="champagne">{t.common.comingSoon}</Badge>
+              <Badge variant="sand">{t.common.comingSoon}</Badge>
             </div>
           </div>
         </div>

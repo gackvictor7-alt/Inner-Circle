@@ -39,3 +39,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local development database (regenerate with npm run db:push && npm run db:seed)
+/dev.db
+/dev.db-journal
+
+# test database
+/.test.db
+/.test.db-journal
