@@ -36,16 +36,17 @@
   },
   /**
    * D1 database (SQLite at the edge). The application accesses it through the
-   * `DB` binding – keep that name. Replace `database_id` with the id printed by
-   * `npx wrangler d1 create inner-circle-db` (see docs/09-deployment.md).
-   * Schema migrations live in ./drizzle and are applied with
-   * `npm run cf:db:migrate:remote`.
+   * `DB` binding – keep that name. No `database_id` is required: Wrangler's
+   * resource provisioning looks the database up by `database_name` and creates
+   * it on the first `wrangler deploy` if it does not exist yet (you may also
+   * create it up front with `npm run cf:d1:create`). Schema migrations live in
+   * ./drizzle and are applied with `wrangler d1 migrations apply DB --remote`
+   * (part of `npm run cf:release`). See docs/09-deployment.md.
    */
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "inner-circle-db",
-      "database_id": "REPLACE_WITH_D1_DATABASE_ID",
       "migrations_dir": "drizzle"
     }
   ]

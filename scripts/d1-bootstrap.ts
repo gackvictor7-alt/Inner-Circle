@@ -10,7 +10,8 @@
  * metrics – production data is created by real members and administration.
  *
  * Prerequisites: `npm run cf:d1:migrate:<target>` (schema) and, for --remote,
- * a `wrangler login` plus the real `database_id` in wrangler.jsonc.
+ * either a `wrangler login` (local machine) or the Workers Builds environment
+ * (`npm run cf:release` runs this step automatically after every deploy).
  */
 
 import { createId } from "../src/db/ids";

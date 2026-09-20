@@ -14,8 +14,9 @@
     alle 49 Importstellen unverändert.
   - `drizzle/0000_init.sql` + `meta/`: vollständige D1-Migration
     (50 Tabellen, 85 Indizes).
-  - Skripte: `cf:build|preview|deploy|upload|dry-run|typegen`,
-    `cf:d1:create|migrate|bootstrap`, `cf:admin`;
+  - Skripte: `cf:build|release|deploy|preview|upload|dry-run|typegen`,
+    `cf:d1:create|migrate|bootstrap`, `cf:admin` (`cf:release` = Deploy +
+    D1-Migrationen + Taxonomie, als Deploy-Befehl für Workers Builds);
     `scripts/d1-bootstrap.ts` (Taxonomie), `scripts/admin-bootstrap.ts`
     (erster Admin), `scripts/taxonomy.ts` (gemeinsame Quelle mit Seed).
   - `.env.example` (erstmals versioniert – nur Platzhalter),
@@ -41,9 +42,11 @@
     `node:crypto`, Dev-Postausgang, Audit-Log, Rate-Limit in D1.
   - `_next/static` mit `immutable`-Cache-Header; libSQL/Native-Binding
     nicht im Worker-Bundle.
-- **Offen (Gründer, manuell):** `wrangler login`, D1 anlegen und
-  `database_id` eintragen, Secrets setzen, Workers-Builds-Anbindung –
-  Schritt-für-Schritt in `docs/09-deployment.md`.
+- **Offen (Gründer, manuell, nur Dashboard):** Build-/Deploy-Befehle in
+  Workers Builds eintragen, `AUTH_SECRET` + `NEXT_PUBLIC_SITE_URL` setzen,
+  Build erneut starten (D1 wird per Wrangler-Provisioning automatisch
+  angelegt und migriert), ersten Admin befördern – Schritt-für-Schritt in
+  `docs/09-deployment.md`.
 - **Externe Abhängigkeiten:** `@opennextjs/cloudflare` (Runtime-Adapter),
   `wrangler` (Dev-Tool).
 

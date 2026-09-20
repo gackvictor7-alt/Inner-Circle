@@ -42,10 +42,9 @@ Produktions-Geheimnisse landen ausschließlich in Env-Variablen.
 - **Schritt 03:** Cloudflare-Konto anlegen, GitHub-Repo über Workers
   Builds verbinden – vollständige Klick-Anleitung in
   `docs/09-deployment.md` (Erstinbetriebnahme).
-- **Schritt 04:** D1-Datenbank anlegen (`npm run cf:d1:create`,
-  `database_id` in `wrangler.jsonc`), `AUTH_SECRET` als Worker-Secret
-  setzen; E-Mail-Konto (Resend) anlegen und `RESEND_API_KEY` als Secret
-  hinterlegen.
+- **Schritt 04:** `AUTH_SECRET` als Worker-Secret setzen (die
+  D1-Datenbank legt der erste Deploy automatisch an); E-Mail-Konto
+  (Resend) anlegen und `RESEND_API_KEY` als Secret hinterlegen.
 - **Schritt 05:** Stripe-Konto (Testmodus), Jahrespreis-Entscheid.
 - **Schritt 09/11:** Provisionsordnungs-Entwurf + Rechtsfragen klären.
 - **Schritt 20:** Domain, Stripe-Live-Freigabe, Launch-Entscheide.
