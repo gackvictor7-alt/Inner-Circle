@@ -12,7 +12,6 @@ vi.mock("next/navigation", () => ({
 }));
 
 import {
-  initialAuthState,
   loginAction,
   registerAction,
   requestPasswordResetAction,
@@ -20,6 +19,7 @@ import {
   resetPasswordAction,
   verifyCodeAction,
 } from "@/app/actions/auth";
+import { initialAuthState } from "@/app/actions/auth-state";
 import { deleteTestUser } from "../helpers";
 
 const PASSWORD = "Testing!2026";

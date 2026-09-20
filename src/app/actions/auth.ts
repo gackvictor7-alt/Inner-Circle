@@ -27,23 +27,10 @@ import { sendPasswordResetEmail } from "@/lib/messages/templates";
 import { EMAIL_RE, handleify, maskEmail } from "@/lib/utils";
 import { getAccessContext } from "@/lib/access/server";
 
-export type AuthState = {
-  status: "idle" | "success" | "error";
-  /** i18n code resolved against `app.errors`. */
-  errorCode?: string;
-  errorParams?: Record<string, string | number>;
-  fieldErrors?: Record<string, string>;
-  /** Development-only: the generated code, shown in a clearly marked dev box. */
-  devCode?: string;
-  /** "dev" = recorded in the development outbox, never presented as delivered. */
-  messageMode?: "provider" | "dev" | "none";
-  redirectTo?: string;
-  /** Masked e-mail the code was sent to (verify page). */
-  target?: string;
-  messageKey?: string;
-};
+// Form state type lives in ./auth-state (a "use server" file may only export async functions).
+import type { AuthState } from "./auth-state";
 
-export const initialAuthState: AuthState = { status: "idle" };
+export type { AuthState };
 
 function field(formData: FormData, key: string, max = 200): string {
   const value = formData.get(key);
