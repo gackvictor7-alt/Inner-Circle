@@ -4,10 +4,7 @@ import { fontSans } from "./fonts";
 import { ThemeInitScript, ThemeProvider } from "@/components/ThemeProvider";
 import { I18nProvider } from "@/lib/i18n/context";
 import { dictionaries } from "@/lib/i18n/dictionaries";
-import { SiteHeader } from "@/components/site/SiteHeader";
-import { SiteFooter } from "@/components/site/SiteFooter";
 import { Toaster } from "@/components/ui/Toaster";
-import { SkipLink } from "@/components/site/SkipLink";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://inner-circle.example"),
@@ -26,27 +23,28 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#f7f8fa" },
-    { media: "(prefers-color-scheme: dark)", color: "#0b0f16" },
+    { media: "(prefers-color-scheme: dark)", color: "#0a0e15" },
   ],
 };
 
+/**
+ * Root layout: providers only. The public website shell lives in (site) and
+ * the member platform shell in (app)/app, so both can be composed freely.
+ */
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="de" suppressHydrationWarning className={fontSans.variable}>
       <head>
         <ThemeInitScript />
       </head>
-      <body className="flex min-h-full min-h-svh flex-col antialiased">
+      <body className="min-h-svh antialiased">
         <ThemeProvider>
           <I18nProvider>
-            <SkipLink />
-            <SiteHeader />
-            <main id="main" className="flex-1">
-              {children}
-            </main>
-            <SiteFooter />
+            {children}
             <Toaster />
           </I18nProvider>
         </ThemeProvider>

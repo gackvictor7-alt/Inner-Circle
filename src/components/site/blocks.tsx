@@ -38,7 +38,7 @@ export function StepsRow({ steps }: { steps: readonly { title: string; desc: str
         <li key={step.title}>
           <Reveal delay={index * 90}>
             <Card className="relative h-full p-6">
-              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-midnight-900 text-sm font-bold text-champagne-400 dark:bg-surface-muted">
+              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-midnight-900 text-sm font-bold text-sand-400 dark:bg-surface-muted">
                 {index + 1}
               </span>
               <h3 className="mt-4 text-base font-bold tracking-tight">{step.title}</h3>
@@ -67,16 +67,16 @@ export function Callout({
   icon: ReactNode;
   title: string;
   text: string;
-  tone?: "neutral" | "champagne" | "warning";
+  tone?: "neutral" | "sand" | "warning";
 }) {
   const tones = {
     neutral: "border-border bg-surface",
-    champagne: "border-champagne-400/30 bg-champagne-400/5",
+    sand: "border-sand-400/30 bg-sand-200/40 dark:bg-sand-400/5",
     warning: "border-border bg-surface",
   } as const;
   const iconTones = {
     neutral: "text-electric-500 bg-electric-500/10",
-    champagne: "text-champagne-600 dark:text-champagne-300 bg-champagne-400/10",
+    sand: "text-sand-600 dark:text-sand-300 bg-sand-400/15",
     warning: "text-danger-600 dark:text-danger-500 bg-danger-500/10",
   } as const;
   return (

@@ -3,8 +3,8 @@
  * the profile features). Deterministic soft gradient per name.
  */
 const palettes = [
-  "from-electric-500/80 to-electric-700",
-  "from-champagne-400 to-champagne-600",
+  "from-electric-500/85 to-electric-700",
+  "from-forest-400 to-forest-600",
   "from-electric-400 to-midnight-700",
   "from-midnight-700 to-electric-700",
 ];

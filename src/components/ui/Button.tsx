@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 
-export type ButtonVariant = "primary" | "secondary" | "ghost" | "exclusive" | "danger";
+export type ButtonVariant = "primary" | "secondary" | "ghost" | "dark" | "success" | "danger";
 export type ButtonSize = "sm" | "md" | "lg";
 
 const base =
@@ -13,8 +13,9 @@ const variants: Record<ButtonVariant, string> = {
   secondary:
     "border border-border-strong bg-surface text-foreground hover:border-foreground/30 hover:bg-surface-muted",
   ghost: "text-foreground-muted hover:text-foreground hover:bg-surface-muted",
-  exclusive:
-    "bg-champagne-400 text-midnight-900 shadow-[0_8px_24px_-12px_rgb(217_188_138/0.7)] hover:bg-champagne-300",
+  dark: "bg-midnight-900 text-paper-50 hover:bg-midnight-800 dark:bg-paper-50 dark:text-midnight-900 dark:hover:bg-white",
+  success:
+    "bg-forest-500 text-white shadow-[0_8px_24px_-12px_rgb(18_128_92/0.6)] hover:bg-forest-600",
   danger: "bg-danger-600 text-white hover:bg-danger-500",
 };
 
@@ -30,6 +31,8 @@ export type ButtonProps = {
   fullWidth?: boolean;
   href?: string;
   className?: string;
+  /** Shows a spinner and disables the button while true. */
+  loading?: boolean;
   children: ReactNode;
 } & Omit<ButtonHTMLAttributes<HTMLButtonElement>, "className">;
 
@@ -40,6 +43,7 @@ export function Button({
   fullWidth = false,
   href,
   className = "",
+  loading = false,
   children,
   ...rest
 }: ButtonProps) {
@@ -66,7 +70,19 @@ export function Button({
   }
 
   return (
-    <button type="button" className={classes} {...rest}>
+    <button
+      type="button"
+      className={classes}
+      aria-busy={loading || undefined}
+      disabled={rest.disabled || loading}
+      {...rest}
+    >
+      {loading && (
+        <span
+          aria-hidden="true"
+          className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"
+        />
+      )}
       {children}
     </button>
   );

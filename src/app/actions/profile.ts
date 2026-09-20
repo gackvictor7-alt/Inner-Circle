@@ -1,0 +1,250 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { eq } from "drizzle-orm";
+import { db } from "@/db/client";
+import { accountDeletionRequests, notificationPreferences, privacySettings, profiles, users } from "@/db/schema";
+import { audit } from "@/lib/admin/audit";
+import { idFor } from "@/db/ids";
+import { getAccessContext } from "@/lib/access/server";
+import { consumeRateLimit } from "@/lib/rate-limit";
+import { fail, done, bool, text, type ActionState } from "./state";
+
+const VISIBILITY = ["public", "members", "connections", "private"] as const;
+
+/** Updates the member profile (members only for the full profile, spec §19/§26). */
+export async function updateProfileAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const access = await getAccessContext();
+  if (!access.user) return fail("unauthorized");
+  if (!access.verified) return fail("verificationRequired");
+
+  const limit = await consumeRateLimit(`profile:${access.user.id}`, 40, 3600);
+  if (!limit.allowed) return fail("rateLimited");
+
+  const firstName = text(formData, "firstName", 60);
+  const lastName = text(formData, "lastName", 60);
+  const headline = text(formData, "headline", 140);
+  const bio = text(formData, "bio", 1200);
+  const location = text(formData, "location", 120);
+  const company = text(formData, "company", 120);
+  const jobTitle = text(formData, "jobTitle", 120);
+  const website = text(formData, "website", 300);
+  const linkedin = text(formData, "linkedin", 300);
+  const xHandle = text(formData, "xHandle", 120);
+  const instagram = text(formData, "instagram", 120);
+  const avatarUrl = text(formData, "avatarUrl", 400);
+
+  if (!firstName || !lastName) return fail("validation");
+  if (bio.length > 1200) return fail("validation");
+
+  const listFrom = (key: string, max: number): string[] =>
+    text(formData, key, 600)
+      .split(",")
+      .map((entry) => entry.trim())
+      .filter(Boolean)
+      .slice(0, max);
+
+  const roles = listFrom("roles", 8);
+  const skills = listFrom("skills", 12);
+  const lookingFor = listFrom("lookingFor", 8);
+
+  const complete = Boolean(headline && bio && location);
+
+  const existing = access.user.profile;
+  const values = {
+    headline: headline || null,
+    bio: bio || null,
+    location: location || null,
+    company: company || null,
+    jobTitle: jobTitle || null,
+    website: website || null,
+    linkedinUrl: linkedin || null,
+    xHandle: xHandle || null,
+    instagramUrl: instagram || null,
+    avatarUrl: avatarUrl || existing?.avatarUrl || null,
+    rolesJson: JSON.stringify(roles),
+    skillsJson: JSON.stringify(skills),
+    lookingForJson: JSON.stringify(lookingFor),
+    // Interests chosen during onboarding stay untouched; completion is recorded once.
+    onboardingCompletedAt: complete ? (existing?.onboardingCompletedAt ?? new Date()) : existing?.onboardingCompletedAt ?? null,
+    updatedAt: new Date(),
+  };
+
+  if (existing) {
+    await db.update(profiles).set(values).where(eq(profiles.id, existing.id));
+  } else {
+    await db.insert(profiles).values({ id: idFor.profile(), userId: access.user.id, ...values, createdAt: new Date() });
+  }
+
+  await db.update(users).set({ firstName, lastName, updatedAt: new Date() }).where(eq(users.id, access.user.id));
+
+  revalidatePath("/app/profile");
+  revalidatePath("/app");
+  revalidatePath(`/app/people/${access.user.handle}`);
+  return done({ messageCode: "saved", redirectTo: "/app/profile?saved=1" });
+}
+
+export async function updatePrivacyAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const access = await getAccessContext();
+  if (!access.user) return fail("unauthorized");
+
+  const rawVisibility = text(formData, "profileVisibility", 24);
+  const profileVisibility = (VISIBILITY as readonly string[]).includes(rawVisibility) ? rawVisibility : "members";
+  const performanceVisibilityRaw = text(formData, "performanceVisibility", 24);
+  const performanceVisibility = (VISIBILITY as readonly string[]).includes(performanceVisibilityRaw)
+    ? performanceVisibilityRaw
+    : "connections";
+
+  const values = {
+    profileVisibility,
+    performanceVisibility,
+    showLocation: bool(formData, "showLocation"),
+    contactVisibility: ["public", "members", "connections", "private"].includes(
+      text(formData, "contactVisibility", 24),
+    )
+      ? text(formData, "contactVisibility", 24)
+      : "connections",
+    discoverable: bool(formData, "discoverable"),
+    allowConnectionRequests: bool(formData, "allowConnectionRequests"),
+    updatedAt: new Date(),
+  };
+
+  const [existing] = await db
+    .select({ userId: privacySettings.userId })
+    .from(privacySettings)
+    .where(eq(privacySettings.userId, access.user.id))
+    .limit(1);
+
+  if (existing) {
+    await db.update(privacySettings).set(values).where(eq(privacySettings.userId, access.user.id));
+  } else {
+    await db.insert(privacySettings).values({ userId: access.user.id, ...values });
+  }
+
+  revalidatePath("/app/settings");
+  return done({ messageCode: "saved" });
+}
+
+export async function updateNotificationPreferencesAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const access = await getAccessContext();
+  if (!access.user) return fail("unauthorized");
+
+  const values = {
+    inAppAll: bool(formData, "inAppAll"),
+    emailMessages: bool(formData, "emailMessages"),
+    emailConnectionRequests: bool(formData, "emailConnectionRequests"),
+    emailProductUpdates: bool(formData, "emailProductUpdates"),
+    updatedAt: new Date(),
+  };
+
+  const [existing] = await db
+    .select({ userId: notificationPreferences.userId })
+    .from(notificationPreferences)
+    .where(eq(notificationPreferences.userId, access.user.id))
+    .limit(1);
+
+  if (existing) {
+    await db
+      .update(notificationPreferences)
+      .set(values)
+      .where(eq(notificationPreferences.userId, access.user.id));
+  } else {
+    await db.insert(notificationPreferences).values({ userId: access.user.id, ...values });
+  }
+
+  revalidatePath("/app/settings");
+  return done({ messageCode: "saved" });
+}
+
+/** Completes the interest/goal onboarding step without starting a trial. */
+export async function skipInterestsAction(): Promise<void> {
+  const access = await getAccessContext();
+  if (!access.user) return;
+  const [existing] = await db
+    .select({ id: profiles.id, onboardingCompletedAt: profiles.onboardingCompletedAt })
+    .from(profiles)
+    .where(eq(profiles.userId, access.user.id))
+    .limit(1);
+
+  const now = new Date();
+  if (existing) {
+    if (!existing.onboardingCompletedAt) {
+      await db.update(profiles).set({ onboardingCompletedAt: now }).where(eq(profiles.id, existing.id));
+    }
+  } else {
+    await db
+      .insert(profiles)
+      .values({ id: idFor.profile(), userId: access.user.id, onboardingCompletedAt: now, createdAt: now, updatedAt: now });
+  }
+  revalidatePath("/app");
+}
+
+export async function markOnboardingComplete(userId: string): Promise<void> {
+  const [existing] = await db
+    .select({ id: profiles.id, onboardingCompletedAt: profiles.onboardingCompletedAt })
+    .from(profiles)
+    .where(eq(profiles.userId, userId))
+    .limit(1);
+  const now = new Date();
+  if (existing) {
+    if (!existing.onboardingCompletedAt) {
+      await db.update(profiles).set({ onboardingCompletedAt: now }).where(eq(profiles.id, existing.id));
+    }
+  } else {
+    await db
+      .insert(profiles)
+      .values({ id: idFor.profile(), userId, onboardingCompletedAt: now, createdAt: now, updatedAt: now });
+  }
+}
+
+/**
+ * Files an account deletion request (spec §61). Deletion itself is irreversible
+ * and therefore processed manually by administration – never triggered by the
+ * browser alone. The requester keeps access until it is processed.
+ */
+export async function requestAccountDeletionAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const access = await getAccessContext();
+  if (!access.user) return fail("unauthorized");
+
+  const reason = text(formData, "reason", 1200);
+  const now = new Date();
+  const userId = access.user.id;
+
+  const [existing] = await db
+    .select()
+    .from(accountDeletionRequests)
+    .where(eq(accountDeletionRequests.userId, userId))
+    .limit(1);
+
+  if (existing) {
+    if (existing.status === "pending") return fail("alreadyExists");
+    await db
+      .update(accountDeletionRequests)
+      .set({ status: "pending", reason: reason || null, requestedAt: now, processedAt: null, processedById: null })
+      .where(eq(accountDeletionRequests.id, existing.id));
+  } else {
+    await db.insert(accountDeletionRequests).values({
+      id: idFor.deletionRequest(),
+      userId,
+      reason: reason || null,
+      status: "pending",
+      requestedAt: now,
+    });
+  }
+
+  await audit({
+    actorId: userId,
+    action: "account_deletion.requested",
+    entityType: "AccountDeletionRequest",
+    entityId: userId,
+  });
+
+  revalidatePath("/app/settings");
+  return done({ messageCode: "saved" });
+}

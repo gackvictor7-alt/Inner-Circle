@@ -2,27 +2,47 @@
   "name": "inner-circle",
   "version": "0.1.0",
   "private": true,
-  "description": "INNER CIRCLE – Digital business ecosystem (project foundation, STEP 01)",
+  "description": "INNER CIRCLE – digital business ecosystem (Sprint 2.0 platform build)",
   "scripts": {
     "dev": "next dev -H 0.0.0.0",
     "build": "next build",
     "start": "next start -H 0.0.0.0",
-    "lint": "eslint"
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "db:push": "drizzle-kit push",
+    "db:generate": "drizzle-kit generate",
+    "db:seed": "tsx --env-file=.env scripts/seed.ts",
+    "db:reset": "tsx --env-file=.env scripts/reset-db.ts",
+    "dev:outbox": "tsx scripts/show-outbox.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:keys": "tsx scripts/check-keys.ts",
+    "i18n:audit": "tsx scripts/i18n-audit.ts"
   },
   "dependencies": {
+    "@libsql/client": "^0.18.0",
+    "drizzle-orm": "^0.45.2",
+    "jose": "^5.10.0",
     "next": "16.3.5",
+    "qrcode": "^1.5.4",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "stripe": "^18.5.0",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
+    "@types/qrcode": "^1.5.6",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "drizzle-kit": "^0.31.10",
     "eslint": "^9",
     "eslint-config-next": "16.3.5",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "tsx": "^4.23.15",
+    "typescript": "^5",
+    "vitest": "^3.2.7"
   },
   "engines": {
     "node": ">=20"

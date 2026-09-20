@@ -36,7 +36,7 @@ export function SiteFooter() {
             <div className="flex items-center gap-3">
               <span
                 aria-hidden="true"
-                className="flex h-9 w-9 items-center justify-center rounded-full border border-champagne-400/60 bg-midnight-800 text-[13px] font-bold text-champagne-400"
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-sand-400/60 bg-midnight-800 text-[13px] font-bold text-sand-400"
               >
                 IC
               </span>

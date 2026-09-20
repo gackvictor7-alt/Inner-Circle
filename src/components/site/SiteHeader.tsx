@@ -8,6 +8,7 @@ import { Logo } from "./Logo";
 import { ThemeLanguageControls } from "./ThemeLanguageControls";
 import { Button } from "@/components/ui/Button";
 import { MenuIcon, XIcon } from "@/components/ui/icons";
+import type { AccessLevel } from "@/lib/access/levels";
 
 const navItems = [
   { href: "/network", key: "network" },
@@ -29,20 +30,38 @@ function useScrollShadow() {
   return scrolled;
 }
 
-export function SiteHeader() {
-  const { t } = useI18n();
+/**
+ * Public site header.
+ *
+ * Mobile navigation fix (Sprint 2.0): the menu panel is rendered as a *sibling*
+ * of the sticky header. A `backdrop-blur` ancestor creates a containing block
+ * for `position: fixed` descendants, which previously clipped the panel and made
+ * it appear behind page content. Rendering it outside that subtree, with its own
+ * scroll container, focus handling and body scroll lock, makes it reliable on
+ * every viewport size.
+ */
+export function SiteHeader({ level = "visitor" as AccessLevel }: { level?: AccessLevel }) {
+  const { t, locale, setLocale } = useI18n();
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
-  const menuPanelRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const scrolled = useScrollShadow();
 
-  // Mobile menu: escape to close, initial focus, body scroll lock.
+  const signedIn = level !== "visitor";
+
+  // Close the menu on navigation.
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [pathname]);
+
   useEffect(() => {
     if (!menuOpen) return;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    menuPanelRef.current?.querySelector<HTMLElement>("a, button")?.focus();
+
+    const focusTarget = panelRef.current?.querySelector<HTMLElement>("a, button");
+    focusTarget?.focus();
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -61,71 +80,104 @@ export function SiteHeader() {
     href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
 
   return (
-    <header
-      className={`sticky top-0 z-50 border-b backdrop-blur-xl transition-shadow duration-300 ${
-        scrolled ? "border-border bg-background/85 shadow-card" : "border-transparent bg-background/70"
-      }`}
-    >
-      <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-        <Logo />
+    <>
+      <header
+        className={`sticky top-0 z-50 border-b transition-shadow duration-300 ${
+          scrolled || menuOpen
+            ? "border-border bg-background/85 shadow-card backdrop-blur-xl"
+            : "border-transparent bg-background/70"
+        }`}
+      >
+        <div className="ic-shell flex h-16 items-center justify-between gap-4">
+          <Logo />
 
-        {/* Desktop navigation */}
-        <nav aria-label={t.brand.name} className="hidden items-center gap-1 lg:flex">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              aria-current={isActive(item.href) ? "page" : undefined}
-              className={`rounded-full px-3.5 py-2 text-sm font-medium transition-colors ${
-                isActive(item.href)
-                  ? "bg-electric-500/10 text-electric-600 dark:text-electric-300"
-                  : "text-foreground-muted hover:bg-surface-muted hover:text-foreground"
-              }`}
+          <nav aria-label={t.brand.name} className="hidden items-center gap-1 lg:flex">
+            {navItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-current={isActive(item.href) ? "page" : undefined}
+                className={`rounded-full px-3.5 py-2 text-sm font-medium transition-colors ${
+                  isActive(item.href)
+                    ? "bg-electric-500/10 text-electric-600 dark:text-electric-300"
+                    : "text-foreground-muted hover:bg-surface-muted hover:text-foreground"
+                }`}
+              >
+                {t.nav[item.key]}
+              </Link>
+            ))}
+          </nav>
+
+          <div className="flex items-center gap-2">
+            <ThemeLanguageControls />
+
+            <div className="hidden items-center gap-2 md:flex">
+              {signedIn ? (
+                <Button href="/app" size="sm">
+                  {t.publicNav.openApp}
+                </Button>
+              ) : (
+                <>
+                  <Link
+                    href="/login"
+                    className="rounded-full px-3.5 py-2 text-sm font-semibold text-foreground-muted transition-colors hover:bg-surface-muted hover:text-foreground"
+                  >
+                    {t.nav.login}
+                  </Link>
+                  <Button href="/register" size="sm">
+                    {t.nav.join}
+                  </Button>
+                </>
+              )}
+            </div>
+
+            <button
+              ref={menuButtonRef}
+              type="button"
+              aria-expanded={menuOpen}
+              aria-controls="mobile-menu"
+              aria-label={menuOpen ? t.nav.menuClose : t.nav.menuOpen}
+              onClick={() => setMenuOpen((value) => !value)}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-surface text-foreground transition-colors hover:bg-surface-muted lg:hidden"
             >
-              {t.nav[item.key]}
-            </Link>
-          ))}
-        </nav>
+              {menuOpen ? <XIcon size={20} /> : <MenuIcon size={20} />}
+            </button>
+          </div>
+        </div>
+      </header>
 
-        <div className="flex items-center gap-2">
-          <ThemeLanguageControls />
-
-          <div className="hidden items-center gap-2 md:flex">
-            <Link
-              href="/login"
-              className="rounded-full px-3.5 py-2 text-sm font-semibold text-foreground-muted transition-colors hover:bg-surface-muted hover:text-foreground"
+      {/* Mobile menu – sibling of the header (never inside the blurred subtree) */}
+      <div
+        id="mobile-menu"
+        ref={panelRef}
+        hidden={!menuOpen}
+        className={`fixed inset-0 z-[60] lg:hidden ${menuOpen ? "" : "pointer-events-none"}`}
+        aria-hidden={!menuOpen}
+      >
+        <button
+          type="button"
+          tabIndex={menuOpen ? 0 : -1}
+          aria-label={t.nav.menuClose}
+          onClick={() => setMenuOpen(false)}
+          className="absolute inset-0 h-full w-full cursor-default bg-midnight-950/40 backdrop-blur-sm"
+        />
+        <div className="absolute inset-x-0 top-0 max-h-[svh] overflow-y-auto rounded-b-3xl border-b border-border bg-background p-4 shadow-pop sm:p-6">
+          <div className="flex items-center justify-between">
+            <Logo />
+            <button
+              type="button"
+              onClick={() => {
+                setMenuOpen(false);
+                menuButtonRef.current?.focus();
+              }}
+              aria-label={t.nav.menuClose}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border text-foreground"
             >
-              {t.nav.login}
-            </Link>
-            <Button href="/register" size="sm">
-              {t.nav.join}
-            </Button>
+              <XIcon size={20} />
+            </button>
           </div>
 
-          {/* Mobile menu button */}
-          <button
-            ref={menuButtonRef}
-            type="button"
-            aria-expanded={menuOpen}
-            aria-controls="mobile-menu"
-            aria-label={menuOpen ? t.nav.menuClose : t.nav.menuOpen}
-            onClick={() => setMenuOpen((v) => !v)}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-surface text-foreground transition-colors hover:bg-surface-muted lg:hidden"
-          >
-            {menuOpen ? <XIcon size={20} /> : <MenuIcon size={20} />}
-          </button>
-        </div>
-      </div>
-
-      {/* Mobile menu overlay – closes via link click, toggle or Escape */}
-      {menuOpen && (
-        <div
-          id="mobile-menu"
-          ref={menuPanelRef}
-          className="fixed inset-x-0 bottom-0 top-16 z-40 overflow-y-auto border-t border-border bg-background/98 backdrop-blur-xl animate-fade-in lg:hidden"
-          tabIndex={-1}
-        >
-          <nav aria-label={t.brand.name} className="mx-auto flex w-full max-w-6xl flex-col px-4 py-6 sm:px-6">
+          <nav aria-label={t.brand.name} className="mt-5">
             <ul className="flex flex-col">
               {navItems.map((item) => (
                 <li key={item.href}>
@@ -133,29 +185,59 @@ export function SiteHeader() {
                     href={item.href}
                     onClick={() => setMenuOpen(false)}
                     aria-current={isActive(item.href) ? "page" : undefined}
-                    className={`flex items-center justify-between rounded-xl px-4 py-3.5 text-base font-semibold transition-colors ${
+                    className={`flex items-center justify-between rounded-xl px-4 py-3 text-base font-semibold transition-colors ${
                       isActive(item.href)
                         ? "bg-electric-500/10 text-electric-600 dark:text-electric-300"
                         : "text-foreground hover:bg-surface-muted"
                     }`}
                   >
                     {t.nav[item.key]}
+                    <span aria-hidden="true" className="text-foreground-subtle">
+                      →
+                    </span>
                   </Link>
                 </li>
               ))}
             </ul>
-            <div className="mt-6 flex flex-col gap-3 border-t border-border pt-6">
-              <Button href="/register" size="lg" fullWidth>
-                {t.nav.join}
-              </Button>
-              <Button href="/login" size="lg" variant="secondary" fullWidth>
-                {t.nav.login}
-              </Button>
-              <p className="mt-2 text-center text-xs text-foreground-subtle">{t.footer.copyright}</p>
-            </div>
           </nav>
+
+          <div className="mt-5 flex flex-col gap-3 border-t border-border pt-5">
+            {signedIn ? (
+              <Button href="/app" size="lg" fullWidth>
+                {t.publicNav.openApp}
+              </Button>
+            ) : (
+              <>
+                <Button href="/register" size="lg" fullWidth>
+                  {t.nav.join}
+                </Button>
+                <Button href="/login" size="lg" variant="secondary" fullWidth>
+                  {t.nav.login}
+                </Button>
+              </>
+            )}
+
+            <div className="mt-2 flex items-center justify-between rounded-xl bg-surface-muted px-3 py-2.5">
+              <div className="flex gap-1">
+                {(["de", "en"] as const).map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={() => setLocale(option)}
+                    aria-pressed={locale === option}
+                    className={`rounded-full px-3 py-1.5 text-xs font-semibold uppercase transition-colors ${
+                      locale === option ? "bg-surface text-foreground shadow-card" : "text-foreground-muted"
+                    }`}
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
+              <ThemeLanguageControls />
+            </div>
+          </div>
         </div>
-      )}
-    </header>
+      </div>
+    </>
   );
 }
