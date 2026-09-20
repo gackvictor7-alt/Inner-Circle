@@ -1,0 +1,11 @@
+# Variables for the local Cloudflare Workers preview (`npm run cf:preview`)
+# and for `next dev` with DATABASE_DRIVER=d1. Copy to `.dev.vars` (gitignored).
+# In production these values are Worker secrets/variables – never commit them.
+NEXTJS_ENV=production
+AUTH_SECRET=replace-with-a-long-random-secret
+NEXT_PUBLIC_SITE_URL=http://localhost:8787
+ENABLE_DEV_OUTBOX=true
+# STRIPE_SECRET_KEY=
+# STRIPE_WEBHOOK_SECRET=
+# RESEND_API_KEY=
+# EMAIL_FROM=

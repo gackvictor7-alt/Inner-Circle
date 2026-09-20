@@ -1,0 +1,59 @@
+/**
+ * Cloudflare Workers configuration for INNER CIRCLE (OpenNext adapter).
+ *
+ * The Next.js app is built with `npm run cf:build` (`opennextjs-cloudflare build`),
+ * which produces the Worker entry (`.open-next/worker.js`) and the static assets
+ * directory (`.open-next/assets`) referenced below. Both paths are generated –
+ * never edit them by hand. See docs/09-deployment.md for the full runbook.
+ *
+ * Reference: https://developers.cloudflare.com/workers/wrangler/configuration/
+ */
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "inner-circle",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-09-01",
+  "compatibility_flags": [
+    // Node.js APIs (node:crypto for scrypt password hashing, node:util, …)
+    "nodejs_compat",
+    // Only public URLs may be fetched from the Worker (Resend, Twilio, Stripe)
+    "global_fetch_strictly_public"
+  ],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  // Logs + traces in the Cloudflare dashboard (Workers → inner-circle → Observability)
+  "observability": {
+    "enabled": true
+  },
+  // Non-secret runtime variables. Secrets (AUTH_SECRET, STRIPE_SECRET_KEY, …)
+  // are never stored here – set them with `wrangler secret put` or in the
+  // dashboard (Settings → Variables and Secrets). Public values such as
+  // NEXT_PUBLIC_SITE_URL can be added here or in the dashboard as plain text.
+  "vars": {
+    "NEXTJS_ENV": "production"
+  },
+  /**
+   * D1 database (SQLite at the edge). The application accesses it through the
+   * `DB` binding – keep that name. Replace `database_id` with the id printed by
+   * `npx wrangler d1 create inner-circle-db` (see docs/09-deployment.md).
+   * Schema migrations live in ./drizzle and are applied with
+   * `npm run cf:db:migrate:remote`.
+   */
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "inner-circle-db",
+      "database_id": "REPLACE_WITH_D1_DATABASE_ID",
+      "migrations_dir": "drizzle"
+    }
+  ]
+  /**
+   * Optional: on-the-fly image optimisation for next/image via Cloudflare Images.
+   * Without this binding images are served unoptimised (the site's images are
+   * static files in /public, so this is fine to start with).
+   *
+   * "images": { "binding": "IMAGES" },
+   */
+}

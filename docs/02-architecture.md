@@ -10,13 +10,13 @@
 | UI-Styling           | **Tailwind CSS v4**                           | Utility-first, Dark-Mode via CSS-Variablen, Design-Token-fähig |
 | Internationalisierung| **Zentrales Wörterbuch-Modul** (`src/lib/i18n`) | DE/EN ab Tag 1, kein verstreuter Hardcodetext; Migration auf next-intl/Routing möglich |
 | Theme                | Eigener `ThemeProvider` (light/dark/system)   | Keine Abhängigkeit, FOUC-frei, persistiert                  |
-| Datenbank (ab St. 04)| **PostgreSQL** (managed Free-Tier, z. B. Neon) + **Prisma** | Relational, migrationsbasiert, portabel, skalierbar |
+| Datenbank            | **SQLite via Drizzle ORM** – **Cloudflare D1** in Produktion, libSQL-Datei lokal (ADR-008) | Relational, migrationsbasiert (`drizzle/`), gleiches Schema in Dev/Test/Prod, Free-Tier |
 | Auth (ab St. 04)     | **Auth.js (NextAuth)**                        | E-Mail+Passwort zuerst, OAuth (Google/Apple) + 2FA nachrüstbar, keine eigene Krypto |
 | E-Mail (ab St. 04)   | Transaktions-Mailer (z. B. Resend Free-Tier)  | Verifizierung, Recovery, Benachrichtigungen                |
 | Abos (ab St. 05)     | **Stripe** (Testmodus → Live)                 | Karten, Apple/Google Pay; Webhook-verifizierter Abo-Status; PayPal ergänzbar |
 | Marktplatz (ab St.12)| Vorauss. **Stripe Connect**                   | Finale Wahl in Schritt 12 (Auszahlungen, KYC, Disputes)    |
 | Storage (ab St. 06)  | S3-kompatibler Object Storage                 | Avatare, Kursvideos, Deal-Dokumente (privat vs. öffentlich getrennt) |
-| Hosting              | **Vercel** (Free/Hobby → Pro bei Wachstum)    | Preview-Deployments pro Branch, null DevOps am Anfang      |
+| Hosting              | **Cloudflare Workers** via OpenNext (ADR-008) | Workers Builds pro Branch/PR, D1 im selben Konto, Free-Tier-Start; Runbook `09-deployment.md` |
 | Mobile (später)      | Responsives Web zuerst; nativ später          | API-/Server-Logik wiederverwendbar                         |
 
 **Prinzip:** Monolith-first (eine Next.js-App, ein Schema), keine
@@ -29,7 +29,7 @@ verteilte Systeme.
 Inner-Circle/
 ├── docs/                  # Verbindliche Projektspezifikation (diese Dateien)
 ├── public/                # Statische Assets (brand/ für Logo/Medien)
-├── prisma/                # (ab Schritt 04) schema.prisma + Migrationen
+├── drizzle/               # SQL-Migrationen (Drizzle Kit) für D1/libSQL
 ├── src/
 │   ├── app/               # Next.js App Router (Routen, Layouts)
 │   ├── components/
@@ -37,8 +37,10 @@ Inner-Circle/
 │   ├── domains/           # Fachlogik je Produktbereich (A–J), siehe README dort
 │   └── lib/
 │       ├── i18n/          # Zentrale DE/EN-Wörterbücher + Provider (aktiv)
-│       ├── auth/          # (ab Schritt 04) Auth.js-Konfiguration
-│       └── db/            # (ab Schritt 04) Prisma-Client
+│       ├── auth/          # Session-/Passwort-/OTP-Logik
+│       └── db/            # Hinweise; Client + Schema liegen in src/db/
+├── wrangler.jsonc         # Cloudflare-Worker-Konfiguration (D1-Binding DB)
+├── open-next.config.ts    # OpenNext-Adapter für Cloudflare
 ├── .env.example           # Alle Umgebungsvariablen (ohne Geheimnisse)
 └── README.md
 ```
@@ -94,7 +96,8 @@ Migrationen versioniert, keine Duplikation geschäftskritischer Daten.
 ## 5. Umgebungen
 
 - **Lokal:** `npm run dev` (diese Sandbox / Gründer-Rechner).
-- **Preview:** automatische Vercel-Deployments pro Branch/PR.
+- **Workers-Vorschau:** `npm run cf:preview` (App in `workerd` + lokale D1).
+- **Preview:** Cloudflare Workers Builds pro Branch/PR (Versions-Upload).
 - **Produktion:** `main`-Branch, eigene Env-Variablen, Stripe-Live erst
   nach Freigabe + Tests (Schritt 20).
 

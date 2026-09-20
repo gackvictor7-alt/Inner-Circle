@@ -19,10 +19,25 @@ npm install
 npm run dev     # http://localhost:3000 (bindet 0.0.0.0)
 npm run build   # Produktions-Build prüfen
 npm run lint    # Lint prüfen
+npm test        # Unit- + Integrationstests (Wegwerf-Datenbank)
 ```
 
-Umgebungsvariablen: `.env.example` nach `.env.local` kopieren
-(alle Integrationen folgen in späteren Schritten).
+Umgebungsvariablen: `.env.example` nach `.env` kopieren (lokal genügt
+`AUTH_SECRET`; alle weiteren Integrationen sind optional und laufen ohne
+Schlüssel im gekennzeichneten Dev-Modus). Lokale Datenbank:
+`npm run db:push && npm run db:seed`.
+
+## Deployment (Cloudflare Workers + D1)
+
+```bash
+npm run cf:preview    # App lokal in der Cloudflare-Laufzeit (workerd) + lokale D1
+npm run cf:dry-run    # Build + Wrangler-Konfiguration prüfen (kein Upload)
+npm run cf:deploy     # Build + Deployment (nach `npx wrangler login`)
+```
+
+Produktion läuft als Cloudflare Worker (OpenNext-Adapter) mit einer
+D1-Datenbank (Binding `DB`, Migrationen in `drizzle/`). Erstinbetriebnahme,
+Secrets, Build-Einstellungen und Admin-Bootstrap: `docs/09-deployment.md`.
 
 ## Struktur
 
@@ -32,7 +47,9 @@ Umgebungsvariablen: `.env.example` nach `.env.local` kopieren
 - `src/domains/` – Fachlogik je Produktbereich (A–J, ab Schritt 04+)
 - `src/lib/i18n/` – Zentrale DE/EN-Texte (kein Hardcodetext in Komponenten!)
 - `src/app/fonts/` – Self-hosted Inter (SIL OFL 1.1)
-- `src/lib/auth/`, `src/lib/db/` – Platzhalter bis Schritt 04
+- `src/db/` – Drizzle-Schema + Laufzeit-Client (D1 in Workers, libSQL lokal)
+- `drizzle/` – versionierte SQL-Migrationen; `scripts/` – Seed, D1-Bootstrap, Admin-Bootstrap
+- `wrangler.jsonc`, `open-next.config.ts` – Cloudflare-Worker-Konfiguration
 - `docs/` – Produktvision, Architektur, Roadmap, Fortschritt
 
 ## Regeln (Kurzfassung)
@@ -46,6 +63,7 @@ Umgebungsvariablen: `.env.example` nach `.env.local` kopieren
 ## Technik
 
 Next.js 16 · React 19 · TypeScript · Tailwind CSS v4 ·
-PostgreSQL + Prisma (ab Schritt 04) · Auth.js (ab Schritt 04) ·
-Stripe (ab Schritt 05) · Vercel-Hosting.
+Drizzle ORM (SQLite: Cloudflare D1 in Produktion, libSQL lokal) ·
+eigene Session-Auth (scrypt, OTP) · Stripe (Sandbox zuerst) ·
+Cloudflare Workers via OpenNext.
 Details: `docs/02-architecture.md`, Entscheidungen: `docs/05-decisions.md`.

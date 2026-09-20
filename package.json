@@ -17,10 +17,23 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:keys": "tsx scripts/check-keys.ts",
-    "i18n:audit": "tsx scripts/i18n-audit.ts"
+    "i18n:audit": "tsx scripts/i18n-audit.ts",
+    "cf:build": "opennextjs-cloudflare build",
+    "cf:preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "cf:deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "cf:upload": "opennextjs-cloudflare build && opennextjs-cloudflare upload",
+    "cf:dry-run": "opennextjs-cloudflare build && wrangler deploy --dry-run",
+    "cf:typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
+    "cf:d1:create": "wrangler d1 create inner-circle-db",
+    "cf:d1:migrate:local": "wrangler d1 migrations apply DB --local",
+    "cf:d1:migrate:remote": "wrangler d1 migrations apply DB --remote",
+    "cf:d1:bootstrap:local": "tsx scripts/d1-bootstrap.ts --local",
+    "cf:d1:bootstrap:remote": "tsx scripts/d1-bootstrap.ts --remote",
+    "cf:admin": "tsx scripts/admin-bootstrap.ts"
   },
   "dependencies": {
     "@libsql/client": "^0.18.0",
+    "@opennextjs/cloudflare": "^1.20.6",
     "drizzle-orm": "^0.45.2",
     "jose": "^5.10.0",
     "next": "16.3.5",
@@ -42,7 +55,8 @@
     "tailwindcss": "^4",
     "tsx": "^4.23.15",
     "typescript": "^5",
-    "vitest": "^3.2.7"
+    "vitest": "^3.2.7",
+    "wrangler": "^4.135.0"
   },
   "engines": {
     "node": ">=20"

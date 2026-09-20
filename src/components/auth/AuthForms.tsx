@@ -12,15 +12,14 @@ import { toast } from "@/components/ui/Toaster";
 import { AlertIcon, CheckCircleIcon, LockIcon, MailIcon, PhoneIcon, SparkleIcon } from "@/components/ui/icons";
 import {
   completeOnboardingAction,
-  initialAuthState,
   loginAction,
   registerAction,
   requestPasswordResetAction,
   resendCodeAction,
   resetPasswordAction,
   verifyCodeAction,
-  type AuthState,
 } from "@/app/actions/auth";
+import { initialAuthState, type AuthState } from "@/app/actions/auth-state";
 
 /** Shared shell for all authentication screens. */
 function AuthCard({

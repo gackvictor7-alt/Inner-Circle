@@ -60,3 +60,26 @@ Gründer-Freigabe.
 - **Entscheidung:** Vercel (Free-Tier → Pro bei Wachstum).
 - **Konsequenz:** Deployment ab Schritt 03 sinnvoll (öffentliche Seite);
   Kostenentscheidung bei Launch (`07-external-services.md`).
+
+## ADR-008: Cloudflare Workers + D1 statt Vercel/PostgreSQL (2026-09-20, Sprint 2.0)
+
+- **Kontext:** Der erste Cloudflare-Deploy scheiterte („Could not detect a
+  directory containing static files“), weil das Projekt als statische
+  Seite ohne Worker-Konfiguration angebunden war. Die Plattform ist
+  vollständig serverseitig dynamisch (Session-Cookie auf jeder Route) und
+  nutzt bereits SQLite (Drizzle/libSQL, ADR-002 damit überholt).
+- **Entscheidung:** Hosting auf **Cloudflare Workers** über den
+  OpenNext-Adapter (`@opennextjs/cloudflare`, `wrangler.jsonc`,
+  `open-next.config.ts`); Produktionsdatenbank **Cloudflare D1**
+  (SQLite-kompatibel, Binding `DB`). `src/db/client.ts` wählt den Treiber
+  zur Laufzeit (D1 in `workerd`, libSQL in Node.js), sodass Dev, Tests
+  und Produktion denselben Code und dasselbe Schema nutzen. Migrationen
+  liegen versioniert in `drizzle/` und werden mit
+  `wrangler d1 migrations apply` eingespielt.
+- **Konsequenz:** Kein separater DB-Anbieter, alles in einem Konto und
+  im Free-Tier startbar; kein R2/Queue nötig (kein ISR). Erster Admin
+  wird per `scripts/admin-bootstrap.ts` befördert, Basistaxonomie per
+  `scripts/d1-bootstrap.ts` eingespielt – der Demo-Seed bleibt
+  Entwicklung. Grenzen: D1 hat kein Transaktions-API (die App nutzt
+  keine Transaktionen); Bildoptimierung bewusst deaktiviert.
+  ADR-007 (Vercel) ist damit ersetzt.

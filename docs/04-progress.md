@@ -1,5 +1,52 @@
 # Entwicklungsfortschritt
 
+## Deployment – Cloudflare Workers + D1 (✅ vorbereitet, 2026-09-20)
+
+- **Ziel:** Den fehlgeschlagenen Cloudflare-Deploy („Could not detect a
+  directory containing static files“) beheben und die Plattform produktiv
+  auf Cloudflare Workers mit D1-Datenbank lauffähig machen – ohne
+  bestehende Funktionen zu verändern.
+- **Geändert/erstellt:**
+  - `wrangler.jsonc` (Worker `inner-circle`, `nodejs_compat`, Assets,
+    D1-Binding `DB`, Observability), `open-next.config.ts`,
+    `public/_headers`, `next.config.ts` (libSQL extern, Dev-Bindings).
+  - `src/db/client.ts`: Laufzeit-Umschaltung D1 ↔ libSQL (lazy Proxy);
+    alle 49 Importstellen unverändert.
+  - `drizzle/0000_init.sql` + `meta/`: vollständige D1-Migration
+    (50 Tabellen, 85 Indizes).
+  - Skripte: `cf:build|preview|deploy|upload|dry-run|typegen`,
+    `cf:d1:create|migrate|bootstrap`, `cf:admin`;
+    `scripts/d1-bootstrap.ts` (Taxonomie), `scripts/admin-bootstrap.ts`
+    (erster Admin), `scripts/taxonomy.ts` (gemeinsame Quelle mit Seed).
+  - `.env.example` (erstmals versioniert – nur Platzhalter),
+    `.dev.vars.example`, `.gitignore`.
+  - Dokumentation: `docs/09-deployment.md` (Runbook), `07`, `05`
+    (ADR-008), README, `src/lib/db/README.md`.
+  - **Bugfix (Produktion):** `src/app/actions/auth.ts` exportierte das
+    Objekt `initialAuthState` aus einer `"use server"`-Datei → in
+    Produktions-Builds schlugen alle Auth-Actions mit
+    „A 'use server' file can only export async functions“ fehl. Zustand
+    nach `src/app/actions/auth-state.ts` verschoben.
+- **Funktioniert (verifiziert):**
+  - `npm run cf:build` (OpenNext-Bundle 5,9 MB, gzip 1,7 MB), `npm run
+    typecheck`, `npm test` (45 Tests), `wrangler deploy --dry-run`
+    (Bindings `DB`, `ASSETS`, `NEXTJS_ENV`).
+  - `wrangler d1 migrations apply DB --local`: 136 Statements grün;
+    Taxonomie-Bootstrap idempotent (23/11/3); Admin-Bootstrap befördert
+    und meldet fehlende Konten sauber.
+  - App in `workerd` (`npm run cf:preview`) gegen lokale D1: öffentliche
+    Seiten 200, `/app`/`/admin` ohne Session 307, kompletter Flow
+    Registrierung → OTP → Verifizierung → Login → Onboarding → 48-h-Trial
+    → Mitgliederbereich (13 Routen 200) → Admin-Konsole; scrypt/OTP über
+    `node:crypto`, Dev-Postausgang, Audit-Log, Rate-Limit in D1.
+  - `_next/static` mit `immutable`-Cache-Header; libSQL/Native-Binding
+    nicht im Worker-Bundle.
+- **Offen (Gründer, manuell):** `wrangler login`, D1 anlegen und
+  `database_id` eintragen, Secrets setzen, Workers-Builds-Anbindung –
+  Schritt-für-Schritt in `docs/09-deployment.md`.
+- **Externe Abhängigkeiten:** `@opennextjs/cloudflare` (Runtime-Adapter),
+  `wrangler` (Dev-Tool).
+
 ## Sprint 2.0 – Von der Website zur Plattform (in Arbeit, 2026-09-21)
 
 - **Ziel:** Aus der bestehenden Website die erste wirklich nutzbare Version
