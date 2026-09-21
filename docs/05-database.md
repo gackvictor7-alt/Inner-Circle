@@ -39,7 +39,7 @@
 
 | Tabelle | Zweck | Status |
 | ------- | ----- | ------ |
-| `Profile` | `userId` (unique), `headline`, `bio`, `location`, `company`, `jobTitle`, Links (`websiteUrl`, `linkedinUrl`, `xUrl`, `instagramUrl`), `avatarUrl`, `coverUrl`, `rolesJson`, `skillsJson`, `lookingForJson`, `profileVisibility`, `onboardingCompletedAt` | **aktiv** (Avatar/Cover nur als URL) |
+| `Profile` | `userId` (unique), `headline`, `bio`, `location`, `company`, `jobTitle`, Links (`websiteUrl`, `linkedinUrl` [DEPRECATED in UI], `xUrl`, `instagramUrl`), `avatarUrl`, `coverUrl`, `rolesJson`, `skillsJson`, `lookingForJson`, `profileVisibility`, `onboardingCompletedAt` | **aktiv** (Avatar/Cover nur als URL; `linkedinUrl` in sichtbarer UI entfernt und deprecated, Spalte für Migrationssicherheit in DB erhalten) |
 | `Interest` / `Goal` | Taxonomie mit DE/EN-Labels und `position` | **aktiv** (Bootstrap per Seed/D1-Bootstrap) |
 | `UserInterest` / `UserGoal` | n:m-Zuordnungen, eindeutig je Paar | **aktiv** |
 | `PrivacySettings` | `profileVisibility`, `performanceVisibility`, `contactVisibility`, `showLocation`, `discoverable`, `allowConnectionRequests` | teilweise erzwungen (K-06) |

@@ -134,17 +134,80 @@ export function DashboardScreen({ data }: { data: DashboardData }) {
 
       {/* Trial / free status banner */}
       {isTrial && (
-        <Card className="flex flex-wrap items-center justify-between gap-4 border-electric-500/30 bg-electric-500/5 p-4 sm:p-5">
-          <div>
-            <p className="font-semibold">
-              {tf(t.app.dashboard.trialBanner, { time: countdown ?? "–" })}
-            </p>
-            <p className="mt-1 text-sm text-foreground-muted">
-              {tf(t.app.access.limitText, { limit: data.trialRequestLimit })} ·{" "}
-              {data.trialRequestsUsed}/{data.trialRequestLimit}
+        <Card className="p-6 border-electric-500/25 bg-gradient-to-br from-electric-500/[0.04] via-surface to-surface">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/80 pb-4">
+            <div className="flex items-center gap-2">
+              <span className="flex h-2 w-2 rounded-full bg-electric-500 animate-pulse" />
+              <span className="text-xs font-bold uppercase tracking-wider text-electric-600 dark:text-electric-300">
+                {t.app.access.levelTrial}
+              </span>
+            </div>
+            {countdown && (
+              <div className="inline-flex items-center gap-1.5 rounded-full border border-electric-500/25 bg-surface px-3 py-1 font-mono text-xs font-semibold text-foreground">
+                <span className="text-foreground-subtle">Restzeit:</span>
+                <span>{countdown}</span>
+              </div>
+            )}
+          </div>
+
+          <div className="mt-4">
+            <h2 className="text-lg font-bold tracking-tight text-foreground">
+              {t.app.dashboard.trialTitle}
+            </h2>
+            <p className="mt-1 text-sm text-foreground-muted max-w-2xl">
+              {t.app.dashboard.trialLead}
             </p>
           </div>
-          <Button href="/app/billing">{t.app.dashboard.trialBannerCta}</Button>
+
+          <div className="mt-5 grid gap-3 sm:grid-cols-3">
+            <div className="rounded-xl border border-border bg-surface/70 p-3.5">
+              <div className="flex items-center gap-2 text-xs font-semibold text-foreground">
+                <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-electric-500/10 text-electric-600 dark:text-electric-300">
+                  <UserPlusIcon size={12} />
+                </span>
+                <span>Netzwerk</span>
+              </div>
+              <p className="mt-2 text-xs text-foreground-muted leading-relaxed">
+                {tf(t.app.dashboard.trialFeature1, {
+                  limit: data.trialRequestLimit,
+                  used: data.trialRequestsUsed,
+                })}
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-border bg-surface/70 p-3.5">
+              <div className="flex items-center gap-2 text-xs font-semibold text-foreground">
+                <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-electric-500/10 text-electric-600 dark:text-electric-300">
+                  <BriefcaseIcon size={12} />
+                </span>
+                <span>Chancen & Markt</span>
+              </div>
+              <p className="mt-2 text-xs text-foreground-muted leading-relaxed">
+                {t.app.dashboard.trialFeature2}
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-border bg-surface/70 p-3.5">
+              <div className="flex items-center gap-2 text-xs font-semibold text-foreground">
+                <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-electric-500/10 text-electric-600 dark:text-electric-300">
+                  <SparkleIcon size={12} />
+                </span>
+                <span>Events & Deals</span>
+              </div>
+              <p className="mt-2 text-xs text-foreground-muted leading-relaxed">
+                {t.app.dashboard.trialFeature3}
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-5 flex flex-wrap items-center justify-between gap-4 border-t border-border/80 pt-4">
+            <p className="text-xs text-foreground-subtle max-w-lg">
+              {t.app.dashboard.trialNotice}
+            </p>
+            <Button href="/app/billing" size="sm" variant="secondary">
+              {t.app.dashboard.trialExploreCta}
+            </Button>
+          </div>
         </Card>
       )}
 

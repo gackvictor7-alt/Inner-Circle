@@ -2,12 +2,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/access/server";
 import { isBlocked, isConnected } from "@/db/queries";
-import { connectionsFor, memberProfileByHandle, profileStats, trustProfile, userPosts } from "@/lib/platform/queries";
+import { memberProfileByHandle, profileStats, trustProfile, userPosts } from "@/lib/platform/queries";
 import { MemberCard } from "@/components/app/MemberCard";
 import { ProfileActions } from "@/components/app/ProfileActions";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { RatingStars } from "@/components/ui/RatingStars";
+import { GlobeIcon, InstagramIcon, XSocialIcon } from "@/components/ui/icons";
 import { LocalizedPageHeader, Tr } from "@/components/app/localized";
 
 export const dynamic = "force-dynamic";
@@ -97,6 +98,44 @@ export default async function MemberProfilePage({ params }: { params: Promise<{ 
                 .filter(Boolean)
                 .join(" · ")}
             </p>
+
+            {(profile.websiteUrl || profile.xUrl || profile.instagramUrl) && (
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                {profile.websiteUrl && (
+                  <a
+                    href={profile.websiteUrl.startsWith("http") ? profile.websiteUrl : `https://${profile.websiteUrl}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-2.5 py-1 text-xs text-foreground-muted hover:text-foreground transition-colors"
+                  >
+                    <GlobeIcon size={13} />
+                    <span>Website</span>
+                  </a>
+                )}
+                {profile.xUrl && (
+                  <a
+                    href={profile.xUrl.startsWith("http") ? profile.xUrl : `https://x.com/${profile.xUrl.replace(/^@/, "")}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-2.5 py-1 text-xs text-foreground-muted hover:text-foreground transition-colors"
+                  >
+                    <XSocialIcon size={12} />
+                    <span>{profile.xUrl.startsWith("@") ? profile.xUrl : `@${profile.xUrl}`}</span>
+                  </a>
+                )}
+                {profile.instagramUrl && (
+                  <a
+                    href={profile.instagramUrl.startsWith("http") ? profile.instagramUrl : `https://instagram.com/${profile.instagramUrl.replace(/^@/, "")}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-2.5 py-1 text-xs text-foreground-muted hover:text-foreground transition-colors"
+                  >
+                    <InstagramIcon size={13} />
+                    <span>{profile.instagramUrl.startsWith("@") ? profile.instagramUrl : `@${profile.instagramUrl}`}</span>
+                  </a>
+                )}
+              </div>
+            )}
 
             <dl className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
               {[

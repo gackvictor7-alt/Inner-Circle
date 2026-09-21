@@ -14,22 +14,24 @@ P2 mittelfristig · P3 Aufräumen.
 
 ## P0 – blockiert den Kern-Flow
 
-### K-01 · Kein echter E-Mail-Versand (Verifizierung)
+### K-01 · E-Mail-Zustellung im Spam-Ordner (Test-Domain `resend.dev`)
 
-- **Symptom:** In Produktion kann sich niemand verifizieren. `/verify` zeigt
-  „Versand noch nicht eingerichtet", erzeugte Codes werden sofort entwertet.
-- **Ursache:** `RESEND_API_KEY` (und `EMAIL_FROM` mit verifizierter Domain) ist
-  nicht gesetzt; ohne Provider legt der Transport nur optional in `DevOutbox` ab.
-- **Betroffen:** `/register` → `/verify`, `/forgot-password`, alle
-  E-Mail-Benachrichtigungen.
-- **Lösung (Gründer):** Resend-Konto, Domain verifizieren, Secret
-  `RESEND_API_KEY` + Text `EMAIL_FROM` setzen, Testkonto verifizieren,
-  anschließend `ENABLE_DEV_OUTBOX` entfernen.
-- **Erster Testversand:** Es genügt `RESEND_API_KEY`. Ohne `EMAIL_FROM` sendet
-  der Code über den Resend-Testabsender `INNER CIRCLE <onboarding@resend.dev>`,
-  der **nur an die E-Mail-Adresse des Resend-Kontos** zustellt. Für echte
-  Empfänger: Domain verifizieren und `EMAIL_FROM` setzen.
-- **Aufwand:** Konfiguration, kein Code. **Dies ist der nächste Schritt.**
+- **Symptom:** Verifizierungs-E-Mails kommen zwar technisch bei Resend an, landen
+  beim Empfänger aber im Spam-Ordner.
+- **Ursache:** Die Absender-Testdomain `onboarding@resend.dev` ist eine geteilte
+  Sandbox von Resend, die von vielen Testanwendungen genutzt und von Mail-Providern
+  (Gmail, Outlook, Apple Mail) durch mangelnde Domain-Reputation abgewertet wird.
+- **Bereits im Code verbessert:**
+  - Standardkonforme Multipart-Zustellung (HTML + Plaintext) statt reinem Text
+  - Reduziertes, hochwertiges Apple-artiges Verification-Template mit klarer Typografie
+  - Keine Spam-Triggerwörter, korrekte UTF-8-Codierung und Tabellen-Layout
+  - Eindeutiger Entity-Header (`X-Entity-Ref-ID`)
+  - Konfigurierbare `EMAIL_FROM` und `EMAIL_REPLY_TO` Variablen
+- **Offene Produktions-Abhängigkeit (Gründer):** Eigene Domain in Resend anlegen
+  und DNS-Einträge für SPF (`TXT`), DKIM (`CNAME`) und DMARC (`TXT`) setzen.
+  Anschließend `EMAIL_FROM="INNER CIRCLE <verify@unsere-domain.com>"` als
+  Cloudflare Environment-Variable hinterlegen. Erst damit ist eine saubere
+  Posteingangs-Zustellung ohne Spamfilter-Klassifizierung gewährleistet.
 
 ### K-02 · Keine SMS-Verifizierung (Twilio)
 

@@ -26,6 +26,7 @@ export const email = {
   provider: "resend" as const,
   apiKey: read("RESEND_API_KEY"),
   from: read("EMAIL_FROM") ?? "INNER CIRCLE <onboarding@resend.dev>",
+  replyTo: read("EMAIL_REPLY_TO"),
   /** Delivery is only real when an API key exists. */
   get configured() {
     return Boolean(this.apiKey);

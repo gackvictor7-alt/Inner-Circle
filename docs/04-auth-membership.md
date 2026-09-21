@@ -136,13 +136,27 @@ der UI als Entwicklungsmodus gekennzeichnet und über
 (`src/lib/membership/plans.ts`; doppelt in `src/lib/env.ts` als
 `membershipPricing` – Quelle der Wahrheit im Code ist `plans.ts`).
 
-## 5. Fälle, die heute nicht funktionieren (bewusst dokumentiert)
+## 5. Profile & Social Links
+
+- **LinkedIn entfernt & deprecated:** LinkedIn wurde vollständig aus der
+  sichtbaren Profiloberfläche (`/app/profile`, `/app/profile/edit`,
+  `/app/people/[handle]`) entfernt. INNER CIRCLE positioniert sich als eigenes
+  Business-Netzwerk und bewirbt LinkedIn nicht prominent extern. Die
+  Datenbankspalte `Profile.linkedinUrl` bleibt zur Wahrung der
+  Migrationssicherheit intern erhalten, wird aber nicht mehr im UI angeboten.
+- **Sekundäre Social Links:** Externe Links zu Instagram, X/Twitter und
+  Websites werden als dezente, sekundäre Angaben dargestellt.
+- **Fokus auf INNER CIRCLE Identität:** Prioritär dargestellt werden platformeigene
+  Aktivitäten, Geschäftsstatistiken (Kontakte, Follower, Posts, Deals),
+  Trust Score & Bewertungen, Rollen, Fähigkeiten, Ziele und Badges.
+
+## 6. Fälle, die heute nicht funktionieren (bewusst dokumentiert)
 
 | Fall | Zustand | Ursache |
 | ---- | ------- | ------- |
 | Registrierung/Verifizierung per Telefon | NOT IMPLEMENTED | Das Registrierungsformular sendet im Telefon-Modus kein `email`-Feld, die Action verlangt aber eine gültige E-Mail → Validierungsfehler. Zusätzlich wird der Code immer über den E-Mail-Kanal ausgestellt |
 | SMS-Code empfangen | BLOCKED | Twilio-Zugangsdaten fehlen (`TWILIO_*`) |
-| E-Mail-Code in Produktion empfangen | BLOCKED | `RESEND_API_KEY` fehlt; `/verify` sagt das offen |
+| E-Mail-Posteingang ohne Spam-Ordner | PARTIAL | E-Mail-Versand über Resend funktioniert technisch, aber die Testdomain `resend.dev` wird von Spamfiltern oft abgestraft; produktiv ist eine verifizierte Domain nötig |
 | Google-/Apple-Login | NOT IMPLEMENTED | Route `/api/auth/oauth/*` existiert nicht (Button ist als „Einrichtung erforderlich" gekennzeichnet) |
 | Bezahlung | BLOCKED | Stripe-Schlüssel fehlen; Dev-Aktivierung nur lokal |
 | 2FA | PREPARED | `VerificationCode.purpose = login_2fa` bzw. Schema vorhanden, keine UI |

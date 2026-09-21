@@ -14,7 +14,7 @@ Variablennamen ein. Die vollständige Variablenliste steht in
 | **Cloudflare D1** | Produktionsdatenbank, Binding `DB`, DB-Name `inner-circle-db` | Migrationen vorhanden (50 Tabellen), Anwendung im Deploy-Befehl | ✅ vorbereitet | keine (Binding in `wrangler.jsonc`) |
 | **GitHub** | Repository, Versionierung, PRs, Workers-Builds-Auslöser | aktiv (`gackvictor7-alt/Inner-Circle`) | ✅ | keine |
 | **OpenNext-Adapter** (`@opennextjs/cloudflare`) | Brücke Next.js → Worker | aktiv (Build erzeugt `.open-next/worker.js`) | ✅ | keine |
-| **Resend** (E-Mail) | Verifizierungscodes, Passwort-Reset, Benachrichtigungen | Code fertig, **kein Konto/Key** | ❌ **blockiert den Kern-Flow** | `RESEND_API_KEY` (Secret), `EMAIL_FROM` (Text) |
+| **Resend** (E-Mail) | Verifizierungscodes, Passwort-Reset, Benachrichtigungen | Code aktiv, Key vorhanden; HTML+Text Multipart-Templates; offene Produktionsabhängigkeit: eigene Domain | ⚠️ Testversand aktiv, Domain verifizieren | `RESEND_API_KEY` (Secret), `EMAIL_FROM` (Text), `EMAIL_REPLY_TO` (Text) |
 | **Twilio** (SMS) | Telefon-Verifizierung | Code fertig, keine Zugangsdaten | ❌ optional | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM_NUMBER`, `TWILIO_TEST_MODE` |
 | **Stripe** (Abos) | Monats-/Jahresmitgliedschaft, Rechnungen, Billing-Portal | Integration vollständig inkl. Webhook-Prüfung, keine Schlüssel | ❌ nicht produktiv aktiv | `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PORTAL_RETURN_URL`, `ALLOW_STRIPE_LIVE` |
 | **Google OAuth** | Social Login | **nicht implementiert** (nur UI-Hinweis „Einrichtung erforderlich") | ❌ | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` (Variablen bereits ausgewertet, aber ohne Route) |
@@ -43,16 +43,25 @@ werden in `/app/settings` (Admin-Sicht) bzw. `/dev/outbox` angezeigt.
 
 ## 3. Was der Gründer selbst einrichten muss
 
-### 3.1 Sofort (blockiert den Kern-Flow)
+### 3.1 Produktions-Zustellbarkeit (Eigene Domain & DNS)
 
-1. **Resend-Konto** anlegen (Free-Tier genügt zum Start).
-2. Absenderdomain verifizieren (SPF/DKIM/DMARC) oder zum Testen
-   `onboarding@resend.dev` nutzen.
-3. API-Key erzeugen und im Worker als **Secret** `RESEND_API_KEY` setzen.
-4. Text-Variable `EMAIL_FROM` setzen, z. B.
-   `INNER CIRCLE <noreply@deine-domain.de>`.
-5. Nach dem ersten erfolgreichen Versand: `ENABLE_DEV_OUTBOX` entfernen und
-   `DELETE FROM DevOutbox;` bzw. „Postausgang leeren" ausführen.
+Der E-Mail-Versand funktioniert mit `RESEND_API_KEY` und `onboarding@resend.dev`
+bereits real. Um Spam-Zustellung bei echten Nutzern (Gmail, Outlook, Apple Mail)
+zu verhindern, ist der Domain-Schritt im DNS zwingend erforderlich:
+
+1. **Eigene Domain in Resend anlegen:** Im Resend Dashboard unter *Domains* die
+   Produktionsdomain (z. B. `inner-circle.app`) hinzufügen.
+2. **DNS-Einträge konfigurieren:**
+   - **DKIM:** CNAME-Einträge laut Resend Dashboard (`resend._domainkey`).
+   - **SPF:** TXT-Eintrag für Domain (`v=spf1 include:amazonses.com ~all` bzw. Resend-Vorgabe).
+   - **DMARC:** TXT-Eintrag auf `_dmarc.<domain>` mit z. B. `v=DMARC1; p=quarantine; pct=100; rua=mailto:dmarc@<domain>`.
+   - **MX (optional):** Falls E-Mail-Rückläufer/Inbound über denselben Host verarbeitet werden.
+3. **Environment anpassen:**
+   - Text-Variable `EMAIL_FROM` im Cloudflare Dashboard auf die verifizierte Domain
+     setzen, z. B. `INNER CIRCLE <verify@unsere-domain.com>` oder `INNER CIRCLE <hello@unsere-domain.com>`.
+   - Optional: `EMAIL_REPLY_TO` auf z. B. `support@unsere-domain.com` setzen.
+   - Es ist **keine Code-Änderung** nötig.
+4. **Dev-Postausgang deaktivieren:** `ENABLE_DEV_OUTBOX` in Produktion entfernen.
 
 ### 3.2 Für Bezahlung
 

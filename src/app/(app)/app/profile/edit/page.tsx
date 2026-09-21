@@ -39,7 +39,6 @@ export default async function ProfileEditPage() {
     { name: "skills", labelKey: "app.profile.skills", helpKey: "app.profile.skillsHint", defaultValue: parseList(profile?.skillsJson) },
     { name: "lookingFor", labelKey: "app.profile.lookingFor", helpKey: "app.profile.rolesHint", defaultValue: parseList(profile?.lookingForJson) },
     { name: "website", labelKey: "app.profile.website", kind: "url", defaultValue: profile?.websiteUrl ?? "" },
-    { name: "linkedin", labelKey: "app.profile.linkedin", kind: "url", defaultValue: profile?.linkedinUrl ?? "" },
     { name: "xHandle", labelKey: "app.profile.x", defaultValue: profile?.xUrl ?? "" },
     { name: "instagram", labelKey: "app.profile.instagram", defaultValue: profile?.instagramUrl ?? "" },
   ];

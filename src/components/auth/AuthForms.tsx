@@ -9,7 +9,7 @@ import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { useI18n } from "@/lib/i18n/context";
 import { toast } from "@/components/ui/Toaster";
-import { AlertIcon, CheckCircleIcon, LockIcon, MailIcon, PhoneIcon, SparkleIcon } from "@/components/ui/icons";
+import { AlertIcon, CheckCircleIcon, CheckIcon, LockIcon, MailIcon, PhoneIcon, SparkleIcon } from "@/components/ui/icons";
 import {
   completeOnboardingAction,
   loginAction,
@@ -421,7 +421,7 @@ export function VerifyForm({
   /** True only when the signed-in account may open /dev/outbox. */
   devOutboxAccessible?: boolean;
 }) {
-  const { t, tf } = useI18n();
+  const { t, tf, locale } = useI18n();
   const router = useRouter();
   const [state, action, pending] = useActionState(verifyCodeAction, initialAuthState);
   const [resendState, resendAction, resendPending] = useActionState(resendCodeAction, initialAuthState);
@@ -432,10 +432,10 @@ export function VerifyForm({
   }, [state, router]);
 
   useEffect(() => {
-    if (resendState.status === "success") {
-      setCooldown(60);
-    }
-  }, [resendState]);
+    if (resendState.status !== "success") return;
+    const timer = setTimeout(() => setCooldown(60), 0);
+    return () => clearTimeout(timer);
+  }, [resendState.status]);
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -484,6 +484,16 @@ export function VerifyForm({
       <form action={action} className="flex flex-col gap-5" noValidate>
         <input type="hidden" name="channel" value={channel} />
         {userId && <input type="hidden" name="userId" value={userId} />}
+        {resendState.status === "success" && (
+          <div className="flex items-start gap-2.5 rounded-xl border border-forest-500/30 bg-forest-500/5 px-3.5 py-3 text-sm text-forest-700 dark:text-forest-400">
+            <CheckCircleIcon size={16} className="mt-0.5 shrink-0" />
+            <span>
+              {effectiveMode === "provider"
+                ? (locale === "de" ? "Wir haben dir einen sechsstelligen Code gesendet." : "We have sent a six-digit code to your email.")
+                : t.app.auth.verify.sentDev}
+            </span>
+          </div>
+        )}
         {errorText && (
           <div className="flex items-start gap-2.5 rounded-xl border border-danger-500/30 bg-danger-500/5 px-3.5 py-3 text-sm text-danger-600 dark:text-danger-500">
             <AlertIcon size={16} className="mt-0.5 shrink-0" />
@@ -660,6 +670,17 @@ export function ResetPasswordForm({ token }: { token: string }) {
 
 /* -------------------------------------------------------- interest onboarding */
 
+const GROUP_ORDER = [
+  "business",
+  "finance",
+  "growth",
+  "technology",
+  "professional",
+  "creative",
+  "lifestyle",
+  "other",
+];
+
 export function InterestOnboardingForm({
   interests,
   goals,
@@ -687,49 +708,96 @@ export function InterestOnboardingForm({
     return acc;
   }, {});
 
+  const sortedGroupEntries = Object.entries(grouped).sort(([groupA], [groupB]) => {
+    const idxA = GROUP_ORDER.indexOf(groupA.toLowerCase());
+    const idxB = GROUP_ORDER.indexOf(groupB.toLowerCase());
+    const posA = idxA >= 0 ? idxA : 999;
+    const posB = idxB >= 0 ? idxB : 999;
+    return posA - posB;
+  });
+
+  const count = selectedInterests.length;
+  const isReady = count >= 3;
+
   return (
-    <div className="ic-shell py-10 sm:py-14">
-      <div className="ic-narrow">
+    <div className="ic-shell py-8 sm:py-12">
+      <div className="mx-auto max-w-3xl">
         <header className="text-center">
-          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">{t.app.onboarding.title}</h1>
-          <p className="mt-3 text-base leading-7 text-foreground-muted">{t.app.onboarding.lead}</p>
+          <div className="inline-flex items-center gap-2 rounded-full border border-electric-500/20 bg-electric-500/5 px-3 py-1 text-xs font-semibold text-electric-600 dark:text-electric-300">
+            <SparkleIcon size={13} />
+            <span>{t.app.onboarding.stepLabel}</span>
+          </div>
+          <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl text-foreground">
+            {t.app.onboarding.title}
+          </h1>
+          <p className="mt-3 text-base leading-relaxed text-foreground-muted max-w-xl mx-auto">
+            {t.app.onboarding.lead}
+          </p>
+
+          <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-border bg-surface px-4 py-1.5 text-xs font-medium text-foreground">
+            <span
+              className={`inline-block h-2 w-2 rounded-full ${
+                isReady ? "bg-forest-500" : "bg-warning-500"
+              }`}
+            />
+            <span>
+              {tf(t.app.onboarding.interestsSelected, { count })}
+            </span>
+            <span className="text-foreground-subtle">·</span>
+            <span className={isReady ? "text-forest-600 dark:text-forest-400 font-semibold" : "text-foreground-subtle"}>
+              {isReady ? t.app.onboarding.readyBadge : t.app.onboarding.minNotice}
+            </span>
+          </div>
         </header>
 
-        <form action={action} className="mt-8 space-y-8">
+        <form action={action} className="mt-10 space-y-10 pb-44 sm:pb-48">
           {state.status === "error" && <FormError state={state} />}
 
-          {Object.entries(grouped).map(([group, items]) => (
-            <section key={group}>
-              <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-foreground-subtle">
-                {group}
-              </h2>
-              <div className="flex flex-wrap gap-2">
-                {items.map((interest) => {
-                  const active = selectedInterests.includes(interest.id);
-                  return (
-                    <button
-                      key={interest.id}
-                      type="button"
-                      aria-pressed={active}
-                      onClick={() => toggle(selectedInterests, setSelectedInterests, interest.id)}
-                      className={`rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
-                        active
-                          ? "border-electric-500 bg-electric-500 text-white"
-                          : "border-border bg-surface text-foreground-muted hover:border-electric-500/40 hover:text-foreground"
-                      }`}
-                    >
-                      {locale === "de" ? interest.labelDe : interest.labelEn}
-                    </button>
-                  );
-                })}
-              </div>
-            </section>
-          ))}
+          <div className="space-y-8">
+            {sortedGroupEntries.map(([group, items]) => (
+              <section key={group} className="rounded-2xl border border-border/80 bg-surface/50 p-5 sm:p-6 backdrop-blur-xs">
+                <h2 className="text-xs font-bold uppercase tracking-wider text-foreground-subtle mb-4">
+                  {group}
+                </h2>
+                <div className="flex flex-wrap gap-2.5">
+                  {items.map((interest) => {
+                    const active = selectedInterests.includes(interest.id);
+                    return (
+                      <button
+                        key={interest.id}
+                        type="button"
+                        aria-pressed={active}
+                        onClick={() => toggle(selectedInterests, setSelectedInterests, interest.id)}
+                        className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-all ${
+                          active
+                            ? "border border-electric-500 bg-electric-500/10 text-electric-600 dark:text-electric-300 ring-1 ring-electric-500/30 shadow-xs"
+                            : "border border-border bg-surface text-foreground hover:border-electric-500/40 hover:bg-surface-muted"
+                        }`}
+                      >
+                        <span
+                          className={`inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full transition-colors ${
+                            active
+                              ? "bg-electric-500 text-white"
+                              : "border border-border-strong text-transparent"
+                          }`}
+                        >
+                          <CheckIcon size={11} className={active ? "opacity-100" : "opacity-0"} />
+                        </span>
+                        <span>{locale === "de" ? interest.labelDe : interest.labelEn}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </section>
+            ))}
+          </div>
 
-          <section>
-            <h2 className="text-xl font-bold tracking-tight">{t.app.onboarding.goalsTitle}</h2>
-            <p className="mt-1 text-sm text-foreground-muted">{t.app.onboarding.goalsLead}</p>
-            <div className="mt-4 grid gap-2 sm:grid-cols-2">
+          <section className="rounded-2xl border border-border/80 bg-surface/50 p-5 sm:p-6 backdrop-blur-xs">
+            <div className="mb-4">
+              <h2 className="text-lg font-bold tracking-tight text-foreground">{t.app.onboarding.goalsTitle}</h2>
+              <p className="mt-1 text-sm text-foreground-muted">{t.app.onboarding.goalsLead}</p>
+            </div>
+            <div className="grid gap-2.5 sm:grid-cols-2">
               {goals.map((goal) => {
                 const active = selectedGoals.includes(goal.id);
                 return (
@@ -738,20 +806,22 @@ export function InterestOnboardingForm({
                     type="button"
                     aria-pressed={active}
                     onClick={() => toggle(selectedGoals, setSelectedGoals, goal.id)}
-                    className={`flex items-center gap-3 rounded-xl border px-4 py-3 text-left text-sm font-medium transition-colors ${
+                    className={`flex items-center gap-3 rounded-xl border p-3.5 text-left text-sm font-medium transition-all ${
                       active
-                        ? "border-electric-500 bg-electric-500/10 text-foreground"
-                        : "border-border bg-surface text-foreground-muted hover:border-electric-500/40"
+                        ? "border-electric-500 bg-electric-500/10 text-foreground ring-1 ring-electric-500/25 shadow-xs"
+                        : "border-border bg-surface text-foreground-muted hover:border-electric-500/40 hover:text-foreground"
                     }`}
                   >
                     <span
-                      className={`inline-flex h-5 w-5 items-center justify-center rounded-full border ${
-                        active ? "border-electric-500 bg-electric-500 text-white" : "border-border-strong"
+                      className={`inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors ${
+                        active
+                          ? "border-electric-500 bg-electric-500 text-white"
+                          : "border-border-strong bg-surface"
                       }`}
                     >
-                      {active ? <CheckCircleIcon size={13} /> : null}
+                      {active ? <CheckIcon size={13} /> : null}
                     </span>
-                    {locale === "de" ? goal.labelDe : goal.labelEn}
+                    <span className="font-medium text-foreground">{locale === "de" ? goal.labelDe : goal.labelEn}</span>
                   </button>
                 );
               })}
@@ -769,15 +839,46 @@ export function InterestOnboardingForm({
             <input key={id} type="hidden" name="goals" value={id} />
           ))}
 
-          <div className="sticky bottom-4 rounded-2xl border border-border bg-surface/95 p-4 shadow-card backdrop-blur">
-            <p className="text-xs text-foreground-muted">
-              {tf(t.app.onboarding.interestsSelected, { count: selectedInterests.length })} ·{" "}
-              {tf(t.app.onboarding.goalsSelected, { count: selectedGoals.length })}
-            </p>
-            <Button type="submit" size="lg" fullWidth className="mt-3" disabled={pending}>
-              {pending ? t.app.onboarding.startingTrial : t.app.onboarding.submit}
-            </Button>
-            <p className="mt-2 text-center text-xs text-foreground-subtle">{t.app.onboarding.trialReady}</p>
+          {/* High-end sticky CTA container */}
+          <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border/80 bg-surface/90 backdrop-blur-xl px-4 py-4 sm:py-5 shadow-lift ic-safe-bottom">
+            <div className="mx-auto max-w-2xl">
+              <div className="flex items-center justify-between text-xs text-foreground-muted px-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-foreground">
+                    {tf(t.app.onboarding.interestsSelected, { count: selectedInterests.length })}
+                  </span>
+                  {!isReady && (
+                    <span className="text-warning-600 dark:text-warning-500 font-medium">
+                      ({t.app.onboarding.minNotice})
+                    </span>
+                  )}
+                  {isReady && (
+                    <span className="text-forest-600 dark:text-forest-400 font-semibold inline-flex items-center gap-1">
+                      <CheckIcon size={12} /> {t.app.onboarding.readyBadge}
+                    </span>
+                  )}
+                </div>
+                {selectedGoals.length > 0 && (
+                  <span>
+                    {tf(t.app.onboarding.goalsSelected, { count: selectedGoals.length })}
+                  </span>
+                )}
+              </div>
+
+              <Button
+                type="submit"
+                size="lg"
+                fullWidth
+                className="mt-3 font-semibold shadow-sm"
+                disabled={pending || !isReady}
+              >
+                {pending ? t.app.onboarding.startingTrial : t.app.onboarding.submit}
+              </Button>
+
+              <p className="mt-2 text-center text-xs text-foreground-subtle tracking-normal">
+                {t.app.onboarding.trialReady}
+              </p>
+            </div>
           </div>
         </form>
       </div>

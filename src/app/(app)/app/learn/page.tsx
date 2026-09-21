@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { desc, eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import { courses, enrollments, marketplaceListings, profiles, users } from "@/db/schema";
@@ -90,24 +89,33 @@ export default async function LearnPage() {
 
       <section>
         <h2 className="mb-4 text-lg font-bold tracking-tight"><Tr k="app.learn.library" /></h2>
-        <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {library.map((course) => (
-            <li key={course.listingId}>
-              <Card className="flex h-full flex-col p-5">
-                {course.isDemo && <Badge variant="outline" className="w-fit"><Tr k="app.common.demo" /></Badge>}
-                <p className="mt-2 text-base font-bold tracking-tight">{course.title}</p>
-                <p className="mt-2 flex-1 text-sm leading-6 text-foreground-muted">{course.summary}</p>
-                <p className="mt-3 text-sm font-bold">{formatMoney(course.priceCents, course.currency, "de")}</p>
-                <p className="mt-1 text-xs text-foreground-subtle">
-                  {course.sellerCompany ?? `${course.sellerFirstName} ${course.sellerLastName}`}
-                </p>
-                <Button href={`/app/marketplace/${course.listingId}`} size="sm" variant="secondary" className="mt-4">
-                  <Tr k="app.learn.previewLesson" />
-                </Button>
-              </Card>
-            </li>
-          ))}
-        </ul>
+        {library.length === 0 ? (
+          <LocalizedEmptyState
+            icon="graduation"
+            titleKey="app.learn.emptyText"
+            textKey="app.learn.lead"
+            action={{ labelKey: "app.marketplace.title", href: "/app/marketplace" }}
+          />
+        ) : (
+          <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {library.map((course) => (
+              <li key={course.listingId}>
+                <Card className="flex h-full flex-col p-5">
+                  {course.isDemo && <Badge variant="outline" className="w-fit"><Tr k="app.common.demo" /></Badge>}
+                  <p className="mt-2 text-base font-bold tracking-tight">{course.title}</p>
+                  <p className="mt-2 flex-1 text-sm leading-6 text-foreground-muted">{course.summary}</p>
+                  <p className="mt-3 text-sm font-bold">{formatMoney(course.priceCents, course.currency, "de")}</p>
+                  <p className="mt-1 text-xs text-foreground-subtle">
+                    {course.sellerCompany ?? `${course.sellerFirstName} ${course.sellerLastName}`}
+                  </p>
+                  <Button href={`/app/marketplace/${course.listingId}`} size="sm" variant="secondary" className="mt-4">
+                    <Tr k="app.learn.previewLesson" />
+                  </Button>
+                </Card>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
     </div>
   );

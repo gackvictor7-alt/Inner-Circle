@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import { investmentInterests, investmentOpportunities } from "@/db/schema";
 import { requireUser } from "@/lib/access/server";
@@ -92,11 +92,15 @@ export default async function InvestmentsPage({
           <Tr k="app.investments.regulatedTitle" />
         </h2>
         <p className="mt-2 text-sm leading-6 text-foreground-muted"><Tr k="app.investments.regulatedText" /></p>
-        <p className="mt-3 text-xs leading-5 text-foreground-subtle"><Tr k="app.investments.regulatedText" /></p>
       </Card>
 
       {rows.length === 0 ? (
-        <LocalizedEmptyState icon="chart" titleKey="app.investments.empty" textKey="app.investments.emptyText" />
+        <LocalizedEmptyState
+          icon="chart"
+          titleKey="app.investments.empty"
+          textKey="app.investments.emptyText"
+          action={access.entitlements.investmentsSubmit ? { labelKey: "app.investments.submitTitle", href: "/app/investments/submit" } : undefined}
+        />
       ) : (
         <ul className="grid gap-4 lg:grid-cols-2">
           {rows.map((row) => (

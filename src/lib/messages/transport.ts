@@ -48,6 +48,10 @@ export async function sendEmail(input: MailInput): Promise<SendResult> {
           subject: input.subject,
           text: input.text,
           ...(input.html ? { html: input.html } : {}),
+          ...(email.replyTo ? { reply_to: email.replyTo } : {}),
+          headers: {
+            "X-Entity-Ref-ID": idFor.outbox(),
+          },
         }),
       });
       if (!response.ok) {

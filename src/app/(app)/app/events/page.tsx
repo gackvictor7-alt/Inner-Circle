@@ -81,7 +81,12 @@ export default async function EventsPage({
           </ul>
         )
       ) : shown.length === 0 ? (
-        <LocalizedEmptyState icon="calendar" titleKey="app.events.emptyUpcoming" textKey="app.events.emptyUpcomingText" />
+        <LocalizedEmptyState
+          icon="calendar"
+          titleKey="app.events.emptyUpcoming"
+          textKey="app.events.emptyUpcomingText"
+          action={{ labelKey: "app.nav.network", href: "/app/network" }}
+        />
       ) : (
         <ul className="grid gap-4 lg:grid-cols-2">
           {shown.map((event) => (
