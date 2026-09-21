@@ -185,7 +185,7 @@ wurde deshalb **bewusst geändert** und gilt ab sofort als genehmigter Zustand:
 | Erstellen | eigener Primäreintrag (Desktop-Button, Mobile `+`); **keine** Event-Erstellung für Mitglieder |
 | Profil | Hauptbereich mit Header + Tabs Übersicht/Aktivitäten/Performance/Angebote; Konto-Punkte (Member Card, Mitgliedschaft, Einstellungen) hier gebündelt |
 | Einstellungen | neuer Abschnitt „Darstellung" (Hell/Dunkel/System) über die bestehende `ThemeProvider`-Infrastruktur |
-| Öffentliche Startseite | verkürzt auf Hero → Was ist INNER CIRCLE? → sechs Bereiche → Proof → Membership-CTA; lange Erklärtexte in die bestehenden Unterseiten verlagert, nicht gelöscht |
+| Öffentliche Startseite | Sprint 4 (Gründerauftrag): Hero-Bild, Farbwelt und Typografie bleiben; Copy und Sektionsfolge auf Conversion (Reason Why → 3 Outcomes → 6 Bereiche → Audience → Flow → Trust → Membership → Portfolio → Events → CTA). Kein Rebranding, kein neues Logo. |
 
 **Unverändert eingefroren bleiben:** Farbwelt, Typografie, Bildsprache
 (Hero-Hintergrund, People-Bilder), Premium-/Apple-Richtung, Hero, Registrierung,

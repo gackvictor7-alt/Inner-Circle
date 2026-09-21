@@ -167,6 +167,36 @@ export function DashboardScreen({ data }: { data: DashboardData }) {
         </div>
       </header>
 
+      {/* Compact “Für dich” – architecture for later personalisation, no extra queries. */}
+      <section aria-labelledby="for-you" className="rounded-2xl border border-border bg-surface px-4 py-4 sm:px-5">
+        <h2 id="for-you" className="text-sm font-bold tracking-tight">
+          {t.app.dashboard.forYouTitle}
+        </h2>
+        <ul className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+          <li>
+            <Link href="/app/discover" className="block rounded-xl px-3 py-2 text-sm hover:bg-surface-muted">
+              {t.app.dashboard.forYouDiscover}
+            </Link>
+          </li>
+          <li>
+            <Link href="/app/inbox" className="block rounded-xl px-3 py-2 text-sm hover:bg-surface-muted">
+              {t.app.dashboard.forYouInbox}
+              {data.unreadInbox > 0 ? ` · ${data.unreadInbox}` : ""}
+            </Link>
+          </li>
+          <li>
+            <Link href="/app/events" className="block rounded-xl px-3 py-2 text-sm hover:bg-surface-muted">
+              {t.app.dashboard.forYouEvents}
+            </Link>
+          </li>
+          <li>
+            <Link href="/app/profile/edit" className="block rounded-xl px-3 py-2 text-sm hover:bg-surface-muted">
+              {t.app.dashboard.forYouProfile}
+            </Link>
+          </li>
+        </ul>
+      </section>
+
       {/* Free accounts: one honest line, not a wall of copy */}
       {data.level === "free" && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-sand-400/40 bg-sand-200/30 px-4 py-3 text-sm dark:bg-sand-400/5">

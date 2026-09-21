@@ -441,3 +441,23 @@ export function matchPercentFromScore(score: number): number {
   const percent = Math.round(Math.min(1, Math.max(0, ratio)) * 99);
   return Math.max(4, percent);
 }
+
+/** Human, rule-based match reasons – never claims AI. */
+export type MatchReason = { kind: "goal" | "interest" | "supply" | "location" | "company"; value?: string };
+
+export function explainMatchReasons(
+  signals: MatchSignals,
+  labels?: { location?: string | null },
+): MatchReason[] {
+  const reasons: MatchReason[] = [];
+  for (const goal of signals.sharedGoals.slice(0, 2)) {
+    reasons.push({ kind: "goal", value: goal });
+  }
+  for (const interest of signals.sharedInterests.slice(0, 2)) {
+    reasons.push({ kind: "interest", value: interest });
+  }
+  if (signals.supplyDemand > 0) reasons.push({ kind: "supply" });
+  if (signals.sameLocation) reasons.push({ kind: "location", value: labels?.location ?? undefined });
+  if (signals.sameCompany) reasons.push({ kind: "company" });
+  return reasons.slice(0, 4);
+}

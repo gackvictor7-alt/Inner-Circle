@@ -3,7 +3,7 @@
 **Diese Datei ist der verbindliche Einstiegspunkt für jeden Menschen und jeden
 KI-Agenten, der an diesem Repository arbeitet.**
 
-- **Stand:** 2026-09-21 (Sprint 3 – Informationsarchitektur + UX-Follow-up Start/Discover/Profil)
+- **Stand:** 2026-09-21 (Sprint 4 – Homepage Conversion, Reason Why, Membership/Trust/20-%-Modell; Member-App nur gezielt)
 - **Technische Basis:** Branch `arena/01a0c434-inner-circle`, Basis `main` @
   `0babcb3`. Vorheriger dokumentierter Stand: `f22c19e` ("fix(auth): honest
   delivery states, protected dev outbox, working 48h trial start")
@@ -63,7 +63,7 @@ existiert. Backend + Daten + Berechtigungen + Nachweis gehören dazu.
 
 | Funktion | Status | Nachweis |
 | -------- | ------ | -------- |
-| Startseite `/` – **verkürzt** (Hero → Was ist INNER CIRCLE? → sechs Bereiche → kompakter Portfolio-Teaser → Membership-CTA) | WORKING | `src/app/(site)/HomeContent.tsx`; Hero + sechs Hauptbereiche unverändert; die ehemalige Statistik-Sektion („Was durch das Netzwerk entsteht") wurde zu einem kompakten Teaser-Block (Kicker + „Wir bauen mehr als Kontakte." + CTA → `/portfolio`) reduziert; **statisch vorgeneriert** (siehe unten „Public-Website-Performance") |
+| Startseite `/` – Conversion-Flow (Hero Reason Why → 3 Outcomes → 6 Kernbereiche editorial → Audience → Flow → Trust → ein Membership-Preis → 20-%-Portfolio → Events → CTA) | WORKING | `src/app/(site)/HomeContent.tsx`; Hero-Bild unverändert; Preis nicht im Hero; **statisch vorgeneriert** |
 | Preview-Seiten `/network`, `/business-deals`, `/investments`, `/marketplace`, `/events` | WORKING | statische Inhalte, nicht aktivierte Funktionen als „Demnächst verfügbar" gekennzeichnet; **statisch vorgeneriert** |
 | `/portfolio` – INNER CIRCLE Portfolio (Arbeitstitel) | WORKING | `src/app/(site)/portfolio/`; 20-%-/25-%-/75-%-Modell (bezogen auf 100 %: 5 % IC / 15 % extern) + 100-€-Beispiel; **kein Fonds, keine Renditeversprechen**; transparent als geplante strategische Zielallokation; **statisch vorgeneriert** |
 | `/membership` (Preise, Leistungen) | WORKING | 24,99 €/Monat aktiv; Jahrespreis im Marketing noch als „folgt" (siehe Known Issue) |

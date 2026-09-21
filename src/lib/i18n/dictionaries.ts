@@ -715,9 +715,9 @@ export type SiteDictionary = typeof siteDe;
 
 const siteEnRaw: SiteDictionary = {
   meta: {
-    title: "INNER CIRCLE – Network, opportunities and knowledge for founders, investors & creators",
+    title: "INNER CIRCLE – Find the people and chances that move your business forward",
     description:
-      "INNER CIRCLE connects ambitious people, founders, investors and creators – for real business contacts, opportunities, knowledge, capital access and remarkable experiences.",
+      "A business platform for ambitious people: customers, partners, capital, investments, knowledge and events. One access, €24.99 a month.",
   },
   brand: {
     name: "INNER CIRCLE",
