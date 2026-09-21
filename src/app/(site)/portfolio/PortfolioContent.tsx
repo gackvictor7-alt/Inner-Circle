@@ -61,7 +61,7 @@ export function PortfolioContent() {
       />
 
       {/* The 20% model + 25/75 breakdown */}
-      <Section bg="default">
+      <Section bg="default" width="wide">
         <SectionHeading kicker={page.modelKicker} title={page.modelTitle} lead={page.modelLead} />
 
         <Reveal>
@@ -103,7 +103,7 @@ export function PortfolioContent() {
       <Section bg="muted">
         <SectionHeading kicker={page.exampleKicker} title={page.exampleTitle} lead={page.exampleLead} />
         <Reveal>
-          <div className="mx-auto mt-12 grid max-w-3xl gap-3">
+          <div className="ic-shell-prose mt-12 grid gap-3">
             <div className="flex items-center justify-between gap-4 rounded-2xl border border-border bg-surface px-5 py-4">
               <span className="text-sm font-semibold text-foreground-muted">
                 {page.exampleRevenue}
