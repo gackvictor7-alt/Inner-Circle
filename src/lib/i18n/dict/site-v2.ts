@@ -127,6 +127,11 @@ export const siteV2De = {
     membershipCta: "Mitgliedschaft wählen",
     membershipNote:
       "Kündbar zum Periodenende. Tests laufen im Zahlungsmodus des Anbieters; echte Abbuchungen sind nicht aktiv, solange die Unternehmens- und Anbieter-Einrichtung nicht abgeschlossen ist.",
+    teaserKicker: "Was durch das Netzwerk entsteht",
+    teaserTitle: "Wir bauen mehr als Kontakte.",
+    teaserLead:
+      "Deals, Unternehmen, Investments, Events und ein eigenes Portfolio – INNER CIRCLE verbindet Menschen und investiert in deren Wachstum.",
+    teaserCta: "Mehr über unser Portfolio & Netzwerk erfahren",
     finalTitle: "Bereit für ein Netzwerk, das liefert?",
     finalLead: "Erstelle dein Konto, verifiziere es und starte 48 Stunden Discovery.",
     finalCtaPrimary: "Jetzt beitreten",
@@ -164,6 +169,43 @@ export const siteV2De = {
     placeholderTitle: "Rechtliche Prüfung ausstehend",
     placeholderText:
       "Diese Seite ist ein technischer Platzhalter. Die endgültigen Texte werden juristisch geprüft, bevor INNER CIRCLE in den Betrieb geht.",
+  },
+  portfolio: {
+    kicker: "INNER CIRCLE Portfolio",
+    title: "Wir bauen nicht nur ein Netzwerk. Wir investieren in dessen Wachstum.",
+    lead:
+      "Langfristig möchte INNER CIRCLE einen Teil seiner eigenen Plattform-Einnahmen investieren – in Unternehmen und Projekte aus dem Netzwerk und in externe Investments. Arbeitstitel: INNER CIRCLE Portfolio (intern „IC Portfolio“).",
+    metaTitle: "INNER CIRCLE Portfolio",
+    metaDescription:
+      "Das INNER CIRCLE Portfolio: 20 % geplantes Investmentbudget aus Plattform-Einnahmen – 25 % in INNER-CIRCLE-Unternehmen, 75 % extern.",
+    modelKicker: "Das 20-%-Modell",
+    modelTitle: "Vom Umsatz zum Investmentbudget.",
+    modelLead:
+      "Von 100 % Plattform-Einnahmen sind 20 % als Investmentbudget vorgesehen. Dieses Budget teilt sich auf in 25 % für Unternehmen und Projekte aus dem INNER-CIRCLE-Netzwerk und 75 % für externe Investments.",
+    budgetRow: "20 % der Einnahmen",
+    budgetRowValue: "Investmentbudget (Ziel)",
+    networkRow: "25 % des Investmentbudgets",
+    networkRowValue: "INNER-CIRCLE-Unternehmen & Projekte",
+    externalRow: "75 % des Investmentbudgets",
+    externalRowValue: "Externe Investments",
+    netLabel: "Bezogen auf 100 % Plattform-Einnahmen",
+    netSummary: "5 % INNER-CIRCLE-Unternehmen · 15 % externe Investments",
+    exampleKicker: "Beispielvisualisierung",
+    exampleTitle: "Von 100 € zu klaren Anteilen.",
+    exampleLead: "So liest sich das Modell an einem einfachen Beispiel – ohne Versprechen, was daraus entsteht.",
+    exampleRevenue: "Einnahmen",
+    exampleBudget: "Investmentbudget",
+    exampleNetwork: "INNER-CIRCLE-Unternehmen",
+    exampleExternal: "Externe Investments",
+    transparencyTitle: "Einsehbar für Mitglieder.",
+    transparencyLead:
+      "Bezahlende Mitglieder sollen später nachvollziehen können, wie viel INNER CIRCLE investiert, in welche Kategorien, welche INNER-CIRCLE-Unternehmen unterstützt wurden – und warum ein Investment ausgewählt wurde. Öffentlich sind nur ausgewählte Informationen sichtbar, Details sind für Mitglieder vorgesehen.",
+    statusTitle: "Ehrlich gesagt.",
+    statusLead:
+      "Bis die rechtliche, steuerliche und bilanzielle Struktur final geprüft und tatsächlich umgesetzt ist, ist dies eine geplante, strategische Zielallokation – kein bestehender Fonds. Es werden keine Renditen versprochen und keine Investments garantiert.",
+    ctaTitle: "Erlebe das Netzwerk dahinter.",
+    ctaText:
+      "Das Portfolio wächst mit dem Netzwerk. Registriere dich, um Teil der Entwicklung zu sein.",
   },
 };
 
@@ -293,6 +335,11 @@ export const siteV2En: SiteV2Dict = {
     membershipCta: "Choose membership",
     membershipNote:
       "Cancel at the end of the period. Tests run in the provider's payment mode; real charges are not active until company and provider setup is complete.",
+    teaserKicker: "What the network creates",
+    teaserTitle: "We build more than contacts.",
+    teaserLead:
+      "Deals, companies, investments, events and a portfolio of our own – INNER CIRCLE connects people and invests in their growth.",
+    teaserCta: "Learn more about our portfolio & network",
     finalTitle: "Ready for a network that delivers?",
     finalLead: "Create your account, verify it and start 48 hours of discovery.",
     finalCtaPrimary: "Join now",
@@ -330,5 +377,42 @@ export const siteV2En: SiteV2Dict = {
     placeholderTitle: "Legal review pending",
     placeholderText:
       "This page is a technical placeholder. Final wording will be legally reviewed before INNER CIRCLE goes live.",
+  },
+  portfolio: {
+    kicker: "INNER CIRCLE Portfolio",
+    title: "We don't just build a network. We invest in its growth.",
+    lead:
+      "In the long run, INNER CIRCLE intends to invest part of its own platform revenue – into companies and projects from the network and into external investments. Working title: INNER CIRCLE Portfolio (internally “IC Portfolio”).",
+    metaTitle: "INNER CIRCLE Portfolio",
+    metaDescription:
+      "The INNER CIRCLE Portfolio: 20% planned investment budget from platform revenue – 25% into INNER CIRCLE companies, 75% external.",
+    modelKicker: "The 20% model",
+    modelTitle: "From revenue to an investment budget.",
+    modelLead:
+      "Of 100% platform revenue, 20% are planned as the investment budget. That budget splits into 25% for companies and projects from the INNER CIRCLE network and 75% for external investments.",
+    budgetRow: "20% of revenue",
+    budgetRowValue: "Investment budget (target)",
+    networkRow: "25% of the investment budget",
+    networkRowValue: "INNER CIRCLE companies & projects",
+    externalRow: "75% of the investment budget",
+    externalRowValue: "External investments",
+    netLabel: "In relation to 100% platform revenue",
+    netSummary: "5% INNER CIRCLE companies · 15% external investments",
+    exampleKicker: "Example visualisation",
+    exampleTitle: "From €100 to clear shares.",
+    exampleLead: "How the model reads with a simple example – without promising any outcome.",
+    exampleRevenue: "Revenue",
+    exampleBudget: "Investment budget",
+    exampleNetwork: "INNER CIRCLE companies",
+    exampleExternal: "External investments",
+    transparencyTitle: "Visible to members.",
+    transparencyLead:
+      "Paying members should later be able to see how much INNER CIRCLE invests, into which categories, which INNER CIRCLE companies were supported – and why an investment was chosen. Publicly only selected information is visible; the details are reserved for members.",
+    statusTitle: "To be transparent.",
+    statusLead:
+      "Until the legal, tax and accounting structure has been fully reviewed and actually implemented, this is a planned, strategic target allocation – not an existing fund. No returns are promised and no investments are guaranteed.",
+    ctaTitle: "Experience the network behind it.",
+    ctaText:
+      "The portfolio grows with the network. Register to be part of the development.",
   },
 };

@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { EmptyState, PageHeader } from "@/components/app/ui";
+import { InboxDemoPreview } from "@/components/app/DemoSections";
 import { useI18n } from "@/lib/i18n/context";
 import { resolveNotificationText } from "@/lib/platform/notification-text";
 import {
@@ -82,12 +83,15 @@ export function NotificationsView({
       )}
 
       {notifications.length === 0 ? (
-        <EmptyState
-          icon={BellIcon}
-          title={t.app.notifications.empty}
-          text={t.app.notifications.emptyText}
-          action={<Button href="/app" size="sm" variant="secondary">{t.app.nav.appHome}</Button>}
-        />
+        <>
+          <EmptyState
+            icon={BellIcon}
+            title={t.app.notifications.empty}
+            text={t.app.notifications.emptyText}
+            action={<Button href="/app" size="sm" variant="secondary">{t.app.nav.appHome}</Button>}
+          />
+          <InboxDemoPreview />
+        </>
       ) : (
         <ul className="space-y-3">
           {notifications.map((notification) => {

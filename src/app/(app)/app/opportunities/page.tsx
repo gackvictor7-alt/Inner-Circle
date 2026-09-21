@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { LocalizedEmptyState, LocalizedPageHeader, Tr } from "@/components/app/localized";
+import { DealsDemoSection } from "@/components/app/DemoSections";
 
 export const dynamic = "force-dynamic";
 
@@ -103,12 +104,15 @@ export default async function OpportunitiesPage({
       </Card>
 
       {rows.length === 0 ? (
-        <LocalizedEmptyState
-          icon="briefcase"
-          titleKey="app.opportunities.emptyTitle"
-          textKey="app.opportunities.emptyText"
-          action={access.entitlements.opportunitiesManage ? { labelKey: "app.create.opportunity", href: "/app/opportunities/new" } : undefined}
-        />
+        <>
+          <LocalizedEmptyState
+            icon="briefcase"
+            titleKey="app.opportunities.emptyTitle"
+            textKey="app.opportunities.emptyText"
+            action={access.entitlements.opportunitiesManage ? { labelKey: "app.create.opportunity", href: "/app/opportunities/new" } : undefined}
+          />
+          <DealsDemoSection />
+        </>
       ) : (
         <ul className="grid gap-4 lg:grid-cols-2">
           {rows.map((row) => (

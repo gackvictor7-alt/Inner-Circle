@@ -19,7 +19,6 @@ import {
 } from "@/components/ui/icons";
 import { Kicker, Section, SectionHeading } from "@/components/site/Section";
 import { Reveal } from "@/components/site/Reveal";
-import { StatsSection, type PlatformMetricView } from "@/components/site/StatsSection";
 import { PLANS, annualSaving } from "@/lib/membership/plans";
 import { formatMoney } from "@/lib/utils";
 
@@ -63,7 +62,7 @@ const areaLinks: Record<AreaKey, string> = {
  * Design freeze respected: hero, imagery, typography, colour and card style
  * are unchanged – only the section order and the amount of copy changed.
  */
-export function HomeContent({ metrics }: { metrics: PlatformMetricView[] }) {
+export function HomeContent() {
   const { t, locale, tf } = useI18n();
   usePageMeta(t.meta.title, t.meta.description);
 
@@ -227,8 +226,27 @@ export function HomeContent({ metrics }: { metrics: PlatformMetricView[] }) {
         </div>
       </Section>
 
-      {/* --------------------------------------------------- Proof (compact) */}
-      <StatsSection metrics={metrics} />
+      {/* ------------------------- Compact teaser: what the network creates.
+          Replaces the former full-size statistics section ("Was durch das
+          Netzwerk entsteht") with a short statement and a single CTA to
+          /portfolio. Hero and six main areas stay untouched. */}
+      <Section bg="muted">
+        <Reveal>
+          <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
+            <div className="max-w-2xl">
+              <Kicker tone="sand">{t.home2.teaserKicker}</Kicker>
+              <h2 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">
+                {t.home2.teaserTitle}
+              </h2>
+              <p className="mt-4 text-base leading-7 text-foreground-muted">{t.home2.teaserLead}</p>
+            </div>
+            <Button href="/portfolio" size="lg" className="shrink-0">
+              {t.home2.teaserCta}
+              <ArrowRightIcon size={18} />
+            </Button>
+          </div>
+        </Reveal>
+      </Section>
 
       {/* -------------------------------------------------- Membership CTA */}
       <Section bg="default">

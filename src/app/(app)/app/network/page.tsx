@@ -1,6 +1,7 @@
 import { requireUser } from "@/lib/access/server";
 import { listDirectoryMembers, listInterests } from "@/lib/platform/queries";
 import { MemberCard } from "@/components/app/MemberCard";
+import { NetworkDemoSection } from "@/components/app/DemoSections";
 import { LocalizedEmptyState, LocalizedPageHeader, Tr } from "@/components/app/localized";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -94,12 +95,15 @@ export default async function NetworkPage({
       </Card>
 
       {members.length === 0 ? (
-        <LocalizedEmptyState
-          icon="users"
-          titleKey="app.network.noResults"
-          textKey="app.network.noResultsCta"
-          action={{ labelKey: "app.discover.title", href: "/app/discover" }}
-        />
+        <>
+          <LocalizedEmptyState
+            icon="users"
+            titleKey="app.network.noResults"
+            textKey="app.network.noResultsCta"
+            action={{ labelKey: "app.discover.title", href: "/app/discover" }}
+          />
+          <NetworkDemoSection />
+        </>
       ) : (
         <>
           <div className="flex items-center justify-between gap-3">

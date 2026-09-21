@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Textarea } from "@/components/ui/Input";
 import { EmptyState, PageHeader } from "@/components/app/ui";
+import { InboxDemoPreview } from "@/components/app/DemoSections";
 import { useI18n } from "@/lib/i18n/context";
 import { deleteMessageAction, markConversationReadAction, sendMessageAction } from "@/app/actions/messages";
 import { initialActionState } from "@/app/actions/state";
@@ -84,12 +85,15 @@ export function MessagesView({
       <div className="grid gap-5 lg:grid-cols-[20rem_1fr]">
         <section aria-label={t.app.messages.title} className="space-y-2">
           {conversations.length === 0 ? (
-            <EmptyState
-              icon={MessageIcon}
-              title={t.app.messages.empty}
-              text={t.app.messages.emptyText}
-              action={<Button href={connectionsHref} size="sm" variant="secondary">{t.app.connections.tabConnections}</Button>}
-            />
+            <>
+              <EmptyState
+                icon={MessageIcon}
+                title={t.app.messages.empty}
+                text={t.app.messages.emptyText}
+                action={<Button href={connectionsHref} size="sm" variant="secondary">{t.app.connections.tabConnections}</Button>}
+              />
+              {!selectedId && <InboxDemoPreview />}
+            </>
           ) : (
             <ul className="space-y-2">
               {conversations.map((conversation) => {

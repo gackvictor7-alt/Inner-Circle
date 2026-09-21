@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { LocalizedEmptyState, LocalizedPageHeader, Tr } from "@/components/app/localized";
+import { EventsDemoSection } from "@/components/app/DemoSections";
 
 export const dynamic = "force-dynamic";
 
@@ -122,6 +123,12 @@ export default async function EventsPage({
           ))}
         </ul>
       )}
+
+      {/* Planned formats – the future INNER CIRCLE calendar. Clearly labelled
+          “Beispiel-Event”: these are format previews, NOT announced events.
+          Real events (above) replace them over time (spec: only INNER CIRCLE
+          / admins create events). */}
+      <EventsDemoSection />
 
       <p className="text-xs leading-5 text-foreground-subtle"><Tr k="app.events.ticketsNotice" /></p>
     </div>

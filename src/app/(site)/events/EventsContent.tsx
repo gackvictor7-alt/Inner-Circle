@@ -54,8 +54,8 @@ export function EventsContent() {
                   width={1600}
                   height={1100}
                   alt={page.imageRegularAlt}
-                    sizes="(min-width: 1024px) 50vw, 100vw"
-                  className="h-full w-full object-cover"
+                  sizes="(min-width: 1024px) 50vw, 100vw"
+                  className="h-auto w-full object-cover lg:h-full"
                 />
                 <p className="absolute bottom-3 right-4 rounded-full bg-midnight-950/60 px-3 py-1 text-[11px] font-medium text-paper-50/80 backdrop-blur-sm">
                   {t.common.imageNote}
@@ -110,8 +110,8 @@ export function EventsContent() {
                   width={1600}
                   height={1100}
                   alt={page.imageVisionAlt}
-                    sizes="(min-width: 1024px) 50vw, 100vw"
-                  className="h-full w-full object-cover"
+                  sizes="(min-width: 1024px) 50vw, 100vw"
+                  className="h-auto w-full object-cover lg:h-full"
                 />
                 <p className="absolute bottom-3 right-4 rounded-full bg-midnight-950/60 px-3 py-1 text-[11px] font-medium text-paper-50/80 backdrop-blur-sm">
                   {t.common.imageNote}

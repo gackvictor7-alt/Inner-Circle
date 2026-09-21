@@ -443,6 +443,8 @@ export const appCoreDe = {
     limitReached: "Dein Limit ist für diese Woche erreicht.",
     connectionMessageRequired:
       "Bitte schreibe kurz, warum du dich verbinden möchtest (mindestens 10 Zeichen).",
+    demoConnectBlocked:
+      "Das ist ein Demo-Profil. Demo-Profile sind Beispiele und erzeugen keine echten Verbindungen.",
   },
   dev: {
     title: "Entwicklungsbereich",
@@ -915,6 +917,8 @@ export const appCoreEn: AppCoreDict = {
     limitReached: "Your limit for this week has been reached.",
     connectionMessageRequired:
       "Please write briefly why you want to connect (at least 10 characters).",
+    demoConnectBlocked:
+      "This is a demo profile. Demo profiles are examples and never create real connections.",
   },
   dev: {
     title: "Development area",

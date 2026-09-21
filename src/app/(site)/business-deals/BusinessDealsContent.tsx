@@ -53,13 +53,13 @@ export function BusinessDealsContent() {
         <div className="grid gap-10 lg:grid-cols-[1.1fr_1fr] lg:items-center">
           <Reveal>
             <div className="relative overflow-hidden rounded-3xl border border-border shadow-card">
-              <Image
+                  <Image
                 src={businessImage}
                 width={1600}
                 height={1100}
                 alt={page.imageAlt}
                 sizes="(min-width: 1024px) 55vw, 100vw"
-                className="h-full w-full object-cover"
+                className="h-auto w-full object-cover sm:h-full"
               />
               <p className="absolute bottom-3 right-4 rounded-full bg-midnight-950/60 px-3 py-1 text-[11px] font-medium text-paper-50/80 backdrop-blur-sm">
                 {t.common.imageNote}

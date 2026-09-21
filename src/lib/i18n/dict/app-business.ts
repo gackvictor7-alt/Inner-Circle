@@ -291,6 +291,8 @@ export const appBusinessDe = {
     mySubmissions: "Meine Einreichungen",
     title: "Investments",
     lead: "Geprüfte Investment-Chancen aus dem Netzwerk – ohne unzulässige Abwicklung.",
+    opportunitiesSectionTitle: "Investment Opportunities",
+    portfolioSectionTitle: "INNER CIRCLE Portfolio",
     browse: "Chancen ansehen",
     searchPlaceholder: "Branche, Stage, Name…",
     filterSector: "Branche",
@@ -674,6 +676,88 @@ export const appBusinessDe = {
       removed: "Demo-Daten entfernt.",
     },
   },
+  demo: {
+    badge: "Demo",
+    sampleBadge: "Beispiel",
+    notice:
+      "Demo- und Beispieldaten dienen nur der Veranschaulichung. Sie erzeugen keine echten Verbindungen, Umsätze, Bewertungen oder Investments.",
+    networkKicker: "So funktioniert das Netzwerk",
+    networkTitle: "Beispielprofile für jede Rolle.",
+    networkLead:
+      "Diese Profile sind fiktiv und zeigen, wie Mitglieder sich später präsentieren. Sie sind eindeutig als DEMO-PROFIL gekennzeichnet und keine echten Mitglieder.",
+    networkBadge: "DEMO-PROFIL",
+    networkTrustEmpty: "Trust-Status: noch offen",
+    networkTrustEmptyText: "Keine erfundenen verifizierten Erfolge – der Status zeigt 0 echte Bewertungen.",
+    networkInterests: "Interessen",
+    networkLookingFor: "Ich suche",
+    networkOffering: "Ich biete",
+    networkSkills: "Skills",
+    discoverKicker: "So funktioniert Discover",
+    discoverTitle: "Demo-Profile zum Durchspielen.",
+    discoverLead:
+      "Keine echten Empfehlungen vorhanden? Hier siehst du den Ablauf: Profilkarte, Interessen, Standort, Rolle und Match-Gründe – inklusive Überspringen, Profil ansehen und Connect.",
+    discoverHowTitle: "So funktioniert Discover",
+    discoverHowLead:
+      "Wische oder tippe dich durch die Karten. Bei echten Mitgliedern sendest du mit „Connect“ eine persönliche Anfrage.",
+    discoverDemoNotice:
+      "Dies ist ein Demo-Profil. Bei echten Mitgliedern kannst du hier eine persönliche Connection-Anfrage senden.",
+    discoverMatch: "Match-Grund",
+    discoverSharedInterest: "Gemeinsames Interesse",
+    discoverSkip: "Überspringen",
+    discoverView: "Profil ansehen",
+    discoverConnect: "Connect",
+    dealsKicker: "Beispielhafte Deals",
+    dealsTitle: "So sehen Deals später aus.",
+    dealsLead:
+      "Diese Deal Cards sind fiktive Beispiele – keine echten Geschäftschancen, keine echten Volumen.",
+    dealsSizeLabel: "Größe",
+    dealsRoleLabel: "Gesuchte Rolle",
+    dealsStatusLabel: "Status",
+    dealsCta: "Deal ansehen",
+    jobsKicker: "Jobs & Projekte",
+    jobsTitle: "Beispiele für Jobs und Projekte.",
+    jobsLead:
+      "Fiktive Einträge mit Demo-Markierung – so werden echte Positionen und Projekte später dargestellt.",
+    marketplaceKicker: "Marketplace-Beispiele",
+    marketplaceTitle: "So vielfältig wird der Marketplace.",
+    marketplaceLead:
+      "Beispielangebote mit Titel, Anbieter, Preis und Kategorie. Bewertungen sind ausschließlich als Beispiel gekennzeichnet.",
+    marketplaceRating: "Beispiel-Bewertung",
+    marketplaceCta: "Angebot ansehen",
+    academyKicker: "Beispiel-Kurse",
+    academyTitle: "Ein Blick in die künftige Kursbibliothek.",
+    academyLead:
+      "Diese Kurskarten sind klar als Demo markiert. Es werden keine erfundenen Verkaufszahlen dargestellt.",
+    academyMeta: "Beispiel",
+    eventsTitle: "Geplante Formate",
+    eventsLead:
+      "Diese Vorschauen möglicher Formate sind eindeutig als Beispiel-Event gekennzeichnet – keine tatsächlich angekündigten Events. Echte Events ersetzen sie später.",
+    eventsBadge: "Beispiel-Event",
+    eventsDisclaimer:
+      "INNER CIRCLE Events werden ausschließlich von INNER CIRCLE bzw. Admins erstellt.",
+    portfolioTitle: "INNER CIRCLE Portfolio",
+    portfolioLead:
+      "Investments des Unternehmens INNER CIRCLE selbst – klar getrennt von Investment Opportunities für Mitglieder.",
+    portfolioTargetBadge: "Strategische Zielallokation",
+    portfolioPlanned:
+      "Geplante, strategische Zielallokation – noch keine rechtlich/steuerlich/bilanziell geprüfte Struktur, kein Fonds, keine Renditeversprechen.",
+    portfolioDashboardTitle: "So wird das Portfolio später sichtbar.",
+    portfolioDashboardLead:
+      "Eine transparente Übersicht – ohne erfundene Zahlen. Echte Einträge erscheinen, sobald echte Investments existieren.",
+    portfolioLabelCapital: "Gesamt investiertes Kapital",
+    portfolioLabelAllocation: "Aktuelle Allokation",
+    portfolioLabelNetwork: "Investments im Netzwerk",
+    portfolioLabelExternal: "Externe Investments",
+    portfolioLabelAssets: "Assetklassen",
+    portfolioLabelDate: "Investitionsdatum",
+    portfolioLabelAmount: "Ursprünglicher Investmentbetrag",
+    portfolioLabelStatus: "Aktueller Status",
+    portfolioLabelUpdates: "Updates",
+    portfolioEmpty: "Noch keine echten Investments",
+    portfolioAssetList: "Unternehmen · Startups · Immobilien · Aktien/ETFs (oder künftig definierte Assetklassen)",
+    portfolioDemoNotice:
+      "Vorschau-Darstellung – es werden keine echten Investments, Beträge oder Entwicklungen dargestellt.",
+  },
 };
 
 export type AppBusinessDict = typeof appBusinessDe;
@@ -957,6 +1041,8 @@ export const appBusinessEn: AppBusinessDict = {
     mySubmissions: "My submissions",
     title: "Investments",
     lead: "Reviewed investment opportunities from the network – without unlawful execution.",
+    opportunitiesSectionTitle: "Investment Opportunities",
+    portfolioSectionTitle: "INNER CIRCLE Portfolio",
     browse: "View opportunities",
     searchPlaceholder: "Sector, stage, name…",
     filterSector: "Sector",
@@ -1337,5 +1423,86 @@ export const appBusinessEn: AppBusinessDict = {
       removeDemoConfirm: "Remove all records flagged as demo?",
       removed: "Demo data removed.",
     },
+  },
+  demo: {
+    badge: "Demo",
+    sampleBadge: "Example",
+    notice:
+      "Demo and sample data serve only to illustrate. They create no real connections, revenue, ratings or investments.",
+    networkKicker: "How the network works",
+    networkTitle: "Sample profiles for every role.",
+    networkLead:
+      "These profiles are fictional and show how members will present themselves later. They are clearly labelled as DEMO PROFILES and are not real members.",
+    networkBadge: "DEMO PROFILE",
+    networkTrustEmpty: "Trust status: open",
+    networkTrustEmptyText: "No invented verified achievements – the status shows 0 real reviews.",
+    networkInterests: "Interests",
+    networkLookingFor: "I am looking for",
+    networkOffering: "I offer",
+    networkSkills: "Skills",
+    discoverKicker: "How Discover works",
+    discoverTitle: "Demo profiles to try out.",
+    discoverLead:
+      "No real recommendations yet? Here you see the flow: profile card, interests, location, role and match reasons – including skip, view profile and connect.",
+    discoverHowTitle: "How Discover works",
+    discoverHowLead:
+      "Swipe or tap through the cards. With real members, “Connect” sends a personal request.",
+    discoverDemoNotice:
+      "This is a demo profile. With real members you can send a personal connection request here.",
+    discoverMatch: "Match reason",
+    discoverSharedInterest: "Shared interest",
+    discoverSkip: "Skip",
+    discoverView: "View profile",
+    discoverConnect: "Connect",
+    dealsKicker: "Sample deals",
+    dealsTitle: "This is how deals will look later.",
+    dealsLead:
+      "These deal cards are fictional examples – no real opportunities, no real volumes.",
+    dealsSizeLabel: "Size",
+    dealsRoleLabel: "Role sought",
+    dealsStatusLabel: "Status",
+    dealsCta: "View deal",
+    jobsKicker: "Jobs & projects",
+    jobsTitle: "Sample jobs and projects.",
+    jobsLead:
+      "Fictional entries with a demo label – this is how real positions and projects will be shown later.",
+    marketplaceKicker: "Marketplace samples",
+    marketplaceTitle: "This is how varied the marketplace gets.",
+    marketplaceLead:
+      "Sample offers with title, provider, price and category. Ratings are labelled as examples only.",
+    marketplaceRating: "Sample rating",
+    marketplaceCta: "View offer",
+    academyKicker: "Sample courses",
+    academyTitle: "A look at the future course library.",
+    academyLead:
+      "These course cards are clearly marked as demo. No invented sales figures are shown.",
+    academyMeta: "Example",
+    eventsTitle: "Planned formats",
+    eventsLead:
+      "These previews of possible formats are clearly labelled as example events – not actually announced events. Real events replace them later.",
+    eventsBadge: "Example event",
+    eventsDisclaimer: "INNER CIRCLE events are created exclusively by INNER CIRCLE or admins.",
+    portfolioTitle: "INNER CIRCLE Portfolio",
+    portfolioLead:
+      "Investments of INNER CIRCLE itself – clearly separated from investment opportunities for members.",
+    portfolioTargetBadge: "Strategic target allocation",
+    portfolioPlanned:
+      "Planned, strategic target allocation – no legally/tax/accounting reviewed structure yet, not a fund, no return promises.",
+    portfolioDashboardTitle: "This is how the portfolio becomes visible later.",
+    portfolioDashboardLead:
+      "A transparent overview – without invented numbers. Real entries appear once real investments exist.",
+    portfolioLabelCapital: "Total invested capital",
+    portfolioLabelAllocation: "Current allocation",
+    portfolioLabelNetwork: "Investments inside the network",
+    portfolioLabelExternal: "External investments",
+    portfolioLabelAssets: "Asset classes",
+    portfolioLabelDate: "Investment date",
+    portfolioLabelAmount: "Original investment amount",
+    portfolioLabelStatus: "Current status",
+    portfolioLabelUpdates: "Updates",
+    portfolioEmpty: "No real investments yet",
+    portfolioAssetList: "Companies · startups · real estate · stocks/ETFs (or asset classes defined later)",
+    portfolioDemoNotice:
+      "Preview view – no real investments, amounts or developments are shown.",
   },
 };

@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { LocalizedEmptyState, LocalizedPageHeader, Tr } from "@/components/app/localized";
+import { MarketplaceDemoSection } from "@/components/app/DemoSections";
 
 export const dynamic = "force-dynamic";
 
@@ -88,12 +89,15 @@ export default async function MarketplacePage({
       </Card>
 
       {rows.length === 0 ? (
-        <LocalizedEmptyState
-          icon="store"
-          titleKey="app.marketplace.empty"
-          textKey="app.marketplace.emptyText"
-          action={access.entitlements.marketplaceSell ? { labelKey: "app.marketplace.createCta", href: "/app/marketplace/new" } : undefined}
-        />
+        <>
+          <LocalizedEmptyState
+            icon="store"
+            titleKey="app.marketplace.empty"
+            textKey="app.marketplace.emptyText"
+            action={access.entitlements.marketplaceSell ? { labelKey: "app.marketplace.createCta", href: "/app/marketplace/new" } : undefined}
+          />
+          <MarketplaceDemoSection />
+        </>
       ) : (
         <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {rows.map((row) => (

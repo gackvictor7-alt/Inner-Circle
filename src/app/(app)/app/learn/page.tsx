@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Progress } from "@/components/ui/Progress";
 import { LocalizedEmptyState, LocalizedPageHeader, Tr } from "@/components/app/localized";
+import { AcademyDemoSection } from "@/components/app/DemoSections";
 
 export const dynamic = "force-dynamic";
 
@@ -90,12 +91,15 @@ export default async function LearnPage() {
       <section>
         <h2 className="mb-4 text-lg font-bold tracking-tight"><Tr k="app.learn.library" /></h2>
         {library.length === 0 ? (
-          <LocalizedEmptyState
-            icon="graduation"
-            titleKey="app.learn.emptyText"
-            textKey="app.learn.lead"
-            action={{ labelKey: "app.marketplace.title", href: "/app/marketplace" }}
-          />
+          <>
+            <LocalizedEmptyState
+              icon="graduation"
+              titleKey="app.learn.emptyText"
+              textKey="app.learn.lead"
+              action={{ labelKey: "app.marketplace.title", href: "/app/marketplace" }}
+            />
+            <AcademyDemoSection />
+          </>
         ) : (
           <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {library.map((course) => (

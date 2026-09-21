@@ -63,8 +63,9 @@ existiert. Backend + Daten + Berechtigungen + Nachweis gehören dazu.
 
 | Funktion | Status | Nachweis |
 | -------- | ------ | -------- |
-| Startseite `/` – **verkürzt** (Hero → Was ist INNER CIRCLE? → sechs Bereiche → Proof → Membership-CTA) | WORKING | `src/app/(site)/HomeContent.tsx`; 8 Sektionen → 3 (+ Hero), `h2` 12 → 6, sichtbarer Text 6 014 → 4 229 Zeichen (−30 %), HTML 83,8 kB → 61,3 kB (−27 %); **statisch vorgeneriert** (siehe unten „Public-Website-Performance") |
+| Startseite `/` – **verkürzt** (Hero → Was ist INNER CIRCLE? → sechs Bereiche → kompakter Portfolio-Teaser → Membership-CTA) | WORKING | `src/app/(site)/HomeContent.tsx`; Hero + sechs Hauptbereiche unverändert; die ehemalige Statistik-Sektion („Was durch das Netzwerk entsteht") wurde zu einem kompakten Teaser-Block (Kicker + „Wir bauen mehr als Kontakte." + CTA → `/portfolio`) reduziert; **statisch vorgeneriert** (siehe unten „Public-Website-Performance") |
 | Preview-Seiten `/network`, `/business-deals`, `/investments`, `/marketplace`, `/events` | WORKING | statische Inhalte, nicht aktivierte Funktionen als „Demnächst verfügbar" gekennzeichnet; **statisch vorgeneriert** |
+| `/portfolio` – INNER CIRCLE Portfolio (Arbeitstitel) | WORKING | `src/app/(site)/portfolio/`; 20-%-/25-%-/75-%-Modell (bezogen auf 100 %: 5 % IC / 15 % extern) + 100-€-Beispiel; **kein Fonds, keine Renditeversprechen**; transparent als geplante strategische Zielallokation; **statisch vorgeneriert** |
 | `/membership` (Preise, Leistungen) | WORKING | 24,99 €/Monat aktiv; Jahrespreis im Marketing noch als „folgt" (siehe Known Issue) |
 | Auth-Seiten `/login`, `/register`, `/forgot-password`, `/reset-password`, `/verify` | WORKING | siehe Bereich B |
 | Rechts-Platzhalter `/imprint`, `/privacy`, `/terms` | PARTIAL | bewusst Platzhalter, kein geprüfter Rechtstext |
@@ -166,6 +167,7 @@ existiert. Backend + Daten + Berechtigungen + Nachweis gehören dazu.
 | Opportunities einreichen (Mitglied) | WORKING | `/app/investments/submit`, `submitInvestmentAction` |
 | Admin-Prüfung (approved/rejected + Notiz) | WORKING | `/admin/investments`, `reviewInvestmentAction` |
 | Listings + Detailseite (nur freigegebene sichtbar) | WORKING | `/app/investments`, `/app/investments/[id]` |
+| Unterstruktur: „Investment Opportunities" (Mitglieder) + „INNER CIRCLE Portfolio" (IC selbst) | WORKING | `/app/investments`; zwei getrennte Sektionen; Portfolio als strategische Zielallokation (20 % → 25 % IC / 75 % extern = 5 % / 15 %), **keine echten Zahlen, keine Renditeversprechen**, keine Vermischung |
 | Absichtserklärungen (Interesse ausdrücken) | WORKING | `expressInvestmentInterestAction` |
 | Regulierte Abläufe (Zeichnung, Zahlung, Verträge, Dokumente) | NOT IMPLEMENTED | bewusst offen, Rechtsprüfung nötig |
 
@@ -220,14 +222,13 @@ existiert. Backend + Daten + Berechtigungen + Nachweis gehören dazu.
 
 **Public-Website-Performance (Incident-Fix 2026-09-21, Error 1102):** Die
 öffentlichen Marketing-Seiten (`/`, `/network`, `/business-deals`,
-`/investments`, `/marketplace`, `/events`, `/membership`, `/register`) sind
+`/investments`, `/portfolio`, `/marketplace`, `/events`, `/membership`, `/register`) sind
 **statisch vorgerendert** (`○` im Build-Route-Manifest) und führen **keine**
 Request-Time-Datenbankzugriffe und **kein** `getAccessContext()` mehr aus.
-Der Homepage-Beweisbereich liest die Kennzahlen aus dem gebündelten Snapshot
-`src/app/(site)/home-metrics.ts` (1:1-Abbild des Seed-Datensatzes, ehrliche
-`kind`-Kennzeichnung); echte Produktionswerte werden in der D1-Tabelle
-`PlatformMetric` gepflegt und mit dem nächsten Release in diesen Snapshot
-gespiegelt. Der Header-„Zur App"-CTA basiert auf dem nicht-httpOnly-Flag
+Die ehemalige Statistik-Sektion der Homepage („Was durch das Netzwerk
+entsteht") wurde durch einen kompakten Portfolio-Teaser ersetzt;
+`src/app/(site)/home-metrics.ts` / `StatsSection` werden von der Homepage
+nicht mehr verwendet (bleiben bis zur ausdrücklichen Ausmusterung erhalten). Der Header-„Zur App"-CTA basiert auf dem nicht-httpOnly-Flag
 `ic_presence` (in Lockstep mit `ic_session`), das **nichts autorisiert**.
 Details: @see `docs/09-deployment.md` (Fehlerzeile 1102).
 

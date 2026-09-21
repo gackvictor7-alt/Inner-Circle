@@ -68,7 +68,7 @@ export function NetworkContent() {
                 height={1100}
                 alt={page.imageAlt}
                 sizes="(min-width: 1024px) 55vw, 100vw"
-                className="h-full w-full object-cover"
+                className="h-auto w-full object-cover lg:h-full"
               />
               <p className="absolute bottom-3 right-4 rounded-full bg-midnight-950/60 px-3 py-1 text-[11px] font-medium text-paper-50/80 backdrop-blur-sm">
                 {t.common.imageNote}
