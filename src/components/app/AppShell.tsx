@@ -73,11 +73,20 @@ type NavItem = {
 };
 
 function useCountdown(ms: number | null) {
-  const [remaining, setRemaining] = useState(ms);
+  const [remaining, setRemaining] = useState<number | null>(ms);
+  const [prevMs, setPrevMs] = useState<number | null>(ms);
+
+  if (ms !== prevMs) {
+    setPrevMs(ms);
+    setRemaining(ms);
+  }
+
   useEffect(() => {
     if (ms === null) return;
-    setRemaining(ms);
-    const timer = setInterval(() => setRemaining((value) => (value && value > 1000 ? value - 1000 : 0)), 1000);
+    const endTime = Date.now() + ms;
+    const timer = setInterval(() => {
+      setRemaining(Math.max(0, endTime - Date.now()));
+    }, 1000);
     return () => clearInterval(timer);
   }, [ms]);
   if (remaining === null) return null;
@@ -156,33 +165,34 @@ export function AppShell({
     <div className="min-h-svh bg-background">
       {/* Mobile top bar */}
       <header className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur-xl lg:hidden">
-        <div className="flex h-14 items-center justify-between gap-3 px-4">
-          <Link href="/app" className="flex items-center gap-2.5">
+        <div className="flex h-14 items-center justify-between gap-2 px-3 sm:px-4">
+          <Link href="/app" className="flex items-center gap-2 shrink-0">
             <span className="flex h-8 w-8 items-center justify-center rounded-full bg-electric-500 text-[11px] font-bold text-white">
               IC
             </span>
             <span className="text-sm font-bold tracking-[0.12em]">INNER CIRCLE</span>
           </Link>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 shrink-0">
             {countdown && (
-              <span className="rounded-full bg-electric-500/10 px-2.5 py-1 text-[11px] font-semibold text-electric-600 dark:text-electric-300">
+              <span className="rounded-full bg-electric-500/10 px-2 py-0.5 text-[10px] sm:text-[11px] font-semibold text-electric-600 dark:text-electric-300">
                 {countdown}
               </span>
             )}
             <Link
               href="/app/notifications"
               aria-label={t.app.nav.notifications}
-              className="relative inline-flex h-9 w-9 items-center justify-center rounded-full border border-border text-foreground-muted"
+              className="relative inline-flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full border border-border text-foreground-muted"
             >
-              <BellIcon size={18} />
+              <BellIcon size={17} />
               {counts.notifications > 0 && <BadgeDot count={counts.notifications} />}
             </Link>
-            <Avatar user={user} size={34} />
+            <Avatar user={user} size={32} />
           </div>
         </div>
       </header>
 
-      <div className="mx-auto flex w-full max-w-[100rem]">
+      {/* Main app layout: Sidebar anchored to viewport left on desktop */}
+      <div className="flex w-full min-h-svh">
         {/* Desktop sidebar */}
         <aside className="sticky top-0 hidden h-svh w-64 shrink-0 flex-col border-r border-border bg-surface px-4 py-5 lg:flex">
           <Link href="/app" className="flex items-center gap-2.5 px-2">
@@ -193,11 +203,17 @@ export function AppShell({
           </Link>
 
           {countdown && (
-            <div className="mt-4 rounded-xl border border-electric-500/25 bg-electric-500/5 px-3 py-2.5">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-electric-600 dark:text-electric-300">
-                {t.app.access.levelTrial}
+            <div className="mt-4 rounded-xl border border-electric-500/25 bg-electric-500/5 p-3">
+              <div className="flex items-center justify-between gap-1">
+                <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-electric-600 dark:text-electric-300">
+                  <span className="h-1.5 w-1.5 rounded-full bg-electric-500 animate-pulse" />
+                  {t.app.access.levelTrial}
+                </span>
+                <span className="font-mono text-xs font-semibold text-foreground">{countdown}</span>
+              </div>
+              <p className="mt-1 text-[11px] text-foreground-muted leading-tight">
+                Discovery-Phase aktiv
               </p>
-              <p className="mt-0.5 font-mono text-sm font-semibold">{countdown}</p>
             </div>
           )}
 
@@ -250,8 +266,8 @@ export function AppShell({
         </aside>
 
         {/* Main column */}
-        <div className="min-w-0 flex-1">
-          <main className="ic-app-bottom-space mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+        <div className="min-w-0 flex-1 flex flex-col">
+          <main className="ic-app-bottom-space w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
             {children}
           </main>
         </div>
@@ -262,39 +278,39 @@ export function AppShell({
         aria-label={t.app.nav.bottomLabel}
         className="ic-safe-bottom fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 backdrop-blur-xl lg:hidden"
       >
-        <ul className="mx-auto flex max-w-md items-stretch justify-between px-2 py-1.5">
+        <ul className="mx-auto flex max-w-md items-stretch justify-between px-1 sm:px-2 py-1.5">
           {bottomItems.map((item) => {
             const create = item.href === "#create";
             const active = !create && isActive(item.href);
             const content = (
               <>
                 <span className="relative">
-                  <item.icon size={22} />
+                  <item.icon size={20} />
                   {item.badge ? <BadgeDot count={item.badge} /> : null}
                 </span>
-                <span className="text-[10px] font-medium">
+                <span className="block max-w-full truncate text-[10px] font-medium leading-tight">
                   {create ? t.app.nav.create : label(item)}
                 </span>
               </>
             );
             return (
-              <li key={item.href + item.key} className="flex-1">
+              <li key={item.href + item.key} className="flex-1 min-w-0">
                 {create ? (
                   <button
                     type="button"
                     onClick={() => setCreateOpen(true)}
-                    className="flex w-full flex-col items-center gap-1 rounded-xl py-1.5 text-electric-600 dark:text-electric-300"
+                    className="flex w-full flex-col items-center gap-1 rounded-xl py-1 text-electric-600 dark:text-electric-300"
                   >
-                    <span className="flex h-9 w-9 items-center justify-center rounded-full bg-electric-500 text-white shadow-[0_8px_20px_-8px_rgb(54_108_245/0.8)]">
-                      <PlusIcon size={20} />
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-electric-500 text-white shadow-[0_8px_20px_-8px_rgb(54_108_245/0.8)]">
+                      <PlusIcon size={18} />
                     </span>
-                    <span className="text-[10px] font-medium">{t.app.nav.create}</span>
+                    <span className="block max-w-full truncate text-[10px] font-medium leading-tight">{t.app.nav.create}</span>
                   </button>
                 ) : (
                   <Link
                     href={item.href}
                     aria-current={active ? "page" : undefined}
-                    className={`flex w-full flex-col items-center gap-1 rounded-xl py-1.5 ${
+                    className={`flex w-full flex-col items-center gap-1 rounded-xl py-1 ${
                       active ? "text-electric-600 dark:text-electric-300" : "text-foreground-muted"
                     }`}
                   >

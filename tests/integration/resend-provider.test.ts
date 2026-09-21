@@ -133,6 +133,8 @@ describe("Resend is configured (RESEND_API_KEY present)", () => {
     expect(payload.from).toBe(FALLBACK_FROM);
     expect(payload.to).toEqual([user.email]);
     expect(payload.text).toMatch(/\b\d{6}\b/);
+    expect(typeof payload.html).toBe("string");
+    expect(payload.headers).toHaveProperty("X-Entity-Ref-ID");
 
     // A delivered code stays usable and is the one Resend received.
     expect(await openCodes(userId)).toHaveLength(1);

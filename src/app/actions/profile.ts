@@ -29,7 +29,6 @@ export async function updateProfileAction(_prev: ActionState, formData: FormData
   const company = text(formData, "company", 120);
   const jobTitle = text(formData, "jobTitle", 120);
   const website = text(formData, "website", 300);
-  const linkedin = text(formData, "linkedin", 300);
   const xHandle = text(formData, "xHandle", 120);
   const instagram = text(formData, "instagram", 120);
   const avatarUrl = text(formData, "avatarUrl", 400);
@@ -58,7 +57,7 @@ export async function updateProfileAction(_prev: ActionState, formData: FormData
     company: company || null,
     jobTitle: jobTitle || null,
     website: website || null,
-    linkedinUrl: linkedin || null,
+    linkedinUrl: existing?.linkedinUrl ?? null,
     xHandle: xHandle || null,
     instagramUrl: instagram || null,
     avatarUrl: avatarUrl || existing?.avatarUrl || null,

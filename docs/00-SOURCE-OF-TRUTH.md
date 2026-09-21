@@ -74,7 +74,7 @@ existiert. Backend + Daten + Berechtigungen + Nachweis gehören dazu.
 | Logout (Session-Widerruf serverseitig) | WORKING | `logoutAction`, `/api/auth/logout` |
 | Sessions (30 Tage, httpOnly, gehasht) | WORKING | `src/lib/auth/session.ts` |
 | E-Mail-Verifizierung (Code-Erzeugung, Hash, Ablauf, Versuche) | WORKING | `src/lib/auth/otp.ts`, `onboarding.test.ts` |
-| **Echter E-Mail-Versand (Resend)** | **BLOCKED** | kein `RESEND_API_KEY` → Zustellmodus `none` in Produktion |
+| **Echter E-Mail-Versand (Resend)** | **WORKING / PARTIAL (DNS offen)** | `RESEND_API_KEY` aktiv; responsive Multipart-Templates (HTML+Text DE/EN); offene Produktionsabhängigkeit: eigene verifizierte Domain (SPF/DKIM/DMARC) gegen Spamfilter der Test-Domain `resend.dev` |
 | Verifizierung im Dev-Postausgang | WORKING | `ENABLE_DEV_OUTBOX` + Admin-Rolle, Testabdeckung `message-delivery.test.ts` |
 | SMS-Verifizierung (Twilio) | BLOCKED | kein Twilio-Konto/Schlüssel |
 | Registrierung per Telefonnummer | NOT IMPLEMENTED | UI-Umschalter existiert, Übermittlung schlägt fehl (Known Issue K-05) |
@@ -103,8 +103,8 @@ existiert. Backend + Daten + Berechtigungen + Nachweis gehören dazu.
 
 | Funktion | Status | Nachweis |
 | -------- | ------ | -------- |
-| Profil ansehen/bearbeiten (Bio, Rolle, Firma, Links) | WORKING | `/app/profile`, `/app/profile/edit` |
-| Interessen & Ziele (Onboarding-Taxonomie) | WORKING | `completeOnboardingAction`, `onboarding.test.ts` |
+| Profil ansehen/bearbeiten (Bio, Rolle, Firma, Links) | WORKING | `/app/profile`, `/app/profile/edit`; **LinkedIn aus UI entfernt und deprecated** (DB-Spalte für Datenintegrität erhalten); Instagram, X und Website sekundär; IC-Business-Identität priorisiert |
+| Interessen & Ziele (Onboarding-Taxonomie) | WORKING | `/onboarding/interests`, `completeOnboardingAction`, Apple-artiges UX-Design, strukturierte Gruppen, mind. 3 Pflicht, `onboarding.test.ts` |
 | Statistiken (Kontakte, Follower, Posts) | WORKING | `/app/profile`, `profileStats()` |
 | Trust & Performance (eigene Sicht) | PARTIAL | Ansicht + Datenmodell vorhanden; Bewertungen können **nicht** abgegeben werden (Verifikations-Pipeline fehlt) |
 | Öffentliche Mitgliedskarte verifizieren | WORKING | `/member/[publicId]` |
@@ -200,9 +200,9 @@ existiert. Backend + Daten + Berechtigungen + Nachweis gehören dazu.
 | D1-Anbindung + Migrationen (50 Tabellen) | WORKING | `drizzle/0000_init.sql`, `cf:release` |
 | Laufzeit-Treiberwechsel D1 ↔ libSQL | WORKING | `src/db/client.ts` |
 | Deployment über Workers Builds (main → Produktion) | PARTIAL | dokumentierter Weg; letzter Merge nach `main` durch den Gründer zu prüfen (Dashboard) |
-| Automatisierte Tests | WORKING | 56 Tests grün |
+| Automatisierte Tests | WORKING | 61 Tests grün (13 Testdateien) |
 | CI (GitHub Actions) | NOT IMPLEMENTED | keine Workflows im Repo |
-| Lint | PARTIAL | 21 bestehende Hinweise (7 Fehler, 14 Warnungen) – vorbestehend, nicht aus diesem Auftrag |
+| Lint | PARTIAL | 15 bestehende Hinweise (5 Fehler, 10 Warnungen) – verbessert von 21/7 |
 | Monitoring/Alerting | PREPARED | Observability im Worker aktiv, keine Alarme |
 
 ## 5. Dokumentenindex
@@ -265,7 +265,8 @@ existiert. Backend + Daten + Berechtigungen + Nachweis gehören dazu.
 
 ## 8. Nächster empfohlener Schritt
 
-**Echter E-Mail-Versand für die Account-Verifizierung** (Resend-Key setzen,
-`EMAIL_FROM` auf eine verifizierte Domain, /verify-Verhalten gegen den echten
-Provider prüfen, Dev-Postausgang deaktivieren). Details:
+**Eigene verifizierte E-Mail-Domain für die Produktion** (Resend-Domain anlegen,
+SPF/DKIM/DMARC im DNS konfigurieren, `EMAIL_FROM` auf die verifizierte Domain
+setzen, um Spam-Filterung der Resend-Sandbox `resend.dev` vollständig zu
+beseitigen). Details: [`07-integrations.md`](07-integrations.md) und
 [`12-roadmap.md`](12-roadmap.md) → Abschnitt NEXT.

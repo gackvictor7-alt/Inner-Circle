@@ -64,7 +64,12 @@ export function NotificationsView({ notifications }: { notifications: Notificati
       )}
 
       {notifications.length === 0 ? (
-        <EmptyState icon={BellIcon} title={t.app.notifications.empty} text={t.app.notifications.emptyText} />
+        <EmptyState
+          icon={BellIcon}
+          title={t.app.notifications.empty}
+          text={t.app.notifications.emptyText}
+          action={<Button href="/app" size="sm" variant="secondary">{t.app.nav.appHome}</Button>}
+        />
       ) : (
         <ul className="space-y-3">
           {notifications.map((notification) => {

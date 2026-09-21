@@ -49,6 +49,7 @@ D1-Binding (kein Secret, in `wrangler.jsonc`): Binding-Name **`DB`**,
 | -------- | ------------- | ------ | ------------ | ----- | ----------- | ---------- |
 | `RESEND_API_KEY` | Runtime | **ja** | **Pflicht für Verifizierung** | echter Mailversand | leer → Dev-Postausgang | **zwingend**, sonst meldet `/verify` offen „Versand noch nicht eingerichtet" |
 | `EMAIL_FROM` | Runtime | nein | empfohlen | Absender (`"Name <adresse@domain>"`); ohne Wert gilt der Resend-Testabsender `INNER CIRCLE <onboarding@resend.dev>` (stellt nur an die Konto-Adresse des Resend-Kontos zu) | `"INNER CIRCLE <noreply@example.com>"` | Absender der verifizierten Domain |
+| `EMAIL_REPLY_TO` | Runtime | nein | optional | Antwortadresse für E-Mails (z. B. `support@meine-domain.com`) | leer | optional |
 
 ## 4. SMS (Twilio) – optional
 

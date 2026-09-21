@@ -10,26 +10,19 @@ Stand**, nicht am Projektbeginn.
 
 ## NEXT – unmittelbar als Nächstes
 
-### N-1 · Echter E-Mail-Versand für die Account-Verifizierung
+### N-1 · Eigene Domain für Resend-Zustellbarkeit (SPF/DKIM/DMARC)
 
-**Ziel:** Ein neues Konto kann sich in Produktion selbst verifizieren, ohne
-Dev-Postausgang und ohne dass ein Code verloren geht.
+**Ziel:** E-Mail-Versand ist im Code vollständig realisiert (Multipart HTML+Text,
+Apple-artiges reduziertes Template, Entity-Header, konfigurierbare From/Reply-To);
+der Spam-Ordner wird durch eigene Domain-Reputation im DNS eliminiert.
 
-**Schritte**
-1. Resend-Konto anlegen, Absenderdomain verifizieren (SPF/DKIM/DMARC).
-2. Worker-Variablen: `RESEND_API_KEY` (Secret), `EMAIL_FROM` (Text,
-   z. B. `INNER CIRCLE <noreply@domain>`).
-3. Testlauf: Registrierung → Code per E-Mail → `/verify` → Onboarding → Trial.
-4. Fehlerpfade prüfen: ungültiger Key, Rate-Limit, Resend-Cooldown,
-   Zustellstatus `provider`.
-5. `ENABLE_DEV_OUTBOX` entfernen, `DevOutbox` leeren.
-6. Dokumentation aktualisieren (dieses Dokument, `00`, `07`, `09`, `11`).
-
-**Definition of Done:** Registrierung und Passwort-Reset funktionieren über den
-echten Provider; `/verify` meldet „gesendet"; Tests bleiben grün; keine
-Klartext-Codes in Browser oder Logs.
-
-**Nicht Teil dieses Schritts:** SMS, OAuth, Stripe.
+**Schritte (Gründer):**
+1. Eigene Domain im Resend Dashboard anlegen.
+2. DNS-Einträge für SPF (`TXT`), DKIM (`CNAME`) und DMARC (`TXT`) hinterlegen.
+3. Worker-Variable: `EMAIL_FROM` auf die verifizierte Domain setzen
+   (z. B. `INNER CIRCLE <verify@unsere-domain.com>`). Optional: `EMAIL_REPLY_TO`.
+4. Testlauf verifizieren: Posteingangs-Zustellung bei Gmail/Outlook.
+5. `ENABLE_DEV_OUTBOX` in Produktion entfernen.
 
 ### N-2 · E-Mail-Templates für Benachrichtigungen prüfen
 

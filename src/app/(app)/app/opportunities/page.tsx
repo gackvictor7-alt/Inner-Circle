@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/db/client";
-import { businessOpportunities, opportunityApplications, profiles, users } from "@/db/schema";
+import { businessOpportunities, profiles, users } from "@/db/schema";
 import { requireUser } from "@/lib/access/server";
 import { myApplications } from "@/lib/platform/queries";
 import { Badge } from "@/components/ui/Badge";
