@@ -69,7 +69,10 @@ Zeichen: ✅ erlaubt · ➖ nicht erlaubt · ⚠️ eingeschränkt (siehe Fußno
 | Investment einreichen | ➖ | ➖ | ➖ | ✅ (Freigabe durch Admin nötig) | ✅ |
 | Absichtserklärung abgeben | ➖ | ➖ | ✅ | ✅ | ✅ |
 | Vertrauliche Deal-Dokumente | ➖ | ➖ | ➖ | ➖ (`dealDocuments` immer false) | ➖ |
+| Verbindungsanfrage senden | ➖ | ➖ | ✅ (max. 3) | ✅ | ✅ |
+| **Verbindungsanfrage ohne persönliche Nachricht** | ➖ | ➖ | ❌ `connectionMessageRequired` | ❌ | ❌ |
 | Events lesen/bewerben | Preview `/events` | ✅ Liste / ➖ Bewerbung | ✅ | ✅ | ✅ |
+| **Events anlegen/bearbeiten (Mitglieder)** | ❌ | ❌ | ❌ | ❌ **bewusst nicht implementiert** | 🔒 Admin/IC-Team (keine Route, keine Action) |
 | Tickets/Check-in | ➖ | ➖ | ➖ | **nicht implementiert** | – |
 | Trust & Performance (eigene Sicht) | ➖ | ➖ | ✅ | ✅ | ✅ |
 | Bewertungen abgeben | ➖ | ➖ | ➖ | ➖ | ➖ (Pipeline fehlt) |
@@ -88,6 +91,13 @@ Zeichen: ✅ erlaubt · ➖ nicht erlaubt · ⚠️ eingeschränkt (siehe Fußno
 **Trial-Mengenbegrenzungen** (`TRIAL_VISIBLE` in `levels.ts`):
 Verzeichnis/Discovery 12 Einträge pro Seite, 6 Chancen, 6 Events,
 3 Investments.
+
+**Event-Erstellung (Sprint 3 bestätigt):** `Entitlements` enthält nur
+`eventsBrowse` und `eventsApply` – **keine** Erstellungs-Freigabe auf keiner
+Stufe. Es existiert weder eine Route (`/app/events/new` → 404) noch eine
+Server-Action mit `insert`/`update`/`delete` auf `events`. Der Create-Eintrag
+in der `AppShell` ist deaktiviert und verlinkt nichts. Abgesichert durch
+`tests/unit/event-permissions.test.ts`.
 
 ## 4. Wo die Durchsetzung passiert (niemals nur in der UI)
 

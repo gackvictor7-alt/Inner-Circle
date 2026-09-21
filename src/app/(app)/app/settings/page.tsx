@@ -6,6 +6,7 @@ import { requireUser } from "@/lib/access/server";
 import { loadNotificationPreferences, loadPrivacy } from "@/lib/platform/queries";
 import { requestAccountDeletionAction, updateNotificationPreferencesAction, updatePrivacyAction } from "@/app/actions/profile";
 import { ActionForm, type FormField } from "@/components/app/forms";
+import { AppearanceControl } from "@/components/app/AppearanceControl";
 import { LocalizedPageHeader, Tr } from "@/components/app/localized";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
@@ -38,13 +39,31 @@ export default async function SettingsPage() {
     labelKey: `app.settings.visibility${value.charAt(0).toUpperCase()}${value.slice(1)}`,
   }));
 
+  const storedMetrics = parseMetrics(privacy?.metricsVisibilityJson);
+  const metricFallback = privacy?.performanceVisibility ?? "members";
+  const metricFields: { key: string; labelKey: string }[] = [
+    { key: "deals", labelKey: "app.settings.metricDeals" },
+    { key: "dealVolume", labelKey: "app.settings.metricDealVolume" },
+    { key: "customers", labelKey: "app.settings.metricCustomers" },
+    { key: "marketplace", labelKey: "app.settings.metricMarketplace" },
+    { key: "courses", labelKey: "app.settings.metricCourses" },
+    { key: "investments", labelKey: "app.settings.metricInvestments" },
+    { key: "events", labelKey: "app.settings.metricEvents" },
+  ];
+
   const privacyFields: FormField[] = [
     { name: "profileVisibility", kind: "select", labelKey: "app.settings.privacyProfile", options: visibilityOptions, defaultValue: privacy?.profileVisibility ?? "members" },
-    { name: "performanceVisibility", kind: "select", labelKey: "app.settings.privacyPerformance", options: visibilityOptions, defaultValue: privacy?.performanceVisibility ?? "connections" },
+    { name: "performanceVisibility", kind: "select", labelKey: "app.settings.privacyPerformance", options: visibilityOptions, defaultValue: privacy?.performanceVisibility ?? "members" },
     { name: "showLocation", kind: "checkbox", labelKey: "app.settings.showLocation", defaultValue: privacy?.showLocation ?? true },
-    
     { name: "discoverable", kind: "checkbox", labelKey: "app.settings.discoverable", defaultValue: privacy?.discoverable ?? true },
     { name: "allowConnectionRequests", kind: "checkbox", labelKey: "app.settings.allowRequests", defaultValue: privacy?.allowConnectionRequests ?? true },
+    ...metricFields.map((metric): FormField => ({
+      name: `metric_${metric.key}`,
+      kind: "select",
+      labelKey: metric.labelKey,
+      options: visibilityOptions,
+      defaultValue: storedMetrics[metric.key] ?? metricFallback,
+    })),
   ];
 
   const prefFields: FormField[] = [
@@ -68,12 +87,19 @@ export default async function SettingsPage() {
         </dl>
       </Card>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <section>
-          <h2 className="mb-4 text-lg font-bold tracking-tight"><Tr k="app.settings.privacyTitle" /></h2>
+      <section>
+        <h2 className="mb-2 text-lg font-bold tracking-tight"><Tr k="app.settings.appearanceTitle" /></h2>
+        <p className="mb-4 max-w-2xl text-sm leading-6 text-foreground-muted"><Tr k="app.settings.appearanceLead" /></p>
+        <AppearanceControl />
+      </section>
+
+      <div className="ic-grid">
+        <section className="ic-span-12 lg:col-span-6">
+          <h2 className="mb-2 text-lg font-bold tracking-tight"><Tr k="app.settings.privacyTitle" /></h2>
+          <p className="mb-4 text-sm leading-6 text-foreground-muted"><Tr k="app.settings.metricsLead" /></p>
           <ActionForm action={updatePrivacyAction} fields={privacyFields} submitKey="app.common.save" successKey="app.common.saved" />
         </section>
-        <section>
+        <section className="ic-span-12 lg:col-span-6">
           <h2 className="mb-4 text-lg font-bold tracking-tight"><Tr k="app.settings.notificationsTitle" /></h2>
           <ActionForm action={updateNotificationPreferencesAction} fields={prefFields} submitKey="app.common.save" successKey="app.common.saved" />
           <p className="mt-3 text-xs text-foreground-subtle"><Tr k="app.notifications.devNotice" /></p>
@@ -133,4 +159,15 @@ export default async function SettingsPage() {
       )}
     </div>
   );
+}
+
+
+function parseMetrics(json: string | null | undefined): Record<string, string> {
+  if (!json) return {};
+  try {
+    const value = JSON.parse(json);
+    return value && typeof value === "object" ? (value as Record<string, string>) : {};
+  } catch {
+    return {};
+  }
 }

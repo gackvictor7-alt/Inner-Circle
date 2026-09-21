@@ -122,6 +122,8 @@ export const profiles = sqliteTable("Profile", {
   rolesJson: text("rolesJson").notNull().default("[]"),
   skillsJson: text("skillsJson").notNull().default("[]"),
   lookingForJson: text("lookingForJson").notNull().default("[]"),
+  /** "I offer" – the counterpart of `lookingForJson` (free-text business list). */
+  offeringJson: text("offeringJson").notNull().default("[]"),
   profileVisibility: text("profileVisibility").notNull().default("members"), // public | members | connections
   onboardingCompletedAt: ts("onboardingCompletedAt"),
   createdAt: createdAt(),
@@ -179,6 +181,12 @@ export const privacySettings = sqliteTable("PrivacySettings", {
   showLocation: integer("showLocation", { mode: "boolean" }).notNull().default(true),
   discoverable: integer("discoverable", { mode: "boolean" }).notNull().default(true),
   allowConnectionRequests: integer("allowConnectionRequests", { mode: "boolean" }).notNull().default(true),
+  /**
+   * Per-metric visibility for the public performance numbers, e.g.
+   * `{"deals":"members","customers":"private"}`. Absent keys fall back to
+   * `performanceVisibility`, so an empty object means "everything as before".
+   */
+  metricsVisibilityJson: text("metricsVisibilityJson").notNull().default("{}"),
   updatedAt: updatedAt(),
 });
 

@@ -237,11 +237,99 @@ summary {
   margin-inline: auto;
 }
 
+/* ------------------------------------------------------------------ *
+ * App area grid (Sprint 3, spec §25)
+ *
+ * The member area is a sidebar + flexible app region. The app region uses a
+ * responsive 12-column grid so cards can occupy 12/8/6/4 columns while long
+ * text stays inside a comfortable measure. This replaces the previous fixed
+ * `max-w-6xl` main column, which left a large unused area on wide screens.
+ * ------------------------------------------------------------------ */
+
+.ic-app-main {
+  width: 100%;
+  /* 1920px: fills the app region next to the sidebar on 1440/1920 screens and
+     keeps the leftover space on 2560 balanced instead of a dead right edge. */
+  max-width: 120rem;
+  margin-inline: auto;
+  padding: 1.5rem 1rem;
+}
+@media (min-width: 640px) {
+  .ic-app-main {
+    padding-inline: 1.5rem;
+  }
+}
+@media (min-width: 1024px) {
+  .ic-app-main {
+    padding: 2rem;
+  }
+}
+@media (min-width: 1600px) {
+  .ic-app-main {
+    padding-inline: 3rem;
+  }
+}
+@media (min-width: 2200px) {
+  .ic-app-main {
+    padding-inline: 4rem;
+  }
+}
+
+/* 12-column app grid */
+.ic-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 1rem;
+}
+@media (min-width: 640px) {
+  .ic-grid {
+    gap: 1.25rem;
+  }
+}
+@media (min-width: 1280px) {
+  .ic-grid {
+    gap: 1.5rem;
+  }
+}
+
+/* Column spans: 12 (mobile) → configurable from `sm` upwards */
+.ic-span-4,
+.ic-span-6,
+.ic-span-8,
+.ic-span-12 {
+  grid-column: span 12 / span 12;
+}
+@media (min-width: 640px) {
+  .ic-span-6 {
+    grid-column: span 6 / span 6;
+  }
+  .ic-span-4 {
+    grid-column: span 6 / span 6;
+  }
+}
+@media (min-width: 1024px) {
+  .ic-span-4 {
+    grid-column: span 4 / span 4;
+  }
+  .ic-span-8 {
+    grid-column: span 8 / span 8;
+  }
+}
+
+/* Comfortable text measure inside a wide grid (never full-bleed paragraphs) */
+.ic-measure {
+  max-width: 46rem;
+}
+.ic-measure-wide {
+  max-width: 62rem;
+}
+
 /* App shell: bottom navigation must not cover content on phones */
 .ic-app-bottom-space {
   padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
 }
-@media (min-width: 1024px) {
+@media (min-width: 1280px) {
+  /* The desktop sidebar replaces the bottom navigation from `xl` upwards. */
   .ic-app-bottom-space {
     padding-bottom: 2.5rem;
   }

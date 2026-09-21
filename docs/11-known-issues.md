@@ -153,14 +153,16 @@ P2 mittelfristig · P3 Aufräumen.
 
 ### K-15 · Lint nicht fehlerfrei (vorbestehend)
 
-- `npm run lint` meldet **21 Probleme**: 7 Fehler (React-Hooks-Regeln
-  „setState in effect" in `SiteHeader`, `StatsSection`, `AppShell`,
-  `DiscoverDeck`, `AuthForms`; „impure function during render" in
-  `app/events/page.tsx`; `module`-Zuweisung in `scripts/seed.ts`) und
-  14 Warnungen (ungenutzte Importe/Variablen).
-- **Wichtig:** Diese Hinweise sind **vorbestehend** und wurden durch den
-  Dokumentationsauftrag nicht verändert. Ein Fix ist ein eigener Auftrag mit
-  Verhaltensprüfung (einige Effekte steuern sichtbares Verhalten).
+- `npm run lint` meldet aktuell **14 Probleme**: 4 Fehler („setState in effect"
+  in `SiteHeader` und `StatsSection`; „impure function during render"
+  (`Date.now()`) in `app/events/page.tsx`; `module`-Zuweisung in
+  `scripts/seed.ts`) und 10 Warnungen (ungenutzte Importe/Variablen).
+- Verlauf: 21 (7 Fehler / 14 Warnungen) → 15 (5 / 10) → **14 (4 / 10)**.
+  Sprint 3 hat **keine** neuen Befunde eingeführt; die zuvor von `AppShell`,
+  `DiscoverDeck` und `AuthForms` gemeldeten Effekte sind behoben bzw. umgebaut.
+- **Wichtig:** Die verbleibenden Hinweise sind **vorbestehend** und betreffen
+  Dateien, deren Verhalten eine eigene Prüfung braucht (Sichtbarkeit des
+  Headers beim Scrollen, Zählanimation der Statistiken, Seed-Skript).
 
 ### K-16 · Keine CI
 

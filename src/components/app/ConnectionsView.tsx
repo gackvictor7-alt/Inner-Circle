@@ -31,23 +31,35 @@ export function ConnectionsView({
   received,
   sent,
   connections,
+  embedded = false,
 }: {
   tab: "requests" | "sent" | "connections";
   received: (Person & { requestId: string; message: string | null; fromTrial: boolean; createdAt: string })[];
   sent: (Person & { requestId: string; status: string; message: string | null; createdAt: string })[];
   connections: (Person & { connectedSince: string | null })[];
+  /** Rendered inside `/app/inbox` – no own page header, inbox-relative links. */
+  embedded?: boolean;
 }) {
   const { t, tf } = useI18n();
   const [respondState, respond] = useActionState(respondConnectionRequestAction, initialActionState);
   const [withdrawState, withdraw] = useActionState(withdrawConnectionRequestAction, initialActionState);
   const [disconnectState, disconnect] = useActionState(disconnectAction, initialActionState);
 
+  const hrefFor = (sub: "requests" | "sent" | "connections") =>
+    embedded
+      ? `/app/inbox?tab=requests&sub=${sub}`
+      : sub === "connections"
+        ? "/app/connections"
+        : `/app/connections?tab=${sub}`;
+  const messageHref = (userId: string) =>
+    embedded ? `/app/inbox?tab=messages&to=${userId}` : `/app/messages?to=${userId}`;
+
   const tabs = [
-    { key: "requests", href: "/app/connections?tab=requests", label: t.app.connections.tabRequests, count: received.length },
-    { key: "sent", href: "/app/connections?tab=sent", label: t.app.connections.tabSent, count: sent.length },
+    { key: "requests", href: hrefFor("requests"), label: t.app.connections.tabRequests, count: received.length },
+    { key: "sent", href: hrefFor("sent"), label: t.app.connections.tabSent, count: sent.length },
     {
       key: "connections",
-      href: "/app/connections",
+      href: hrefFor("connections"),
       label: t.app.connections.tabConnections,
       count: connections.length,
     },
@@ -55,7 +67,7 @@ export function ConnectionsView({
 
   return (
     <div className="space-y-8">
-      <PageHeader title={t.app.connections.title} lead={t.app.connections.lead} />
+      {!embedded && <PageHeader title={t.app.connections.title} lead={t.app.connections.lead} />}
 
       <nav aria-label={t.app.connections.title} className="flex flex-wrap gap-2">
         {tabs.map((item) => (
@@ -185,7 +197,7 @@ export function ConnectionsView({
               <Card key={person.id} className="flex flex-col p-5">
                 <PersonLine person={person} />
                 <div className="mt-4 flex flex-wrap gap-2">
-                  <Button href={`/app/messages?to=${person.id}`} size="sm">
+                  <Button href={messageHref(person.id)} size="sm">
                     {t.app.connections.message}
                   </Button>
                   <form action={disconnect}>

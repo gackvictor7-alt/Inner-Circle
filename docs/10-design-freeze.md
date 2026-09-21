@@ -58,6 +58,12 @@ Feature-Auftrags sind **keine** gültigen Gründe.
 - Dateien: `src/components/site/SiteHeader.tsx`, `SiteFooter.tsx`, `Logo.tsx`.
 - Mitgliederbereich-Navigation (Sidebar, Bottom-Bar, „Erstellen"-Sheet) in
   `src/components/app/AppShell.tsx`.
+- **Sprint 3 (ausdrücklicher Gründerauftrag):** Die Primärnavigation wurde auf
+  **sechs Bereiche** reduziert – Start · Discover · Erstellen · Inbox · Events ·
+  Profil. Der öffentliche Header und der Footer sind **unverändert**; die
+  Änderung betrifft ausschließlich den Mitgliederbereich. Alle bisherigen
+  Punkte existieren weiter (zweite Sidebar-Gruppe „Bereiche", Profil-Konto-Block,
+  Umleitungen von `/app/messages`, `/app/connections`, `/app/notifications`).
 
 ### 1.6 Grundlayout
 
@@ -68,6 +74,11 @@ Feature-Auftrags sind **keine** gültigen Gründe.
   Easing (`--ease-emphasized`).
 - Karten-/Panels-Stil der Bereiche Membership, Events, Opportunities,
   Marketplace, Investments.
+- **Sprint 3 (ausdrücklicher Gründerauftrag):** zusätzlich
+  `.ic-app-main`, `.ic-grid`, `.ic-span-4|6|8|12`, `.ic-measure`,
+  `.ic-measure-wide`. Bestehende Shell-Klassen wurden **nicht** geändert;
+  `.ic-app-bottom-space` greift weiterhin ab 1280 px. Die neuen Klassen dienen
+  nur dazu, die große freie Fläche rechts auf 1440–2560 px zu füllen.
 
 ### 1.7 Dark/Light-System
 
@@ -133,3 +144,26 @@ Feature-Auftrags sind **keine** gültigen Gründe.
 > **nichts Sichtbares verändern.** Keine Bilder, keine Farben, keine
 > Typografie, kein Layout, keine Navigation, keine Mobile-Richtung, kein
 > Redesign des Mitgliederbereichs.
+
+## 6. Sprint 3 – Informationsarchitektur (Gründerauftrag, 2026-09-21)
+
+Der Auftrag lautete ausdrücklich: **kein Redesign**. INNER CIRCLE soll sich wie
+eine moderne Business-App anfühlen statt wie ein komplexes Dashboard. Folgendes
+wurde deshalb **bewusst geändert** und gilt ab sofort als genehmigter Zustand:
+
+| Bereich | Änderung |
+| ------- | -------- |
+| Navigation | 6 Primärbereiche (Start · Discover · Erstellen · Inbox · Events · Profil); alles andere darunter gruppiert, nichts gelöscht |
+| Start | nur noch kompakte Kopfzeile (`Hallo, <Name>`, Trial-Chip, Inbox-Shortcut) + sechs Kernbereichs-Karten; die großen Discovery-Trial- und Profilfortschritts-Boxen sind ins Profil gewandert |
+| Trust & Performance | kein Navigations-/Startbereich mehr; Daten und Funktionen vollständig unter `/app/profile?tab=performance` (+ `/app/trust`) |
+| Discover | Hinge/Tinder-Mechanik auf Business-Identität; Connect **nur** mit Pflichtnachricht |
+| Inbox | `/app/messages`, `/app/connections`, `/app/notifications` unter `/app/inbox` zusammengeführt (Tabs); alte Pfade leiten um |
+| Erstellen | eigener Primäreintrag (Desktop-Button, Mobile `+`); **keine** Event-Erstellung für Mitglieder |
+| Profil | Hauptbereich mit Header + Tabs Übersicht/Aktivitäten/Performance/Angebote; Konto-Punkte (Member Card, Mitgliedschaft, Einstellungen) hier gebündelt |
+| Einstellungen | neuer Abschnitt „Darstellung" (Hell/Dunkel/System) über die bestehende `ThemeProvider`-Infrastruktur |
+| Öffentliche Startseite | verkürzt auf Hero → Was ist INNER CIRCLE? → sechs Bereiche → Proof → Membership-CTA; lange Erklärtexte in die bestehenden Unterseiten verlagert, nicht gelöscht |
+
+**Unverändert eingefroren bleiben:** Farbwelt, Typografie, Bildsprache
+(Hero-Hintergrund, People-Bilder), Premium-/Apple-Richtung, Hero, Registrierung,
+E-Mail-Verifizierung, Discovery-Trial, Mitgliedschaftslogik, DB-Logik, Auth.
+LinkedIn bleibt entfernt. Keine erfundenen Daten.

@@ -1,7 +1,8 @@
 import { requireUser } from "@/lib/access/server";
-import { updateProfileAction } from "@/app/actions/profile";
+import { interestTaxonomy, updateProfileAction } from "@/app/actions/profile";
 import { ActionForm, type FormField } from "@/components/app/forms";
-import { LocalizedPageHeader, LocalizedEmptyState } from "@/components/app/localized";
+import { InterestGoalEditor } from "@/components/app/InterestGoalEditor";
+import { LocalizedPageHeader, LocalizedEmptyState, Tr } from "@/components/app/localized";
 
 export const dynamic = "force-dynamic";
 
@@ -16,15 +17,21 @@ function parseList(json: string | null | undefined): string {
 }
 
 /** Profile editing. Available to verified accounts; full fields need membership. */
-export default async function ProfileEditPage() {
+export default async function ProfileEditPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ saved?: string }>;
+}) {
   const access = await requireUser("/app/profile/edit");
   const user = access.user;
+  const params = await searchParams;
 
   if (!access.entitlements.profileFull && access.level !== "free") {
     // Trial accounts may still edit the basics – only the *public depth* is limited.
   }
 
   const profile = user.profile;
+  const taxonomy = await interestTaxonomy();
 
   const fields: FormField[] = [
     { name: "firstName", labelKey: "app.auth.firstName", required: true, defaultValue: user.firstName, autoComplete: "given-name" },
@@ -38,6 +45,7 @@ export default async function ProfileEditPage() {
     { name: "roles", labelKey: "app.profile.roles", helpKey: "app.profile.rolesHint", defaultValue: parseList(profile?.rolesJson) },
     { name: "skills", labelKey: "app.profile.skills", helpKey: "app.profile.skillsHint", defaultValue: parseList(profile?.skillsJson) },
     { name: "lookingFor", labelKey: "app.profile.lookingFor", helpKey: "app.profile.rolesHint", defaultValue: parseList(profile?.lookingForJson) },
+    { name: "offering", labelKey: "app.profile.offering", helpKey: "app.profile.offeringHint", defaultValue: parseList(profile?.offeringJson) },
     { name: "website", labelKey: "app.profile.website", kind: "url", defaultValue: profile?.websiteUrl ?? "" },
     { name: "xHandle", labelKey: "app.profile.x", defaultValue: profile?.xUrl ?? "" },
     { name: "instagram", labelKey: "app.profile.instagram", defaultValue: profile?.instagramUrl ?? "" },
@@ -55,12 +63,37 @@ export default async function ProfileEditPage() {
         />
       )}
 
+      {params.saved === "interests" && (
+        <p role="status" className="rounded-xl bg-forest-500/10 px-4 py-3 text-sm text-forest-700 dark:text-forest-200">
+          <Tr k="app.profile.interestsSaved" />
+        </p>
+      )}
+
       <ActionForm
         action={updateProfileAction}
         fields={fields}
         columns={2}
         submitKey="app.profile.save"
         successKey="app.profile.saved"
+      />
+
+      {/* Interests & goals – same taxonomy as onboarding (spec §23) */}
+      <InterestGoalEditor
+        interests={taxonomy.interests.map((row) => ({
+          id: row.id,
+          slug: row.slug,
+          labelDe: row.labelDe,
+          labelEn: row.labelEn,
+          groupDe: row.groupDe,
+          groupEn: row.groupEn,
+        }))}
+        goals={taxonomy.goals.map((row) => ({ id: row.id, slug: row.slug, labelDe: row.labelDe, labelEn: row.labelEn }))}
+        selectedInterests={user.interests
+          .map((interest) => taxonomy.interests.find((row) => row.slug === interest.slug)?.id)
+          .filter((id): id is string => Boolean(id))}
+        selectedGoals={user.goals
+          .map((goal) => taxonomy.goals.find((row) => row.slug === goal.slug)?.id)
+          .filter((id): id is string => Boolean(id))}
       />
     </div>
   );

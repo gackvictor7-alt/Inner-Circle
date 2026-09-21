@@ -57,6 +57,7 @@ export default async function MemberProfilePage({ params }: { params: Promise<{ 
             <ProfileActions
               userId={profile.id}
               handle={profile.handle}
+              firstName={profile.firstName}
               isConnected={connected}
               isBlocked={blocked}
               canFollow={access.entitlements.follow}

@@ -1,13 +1,16 @@
 # 05 – Datenbank (Cloudflare D1 / Drizzle)
 
-**Stand:** 2026-09-21 · Basis: `src/db/schema.ts` (893 Zeilen) und
-`drizzle/0000_init.sql`.
+**Stand:** 2026-09-21 (Sprint 3) · Basis: `src/db/schema.ts` und
+`drizzle/0000_init.sql` + **`drizzle/0001_sprint3_discover_profile.sql`**.
 
 - **Dialekt:** SQLite. In Produktion **Cloudflare D1** über das Binding `DB`
   (`database_name: inner-circle-db`), lokal/testweise **libSQL**
   (`DATABASE_URL`, Default `file:./dev.db`, Tests `file:./.test.db`).
-- **Migration:** genau eine, `drizzle/0000_init.sql` – **50 Tabellen,
-  85 Indizes, 58 Fremdschlüssel, 135 Statements**.
+- **Migrationen:** `drizzle/0000_init.sql` – **50 Tabellen,
+  85 Indizes, 58 Fremdschlüssel, 135 Statements** – und
+  `drizzle/0001_sprint3_discover_profile.sql` (Sprint 3, **rein additiv**:
+  zwei neue Textspalten, keine Löschungen oder Umbenennungen; lokal per
+  `npm run db:push`, remote per `npm run cf:d1:migrate:remote`).
 - **Keine Transaktionen:** D1 bietet kein Transaktions-API; mehrstufige
   Schreibvorgänge sind sequenziell und idempotent gehalten.
 
@@ -39,10 +42,10 @@
 
 | Tabelle | Zweck | Status |
 | ------- | ----- | ------ |
-| `Profile` | `userId` (unique), `headline`, `bio`, `location`, `company`, `jobTitle`, Links (`websiteUrl`, `linkedinUrl` [DEPRECATED in UI], `xUrl`, `instagramUrl`), `avatarUrl`, `coverUrl`, `rolesJson`, `skillsJson`, `lookingForJson`, `profileVisibility`, `onboardingCompletedAt` | **aktiv** (Avatar/Cover nur als URL; `linkedinUrl` in sichtbarer UI entfernt und deprecated, Spalte für Migrationssicherheit in DB erhalten) |
+| `Profile` | `userId` (unique), `headline`, `bio`, `location`, `company`, `jobTitle`, Links (`websiteUrl`, `linkedinUrl` [DEPRECATED in UI], `xUrl`, `instagramUrl`), `avatarUrl`, `coverUrl`, `rolesJson`, `skillsJson`, `lookingForJson`, **`offeringJson` (Sprint 3, „Ich biete")**, `profileVisibility`, `onboardingCompletedAt` | **aktiv** (Avatar/Cover nur als URL; `linkedinUrl` in sichtbarer UI entfernt und deprecated, Spalte für Migrationssicherheit in DB erhalten) |
 | `Interest` / `Goal` | Taxonomie mit DE/EN-Labels und `position` | **aktiv** (Bootstrap per Seed/D1-Bootstrap) |
 | `UserInterest` / `UserGoal` | n:m-Zuordnungen, eindeutig je Paar | **aktiv** |
-| `PrivacySettings` | `profileVisibility`, `performanceVisibility`, `contactVisibility`, `showLocation`, `discoverable`, `allowConnectionRequests` | teilweise erzwungen (K-06) |
+| `PrivacySettings` | `profileVisibility`, `performanceVisibility`, `contactVisibility`, `showLocation`, `discoverable`, `allowConnectionRequests`, **`metricsVisibilityJson` (Sprint 3)** | teilweise erzwungen (K-06); `metricsVisibilityJson` in `/app/profile?tab=performance` erzwungen |
 | `NotificationPreference` | `emailMessages`, `emailConnectionRequests`, `emailProductUpdates`, `inAppAll` | gespeichert; E-Mail-Zustellung hängt am Provider |
 | `SellerProfile` | Verkäuferstatus (`none`\|`pending`\|`approved`\|`rejected`) + Antragsnotizen | vorbereitet (keine Antrags-UI) |
 
@@ -133,6 +136,16 @@
 | `PlatformMetric` | öffentliche Kennzahlen mit `kind` (`verified`\|`self_reported`\|`demo`\|`zero_state`), DE/EN-Labels | **aktiv** (Startseite) |
 
 *(`Badge`/`UserBadge` sind oben mitgezählt; die Gesamtzahl bleibt 50.)*
+
+## Sprint 3 – neue Spalten (Migration `0001`)
+
+| Tabelle | Spalte | Typ / Default | Bedeutung |
+| ------- | ------ | ------------- | --------- |
+| `Profile` | `offeringJson` | `text NOT NULL DEFAULT '[]'` | „Ich biete" – Freitextliste, wird in der Discover-Karte und im Profil-Header angezeigt. Ergänzt das bestehende `lookingForJson` („Ich suche"). |
+| `PrivacySettings` | `metricsVisibilityJson` | `text NOT NULL DEFAULT '{}'` | Sichtbarkeit je Business-Kennzahl. Erlaubte Schlüssel: `deals`, `dealVolume`, `customers`, `marketplace`, `courses`, `investments`, `events`; erlaubte Werte: `public`, `members`, `connections`, `private`. Fehlende oder ungültige Einträge fallen auf `performanceVisibility` zurück; unbekannte Werte werden beim Speichern verworfen (`parseMetricsVisibility`, `src/lib/platform/rules.ts`). |
+
+Beide Spalten sind **rein additiv** (SQLite `ALTER TABLE … ADD`), haben einen
+Default und erfordern kein Backfill. Alte Zeilen verhalten sich wie zuvor.
 
 ## Wichtige Beziehungen
 

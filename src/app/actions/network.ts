@@ -17,6 +17,7 @@ import { connectionPair, isBlocked, isConnected } from "@/db/queries";
 import { notify } from "@/lib/notifications/service";
 import { releaseTrialConnectionRequest, registerTrialConnectionRequest } from "@/lib/trial/service";
 import { consumeRateLimit } from "@/lib/rate-limit";
+import { CONNECTION_MESSAGE_MAX_LENGTH, CONNECTION_MESSAGE_MIN_LENGTH } from "@/lib/platform/rules";
 import { fail, done, text, type ActionState } from "./state";
 
 /* ------------------------------------------------------------------ helpers */
@@ -34,6 +35,7 @@ function refreshMemberViews() {
   revalidatePath("/app/network");
   revalidatePath("/app/discover");
   revalidatePath("/app/connections");
+  revalidatePath("/app/inbox");
   revalidatePath("/app");
 }
 
@@ -100,8 +102,11 @@ export async function sendConnectionRequestAction(
   if (access.entitlements.connect === "no") return fail("membershipRequired");
 
   const targetId = text(formData, "userId", 64);
-  const message = text(formData, "message", 600);
+  const message = text(formData, "message", CONNECTION_MESSAGE_MAX_LENGTH).trim();
   if (!targetId) return fail("validation");
+  // A short personal message is mandatory (Sprint 3, spec §7): it keeps
+  // Discover a quality channel and makes every request reviewable.
+  if (message.length < CONNECTION_MESSAGE_MIN_LENGTH) return fail("connectionMessageRequired");
   if (targetId === access.user.id) return fail("selfAction");
   if (await isBlocked(access.user.id, targetId)) return fail("forbidden");
   if (await isConnected(access.user.id, targetId)) return fail("alreadyExists");
@@ -134,14 +139,14 @@ export async function sendConnectionRequestAction(
   if (existing) {
     await db
       .update(connectionRequests)
-      .set({ status: "pending", message: message || null, respondedAt: null, createdAt: now })
+      .set({ status: "pending", message, respondedAt: null, createdAt: now })
       .where(eq(connectionRequests.id, existing.id));
   } else {
     await db.insert(connectionRequests).values({
       id: idFor.request(),
       fromUserId: access.user.id,
       toUserId: targetId,
-      message: message || null,
+      message,
       status: "pending",
       fromTrial: trialRegistered,
       createdAt: now,
@@ -154,7 +159,7 @@ export async function sendConnectionRequestAction(
     type: "connection_request",
     titleKey: "app.notifications.types.connection_request",
     params: { name: `${access.user.firstName} ${access.user.lastName}`.trim() },
-    url: "/app/connections?tab=requests",
+    url: "/app/inbox?tab=requests",
     entityType: "connection_request",
     dedupeKey: `connection_request:${access.user.id}:${targetId}`,
   });
@@ -226,7 +231,7 @@ export async function respondConnectionRequestAction(
     type: accepted ? "connection_accepted" : "system",
     titleKey: accepted ? "app.notifications.types.connection_accepted" : "app.notifications.types.system",
     params: { name: `${access.user.firstName} ${access.user.lastName}`.trim() },
-    url: accepted ? "/app/connections" : "/app/connections?tab=sent",
+    url: accepted ? "/app/inbox?tab=connections" : "/app/inbox?tab=sent",
     entityType: "connection_request",
     entityId: requestId,
     dedupeKey: `connection_response:${requestId}`,

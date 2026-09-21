@@ -3,9 +3,15 @@
 **Diese Datei ist der verbindliche Einstiegspunkt für jeden Menschen und jeden
 KI-Agenten, der an diesem Repository arbeitet.**
 
-- **Stand:** 2026-09-21
-- **Technische Basis:** Branch `main`, Commit `f22c19e` ("fix(auth): honest
+- **Stand:** 2026-09-21 (Sprint 3 – Informationsarchitektur)
+- **Technische Basis:** Branch `arena/01a0c434-inner-circle`, Basis `main` @
+  `0babcb3`. Vorheriger dokumentierter Stand: `f22c19e` ("fix(auth): honest
   delivery states, protected dev outbox, working 48h trial start")
+- **Sprint-3-Auftrag:** ausdrücklicher Gründerauftrag zur Vereinfachung der
+  Navigation, der Startseite, des Discover-Flows, der Inbox, des Profils und
+  der öffentlichen Homepage. Farbwelt, Typografie, Bildsprache und
+  Premium-Stil bleiben unverändert (siehe
+  [`10-design-freeze.md`](10-design-freeze.md), Abschnitt 6).
 - **Gültigkeit:** Der **Code im Repository** ist die technische Wahrheit. Diese
   Dokumentation beschreibt, was dort tatsächlich steht – nicht, was geplant war.
 - **Design-Status:** siehe [`10-design-freeze.md`](10-design-freeze.md) –
@@ -34,7 +40,8 @@ Details: [`01-product.md`](01-product.md)
 | Deployment | Build `npm run cf:build` · Deploy `npm run cf:release` · Production-Branch `main` |
 | Datenbank (Produktion) | D1 `inner-circle-db`, Binding `DB`, Migrationen in `drizzle/` |
 | i18n | Eigenes Wörterbuch `src/lib/i18n` (DE = Standard, EN vollständig) |
-| Tests | Vitest: 12 Dateien / **56 Tests grün** (`npm test`) |
+| Tests | Vitest: **17 Dateien / 80 Tests grün** (`npm test`) |
+| App-Navigation | **6 Primärbereiche**: Start · Discover · Erstellen · Inbox · Events · Profil |
 
 ## 3. Status-Legende (verbindlich)
 
@@ -56,7 +63,7 @@ existiert. Backend + Daten + Berechtigungen + Nachweis gehören dazu.
 
 | Funktion | Status | Nachweis |
 | -------- | ------ | -------- |
-| Startseite `/` (Hero, Säulen, Stats, Events, Membership, FAQ, CTA) | WORKING | `src/app/(site)/HomeContent.tsx`, Build + manueller Smoke |
+| Startseite `/` – **verkürzt** (Hero → Was ist INNER CIRCLE? → sechs Bereiche → Proof → Membership-CTA) | WORKING | `src/app/(site)/HomeContent.tsx`; 8 Sektionen → 3 (+ Hero), `h2` 12 → 6, sichtbarer Text 6 014 → 4 229 Zeichen (−30 %), HTML 83,8 kB → 61,3 kB (−27 %) |
 | Preview-Seiten `/network`, `/business-deals`, `/investments`, `/marketplace`, `/events` | WORKING | statische Inhalte, nicht aktivierte Funktionen als „Demnächst verfügbar" gekennzeichnet |
 | `/membership` (Preise, Leistungen) | WORKING | 24,99 €/Monat aktiv; Jahrespreis im Marketing noch als „folgt" (siehe Known Issue) |
 | Auth-Seiten `/login`, `/register`, `/forgot-password`, `/reset-password`, `/verify` | WORKING | siehe Bereich B |
@@ -103,10 +110,13 @@ existiert. Backend + Daten + Berechtigungen + Nachweis gehören dazu.
 
 | Funktion | Status | Nachweis |
 | -------- | ------ | -------- |
-| Profil ansehen/bearbeiten (Bio, Rolle, Firma, Links) | WORKING | `/app/profile`, `/app/profile/edit`; **LinkedIn aus UI entfernt und deprecated** (DB-Spalte für Datenintegrität erhalten); Instagram, X und Website sekundär; IC-Business-Identität priorisiert |
+| Profil ansehen/bearbeiten (Bio, Rolle, Firma, Links, **„Ich biete"**) | WORKING | `/app/profile`, `/app/profile/edit`; **LinkedIn aus UI entfernt und deprecated** (DB-Spalte für Datenintegrität erhalten); Instagram, X und Website sekundär; IC-Business-Identität priorisiert |
+| **Profil als Hauptbereich** (Header + Tabs Übersicht/Aktivitäten/Performance/Angebote) | WORKING | `/app/profile?tab=…`; Profilfortschritt, Trust & Performance und Konto-Links (Member Card, Mitgliedschaft, Einstellungen) leben hier |
 | Interessen & Ziele (Onboarding-Taxonomie) | WORKING | `/onboarding/interests`, `completeOnboardingAction`, Apple-artiges UX-Design, strukturierte Gruppen, mind. 3 Pflicht, `onboarding.test.ts` |
-| Statistiken (Kontakte, Follower, Posts) | WORKING | `/app/profile`, `profileStats()` |
-| Trust & Performance (eigene Sicht) | PARTIAL | Ansicht + Datenmodell vorhanden; Bewertungen können **nicht** abgegeben werden (Verifikations-Pipeline fehlt) |
+| **Interessen & Ziele nach dem Onboarding ändern** | WORKING | `/app/profile/edit` → „Interessen & Ziele", `updateInterestsAction`, dieselbe Taxonomie (`Interest`/`Goal`), `profile-preferences.test.ts` |
+| Statistiken (Kontakte, Follower, Trust Score) | WORKING | `/app/profile`, `profileStats()`, `performanceCountsFor()` |
+| **Sichtbarkeit einzelner Business-Zahlen** | WORKING | `PrivacySettings.metricsVisibilityJson` (7 Kennzahlen), `/app/settings`, erzwungen in `/app/profile?tab=performance` |
+| Trust & Performance (eigene Sicht) | PARTIAL | `/app/profile?tab=performance` (+ `/app/trust` als Detailseite); Bewertungen können **nicht** abgegeben werden (Verifikations-Pipeline fehlt) |
 | Öffentliche Mitgliedskarte verifizieren | WORKING | `/member/[publicId]` |
 | Activity Feed (Posts) | WORKING | `Post`, `createPostAction`, Feed auf Dashboard |
 | Profilsichtbarkeit / Datenschutz-Einstellungen | PARTIAL | Werte werden gespeichert (`PrivacySettings`), aber nicht überall in Queries erzwungen |
@@ -118,8 +128,9 @@ existiert. Backend + Daten + Berechtigungen + Nachweis gehören dazu.
 | -------- | ------ | -------- |
 | Member Discovery (Verzeichnis mit Suche/Filter) | WORKING | `/app/network`, `listDirectoryMembers()` |
 | Follow | WORKING | `followAction` |
-| Connection Requests (senden/annehmen/ablehnen/zurückziehen) | WORKING | `network.ts`, `messaging-authorization.test.ts` |
-| Swipe Discovery | WORKING | `/app/discover`, `DiscoverDeck` |
+| Connection Requests (senden/annehmen/ablehnen/zurückziehen) | WORKING | `network.ts`, `connection-request.test.ts`, `messaging-authorization.test.ts` |
+| **Verbindungsanfrage nur mit Pflichtnachricht** (min. 10 Zeichen) | WORKING | serverseitig in `sendConnectionRequestAction` (`CONNECTION_MESSAGE_MIN_LENGTH`), UI `ConnectDialog`, `connection-request.test.ts` |
+| **Discover** (Business-Karten, Relevanz-Ranking, Filter) | WORKING | `/app/discover`, `DiscoverDeck`, `src/lib/discover/matching.ts`, `discover-matching.test.ts` |
 | Messaging (nur zwischen verbundenen Konten) | WORKING | `message-delivery`, `messaging-authorization` Tests |
 | Blockieren | WORKING | `Block`, `blockMemberAction` |
 | Notifications (in-App, i18n, Dedupe) | WORKING | `Notification`, `notify()` |
@@ -165,14 +176,14 @@ existiert. Backend + Daten + Berechtigungen + Nachweis gehören dazu.
 | Events ansehen (Mitgliederbereich) | WORKING | `/app/events`, `Event`-Tabelle |
 | Bewerben/Abbestätigen, Warteliste-Flag | WORKING (Datenmodell) | `applyToEventAction`, `cancelEventApplicationAction` |
 | Tickets, QR-Check-in, Attendance | NOT IMPLEMENTED | Bewerbungen existieren, keine Ticket-/Check-in-Tabellen |
-| Events anlegen (Admin/Veranstalter) | NOT IMPLEMENTED | `AppShell`-Eintrag bewusst deaktiviert |
+| Events anlegen (Mitglieder) | **NOT IMPLEMENTED – bewusst** | INNER CIRCLE kuratiert Events selbst; kein Create-Eintrag, keine Route, keine Server-Action – abgesichert durch `event-permissions.test.ts` |
 | Öffentliche Events-Seite mit echten Daten | PARTIAL | `/events` ist eine öffentliche Preview mit ehrlichem Leerzustand |
 
 ### J. Trust & Performance
 
 | Funktion | Status | Nachweis |
 | -------- | ------ | -------- |
-| Trust-Score-Anzeige (leer, ohne erfundene Werte) | PARTIAL | `TrustScoreSummary`, `/app/trust`; ohne verifizierte Bewertungen bleibt der Score leer |
+| Trust-Score-Anzeige (leer, ohne erfundene Werte) | PARTIAL | `TrustScoreSummary`, `/app/profile?tab=performance` und `/app/trust`; **kein eigener Navigationspunkt mehr**; ohne verifizierte Bewertungen bleibt der Score leer |
 | Bewertungen abgeben | NOT IMPLEMENTED | bewusst nicht aktiv (Verifikationskontext fehlt) |
 | Performance-Records (Kennzahlen) | PREPARED | Tabelle + Admin-freie Anzeige, keine Eingabemaske |
 | Badges | PARTIAL | `Badge`/`UserBadge` + Taxonomie vorhanden, Zuweisung nur per Seed/DB |
@@ -200,10 +211,50 @@ existiert. Backend + Daten + Berechtigungen + Nachweis gehören dazu.
 | D1-Anbindung + Migrationen (50 Tabellen) | WORKING | `drizzle/0000_init.sql`, `cf:release` |
 | Laufzeit-Treiberwechsel D1 ↔ libSQL | WORKING | `src/db/client.ts` |
 | Deployment über Workers Builds (main → Produktion) | PARTIAL | dokumentierter Weg; letzter Merge nach `main` durch den Gründer zu prüfen (Dashboard) |
-| Automatisierte Tests | WORKING | 61 Tests grün (13 Testdateien) |
+| Automatisierte Tests | WORKING | **80 Tests grün (17 Testdateien)** |
 | CI (GitHub Actions) | NOT IMPLEMENTED | keine Workflows im Repo |
-| Lint | PARTIAL | 15 bestehende Hinweise (5 Fehler, 10 Warnungen) – verbessert von 21/7 |
+| Lint | PARTIAL | **14 bestehende Hinweise (4 Fehler, 10 Warnungen)** – verbessert von 21/7; keine neuen Befunde aus diesem Sprint |
 | Monitoring/Alerting | PREPARED | Observability im Worker aktiv, keine Alarme |
+
+## 4b. Informationsarchitektur ab Sprint 3
+
+**Primärnavigation (Desktop-Sidebar und Mobile Bottom-Bar) – exakt sechs
+Bereiche:**
+
+| # | Bereich | Route | Inhalt |
+| - | ------- | ----- | ------ |
+| 1 | **Start** | `/app` | kompakte Kopfzeile (`Hallo, <Name>` + Trial-Chip + Inbox-Shortcut) und die sechs Kernbereichs-Karten |
+| 2 | **Discover** | `/app/discover` | Business-Karten mit Pflicht-Connect-Nachricht, Relevanz-Ranking, Filter |
+| 3 | **Erstellen** | Create-Sheet (Desktop-Button / Mobile `+`) | Business Deal · Job/Projekt · Investment · Marketplace-Angebot · Kurs · Beitrag |
+| 4 | **Inbox** | `/app/inbox` | Nachrichten · Anfragen · Benachrichtigungen (Segmented Control) |
+| 5 | **Events** | `/app/events` | kommende Events, Bewerbungen, eigene Teilnahme – kuratiert von INNER CIRCLE |
+| 6 | **Profil** | `/app/profile` | Business Identity: Übersicht · Aktivitäten · Performance · Angebote + Konto |
+
+**Unter geordnet (nicht gelöscht):** Netzwerk, Chancen, Jobs & Projekte,
+Investments, Marketplace, Academy erscheinen als zweite Sidebar-Gruppe
+„Bereiche" und als Karten auf Start. Member Card, Mitgliedschaft,
+Mitgliedsantrag, Trust & Performance und Einstellungen sind über
+`/app/profile` (Konto-Block) bzw. das Konto-Sheet erreichbar – nicht mehr als
+eigene Navigationspunkte.
+
+**Umleitungen für bestehende Deep Links:** `/app/messages` →
+`/app/inbox?tab=messages`, `/app/connections?tab=x` →
+`/app/inbox?tab=requests&sub=x`, `/app/notifications` →
+`/app/inbox?tab=notifications`. Alle Query-Parameter (`?c=`, `?to=`) bleiben
+erhalten.
+
+**Trust & Performance** ist kein Start- oder Navigationsbereich mehr, sondern
+`/app/profile?tab=performance` (Trust Score, Bewertungen, verifizierte
+Kennzahlen, Badges) plus die Detailseite `/app/trust`.
+
+**Theme:** `/app/settings` → „Darstellung" mit Hell / Dunkel / System,
+gespeichert über die bestehende `ThemeProvider`-Infrastruktur (localStorage +
+FOUC-freies Init-Skript). Es wurde **keine** zweite Theme-Engine gebaut.
+
+**Layout:** Der App-Bereich nutzt `.ic-app-main` (max. 120rem, zentriert) mit
+einem 12-Spalten-Raster (`.ic-grid`, `.ic-span-4/6/8/12`) und Textmaßen
+`.ic-measure` / `.ic-measure-wide`. Dadurch füllt die App 1280–1920 px aus und
+lässt auf 2560 px symmetrische Ränder statt einer toten rechten Fläche.
 
 ## 5. Dokumentenindex
 

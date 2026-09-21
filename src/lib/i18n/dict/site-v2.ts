@@ -22,6 +22,19 @@ export const siteV2De = {
       investment: "Investment-Chancen mit Prüfung",
       events: "Events und Erlebnisse",
     },
+    aboutKicker: "Was ist INNER CIRCLE?",
+    aboutTitle: "Ein Business-Netzwerk, das zu Geschäften führt.",
+    aboutLead:
+      "INNER CIRCLE ist die Plattform für Gründer, Unternehmer, Investoren, Creator und Freelancer. Du entdeckst relevante Menschen, verbindest dich mit einer persönlichen Nachricht und handelst danach: Deals, Projekte, Kapital, Wissen und Events – in einer App.",
+    aboutPoint1: "Entdecken: relevante Business-Kontakte statt endloser Listen.",
+    aboutPoint2: "Verbinden: jede Anfrage braucht eine persönliche Nachricht.",
+    aboutPoint3: "Handeln: Deals, Jobs, Investments, Marktplatz, Academy und Events.",
+    aboutCta: "Bereiche ansehen",
+    proofKicker: "Ergebnisse",
+    proofTitle: "Was auf der Plattform passiert.",
+    proofLead:
+      "Alle Werte stammen aus der Plattform-Datenbank. Vor dem Launch sind sie klar als Ziel- oder Demowert gekennzeichnet.",
+    proofCta: "Mitglied werden",
     enablesKicker: "Was INNER CIRCLE ermöglicht",
     enablesTitle: "Eine Plattform. Sechs Wege nach vorn.",
     enablesLead:
@@ -175,6 +188,19 @@ export const siteV2En: SiteV2Dict = {
       investment: "Reviewed investment opportunities",
       events: "Events and experiences",
     },
+    aboutKicker: "What is INNER CIRCLE?",
+    aboutTitle: "A business network that leads to business.",
+    aboutLead:
+      "INNER CIRCLE is the platform for founders, entrepreneurs, investors, creators and freelancers. You discover relevant people, connect with a personal message and then act: deals, projects, capital, knowledge and events – in one app.",
+    aboutPoint1: "Discover: relevant business contacts instead of endless lists.",
+    aboutPoint2: "Connect: every request needs a personal message.",
+    aboutPoint3: "Act: deals, jobs, investments, marketplace, academy and events.",
+    aboutCta: "See the areas",
+    proofKicker: "Results",
+    proofTitle: "What happens on the platform.",
+    proofLead:
+      "Every value comes from the platform database. Before launch they are clearly labelled as target or demo values.",
+    proofCta: "Become a member",
     enablesKicker: "What INNER CIRCLE enables",
     enablesTitle: "One platform. Six ways forward.",
     enablesLead:

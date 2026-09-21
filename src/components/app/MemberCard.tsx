@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { useI18n } from "@/lib/i18n/context";
-import { followAction, sendConnectionRequestAction } from "@/app/actions/network";
+import { ConnectDialog } from "@/components/app/ConnectDialog";
+import { followAction } from "@/app/actions/network";
 import { initialActionState } from "@/app/actions/state";
 import { AwardIcon, CheckIcon, UserPlusIcon } from "@/components/ui/icons";
 
@@ -47,15 +48,13 @@ export function MemberCard({
   canConnect: boolean;
   compact?: boolean;
 }) {
-  const { t, tf } = useI18n();
+  const { t } = useI18n();
+  const [connectOpen, setConnectOpen] = useState(false);
+  const [requestSent, setRequestSent] = useState(false);
   const [followState, follow, followPending] = useActionState(followAction, initialActionState);
-  const [connectState, connect, connectPending] = useActionState(
-    sendConnectionRequestAction,
-    initialActionState,
-  );
 
   const following = followState.status === "success" ? !member.isFollowing : member.isFollowing;
-  const requestSent = connectState.status === "success" || member.requestPending;
+  const pending = requestSent || member.requestPending;
 
   return (
     <Card className={`flex h-full flex-col ${compact ? "p-4" : "p-5"}`}>
@@ -118,22 +117,19 @@ export function MemberCard({
 
       <div className="mt-4 flex flex-wrap gap-2">
         {member.isConnected ? (
-          <Button href={`/app/messages?to=${member.id}`} size="sm" variant="secondary">
+          <Button href={`/app/inbox?tab=messages&to=${member.id}`} size="sm" variant="secondary">
             {t.app.messages.title}
           </Button>
-        ) : requestSent ? (
+        ) : pending ? (
           <Button size="sm" variant="ghost" disabled>
             <CheckIcon size={15} />
             {t.app.connections.sentToast}
           </Button>
         ) : canConnect ? (
-          <form action={connect}>
-            <input type="hidden" name="userId" value={member.id} />
-            <Button type="submit" size="sm" loading={connectPending}>
-              <UserPlusIcon size={15} />
-              {t.app.network.connectCta}
-            </Button>
-          </form>
+          <Button size="sm" onClick={() => setConnectOpen(true)}>
+            <UserPlusIcon size={15} />
+            {t.app.network.connectCta}
+          </Button>
         ) : (
           <Button size="sm" variant="ghost" disabled>
             {t.app.access.memberOnly}
@@ -155,18 +151,23 @@ export function MemberCard({
         </Button>
       </div>
 
-      {(followState.status === "error" || connectState.status === "error") && (
+      {followState.status === "error" && (
         <p className="mt-2 text-xs text-danger-600 dark:text-danger-300">
-          {t.app.errors[
-            (followState.errorCode ?? connectState.errorCode ?? "generic") as keyof typeof t.app.errors
-          ] ?? t.app.errors.generic}
+          {t.app.errors[(followState.errorCode ?? "generic") as keyof typeof t.app.errors] ??
+            t.app.errors.generic}
         </p>
       )}
-      {(connectState.status === "success" || followState.status === "success") && (
-        <p className="mt-2 text-xs text-forest-600 dark:text-forest-300">
-          {connectState.status === "success" ? t.app.connections.sentToast : t.app.network.followCta}
-        </p>
+      {followState.status === "success" && (
+        <p className="mt-2 text-xs text-forest-600 dark:text-forest-300">{t.app.network.followCta}</p>
       )}
+
+      {/* Every connection request goes through the mandatory-message dialog. */}
+      <ConnectDialog
+        open={connectOpen}
+        onClose={() => setConnectOpen(false)}
+        target={{ id: member.id, handle: member.handle, firstName: member.firstName }}
+        onSent={() => setRequestSent(true)}
+      />
     </Card>
   );
 }
