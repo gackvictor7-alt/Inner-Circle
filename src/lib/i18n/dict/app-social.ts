@@ -114,6 +114,7 @@ export const appSocialDe = {
   },
   network: {
     title: "Netzwerk",
+    requestsTitle: "Kontaktanfragen",
     lead: "Finde Menschen, die dich weiterbringen – und die du weiterbringen kannst.",
     directoryTitle: "Mitglieder entdecken",
     searchPlaceholder: "Name, Rolle, Unternehmen, Skill…",
@@ -575,6 +576,7 @@ export const appSocialEn: AppSocialDict = {
   },
   network: {
     title: "Network",
+    requestsTitle: "connection requests",
     lead: "Find people who move you forward – and whom you can move forward.",
     directoryTitle: "Discover members",
     searchPlaceholder: "Name, role, company, skill…",

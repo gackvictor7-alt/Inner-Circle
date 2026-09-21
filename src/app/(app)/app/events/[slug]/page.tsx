@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { and, count, eq, sql } from "drizzle-orm";
 import { db } from "@/db/client";
@@ -56,7 +57,19 @@ export default async function EventDetailPage({ params }: { params: Promise<{ sl
         }
       />
 
-      <Card className="p-6">
+      <Card className="overflow-hidden">
+        {event.imageUrl ? (
+          <Image
+            src={event.imageUrl}
+            alt=""
+            width={1600}
+            height={760}
+            sizes="100vw"
+            priority
+            className="h-44 w-full object-cover sm:h-60 lg:h-72"
+          />
+        ) : null}
+        <div className="p-6">
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant={event.state === "confirmed" ? "forest" : "sand"}>
             <Tr k={`app.events.state.${event.state}`} />
@@ -88,6 +101,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ sl
             <Tr k="app.events.detail.conceptNotice" />
           </p>
         )}
+        </div>
       </Card>
 
       <section>

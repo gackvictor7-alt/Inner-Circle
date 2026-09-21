@@ -1,6 +1,7 @@
 # 04 – Authentifizierung, Verifizierung, Trial & Membership
 
-**Stand:** 2026-09-21 · Basis: `main` @ `f22c19e`.
+**Stand:** 2026-09-21 (Sprint 5: Login-/Registrierungs-UX gehärtet,
+Passwortregeln aus einer Quelle) · Basis: `main` @ `c211e20`.
 Dieses Dokument beschreibt den **tatsächlich implementierten** Ablauf
 (eigene Auth-Implementierung – **kein** Auth.js; siehe ADR-008/ADR-009 in
 [`13-decisions.md`](13-decisions.md)).
@@ -64,6 +65,33 @@ Voll-Mitglied (nach manueller Freigabe durch die Administration)
 | Fall: unverifiziert | Session wird angelegt, neuer Code ausgestellt, Weiterleitung `/verify` (Zustellmodus wie oben) |
 | Fall: verifiziert | neue `Session`, `User.lastLoginAt`/`updatedAt`, Audit `auth.login`, Weiterleitung `landingPathFor()`: `/onboarding/interests` bei unvollständigem Onboarding, sonst `/app` (Admin `/app?admin=1`) |
 | Fehlerzustände | `rateLimited`, `validation`, `invalidCredentials`, `accountSuspended` |
+
+**Formular-UX (Sprint 5, 2026-09-21 – Login/Register/Reset):**
+
+- Alle Auth-Formulare (`src/components/auth/AuthForms.tsx`) sind **hydrations-
+  gated**: Der Absende-Button ist bis zum Abschluss der Hydration deaktiviert
+  (`useSyncExternalStore`-Mount-Prüfung), ein `<noscript>`-Hinweis erklärt die
+  JavaScript-Voraussetzung. Dadurch gibt es keinen nativen POST mehr vor der
+  Hydration (früher: HTTP 500 „Failed to find Server Action") und **keinen
+  Seiten-Reload bei Fehlern** – E-Mail und Passwort bleiben im Formular.
+- `guardAction` fängt Netzwerk-/Serverausnahmen ab und meldet sie als
+  `serverError` am Formular (keine irreführende Erfolgsmeldung, kein Crash).
+- Doppel-Submit ist ausgeschlossen (`Button loading={pending}`).
+- Passwortregeln kommen aus **einer** Quelle
+  (`src/lib/auth/password-rules.ts`): ≥10 Zeichen, Buchstabe + Ziffer. Server
+  (`passwordProblem`) und UI (`PasswordField` mit Live-Checkliste und
+  Ein-/Ausblenden) können nicht auseinanderlaufen; Regeln werden auf
+  `/register`, `/reset-password` und beim Passwortwechsel sichtbar angezeigt.
+- Fehlercodes → Meldungen (DE/EN, Wörterbuch `app.auth.errors`):
+  `invalidCredentials` = „E-Mail-Adresse oder Passwort nicht korrekt."
+  (bewusst identisch für unbekanntes Konto und falsches Passwort),
+  `validation` liefert Feldfehler (`required`, `invalidEmail`),
+  `accountSuspended`, `rateLimited`, `passwordTooShort`, `passwordNeedsBoth`,
+  `passwordMismatch`, `tokenInvalid`, `serverError`.
+- Passwörter werden ausschließlich im Formularzustand gehalten und per
+  Server-Action übertragen – nie in `localStorage`, Logs oder URLs.
+- OAuth-/Telefon-Buttons sind echte deaktivierte Elemente ohne
+  Navigationsziel (K-04 behoben, Aussehen unverändert).
 
 ### 2.4 Logout – `/api/auth/logout` bzw. `logoutAction`
 
@@ -158,7 +186,7 @@ der UI als Entwicklungsmodus gekennzeichnet und über
 | Registrierung/Verifizierung per Telefon | NOT IMPLEMENTED | Das Registrierungsformular sendet im Telefon-Modus kein `email`-Feld, die Action verlangt aber eine gültige E-Mail → Validierungsfehler. Zusätzlich wird der Code immer über den E-Mail-Kanal ausgestellt |
 | SMS-Code empfangen | BLOCKED | Twilio-Zugangsdaten fehlen (`TWILIO_*`) |
 | E-Mail-Posteingang ohne Spam-Ordner | PARTIAL | E-Mail-Versand über Resend funktioniert technisch, aber die Testdomain `resend.dev` wird von Spamfiltern oft abgestraft; produktiv ist eine verifizierte Domain nötig |
-| Google-/Apple-Login | NOT IMPLEMENTED | Route `/api/auth/oauth/*` existiert nicht (Button ist als „Einrichtung erforderlich" gekennzeichnet) |
+| Google-/Apple-Login | NOT IMPLEMENTED | Route `/api/auth/oauth/*` existiert nicht; Buttons sind seit Sprint 5 echte `disabled`-Elemente mit Badge „Einrichtung erforderlich" (K-04 behoben – kein toter Link, kein 404) |
 | Bezahlung | BLOCKED | Stripe-Schlüssel fehlen; Dev-Aktivierung nur lokal |
 | 2FA | PREPARED | `VerificationCode.purpose = login_2fa` bzw. Schema vorhanden, keine UI |
 

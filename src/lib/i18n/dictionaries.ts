@@ -594,7 +594,7 @@ const siteDe = {
     contactNote: "(Platzhalter bis zum Launch)",
     copyright: "INNER CIRCLE – im Aufbau. Alle Rechte vorbehalten.",
     disclaimer:
-      "Entwicklungsvorschau: Diese Website befindet sich im Aufbau. Noch nicht implementierte Funktionen sind als „Demnächst verfügbar“ gekennzeichnet. Alle Bilder sind vorläufige, KI-generierte Stimmungsbilder und zeigen keine tatsächlichen INNER-CIRCLE-Veranstaltungen oder Mitglieder. Keine Anlageberatung, keine Erfolgsversprechen. Preise können sich vor dem Launch ändern.",
+      "Entwicklungsvorschau: Diese Website befindet sich im Aufbau. Noch nicht implementierte Funktionen sind als „Demnächst verfügbar“ gekennzeichnet. Ein Teil der Marketingbilder sind illustrative, teilweise KI-generierte Visualisierungen – sie zeigen keine echten Mitglieder, Events, Geschäftsabschlüsse oder Erfolge. Demo-Profile, Demo-Events und Beispielinhalte in der Plattform sind dort, wo Verwechslungsgefahr besteht, eindeutig als „Demo“ bzw. „Beispiel“ markiert. Keine Anlageberatung, keine Erfolgsversprechen. Preise können sich vor dem Launch ändern.",
     imprint: "Impressum",
     privacy: "Datenschutz",
     terms: "AGB",
@@ -1288,7 +1288,7 @@ const siteEnRaw: SiteDictionary = {
     contactNote: "(placeholder until launch)",
     copyright: "INNER CIRCLE – in the making. All rights reserved.",
     disclaimer:
-      "Development preview: this website is under construction. Features that are not implemented yet are marked as “Coming soon”. All images are temporary AI-generated mood images and do not show real INNER CIRCLE events or members. No investment advice, no promises of returns. Prices may change before launch.",
+      "Development preview: this website is under construction. Features that are not implemented yet are marked as “Coming soon”. Some marketing images are illustrative, partly AI-generated visualisations – they do not show real members, events, business transactions or achievements. Demo profiles, demo events and sample content inside the platform are clearly labelled “Demo” or “Example” wherever confusion is possible. No investment advice, no promises of success. Prices may change before launch.",
     imprint: "Imprint",
     privacy: "Privacy",
     terms: "Terms",

@@ -53,7 +53,7 @@ export function MembershipBlock({
   ];
 
   return (
-    <section id={id} className="border-b border-border/70 bg-surface py-16 sm:py-20 lg:py-24">
+    <section id={id} className="border-b border-border/70 bg-surface py-10 sm:py-20 lg:py-24">
       <div className="ic-shell-wide">
         <div className="grid gap-12 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:items-start">
           <Reveal>
@@ -61,12 +61,12 @@ export function MembershipBlock({
             <h2 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
               {t.home2.membershipTitle}
             </h2>
-            <p className="mt-4 max-w-xl text-base leading-7 text-foreground-muted">{t.home2.membershipLead}</p>
+            <p className="mt-4 hidden max-w-xl text-base leading-7 text-foreground-muted sm:block">{t.home2.membershipLead}</p>
             <p className="mt-6 max-w-xl text-sm leading-6 text-foreground-subtle">
               {t.home2.membershipTrialLine}
             </p>
             {showIncluded && (
-              <ul className="mt-8 space-y-2.5 border-t border-border pt-6">
+              <ul className="mt-8 hidden space-y-2.5 border-t border-border pt-6 lg:block">
                 {t.home2.membershipIncludedItems.map((item) => (
                   <li key={item} className="flex gap-2.5 text-sm leading-6">
                     <CheckIcon size={16} className="mt-1 shrink-0 text-forest-500" />
@@ -75,7 +75,7 @@ export function MembershipBlock({
                 ))}
               </ul>
             )}
-            <p className="mt-6 max-w-xl text-xs leading-5 text-foreground-subtle">{t.home2.membershipNote}</p>
+            <p className="mt-6 hidden max-w-xl text-xs leading-5 text-foreground-subtle sm:block">{t.home2.membershipNote}</p>
           </Reveal>
 
           <Reveal delay={80}>

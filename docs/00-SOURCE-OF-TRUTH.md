@@ -3,12 +3,25 @@
 **Diese Datei ist der verbindliche Einstiegspunkt für jeden Menschen und jeden
 KI-Agenten, der an diesem Repository arbeitet.**
 
-- **Stand:** 2026-09-21 (Sprint 4 – Homepage Conversion, Reason Why,
-  Membership/Trust/20-%-Modell; neue Bildrichtung per Gründungsauftrag
-  (ADR-013); Demo-Content im Member-Bereich ausgebaut)
-- **Technische Basis:** Branch `arena/01a0c434-inner-circle`, Basis `main` @
-  `0babcb3`. Vorheriger dokumentierter Stand: `f22c19e` ("fix(auth): honest
-  delivery states, protected dev outbox, working 48h trial start")
+- **Stand:** 2026-09-21 (Sprint 5 – Mobile-UX-Kompaktierung der Startseite,
+  Login-/Registrierungs-UX gehärtet, Sprachumschalter mit Flagge + Namen,
+  KI-/Demo-Hinweise neu platziert, Demo-CTAs öffnen Detail-Dialoge,
+  Event-Bilder im Member-Bereich, kleine Visualisierungen; Sprint 4: Homepage
+  Conversion, Reason Why, Membership/Trust/20-%-Modell, ADR-013-Bildrichtung)
+- **Technische Basis:** Branch `arena/01a0c5b7-inner-circle`, Basis `main` @
+  `c211e20`. Vorheriger dokumentierter Stand: `0babcb3` (Sprint 4)
+- **Sprint-5-Auftrag:** ausdrücklicher Gründerauftrag: mobile Startseite
+  substanziell verkürzen (Hero → 3 Ergebnisse kompakt → 6 Kernbereiche als
+  klickbare Übersicht → Membership → Footer; Desktop behält die reiche
+  Bild-Text-Struktur), Hero kürzer/mittiger, Sprachauswahl mit Flagge +
+  vollem Namen, KI-Generierungs-Hinweis aus dem Hero in den Footer, Login
+  behält Eingaben bei Fehlern, Passwortregeln sichtbar und servergleich,
+  Demo-CTAs (Deals/Marketplace/Academy/Events/Discover) öffnen ehrliche
+  Detail-Dialoge, Event-Bilder im Member-Bereich, Visualisierungen nur mit
+  echten bzw. klar gekennzeichneten Demo-Daten, Mitgliedschaftspreise
+  24,99 €/Monat und 249,90 €/Jahr konsistent. Keine neuen Animationen,
+  keine neuen Abhängigkeiten, keine DB-Abfragen auf der öffentlichen
+  Startseite.
 - **Sprint-3-Auftrag:** ausdrücklicher Gründerauftrag zur Vereinfachung der
   Navigation, der Startseite, des Discover-Flows, der Inbox, des Profils und
   der öffentlichen Homepage. Farbwelt, Typografie, Bildsprache und

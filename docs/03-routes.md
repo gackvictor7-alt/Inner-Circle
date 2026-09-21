@@ -97,7 +97,7 @@ Alle Routen liegen unter dem App-Layout `src/app/(app)/app/layout.tsx`, das
 | `/api/auth/logout` | POST/GET | Session widerrufen + Redirect `/` | free+ | WORKING | für reine HTML-Formulare ohne Client-JS |
 | `/api/billing/checkout` | POST | Start des Checkout (Stripe) oder Dev-Aktivierung | free+ (angemeldet) | BLOCKED (Stripe) / WORKING (Dev) | Ratelimit 10/10 min; `GET` leitet auf `/app/billing` |
 | `/api/webhooks/stripe` | POST | einzig erlaubter Produktiv-Pfad für Mitgliedschaftsänderungen | öffentlich, **signaturgeprüft** | BLOCKED (kein Stripe) | Idempotenz über `MembershipEvent.providerEventId`; ohne Secret 400 |
-| `/api/auth/oauth/google` | – | – | – | **NOT IMPLEMENTED** | Route existiert **nicht**; der Login-Button verlinkt sie (K-04) |
+| `/api/auth/oauth/google` | – | – | – | **NOT IMPLEMENTED** | Route existiert **nicht**; Login-/Register-Buttons sind seit Sprint 5 echte `disabled`-Elemente ohne Link (K-04 behoben) |
 | `/api/auth/oauth/apple` | – | – | – | **NOT IMPLEMENTED** | wie oben |
 
 ## 6. Server Actions

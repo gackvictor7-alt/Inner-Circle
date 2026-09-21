@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useState, useSyncExternalStore } from "react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -20,6 +20,7 @@ import {
   verifyCodeAction,
 } from "@/app/actions/auth";
 import { initialAuthState, type AuthState } from "@/app/actions/auth-state";
+import { PasswordField } from "@/components/auth/PasswordField";
 import type { DeliveryMode } from "@/lib/env";
 
 /** Shared shell for all authentication screens. */
@@ -54,16 +55,22 @@ function AuthCard({
 
 function FormError({ state }: { state: AuthState }) {
   const { t, tf } = useI18n();
-  if (state.status !== "error" || !state.errorCode) {
-    const fieldError = state.fieldErrors ? Object.values(state.fieldErrors)[0] : undefined;
-    if (!fieldError) return null;
+  const firstFieldError = state.fieldErrors ? Object.values(state.fieldErrors)[0] : undefined;
+  // "validation" carries per-field messages: show the first one prominently
+  // (the fields themselves repeat it inline).
+  if (state.status === "error" && (!state.errorCode || state.errorCode === "validation")) {
+    if (!firstFieldError) return null;
     return (
-      <div className="flex items-start gap-2.5 rounded-xl border border-danger-500/30 bg-danger-500/5 px-3.5 py-3 text-sm text-danger-600 dark:text-danger-500">
+      <div
+        role="alert"
+        className="flex items-start gap-2.5 rounded-xl border border-danger-500/30 bg-danger-500/5 px-3.5 py-3 text-sm text-danger-600 dark:text-danger-500"
+      >
         <AlertIcon size={16} className="mt-0.5 shrink-0" />
-        <span>{t.app.auth.errors[fieldError as keyof typeof t.app.auth.errors] ?? t.app.errors.validation}</span>
+        <span>{(t.app.auth.errors as Record<string, string>)[firstFieldError] ?? t.app.errors.validation}</span>
       </div>
     );
   }
+  if (state.status !== "error" || !state.errorCode) return null;
 
   const direct = (t.app.auth.errors as Record<string, string>)[state.errorCode];
   const onboard = {
@@ -95,6 +102,47 @@ function fieldMessage(
   const key = state.fieldErrors?.[field];
   if (!key) return undefined;
   return (t.app.auth.errors as Record<string, string>)[key] ?? t.app.errors.validation;
+}
+
+/**
+ * Auth forms are fully client-driven (`useActionState`); a native form POST
+ * without a hydrated React runtime cannot resolve the server action and would
+ * navigate to an error page, wiping every input. The submit button is gated
+ * until mount, and network/server exceptions are converted into an honest,
+ * visible error message instead of crashing the page.
+ */
+const noopSubscribe = () => () => {};
+
+function useMountedGate(): boolean {
+  // React's recommended hydration-safe "mounted" check via
+  // useSyncExternalStore: the server snapshot is false, the client snapshot is
+  // true. No effect, no setState – nothing that can cascade renders or break
+  // the very first paint.
+  return useSyncExternalStore(noopSubscribe, () => true, () => false);
+}
+
+type GuardedAction = (previous: AuthState, formData: FormData) => Promise<AuthState>;
+
+function guardAction(action: GuardedAction): GuardedAction {
+  return async (previous, formData) => {
+    try {
+      return await action(previous, formData);
+    } catch {
+      // Network hiccup, worker restart, deployment in flight – say so.
+      return { status: "error", errorCode: "serverError" };
+    }
+  };
+}
+
+function JsRequiredNote() {
+  const { t } = useI18n();
+  return (
+    <noscript>
+      <p className="rounded-xl border border-warning-500/30 bg-warning-500/10 px-3.5 py-3 text-xs leading-5 text-warning-500">
+        {t.app.auth.jsRequired}
+      </p>
+    </noscript>
+  );
 }
 
 /**
@@ -154,8 +202,12 @@ function DeliveryNotice({
 export function LoginForm({ next }: { next?: string }) {
   const { t } = useI18n();
   const router = useRouter();
-  const [state, action, pending] = useActionState(loginAction, initialAuthState);
+  const mounted = useMountedGate();
+  const [state, action, pending] = useActionState(guardAction(loginAction), initialAuthState);
+  // Controlled inputs: e-mail AND password survive every failed attempt –
+  // the user only corrects what was wrong (no wiped form, no page reload).
   const [identifier, setIdentifier] = useState("");
+  const [password, setPassword] = useState("");
 
   useEffect(() => {
     if (state.status === "success" && state.redirectTo) router.push(state.redirectTo);
@@ -176,6 +228,7 @@ export function LoginForm({ next }: { next?: string }) {
     >
       <form action={action} className="flex flex-col gap-5" noValidate>
         <input type="hidden" name="next" value={next ?? ""} />
+        <JsRequiredNote />
         <FormError state={state} />
         <Input
           label={t.app.auth.email}
@@ -185,6 +238,7 @@ export function LoginForm({ next }: { next?: string }) {
           placeholder="name@example.com"
           value={identifier}
           onChange={(event) => setIdentifier(event.target.value)}
+          error={fieldMessage(state, "identifier", t)}
           required
         />
         <Input
@@ -192,6 +246,9 @@ export function LoginForm({ next }: { next?: string }) {
           name="password"
           type="password"
           autoComplete="current-password"
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+          error={fieldMessage(state, "password", t)}
           required
         />
         <div className="flex justify-end">
@@ -202,7 +259,9 @@ export function LoginForm({ next }: { next?: string }) {
             {t.app.auth.forgotLink}
           </Link>
         </div>
-        <Button type="submit" size="lg" fullWidth disabled={pending}>
+        {/* Gated until hydration (native POST would lose all inputs) and
+            disabled while pending – visible loading state, no double submit. */}
+        <Button type="submit" size="lg" fullWidth disabled={!mounted || pending} loading={pending}>
           {pending ? t.app.auth.loggingIn : t.app.auth.submitLogin}
         </Button>
       </form>
@@ -216,11 +275,16 @@ export function LoginForm({ next }: { next?: string }) {
           <ProviderButton provider="google" />
           <ProviderButton provider="apple" />
         </div>
+        <p className="mt-3 text-xs leading-5 text-foreground-subtle">{t.app.auth.providerSetupHint}</p>
       </div>
     </AuthCard>
   );
 }
 
+/**
+ * Sign-in methods without backend (K-04): rendered as genuinely disabled
+ * buttons – same look, but no dead navigation target and no 404.
+ */
 function ProviderButton({ provider }: { provider: "phone" | "google" | "apple" }) {
   const { t } = useI18n();
   const labels = {
@@ -231,10 +295,7 @@ function ProviderButton({ provider }: { provider: "phone" | "google" | "apple" }
   const icon = provider === "phone" ? <PhoneIcon size={16} /> : <LockIcon size={16} />;
 
   return (
-    <Link
-      href={provider === "phone" ? "/login?method=phone" : `/api/auth/oauth/${provider}`}
-      className="flex items-center justify-between gap-3 rounded-xl border border-dashed border-border px-4 py-2.5 text-sm text-foreground-muted transition-colors hover:bg-surface-muted"
-    >
+    <span className="flex cursor-not-allowed items-center justify-between gap-3 rounded-xl border border-dashed border-border px-4 py-2.5 text-sm text-foreground-muted">
       <span className="flex items-center gap-2.5">
         {icon}
         {labels[provider]}
@@ -242,7 +303,7 @@ function ProviderButton({ provider }: { provider: "phone" | "google" | "apple" }
       <Badge variant="warning" className="shrink-0">
         {t.app.common.setupRequired}
       </Badge>
-    </Link>
+    </span>
   );
 }
 
@@ -251,8 +312,20 @@ function ProviderButton({ provider }: { provider: "phone" | "google" | "apple" }
 export function RegisterForm() {
   const { t, locale } = useI18n();
   const router = useRouter();
-  const [state, action, pending] = useActionState(registerAction, initialAuthState);
+  const mounted = useMountedGate();
+  const [state, action, pending] = useActionState(guardAction(registerAction), initialAuthState);
   const [method, setMethod] = useState<"email" | "phone">("email");
+  // Every field is controlled so a validation error never discards correct
+  // inputs – the user fixes exactly the field that failed.
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [passwordConfirm, setPasswordConfirm] = useState("");
+  const [age, setAge] = useState(false);
+  const [terms, setTerms] = useState(false);
+  const [marketing, setMarketing] = useState(false);
 
   useEffect(() => {
     if (state.status === "success" && state.redirectTo) router.push(state.redirectTo);
@@ -302,6 +375,8 @@ export function RegisterForm() {
               label={t.app.auth.firstName}
               name="firstName"
               autoComplete="given-name"
+              value={firstName}
+              onChange={(event) => setFirstName(event.target.value)}
               error={fieldMessage(state, "firstName", t)}
               required
             />
@@ -309,6 +384,8 @@ export function RegisterForm() {
               label={t.app.auth.lastName}
               name="lastName"
               autoComplete="family-name"
+              value={lastName}
+              onChange={(event) => setLastName(event.target.value)}
               error={fieldMessage(state, "lastName", t)}
               required
             />
@@ -321,6 +398,8 @@ export function RegisterForm() {
               type="email"
               autoComplete="email"
               placeholder="name@example.com"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
               error={fieldMessage(state, "email", t)}
               required
             />
@@ -332,36 +411,41 @@ export function RegisterForm() {
               autoComplete="tel"
               placeholder="+49 170 0000000"
               hint="E.164, z. B. +491700000000"
+              value={phone}
+              onChange={(event) => setPhone(event.target.value)}
               error={fieldMessage(state, "phone", t)}
               required
             />
           )}
 
-          <Input
+          <PasswordField
             label={t.app.auth.password}
             name="password"
-            type="password"
+            value={password}
+            onChange={setPassword}
             autoComplete="new-password"
             hint={t.app.auth.passwordHint}
             error={fieldMessage(state, "password", t)}
+            showRules
             required
           />
-          <Input
+          <PasswordField
             label={t.app.auth.passwordConfirm}
             name="passwordConfirm"
-            type="password"
+            value={passwordConfirm}
+            onChange={setPasswordConfirm}
             autoComplete="new-password"
             error={fieldMessage(state, "passwordConfirm", t)}
             required
           />
 
           <div className="space-y-3 rounded-xl border border-border bg-surface-muted/60 p-4">
-            <Checkbox name="age" label={t.app.auth.ageLabel} error={fieldMessage(state, "age", t)} required />
-            <Checkbox name="terms" label={t.app.auth.termsLabel} error={fieldMessage(state, "terms", t)} required />
-            <Checkbox name="marketing" label={t.app.auth.marketingLabel} />
+            <Checkbox name="age" label={t.app.auth.ageLabel} error={fieldMessage(state, "age", t)} checked={age} onChange={setAge} required />
+            <Checkbox name="terms" label={t.app.auth.termsLabel} error={fieldMessage(state, "terms", t)} checked={terms} onChange={setTerms} required />
+            <Checkbox name="marketing" label={t.app.auth.marketingLabel} checked={marketing} onChange={setMarketing} />
           </div>
 
-          <Button type="submit" size="lg" fullWidth disabled={pending}>
+          <Button type="submit" size="lg" fullWidth disabled={!mounted || pending} loading={pending}>
             {pending ? t.app.auth.creatingAccount : t.app.auth.submitRegister}
           </Button>
 
@@ -382,11 +466,15 @@ function Checkbox({
   name,
   label,
   error,
+  checked,
+  onChange,
   required,
 }: {
   name: string;
   label: string;
   error?: string;
+  checked: boolean;
+  onChange: (value: boolean) => void;
   required?: boolean;
 }) {
   return (
@@ -395,6 +483,9 @@ function Checkbox({
         <input
           type="checkbox"
           name={name}
+          checked={checked}
+          required={required}
+          onChange={(event) => onChange(event.target.checked)}
           className="mt-0.5 h-4 w-4 rounded border-border-strong text-electric-500 focus:ring-electric-500/30"
         />
         <span className="leading-5">{label}</span>
@@ -423,8 +514,9 @@ export function VerifyForm({
 }) {
   const { t, tf, locale } = useI18n();
   const router = useRouter();
-  const [state, action, pending] = useActionState(verifyCodeAction, initialAuthState);
-  const [resendState, resendAction, resendPending] = useActionState(resendCodeAction, initialAuthState);
+  const mounted = useMountedGate();
+  const [state, action, pending] = useActionState(guardAction(verifyCodeAction), initialAuthState);
+  const [resendState, resendAction, resendPending] = useActionState(guardAction(resendCodeAction), initialAuthState);
   const [cooldown, setCooldown] = useState(0);
 
   useEffect(() => {
@@ -519,7 +611,7 @@ export function VerifyForm({
           className="text-center font-mono text-lg tracking-[0.35em]"
           required
         />
-        <Button type="submit" size="lg" fullWidth disabled={pending}>
+        <Button type="submit" size="lg" fullWidth disabled={!mounted || pending} loading={pending}>
           {t.app.auth.verify.submit}
         </Button>
       </form>
@@ -527,7 +619,7 @@ export function VerifyForm({
       <form action={resendAction} className="mt-4">
         <input type="hidden" name="channel" value={channel} />
         {userId && <input type="hidden" name="userId" value={userId} />}
-        <Button type="submit" variant="secondary" fullWidth disabled={resendPending || cooldown > 0}>
+        <Button type="submit" variant="secondary" fullWidth disabled={!mounted || resendPending || cooldown > 0} loading={resendPending}>
           {cooldown > 0 ? tf(t.app.auth.verify.resendIn, { seconds: cooldown }) : t.app.auth.verify.resend}
         </Button>
       </form>
@@ -555,7 +647,8 @@ export function ForgotPasswordForm({
   devOutboxAccessible?: boolean;
 }) {
   const { t, locale } = useI18n();
-  const [state, action, pending] = useActionState(requestPasswordResetAction, initialAuthState);
+  const mounted = useMountedGate();
+  const [state, action, pending] = useActionState(guardAction(requestPasswordResetAction), initialAuthState);
 
   if (state.status === "success") {
     return (
@@ -602,7 +695,7 @@ export function ForgotPasswordForm({
           error={fieldMessage(state, "email", t)}
           required
         />
-        <Button type="submit" size="lg" fullWidth disabled={pending}>
+        <Button type="submit" size="lg" fullWidth disabled={!mounted || pending} loading={pending}>
           {t.app.auth.forgot.submit}
         </Button>
       </form>
@@ -613,7 +706,10 @@ export function ForgotPasswordForm({
 export function ResetPasswordForm({ token }: { token: string }) {
   const { t } = useI18n();
   const router = useRouter();
-  const [state, action, pending] = useActionState(resetPasswordAction, initialAuthState);
+  const mounted = useMountedGate();
+  const [state, action, pending] = useActionState(guardAction(resetPasswordAction), initialAuthState);
+  const [password, setPassword] = useState("");
+  const [passwordConfirm, setPasswordConfirm] = useState("");
 
   useEffect(() => {
     if (state.status === "success") {
@@ -622,7 +718,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
     }
   }, [state, router, t]);
 
-  if (state.errorCode === "invalidToken") {
+  if (state.errorCode === "tokenInvalid") {
     return (
       <AuthCard
         title={t.app.auth.forgot.invalidToken}
@@ -642,26 +738,30 @@ export function ResetPasswordForm({ token }: { token: string }) {
     <AuthCard title={t.app.auth.forgot.resetTitle} lead={t.app.auth.forgot.resetLead}>
       <form action={action} className="flex flex-col gap-5" noValidate>
         <input type="hidden" name="token" value={token} />
+        <JsRequiredNote />
         <FormError state={state} />
-        <Input
+        <PasswordField
           label={t.app.auth.password}
           name="password"
-          type="password"
+          value={password}
+          onChange={setPassword}
           autoComplete="new-password"
           hint={t.app.auth.passwordHint}
           error={fieldMessage(state, "password", t)}
+          showRules
           required
         />
-        <Input
+        <PasswordField
           label={t.app.auth.passwordConfirm}
           name="passwordConfirm"
-          type="password"
+          value={passwordConfirm}
+          onChange={setPasswordConfirm}
           autoComplete="new-password"
           error={fieldMessage(state, "passwordConfirm", t)}
           required
         />
-        <Button type="submit" size="lg" fullWidth disabled={pending}>
-          {t.app.auth.forgot.resetSubmit}
+        <Button type="submit" size="lg" fullWidth disabled={!mounted || pending} loading={pending}>
+          {pending ? t.app.auth.loggingIn : t.app.auth.forgot.resetSubmit}
         </Button>
       </form>
     </AuthCard>
@@ -690,7 +790,8 @@ export function InterestOnboardingForm({
 }) {
   const { t, locale, tf } = useI18n();
   const router = useRouter();
-  const [state, action, pending] = useActionState(completeOnboardingAction, initialAuthState);
+  const mounted = useMountedGate();
+  const [state, action, pending] = useActionState(guardAction(completeOnboardingAction), initialAuthState);
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
 
@@ -870,7 +971,7 @@ export function InterestOnboardingForm({
                 size="lg"
                 fullWidth
                 className="mt-3 font-semibold shadow-sm"
-                disabled={pending || !isReady}
+                disabled={!mounted || pending || !isReady}
               >
                 {pending ? t.app.onboarding.startingTrial : t.app.onboarding.submit}
               </Button>
