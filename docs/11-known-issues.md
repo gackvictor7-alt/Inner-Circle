@@ -25,6 +25,10 @@ P2 mittelfristig · P3 Aufräumen.
 - **Lösung (Gründer):** Resend-Konto, Domain verifizieren, Secret
   `RESEND_API_KEY` + Text `EMAIL_FROM` setzen, Testkonto verifizieren,
   anschließend `ENABLE_DEV_OUTBOX` entfernen.
+- **Erster Testversand:** Es genügt `RESEND_API_KEY`. Ohne `EMAIL_FROM` sendet
+  der Code über den Resend-Testabsender `INNER CIRCLE <onboarding@resend.dev>`,
+  der **nur an die E-Mail-Adresse des Resend-Kontos** zustellt. Für echte
+  Empfänger: Domain verifizieren und `EMAIL_FROM` setzen.
 - **Aufwand:** Konfiguration, kein Code. **Dies ist der nächste Schritt.**
 
 ### K-02 · Keine SMS-Verifizierung (Twilio)

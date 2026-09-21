@@ -1,7 +1,7 @@
 # 08 – Test- und Qualitätssicherung
 
-**Stand:** 2026-09-21 · Aktueller Lauf auf `main` @ `f22c19e`:
-`npm test` = **12 Dateien / 56 Tests grün**, `npm run typecheck` grün,
+**Stand:** 2026-09-21 · Aktueller Lauf auf `main` @ `f22c19e` (+ Resend-Test):
+`npm test` = **13 Dateien / 61 Tests grün**, `npm run typecheck` grün,
 `npm run cf:build` grün, `npm run lint` = 21 bestehende Hinweise
 (7 Fehler, 14 Warnungen – vorbestehend, siehe K-15).
 
@@ -49,6 +49,7 @@
 | `tests/integration/webhook.test.ts` | ohne Signatur/Secret niemals ein „verifiziertes" Event | Integration (DB) |
 | `tests/integration/messaging-authorization.test.ts` | Messaging nur zwischen bestätigten Verbindungen, Blockierung in beide Richtungen | Integration (DB) |
 | `tests/integration/message-delivery.test.ts` | produktionsnaher Zustand → ehrliches `none`, kein hängender Code, `ENABLE_DEV_OUTBOX` + Allowlist, Code nie an den Browser, Cooldown ≠ fehlender Versandweg, Outbox-Link nur Admin | Integration (DB) |
+| `tests/integration/resend-provider.test.ts` | konfigurierter `RESEND_API_KEY` → Versand über die Resend-API (Endpoint, Auth-Header, Absender `EMAIL_FROM` bzw. `onboarding@resend.dev`), Code bleibt gültig, Ablehnung durch Resend → ehrliches `send_failed` + Entwertung, „Code erneut senden" geht an Resend statt in den Postausgang | Integration (DB, `fetch` gestubbt) |
 
 **Testinfrastruktur:** `tests/global-setup.ts` löscht `.test.db`, erzeugt das
 Schema per `drizzle-kit push`; `tests/setup.ts` setzt `AUTH_SECRET`, Test-DB,

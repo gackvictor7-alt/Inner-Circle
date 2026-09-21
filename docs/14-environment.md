@@ -48,7 +48,7 @@ D1-Binding (kein Secret, in `wrangler.jsonc`): Binding-Name **`DB`**,
 | Variable | Build/Runtime | Secret | erforderlich | Zweck | Entwicklung | Produktion |
 | -------- | ------------- | ------ | ------------ | ----- | ----------- | ---------- |
 | `RESEND_API_KEY` | Runtime | **ja** | **Pflicht für Verifizierung** | echter Mailversand | leer → Dev-Postausgang | **zwingend**, sonst meldet `/verify` offen „Versand noch nicht eingerichtet" |
-| `EMAIL_FROM` | Runtime | nein | empfohlen | Absender (`"Name <adresse@domain>"`) | `"INNER CIRCLE <noreply@example.com>"` | Absender der verifizierten Domain |
+| `EMAIL_FROM` | Runtime | nein | empfohlen | Absender (`"Name <adresse@domain>"`); ohne Wert gilt der Resend-Testabsender `INNER CIRCLE <onboarding@resend.dev>` (stellt nur an die Konto-Adresse des Resend-Kontos zu) | `"INNER CIRCLE <noreply@example.com>"` | Absender der verifizierten Domain |
 
 ## 4. SMS (Twilio) – optional
 
@@ -109,8 +109,13 @@ Upload-Funktion**.
 ## 9. Zusammenfassung: Was für den Start zwingend ist
 
 **Muss gesetzt sein (Produktion):**
-`AUTH_SECRET`, `NEXT_PUBLIC_SITE_URL`, `RESEND_API_KEY`, `EMAIL_FROM`,
-`NODE_VERSION` (Build).
+`AUTH_SECRET`, `NEXT_PUBLIC_SITE_URL`, `RESEND_API_KEY`, `NODE_VERSION` (Build).
+
+**Empfohlen, technisch aber optional:** `EMAIL_FROM`. Fehlt sie, sendet der
+Code über den Resend-Testabsender `INNER CIRCLE <onboarding@resend.dev>`
+(`src/lib/env.ts`). Der Testabsender stellt **nur an die E-Mail-Adresse des
+Resend-Kontos** zu – gut für den ersten Testversand, nicht für echte Empfänger
+(dafür Domain verifizieren, dann `EMAIL_FROM` setzen).
 
 **Muss zusätzlich für Bezahlung gesetzt sein:**
 `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`.
