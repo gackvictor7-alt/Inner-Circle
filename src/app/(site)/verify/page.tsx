@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { VerifyForm } from "@/components/auth/AuthForms";
 import { getCurrentUser } from "@/lib/auth/session";
 import { pendingVerificationTarget } from "@/lib/auth/otp";
+import { canOpenDevOutbox, deliveryModeFor } from "@/lib/env";
 import { maskEmail, maskPhone } from "@/lib/utils";
 import { dictionaries } from "@/lib/i18n/dictionaries";
 
@@ -15,6 +16,10 @@ export const metadata: Metadata = {
  * Verification screen. Accepts both a session (after registration) and a
  * direct user id (development/test flows). The target address is masked and
  * never exposed in full to the client.
+ *
+ * The page also tells the truth about delivery: whether the code was really
+ * sent (provider), only recorded in the development outbox, or could not be
+ * delivered at all because no channel is configured yet.
  */
 export default async function VerifyPage({
   searchParams,
@@ -37,15 +42,16 @@ export default async function VerifyPage({
 
   const target = await pendingVerificationTarget(userId, channel);
   const fallbackTarget = channel === "phone" ? sessionUser?.phone : sessionUser?.email;
-  const masked = target
-    ? channel === "phone"
-      ? maskPhone(target)
-      : maskEmail(target)
-    : fallbackTarget
-      ? channel === "phone"
-        ? maskPhone(fallbackTarget)
-        : maskEmail(fallbackTarget)
-      : null;
+  const resolvedTarget = target ?? fallbackTarget ?? null;
+  const masked = resolvedTarget ? (channel === "phone" ? maskPhone(resolvedTarget) : maskEmail(resolvedTarget)) : null;
 
-  return <VerifyForm channel={channel} userId={userId} maskedTarget={masked} />;
+  return (
+    <VerifyForm
+      channel={channel}
+      userId={userId}
+      maskedTarget={masked}
+      delivery={deliveryModeFor(channel, resolvedTarget ?? undefined)}
+      devOutboxAccessible={canOpenDevOutbox(sessionUser)}
+    />
+  );
 }

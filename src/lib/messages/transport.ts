@@ -1,7 +1,7 @@
 import { db } from "@/db/client";
 import { devOutbox } from "@/db/schema";
 import { idFor } from "@/db/ids";
-import { email, flags, sms } from "@/lib/env";
+import { devOutboxAccepts, email, sms, type DeliveryMode } from "@/lib/env";
 
 /**
  * Outgoing message layer.
@@ -12,13 +12,17 @@ import { email, flags, sms } from "@/lib/env";
  *   * Otherwise the message is recorded in the development outbox and the
  *     caller receives `mode: "dev"`. Development messages are never presented
  *     as real deliveries.
+ *   * When neither exists (production without provider, or a recipient outside
+ *     `DEV_OUTBOX_RECIPIENTS`) the result is `ok: false, mode: "none"`. A
+ *     message that reaches nobody is never reported as sent – that silent loss
+ *     is exactly what blocked verification on the first deployment.
  */
 
 export type SendResult = {
   ok: boolean;
-  mode: "provider" | "dev";
+  mode: DeliveryMode;
   providerId?: string;
-  error?: string;
+  error?: "no_delivery_channel" | "outbox_write_failed" | string;
 };
 
 type MailInput = {
@@ -57,16 +61,13 @@ export async function sendEmail(input: MailInput): Promise<SendResult> {
     }
   }
 
-  if (flags.devOutboxEnabled) {
-    await recordDevMessage({
-      channel: "email",
-      to: input.to,
-      subject: input.subject,
-      body: input.text,
-      template: input.template,
-    });
-  }
-  return { ok: true, mode: "dev" };
+  return recordOrRefuse({
+    channel: "email",
+    to: input.to,
+    subject: input.subject,
+    body: input.text,
+    template: input.template,
+  });
 }
 
 export async function sendSms(input: { to: string; body: string; template?: string }): Promise<SendResult> {
@@ -94,19 +95,29 @@ export async function sendSms(input: { to: string; body: string; template?: stri
     }
   }
 
-  if (flags.devOutboxEnabled) {
-    await recordDevMessage({ channel: "sms", to: input.to, body: input.body, template: input.template });
-  }
-  return { ok: true, mode: "dev" };
+  return recordOrRefuse({ channel: "sms", to: input.to, body: input.body, template: input.template });
 }
 
-export async function recordDevMessage(input: {
+type DevMessage = {
   channel: "email" | "sms";
   to: string;
   subject?: string;
   body: string;
   template?: string;
-}): Promise<void> {
+};
+
+/** No provider: record in the dev outbox when allowed, otherwise refuse honestly. */
+async function recordOrRefuse(message: DevMessage): Promise<SendResult> {
+  if (!devOutboxAccepts(message.to)) {
+    return { ok: false, mode: "none", error: "no_delivery_channel" };
+  }
+  const recorded = await recordDevMessage(message);
+  if (!recorded) return { ok: false, mode: "none", error: "outbox_write_failed" };
+  return { ok: true, mode: "dev" };
+}
+
+/** Stores a message in the development outbox. Returns false when it could not be stored. */
+export async function recordDevMessage(input: DevMessage): Promise<boolean> {
   try {
     await db.insert(devOutbox).values({
       id: idFor.outbox(),
@@ -117,7 +128,10 @@ export async function recordDevMessage(input: {
       template: input.template ?? null,
       createdAt: new Date(),
     });
+    return true;
   } catch {
-    // Never break a flow because the development outbox failed.
+    // Never break a flow because the development outbox failed – but never
+    // claim the message is readable somewhere either.
+    return false;
   }
 }

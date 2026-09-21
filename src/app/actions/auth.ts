@@ -2,7 +2,7 @@
 
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { and, eq, gt, inArray, isNull } from "drizzle-orm";
+import { and, eq, gt, inArray, isNull, or } from "drizzle-orm";
 import { db } from "@/db/client";
 import {
   authTokens,
@@ -26,6 +26,7 @@ import { startTrial } from "@/lib/trial/service";
 import { sendPasswordResetEmail } from "@/lib/messages/templates";
 import { EMAIL_RE, handleify, maskEmail } from "@/lib/utils";
 import { getAccessContext } from "@/lib/access/server";
+import { canOpenDevOutbox } from "@/lib/env";
 
 // Form state type lives in ./auth-state (a "use server" file may only export async functions).
 import type { AuthState } from "./auth-state";
@@ -149,13 +150,16 @@ export async function registerAction(_prev: AuthState, formData: FormData): Prom
 
   await audit({ actorId: userId, action: "auth.registered", entityType: "User", entityId: userId });
 
+  // The account exists either way; /verify explains truthfully whether a code
+  // could be delivered (provider), was recorded (dev outbox) or reached nobody.
   return {
     status: "success",
     redirectTo: "/verify",
     messageMode: issued.mode,
     devCode: issued.devCode,
+    devOutboxAccessible: false,
     target: maskEmail(email),
-    messageKey: issued.ok ? "codeSent" : "codeFailed",
+    messageKey: issued.ok ? "codeSent" : issued.error === "not_configured" ? "deliveryUnavailable" : "codeFailed",
   };
 }
 
@@ -197,6 +201,7 @@ export async function loginAction(_prev: AuthState, formData: FormData): Promise
       redirectTo: "/verify",
       messageMode: issued.mode,
       devCode: issued.devCode,
+      devOutboxAccessible: canOpenDevOutbox(user),
       target: user.email ? maskEmail(user.email) : undefined,
       messageKey: "verificationRequired",
     };
@@ -268,10 +273,19 @@ export async function resendCodeAction(_prev: AuthState, formData: FormData): Pr
   });
 
   if (!issued.ok) {
+    const errorCode =
+      issued.error === "rate_limited"
+        ? "rateLimited"
+        : issued.error === "not_configured"
+          ? "deliveryUnavailable"
+          : "codeFailed";
     return {
       status: "error",
-      errorCode: issued.error === "rate_limited" ? "rateLimited" : "codeFailed",
+      errorCode,
       errorParams: { seconds: issued.retryAfterSeconds ?? 60 },
+      // Only a missing delivery channel changes the page's delivery status; a
+      // cooldown or provider hiccup says nothing about how codes are delivered.
+      ...(issued.error === "not_configured" ? { messageMode: "none" as const } : {}),
     };
   }
 
@@ -279,6 +293,7 @@ export async function resendCodeAction(_prev: AuthState, formData: FormData): Pr
     status: "success",
     messageMode: issued.mode,
     devCode: issued.devCode,
+    devOutboxAccessible: canOpenDevOutbox(user),
     target: channel === "phone" ? maskPhoneTarget(user.phone) : user.email ? maskEmail(user.email) : undefined,
     messageKey: "codeSent",
   };
@@ -404,12 +419,15 @@ export async function completeOnboardingAction(_prev: AuthState, formData: FormD
     })
     .where(eq(profiles.userId, user.id));
 
+  // The onboarding form submits taxonomy ids; older clients/tests send slugs.
+  // Both are accepted so a selection is never silently dropped.
   await db.delete(userInterests).where(eq(userInterests.userId, user.id));
   if (selectedInterests.length > 0) {
+    const wanted = selectedInterests.slice(0, 24);
     const rows = await db
       .select({ id: interests.id })
       .from(interests)
-      .where(inArray(interests.slug, selectedInterests.slice(0, 24)));
+      .where(or(inArray(interests.slug, wanted), inArray(interests.id, wanted)));
     if (rows.length > 0) {
       await db
         .insert(userInterests)
@@ -419,7 +437,11 @@ export async function completeOnboardingAction(_prev: AuthState, formData: FormD
 
   await db.delete(userGoals).where(eq(userGoals.userId, user.id));
   if (selectedGoals.length > 0) {
-    const rows = await db.select({ id: goals.id }).from(goals).where(inArray(goals.slug, selectedGoals.slice(0, 24)));
+    const wanted = selectedGoals.slice(0, 24);
+    const rows = await db
+      .select({ id: goals.id })
+      .from(goals)
+      .where(or(inArray(goals.slug, wanted), inArray(goals.id, wanted)));
     if (rows.length > 0) {
       await db
         .insert(userGoals)

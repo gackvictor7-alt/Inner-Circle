@@ -25,6 +25,7 @@ Kandidat (ADR-007); die Umstellung ist in ADR-008 begründet.
 | `public/_headers` | Cache-Header für unveränderliche `_next/static`-Assets |
 | `scripts/d1-bootstrap.ts` | Basistaxonomie (Interessen, Ziele, Badges) in D1 anlegen – idempotent |
 | `scripts/admin-bootstrap.ts` | Registriertes Konto zum Admin machen (erster Admin in Produktion) |
+| `scripts/show-outbox.ts` | Dev-Postausgang lesen (`npm run dev:outbox`, lokal oder `--remote` gegen D1) |
 | `.env.example` / `.dev.vars.example` | Alle Variablen als Platzhalter (Node bzw. Workers-Vorschau) |
 
 ## npm-Skripte
@@ -42,6 +43,7 @@ Kandidat (ADR-007); die Umstellung ist in ADR-008 begründet.
 | `npm run cf:d1:migrate:local` / `:remote` | Migrationen aus `drizzle/` einspielen (remote läuft auch in `cf:release`) |
 | `npm run cf:d1:bootstrap:local` / `:remote` | Basistaxonomie einspielen (remote läuft auch in `cf:release`) |
 | `npm run cf:admin -- --email=… --remote` | Konto zum Admin machen (Alternative: D1-Konsole im Dashboard) |
+| `npm run dev:outbox -- --remote [--to=…]` | Einträge des Dev-Postausgangs aus D1 lesen (nur mit `ENABLE_DEV_OUTBOX=true`) |
 
 ## Erstinbetriebnahme (Reihenfolge)
 
@@ -75,7 +77,14 @@ Installation. `wrangler login` wird nur gebraucht, wenn du die
      `RESEND_API_KEY`, `TWILIO_*`, `GOOGLE_*`/`APPLE_*`; Typ Text:
      `EMAIL_FROM`, `STRIPE_PUBLISHABLE_KEY`. Ohne Schlüssel bleibt die
      jeweilige Funktion ehrlich im Zustand „Einrichtung erforderlich“.
-   - **Nicht** setzen: `ENABLE_DEV_OUTBOX`, `ALLOW_DEV_MEMBERSHIP_ACTIVATION`.
+   - **Nicht** setzen: `ALLOW_DEV_MEMBERSHIP_ACTIVATION`. `ENABLE_DEV_OUTBOX`
+     nur bewusst für den Testbetrieb ohne E-Mail-Anbieter (Abschnitt
+     „Testbetrieb ohne E-Mail-Provider“) – vor dem öffentlichen Start
+     wieder entfernen.
+   - Text-Variablen aus dem Dashboard bleiben nur erhalten, weil
+     `wrangler.jsonc` `"keep_vars": true` setzt. Ohne dieses Flag löscht
+     jeder Deploy (auch Workers Builds) alle im Dashboard angelegten
+     Text-Variablen – Secrets sind davon nicht betroffen.
    *Deploy* klicken (Variablen werden mit dem nächsten Deploy aktiv).
 4. **Deploy auslösen:** Worker → *Deployments* → *Retry build* beim letzten
    Build – oder ein Push nach `main`. Der Deploy-Befehl erledigt
@@ -86,22 +95,77 @@ Installation. `wrangler login` wird nur gebraucht, wenn du die
    Datenbank erscheint unter *Storage & Databases* → *D1*.
 5. **E-Mail-Versand aktivieren** (nötig für Verifizierungscodes – ohne
    Provider kann sich in Produktion niemand verifizieren; Codes werden dort
-   bewusst nicht angezeigt): Resend-Konto (Free-Tier) → API-Key →
+   bewusst nie im Browser angezeigt): Resend-Konto (Free-Tier) → API-Key →
    Secret `RESEND_API_KEY` + Text-Variable `EMAIL_FROM`
    (z. B. `INNER CIRCLE <onboarding@resend.dev>` zum Testen an die eigene
    Adresse; für echte Mitglieder eigene Domain in Resend verifizieren).
+   Solange kein Provider existiert, sagt `/verify` das offen („Versand noch
+   nicht eingerichtet“) – für den Test davor siehe den Abschnitt
+   „Testbetrieb ohne E-Mail-Provider“.
 6. **Ersten Admin anlegen:** im Live-System normal registrieren und den
    Code bestätigen, dann Rolle setzen – entweder
    - Dashboard → *Storage & Databases* → *D1* → `inner-circle-db` →
      *Console*: `UPDATE User SET role = 'admin' WHERE email = 'deine@mail';`
    - oder lokal: `npx wrangler login` und
      `npm run cf:admin -- --email=deine@mail --remote`.
+   Die Rolle wird bei jeder Anfrage frisch aus der Datenbank gelesen – ein
+   erneutes Anmelden ist nicht nötig, schadet aber auch nicht.
    Notlösung ohne E-Mail-Provider (nur für das allererste Konto): in der
    D1-Konsole zusätzlich `emailVerifiedAt = strftime('%s','now') * 1000`
-   setzen. Danach ab- und wieder anmelden.
+   setzen – oder besser den geschützten Dev-Postausgang (nächster
+   Abschnitt) verwenden, damit der Verify-Schritt selbst getestet wird.
 7. **Stripe-Webhook** (sobald Stripe-Schlüssel gesetzt): Endpoint
    `https://<worker-url>/api/webhooks/stripe`, Signing-Secret als
    `STRIPE_WEBHOOK_SECRET` speichern.
+
+## Testbetrieb ohne E-Mail-Provider (geschützter Dev-Postausgang)
+
+Ohne `RESEND_API_KEY` kann der Worker keine Codes zustellen. Damit der
+Ablauf *Registrierung → Verifizierung → Interessen → 48-h-Trial* trotzdem
+vollständig getestet werden kann, gibt es den **Dev-Postausgang**: erzeugte
+E-Mails/SMS werden in der Tabelle `DevOutbox` abgelegt statt versendet.
+Sicherheitsregeln (alle serverseitig erzwungen):
+
+- **Aus, solange nichts gesetzt ist.** In Produktions-Builds existiert
+  `/dev/outbox` nur mit der Variable `ENABLE_DEV_OUTBOX=true` – sonst 404,
+  und es wird auch nichts aufgezeichnet. Die App behauptet dann nicht mehr,
+  ein Code läge „im Dev-Postausgang“; `/verify` zeigt stattdessen „Versand
+  noch nicht eingerichtet“, und der Link zum Postausgang erscheint nur für
+  Konten, die ihn wirklich öffnen können.
+- **Nur Administratoren.** `/dev/outbox` verlangt immer die Rolle `admin`.
+  Der Code wird in Produktion nie an den Browser zurückgegeben (kein
+  Inline-Code wie in der lokalen Entwicklung).
+- **Empfänger-Allowlist.** `DEV_OUTBOX_RECIPIENTS=deine@mail,@deine-domain.de`
+  beschränkt die Aufzeichnung auf eigene Testadressen. Registriert sich
+  während des Tests eine fremde Person, wird ihr Code **nicht** gespeichert
+  (sie sieht ehrlich „Versand noch nicht eingerichtet“). Für den öffentlich
+  erreichbaren Worker dringend empfohlen.
+- **Ein Code, der niemanden erreicht, bleibt nicht gültig.** Kann weder
+  Provider noch Postausgang die Nachricht tragen, wird der erzeugte Code
+  sofort entwertet; der nächste Versuch erzeugt einen neuen.
+
+**Einrichtung (Dashboard, kein lokales Tooling nötig):**
+
+1. Worker → *Settings* → *Variables and Secrets*: `ENABLE_DEV_OUTBOX` = `true`
+   und `DEV_OUTBOX_RECIPIENTS` = eigene Testadresse(n), beide Typ Text →
+   *Deploy*. (Bleiben dank `keep_vars` über spätere Deploys erhalten.)
+2. Testkonto zum Admin machen (Schritt 6 oben; D1-Konsole oder `cf:admin`).
+   Ein unbestätigtes Konto darf Admin sein – die Rolle ist unabhängig von
+   der Verifizierung.
+3. Im Browser mit dem Testkonto anmelden → `/verify` → **„Code erneut
+   senden“**. Der neue Code landet im Postausgang; jetzt erscheint auch der
+   Link „Dev-Postausgang öffnen“.
+4. Code ablesen – einer der drei geschützten Wege:
+   - `/dev/outbox` (nur Admin),
+   - D1-Konsole: `SELECT "to", "body", "createdAt" FROM DevOutbox ORDER BY createdAt DESC LIMIT 5;`
+   - lokal: `npx wrangler login` und `npm run dev:outbox -- --remote --to=deine@mail`.
+5. Code eingeben → `/onboarding/interests` → „Discovery starten“ → Dashboard
+   mit laufendem 48-h-Countdown.
+
+**Zurückbauen:** Sobald `RESEND_API_KEY` gesetzt ist, gehen Nachrichten
+automatisch über Resend und der Postausgang zeichnet nichts mehr auf.
+Spätestens vor dem öffentlichen Start `ENABLE_DEV_OUTBOX` entfernen und im
+Postausgang „Postausgang leeren“ ausführen (oder `DELETE FROM DevOutbox;`).
 
 ## Laufender Betrieb
 
@@ -127,7 +191,8 @@ Installation. `wrangler login` wird nur gebraucht, wenn du die
   `.env`/`.dev.vars` (beide gitignored). `.env.example` und
   `.dev.vars.example` enthalten nur Platzhalter.
 - `wrangler.jsonc` enthält keine Secrets und keine Konto-IDs – nur
-  Bindings, Flags und den D1-Datenbanknamen.
+  Bindings, Flags und den D1-Datenbanknamen. `keep_vars: true` sorgt dafür,
+  dass im Dashboard gepflegte Text-Variablen einen Deploy überleben.
 - Der Cloudflare-Build darf keine `.env`-Datei sehen (OpenNext würde die
   Werte einbetten) – im Repo liegt keine.
 - Bildoptimierung (`IMAGES`-Binding) ist bewusst aus; Bilder werden

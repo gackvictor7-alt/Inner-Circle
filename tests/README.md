@@ -20,6 +20,9 @@ npm run test:watch  # watch mode
 | `tests/integration/trial.test.ts` | trial start, one-trial-per-account, fingerprint abuse block, request cap |
 | `tests/integration/webhook.test.ts` | webhook signature handling – never a "verified" event without a real signature |
 | `tests/integration/messaging-authorization.test.ts` | connections must be accepted before messaging; blocks in both directions |
+| `tests/integration/auth-flow.test.ts` | registration, OTP verification, login routing, password recovery (dev outbox) |
+| `tests/integration/message-delivery.test.ts` | production-like delivery: no provider + no outbox → honest `none` (nothing sent, no dangling code); `ENABLE_DEV_OUTBOX` + recipient allow-list; code never returned to the browser in production |
+| `tests/integration/onboarding.test.ts` | interests/goals are stored from the form's taxonomy ids, the 48-hour trial starts exactly once, unverified/anonymous accounts are refused |
 
 ## Database
 

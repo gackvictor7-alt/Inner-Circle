@@ -4,7 +4,10 @@
 NEXTJS_ENV=production
 AUTH_SECRET=replace-with-a-long-random-secret
 NEXT_PUBLIC_SITE_URL=http://localhost:8787
+# Dev outbox (admin-only /dev/outbox) – records mail/SMS instead of sending.
 ENABLE_DEV_OUTBOX=true
+# Optional: only record these recipients (e.g. me@example.com,@my-domain.de)
+DEV_OUTBOX_RECIPIENTS=
 # STRIPE_SECRET_KEY=
 # STRIPE_WEBHOOK_SECRET=
 # RESEND_API_KEY=
