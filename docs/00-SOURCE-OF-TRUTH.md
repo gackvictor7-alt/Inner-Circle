@@ -40,7 +40,7 @@ Details: [`01-product.md`](01-product.md)
 | Deployment | Build `npm run cf:build` · Deploy `npm run cf:release` · Production-Branch `main` |
 | Datenbank (Produktion) | D1 `inner-circle-db`, Binding `DB`, Migrationen in `drizzle/` |
 | i18n | Eigenes Wörterbuch `src/lib/i18n` (DE = Standard, EN vollständig) |
-| Tests | Vitest: **17 Dateien / 80 Tests grün** (`npm test`) |
+| Tests | Vitest: **18 Dateien / 84 Tests grün** (`npm test`) |
 | App-Navigation | **6 Primärbereiche**: Start · Discover · Erstellen · Inbox · Events · Profil |
 
 ## 3. Status-Legende (verbindlich)
@@ -63,8 +63,8 @@ existiert. Backend + Daten + Berechtigungen + Nachweis gehören dazu.
 
 | Funktion | Status | Nachweis |
 | -------- | ------ | -------- |
-| Startseite `/` – **verkürzt** (Hero → Was ist INNER CIRCLE? → sechs Bereiche → Proof → Membership-CTA) | WORKING | `src/app/(site)/HomeContent.tsx`; 8 Sektionen → 3 (+ Hero), `h2` 12 → 6, sichtbarer Text 6 014 → 4 229 Zeichen (−30 %), HTML 83,8 kB → 61,3 kB (−27 %) |
-| Preview-Seiten `/network`, `/business-deals`, `/investments`, `/marketplace`, `/events` | WORKING | statische Inhalte, nicht aktivierte Funktionen als „Demnächst verfügbar" gekennzeichnet |
+| Startseite `/` – **verkürzt** (Hero → Was ist INNER CIRCLE? → sechs Bereiche → Proof → Membership-CTA) | WORKING | `src/app/(site)/HomeContent.tsx`; 8 Sektionen → 3 (+ Hero), `h2` 12 → 6, sichtbarer Text 6 014 → 4 229 Zeichen (−30 %), HTML 83,8 kB → 61,3 kB (−27 %); **statisch vorgeneriert** (siehe unten „Public-Website-Performance") |
+| Preview-Seiten `/network`, `/business-deals`, `/investments`, `/marketplace`, `/events` | WORKING | statische Inhalte, nicht aktivierte Funktionen als „Demnächst verfügbar" gekennzeichnet; **statisch vorgeneriert** |
 | `/membership` (Preise, Leistungen) | WORKING | 24,99 €/Monat aktiv; Jahrespreis im Marketing noch als „folgt" (siehe Known Issue) |
 | Auth-Seiten `/login`, `/register`, `/forgot-password`, `/reset-password`, `/verify` | WORKING | siehe Bereich B |
 | Rechts-Platzhalter `/imprint`, `/privacy`, `/terms` | PARTIAL | bewusst Platzhalter, kein geprüfter Rechtstext |
@@ -79,7 +79,7 @@ existiert. Backend + Daten + Berechtigungen + Nachweis gehören dazu.
 | Passwort-Hashing (scrypt, OWASP-Parameter) | WORKING | `tests/unit/auth-crypto.test.ts` |
 | Login | WORKING | `loginAction`, Integrationstest |
 | Logout (Session-Widerruf serverseitig) | WORKING | `logoutAction`, `/api/auth/logout` |
-| Sessions (30 Tage, httpOnly, gehasht) | WORKING | `src/lib/auth/session.ts` |
+| Sessions (30 Tage, httpOnly, gehasht) | WORKING | `src/lib/auth/session.ts`; zusätzlich nicht-httpOnly-Präsenz-Flag `ic_presence` in Lockstep mit `ic_session` (nur für den „Zur App"-CTA der öffentlichen Seiten, keine Identität, keine Autorisierung) |
 | E-Mail-Verifizierung (Code-Erzeugung, Hash, Ablauf, Versuche) | WORKING | `src/lib/auth/otp.ts`, `onboarding.test.ts` |
 | **Echter E-Mail-Versand (Resend)** | **WORKING / PARTIAL (DNS offen)** | `RESEND_API_KEY` aktiv; responsive Multipart-Templates (HTML+Text DE/EN); offene Produktionsabhängigkeit: eigene verifizierte Domain (SPF/DKIM/DMARC) gegen Spamfilter der Test-Domain `resend.dev` |
 | Verifizierung im Dev-Postausgang | WORKING | `ENABLE_DEV_OUTBOX` + Admin-Rolle, Testabdeckung `message-delivery.test.ts` |
@@ -211,12 +211,25 @@ existiert. Backend + Daten + Berechtigungen + Nachweis gehören dazu.
 | D1-Anbindung + Migrationen (50 Tabellen) | WORKING | `drizzle/0000_init.sql`, `cf:release` |
 | Laufzeit-Treiberwechsel D1 ↔ libSQL | WORKING | `src/db/client.ts` |
 | Deployment über Workers Builds (main → Produktion) | PARTIAL | dokumentierter Weg; letzter Merge nach `main` durch den Gründer zu prüfen (Dashboard) |
-| Automatisierte Tests | WORKING | **80 Tests grün (17 Testdateien)** |
+| Automatisierte Tests | WORKING | **84 Tests grün (18 Testdateien)** |
 | CI (GitHub Actions) | NOT IMPLEMENTED | keine Workflows im Repo |
 | Lint | PARTIAL | **14 bestehende Hinweise (4 Fehler, 10 Warnungen)** – verbessert von 21/7; keine neuen Befunde aus diesem Sprint |
 | Monitoring/Alerting | PREPARED | Observability im Worker aktiv, keine Alarme |
 
 ## 4b. Informationsarchitektur ab Sprint 3
+
+**Public-Website-Performance (Incident-Fix 2026-09-21, Error 1102):** Die
+öffentlichen Marketing-Seiten (`/`, `/network`, `/business-deals`,
+`/investments`, `/marketplace`, `/events`, `/membership`, `/register`) sind
+**statisch vorgerendert** (`○` im Build-Route-Manifest) und führen **keine**
+Request-Time-Datenbankzugriffe und **kein** `getAccessContext()` mehr aus.
+Der Homepage-Beweisbereich liest die Kennzahlen aus dem gebündelten Snapshot
+`src/app/(site)/home-metrics.ts` (1:1-Abbild des Seed-Datensatzes, ehrliche
+`kind`-Kennzeichnung); echte Produktionswerte werden in der D1-Tabelle
+`PlatformMetric` gepflegt und mit dem nächsten Release in diesen Snapshot
+gespiegelt. Der Header-„Zur App"-CTA basiert auf dem nicht-httpOnly-Flag
+`ic_presence` (in Lockstep mit `ic_session`), das **nichts autorisiert**.
+Details: @see `docs/09-deployment.md` (Fehlerzeile 1102).
 
 **Primärnavigation (Desktop-Sidebar und Mobile Bottom-Bar) – exakt sechs
 Bereiche:**

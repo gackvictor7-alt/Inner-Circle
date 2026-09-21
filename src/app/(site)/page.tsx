@@ -1,37 +1,24 @@
-import { asc } from "drizzle-orm";
-import { db } from "@/db/client";
-import { platformMetrics } from "@/db/schema";
 import { HomeContent } from "./HomeContent";
-import type { PlatformMetricView } from "@/components/site/StatsSection";
-
-export const dynamic = "force-dynamic";
+import { DEFAULT_HOME_METRICS } from "./home-metrics";
 
 /**
- * Public homepage. Statistics come from the database so verified production
- * values can replace demo values through administration (spec §10).
+ * Public homepage.
+ *
+ * Performance: this page is STATICALLY pre-rendered and never touches the
+ * database at request time. A per-request D1 read (plus the session/trial/
+ * membership chain in the shared layout) pushed `/` over the CPU limit on
+ * Cloudflare Workers Free (Error 1102 "Worker exceeded CPU time limit").
+ *
+ * The statistics section is rendered from a bundled snapshot of the demo
+ * dataset (see `home-metrics.ts`); the values carry their honest data kind
+ * ("demo"/"zero_state") exactly as before. Verified production numbers are
+ * maintained through the D1 `PlatformMetric` table and mirrored back into
+ * `home-metrics.ts` with the next deploy – the section hides itself when the
+ * dataset is empty, like today.
+ *
+ * Auth/trial/membership logic is unchanged – it simply no longer runs on the
+ * public homepage.
  */
-export default async function HomePage() {
-  let metrics: PlatformMetricView[] = [];
-  try {
-    const rows = await db.select().from(platformMetrics).orderBy(asc(platformMetrics.position));
-    metrics = rows.map((row) => ({
-      key: row.key,
-      labelDe: row.labelDe,
-      labelEn: row.labelEn,
-      valueInt: row.valueInt,
-      valueCents: row.valueCents,
-      unitDe: row.unitDe,
-      unitEn: row.unitEn,
-      kind: row.kind as PlatformMetricView["kind"],
-      category: row.category,
-      descDe: row.descDe,
-      descEn: row.descEn,
-      updatedAt: row.updatedAt.toISOString(),
-    }));
-  } catch {
-    // Database not migrated yet (fresh clone) – the section is hidden.
-    metrics = [];
-  }
-
-  return <HomeContent metrics={metrics} />;
+export default function HomePage() {
+  return <HomeContent metrics={DEFAULT_HOME_METRICS} />;
 }

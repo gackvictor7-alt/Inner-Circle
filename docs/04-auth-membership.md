@@ -38,7 +38,7 @@ Voll-Mitglied (nach manueller Freigabe durch die Administration)
 | Voraussetzung | kein Login nötig; Rate-Limit 8/h pro IP (`register:<ip>`) |
 | Validierung | Vorname/Nachname ≥ 2 Zeichen, E-Mail-Format, Alter-Häkchen, AGB-Häkchen, Passwort ≥ 10 Zeichen mit Buchstabe **und** Ziffer, Passwort-Wiederholung |
 | DB-Schreibvorgänge | `User` (mit `handle`, `passwordHash`, `role="user"`, `status="active"`, `ageConfirmedAt`, `termsAcceptedAt`, `locale`), `Profile`, `PrivacySettings`, `NotificationPreferences`, `Session`, `VerificationCode` (Typ `verify_account`), `AdminAuditLog` (`auth.registered`) |
-| Sessionänderung | neue Session (30 Tage) + httpOnly-Cookie `ic_session` |
+| Sessionänderung | neue Session (30 Tage) + httpOnly-Cookie `ic_session` (+ nicht-httpOnly-Präsenz-Flag `ic_presence` in Lockstep – nur für den öffentlichen „Zur App"-CTA, ohne Identität/Autorisierung) |
 | Ergebnis | `{ status: "success", redirectTo: "/verify" }` mit ehrlichem Zustellstatus (`messageMode`, `messageKey`) |
 | Fehlerzustände | `rateLimited`, `validation` (Feldfehler `firstName|lastName|email|age|terms|password`), `emailTaken`, `deliveryUnavailable` (kein Versandweg), `codeFailed` |
 | Nächste Route | `/verify` |
@@ -67,8 +67,9 @@ Voll-Mitglied (nach manueller Freigabe durch die Administration)
 
 ### 2.4 Logout – `/api/auth/logout` bzw. `logoutAction`
 
-Server-seitiger Widerruf: `Session.revokedAt` wird gesetzt, Cookie gelöscht,
-Redirect `/`. Kein reiner Client-Logout. Audit `auth.logout`.
+Server-seitiger Widerruf: `Session.revokedAt` wird gesetzt, Cookie **und**
+Präsenz-Flag gelöscht, Redirect `/`. Kein reiner Client-Logout. Audit
+`auth.logout`.
 
 ### 2.5 Passwort vergessen – `/forgot-password` → `requestPasswordResetAction`
 
