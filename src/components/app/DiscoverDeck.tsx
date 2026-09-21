@@ -15,6 +15,7 @@ import { useActionState } from "react";
 import {
   CheckIcon,
   CompassIcon,
+  FilterIcon,
   GlobeIcon,
   HeartIcon,
   MapPinIcon,
@@ -56,6 +57,20 @@ export type DiscoverCardData = {
 export type DiscoverFilterOptions = {
   industries: { value: string; label: string }[];
   interests: { value: string; label: string }[];
+  investmentInterests: { value: string; label: string }[];
+  radiusKm: number[];
+};
+
+export type DiscoverFiltersState = {
+  role?: string;
+  location?: string;
+  industry?: string;
+  interest?: string;
+  lookingFor?: string;
+  offering?: string;
+  investInterest?: string;
+  radius?: number;
+  kind?: string;
 };
 
 /**
@@ -72,13 +87,17 @@ export function DiscoverDeck({
   canConnect,
   trialRemaining,
   filters,
+  moreOpen: moreOpenInitial = false,
+  locationGeocodable = true,
   filterOptions,
 }: {
   members: DiscoverCardData[];
   canFollow: boolean;
   canConnect: boolean;
   trialRemaining: number | null;
-  filters: { role?: string; location?: string; industry?: string; interest?: string; kind?: string };
+  filters: DiscoverFiltersState;
+  moreOpen?: boolean;
+  locationGeocodable?: boolean;
   filterOptions: DiscoverFilterOptions;
 }) {
   const { t, tf } = useI18n();
@@ -86,6 +105,7 @@ export function DiscoverDeck({
   const [skipped, setSkipped] = useState<string[]>([]);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [connectTarget, setConnectTarget] = useState<DiscoverCardData | null>(null);
+  const [moreOpen, setMoreOpen] = useState(moreOpenInitial);
 
   const queue = useMemo(
     () => members.filter((member) => !skipped.includes(member.id)),
@@ -122,7 +142,101 @@ export function DiscoverDeck({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current, connectTarget, canConnect]);
 
-  const hasFilters = Boolean(filters.role || filters.location || filters.industry || filters.interest || filters.kind);
+  const hasFilters = Boolean(
+    filters.role ||
+      filters.location ||
+      filters.industry ||
+      filters.interest ||
+      filters.lookingFor ||
+      filters.offering ||
+      filters.investInterest ||
+      filters.radius ||
+      filters.kind,
+  );
+
+  /** Active filters as removable chips; each removal keeps the other params. */
+  const optionLabel = (options: { value: string; label: string }[], value?: string) =>
+    options.find((option) => option.value === value)?.label ?? value ?? "";
+  const kindLabels: Record<string, string> = {
+    investor: t.app.discover.filtersKindInvestor,
+    founder: t.app.discover.filtersKindFounder,
+    creator: t.app.discover.filtersKindCreator,
+    service: t.app.discover.filtersKindService,
+  };
+  const hrefWithout = (omit?: string) => {
+    const params = new URLSearchParams();
+    if (filters.role && omit !== "role") params.set("role", filters.role);
+    if (filters.location && omit !== "location") params.set("location", filters.location);
+    if (filters.industry && omit !== "industry") params.set("industry", filters.industry);
+    if (filters.interest && omit !== "interest") params.set("interest", filters.interest);
+    if (filters.lookingFor && omit !== "lookingFor") params.set("lookingFor", filters.lookingFor);
+    if (filters.offering && omit !== "offering") params.set("offering", filters.offering);
+    if (filters.investInterest && omit !== "invest") params.set("invest", filters.investInterest);
+    if (filters.radius && omit !== "radius") params.set("radius", String(filters.radius));
+    if (filters.kind && omit !== "kind") params.set("kind", filters.kind);
+    if (moreOpen) params.set("more", "1");
+    const query = params.toString();
+    return query ? `/app/discover?${query}` : "/app/discover";
+  };
+  const chips = [
+    filters.role && {
+      key: "role",
+      label: `${t.app.discover.filtersRole}: ${filters.role}`,
+      href: hrefWithout("role"),
+    },
+    filters.location && {
+      key: "location",
+      label: `${t.app.discover.filtersLocation}: ${filters.location}`,
+      href: hrefWithout("location"),
+    },
+    filters.radius && {
+      key: "radius",
+      label: `${t.app.discover.filtersRadius}: ${tf(t.app.discover.filtersRadiusValue, { km: filters.radius })}`,
+      href: hrefWithout("radius"),
+    },
+    filters.industry && {
+      key: "industry",
+      label: `${t.app.discover.filtersIndustry}: ${optionLabel(filterOptions.industries, filters.industry)}`,
+      href: hrefWithout("industry"),
+    },
+    filters.interest && {
+      key: "interest",
+      label: `${t.app.discover.filtersInterest}: ${optionLabel(filterOptions.interests, filters.interest)}`,
+      href: hrefWithout("interest"),
+    },
+    filters.lookingFor && {
+      key: "lookingFor",
+      label: `${t.app.discover.filtersLookingFor}: ${filters.lookingFor}`,
+      href: hrefWithout("lookingFor"),
+    },
+    filters.offering && {
+      key: "offering",
+      label: `${t.app.discover.filtersOffering}: ${filters.offering}`,
+      href: hrefWithout("offering"),
+    },
+    filters.investInterest && {
+      key: "invest",
+      label: `${t.app.discover.filtersInvest}: ${optionLabel(filterOptions.investmentInterests, filters.investInterest)}`,
+      href: hrefWithout("invest"),
+    },
+    filters.kind && {
+      key: "kind",
+      label: `${t.app.discover.filtersKind}: ${kindLabels[filters.kind] ?? filters.kind}`,
+      href: hrefWithout("kind"),
+    },
+  ].filter((chip): chip is { key: string; label: string; href: string } => Boolean(chip));
+
+  const radiusHint =
+    filters.radius && !filters.location
+      ? t.app.discover.filtersRadiusNeedsLocation
+      : filters.radius && !locationGeocodable
+        ? tf(t.app.discover.filtersRadiusUnavailable, { location: filters.location ?? "" })
+        : null;
+
+  const inputClass =
+    "h-9 w-full min-w-0 rounded-lg border border-border bg-background px-3 text-sm font-normal text-foreground sm:w-44";
+  const selectClass =
+    "h-9 w-full min-w-0 rounded-lg border border-border bg-background px-2.5 text-sm font-normal text-foreground sm:w-auto";
 
   return (
     <div className="space-y-6">
@@ -143,74 +257,82 @@ export function DiscoverDeck({
       <form
         method="get"
         action="/app/discover"
-        className="ic-grid items-end rounded-2xl border border-border bg-surface p-4"
+        className="rounded-2xl border border-border bg-surface p-3 sm:p-4"
       >
-        <label className="ic-span-4 text-xs font-semibold text-foreground-muted lg:col-span-3">
-          <span className="mb-1 block">{t.app.discover.filtersRole}</span>
+        {/* Compact bar: the four most-used filters + apply / more / reset. */}
+        <div className="flex flex-wrap items-center gap-2">
           <input
+            type="text"
             name="role"
             defaultValue={filters.role ?? ""}
             placeholder={t.app.discover.filtersRolePlaceholder}
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm font-normal text-foreground"
+            aria-label={t.app.discover.filtersRole}
+            className={inputClass}
           />
-        </label>
-        <label className="ic-span-4 text-xs font-semibold text-foreground-muted lg:col-span-3">
-          <span className="mb-1 block">{t.app.discover.filtersLocation}</span>
           <input
+            type="text"
             name="location"
             defaultValue={filters.location ?? ""}
             placeholder={t.app.discover.filtersLocationPlaceholder}
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm font-normal text-foreground"
+            aria-label={t.app.discover.filtersLocation}
+            className={inputClass}
           />
-        </label>
-        <label className="ic-span-4 text-xs font-semibold text-foreground-muted lg:col-span-2">
-          <span className="mb-1 block">{t.app.discover.filtersIndustry}</span>
+          <select
+            name="radius"
+            defaultValue={filters.radius ? String(filters.radius) : ""}
+            aria-label={t.app.discover.filtersRadius}
+            className={selectClass}
+          >
+            <option value="">{t.app.discover.filtersRadius}</option>
+            {filterOptions.radiusKm.map((km) => (
+              <option key={km} value={km}>
+                {tf(t.app.discover.filtersRadiusValue, { km })}
+              </option>
+            ))}
+          </select>
           <select
             name="industry"
             defaultValue={filters.industry ?? ""}
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm font-normal text-foreground"
+            aria-label={t.app.discover.filtersIndustry}
+            className={selectClass}
           >
-            <option value="">{t.app.discover.filtersAll}</option>
+            <option value="">{t.app.discover.filtersIndustry}</option>
             {filterOptions.industries.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
               </option>
             ))}
           </select>
-        </label>
-        <label className="ic-span-4 text-xs font-semibold text-foreground-muted lg:col-span-2">
-          <span className="mb-1 block">{t.app.discover.filtersInterest}</span>
-          <select
-            name="interest"
-            defaultValue={filters.interest ?? ""}
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm font-normal text-foreground"
-          >
-            <option value="">{t.app.discover.filtersAll}</option>
-            {filterOptions.interests.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="ic-span-4 text-xs font-semibold text-foreground-muted lg:col-span-2">
-          <span className="mb-1 block">{t.app.discover.filtersKind}</span>
-          <select
-            name="kind"
-            defaultValue={filters.kind ?? ""}
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm font-normal text-foreground"
-          >
-            <option value="">{t.app.discover.filtersAll}</option>
-            <option value="investor">{t.app.discover.filtersKindInvestor}</option>
-            <option value="founder">{t.app.discover.filtersKindFounder}</option>
-            <option value="creator">{t.app.discover.filtersKindCreator}</option>
-            <option value="service">{t.app.discover.filtersKindService}</option>
-          </select>
-        </label>
-        <div className="ic-span-12 flex flex-wrap items-center gap-2 lg:col-span-12">
+
+          {/* The "more" fields must survive a submit while the panel is closed. */}
+          {!moreOpen && (
+            <>
+              <input type="hidden" name="interest" value={filters.interest ?? ""} />
+              <input type="hidden" name="kind" value={filters.kind ?? ""} />
+              <input type="hidden" name="lookingFor" value={filters.lookingFor ?? ""} />
+              <input type="hidden" name="offering" value={filters.offering ?? ""} />
+              <input type="hidden" name="invest" value={filters.investInterest ?? ""} />
+            </>
+          )}
+          {moreOpen && <input type="hidden" name="more" value="1" />}
+
           <Button type="submit" size="sm" variant="secondary">
             {t.app.discover.filtersApply}
           </Button>
+          <button
+            type="button"
+            onClick={() => setMoreOpen((open) => !open)}
+            aria-expanded={moreOpen}
+            className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border-strong bg-surface px-4 text-sm font-semibold text-foreground-muted transition-colors hover:text-foreground"
+          >
+            <FilterIcon size={14} />
+            {moreOpen ? t.app.discover.filtersLess : t.app.discover.filtersMore}
+            {chips.length > 0 && (
+              <span className="rounded-full bg-electric-500/10 px-1.5 text-[11px] font-bold text-electric-600 dark:text-electric-300">
+                {chips.length}
+              </span>
+            )}
+          </button>
           {hasFilters && (
             <Link
               href="/app/discover"
@@ -219,22 +341,107 @@ export function DiscoverDeck({
               {t.app.discover.filtersClear}
             </Link>
           )}
-          {skipped.length > 0 && (
-            <button
-              type="button"
-              onClick={() => {
-                setSkipped([]);
-                setIndex(0);
-              }}
-              className="text-sm font-semibold text-foreground-muted hover:text-foreground"
-            >
-              {t.app.discover.resetSeen}
-            </button>
-          )}
           <span className="ml-auto text-xs text-foreground-subtle">
             {tf(t.app.discover.cardOf, { index: Math.min(index + 1, Math.max(queue.length, 1)), total: queue.length })}
           </span>
         </div>
+
+        {/* More filters: interest, type, "Ich suche", "Ich biete", investments. */}
+        {moreOpen && (
+          <div className="mt-3 grid gap-2 border-t border-border pt-3 sm:grid-cols-2 lg:grid-cols-5">
+            <select
+              name="interest"
+              defaultValue={filters.interest ?? ""}
+              aria-label={t.app.discover.filtersInterest}
+              className={selectClass}
+            >
+              <option value="">{t.app.discover.filtersInterest}</option>
+              {filterOptions.interests.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <select
+              name="kind"
+              defaultValue={filters.kind ?? ""}
+              aria-label={t.app.discover.filtersKind}
+              className={selectClass}
+            >
+              <option value="">{t.app.discover.filtersKind}</option>
+              <option value="investor">{t.app.discover.filtersKindInvestor}</option>
+              <option value="founder">{t.app.discover.filtersKindFounder}</option>
+              <option value="creator">{t.app.discover.filtersKindCreator}</option>
+              <option value="service">{t.app.discover.filtersKindService}</option>
+            </select>
+            <input
+              type="text"
+              name="lookingFor"
+              defaultValue={filters.lookingFor ?? ""}
+              placeholder={t.app.discover.filtersLookingForPlaceholder}
+              aria-label={t.app.discover.filtersLookingFor}
+              className={inputClass}
+            />
+            <input
+              type="text"
+              name="offering"
+              defaultValue={filters.offering ?? ""}
+              placeholder={t.app.discover.filtersOfferingPlaceholder}
+              aria-label={t.app.discover.filtersOffering}
+              className={inputClass}
+            />
+            <select
+              name="invest"
+              defaultValue={filters.investInterest ?? ""}
+              aria-label={t.app.discover.filtersInvest}
+              className={selectClass}
+            >
+              <option value="">{t.app.discover.filtersInvest}</option>
+              {filterOptions.investmentInterests.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* Active filters as chips – every chip removes exactly one filter. */}
+        {chips.length > 0 && (
+          <ul className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-border pt-3">
+            {chips.map((chip) => (
+              <li key={chip.key}>
+                <span className="inline-flex items-center gap-1 rounded-full bg-electric-500/10 py-1 pl-3 pr-1.5 text-xs font-medium text-electric-600 dark:text-electric-300">
+                  {chip.label}
+                  <Link
+                    href={chip.href}
+                    aria-label={`${t.app.discover.filtersRemove}: ${chip.label}`}
+                    className="rounded-full p-0.5 transition-colors hover:bg-electric-500/20"
+                  >
+                    <XIcon size={12} />
+                  </Link>
+                </span>
+              </li>
+            ))}
+            {skipped.length > 0 && (
+              <li>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSkipped([]);
+                    setIndex(0);
+                  }}
+                  className="text-xs font-semibold text-foreground-muted hover:text-foreground"
+                >
+                  {t.app.discover.resetSeen}
+                </button>
+              </li>
+            )}
+          </ul>
+        )}
+
+        {/* Honest radius note: no geocodable city → exact match instead. */}
+        {radiusHint && <p className="mt-2 text-xs text-foreground-subtle">{radiusHint}</p>}
       </form>
 
       {/* -------------------------------------------------------------- card */}

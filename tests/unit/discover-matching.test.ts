@@ -1,9 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
   applyDiscoverFilters,
+  geocodeLocation,
   hasActiveFilters,
+  haversineKm,
+  INVESTMENT_INTEREST_SLUGS,
   matchPercentFromScore,
   matchesKindFilter,
+  RADIUS_OPTIONS_KM,
+  radiusFromValue,
   rankCandidates,
   scoreMatch,
   type ProfileSignals,
@@ -124,5 +129,79 @@ describe("discover filters", () => {
     expect(hasActiveFilters({})).toBe(false);
     expect(hasActiveFilters({ role: "  " })).toBe(false);
     expect(hasActiveFilters({ kind: "founder" })).toBe(true);
+  });
+});
+
+describe("discover supply/demand and investment filters", () => {
+  const seeker = {
+    id: "1",
+    ...signals({ lookingFor: ["B2B-Vertrieb"], offering: ["Growth-Beratung"] }),
+  };
+  const investor = {
+    id: "2",
+    ...signals({ interestSlugs: ["venture-capital"], offering: ["Kapital"] }),
+  };
+
+  it("filters by 'Ich suche' and 'Ich biete' free text", () => {
+    expect(applyDiscoverFilters([seeker, investor], { lookingFor: "vertrieb" })).toHaveLength(1);
+    expect(applyDiscoverFilters([seeker, investor], { offering: "beratung" })).toHaveLength(1);
+    expect(applyDiscoverFilters([seeker, investor], { offering: "steuer" })).toHaveLength(0);
+  });
+
+  it("filters by the curated investment interest slugs", () => {
+    expect(applyDiscoverFilters([seeker, investor], { investInterest: "venture-capital" })).toHaveLength(1);
+    expect(applyDiscoverFilters([seeker, investor], { investInterest: "real-estate" })).toHaveLength(0);
+    expect(INVESTMENT_INTEREST_SLUGS).toContain("investing");
+  });
+
+  it("reports the new filters as active", () => {
+    expect(hasActiveFilters({ lookingFor: " " })).toBe(false);
+    expect(hasActiveFilters({ offering: "Beratung" })).toBe(true);
+    expect(hasActiveFilters({ investInterest: "investing" })).toBe(true);
+    expect(hasActiveFilters({ radius: 50 })).toBe(true);
+  });
+});
+
+describe("discover radius filter (honest, offline city table)", () => {
+  const berlin = { id: "1", ...signals({ location: "Berlin, Deutschland" }) };
+  const hamburg = { id: "2", ...signals({ location: "Hamburg, Deutschland" }) };
+  const leipzig = { id: "3", ...signals({ location: "Leipzig" }) };
+  const remote = { id: "4", ...signals({ location: "Remote" }) };
+
+  it("geocodes real member location strings via the bundled table", () => {
+    expect(geocodeLocation("Berlin, Deutschland")?.city).toBe("berlin");
+    expect(geocodeLocation("Frankfurt am Main")?.city).toBe("frankfurt");
+    expect(geocodeLocation("münchen")?.city).toBe("münchen");
+    expect(geocodeLocation("Remote")).toBeNull();
+    expect(geocodeLocation(null)).toBeNull();
+  });
+
+  it("computes distances as the crow flies", () => {
+    const a = geocodeLocation("Berlin")!;
+    const b = geocodeLocation("Hamburg")!;
+    const km = haversineKm(a, b);
+    expect(km).toBeGreaterThan(240);
+    expect(km).toBeLessThan(270);
+  });
+
+  it("applies a radius around a geocodable location", () => {
+    expect(applyDiscoverFilters([berlin, hamburg, remote], { location: "Berlin", radius: 100 })).toHaveLength(1);
+    expect(applyDiscoverFilters([berlin, hamburg, leipzig], { location: "Berlin", radius: 250 })).toHaveLength(2);
+    // Members without a resolvable city cannot be inside the circle.
+    expect(applyDiscoverFilters([berlin, remote], { location: "Berlin", radius: 250 })).toHaveLength(1);
+  });
+
+  it("stays inert without a radius or with an unknown origin city", () => {
+    // No radius → plain substring location filter only.
+    expect(applyDiscoverFilters([berlin, hamburg, remote], { location: "berlin" })).toHaveLength(1);
+    // Unknown origin → radius ignored, substring filter still applies.
+    expect(applyDiscoverFilters([berlin, hamburg], { location: "Looping", radius: 500 })).toHaveLength(0);
+  });
+
+  it("only accepts the offered radius options", () => {
+    expect(radiusFromValue("50")).toBe(50);
+    expect(radiusFromValue("33")).toBeUndefined();
+    expect(radiusFromValue(undefined)).toBeUndefined();
+    expect(RADIUS_OPTIONS_KM).toEqual([25, 50, 100, 250]);
   });
 });

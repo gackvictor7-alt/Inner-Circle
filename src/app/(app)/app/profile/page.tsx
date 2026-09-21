@@ -15,11 +15,11 @@ import { LocalizedEmptyState, Tr } from "@/components/app/localized";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { Progress } from "@/components/ui/Progress";
 import { RatingStars } from "@/components/ui/RatingStars";
 import {
   BriefcaseIcon,
   ChartIcon,
+  ChevronDownIcon,
   GlobeIcon,
   GraduationIcon,
   InstagramIcon,
@@ -126,206 +126,199 @@ export default async function OwnProfilePage({
   ];
 
   return (
-    <div className="space-y-8">
-      {/* ---------------------------------------------------------- header */}
-      <Card className="p-6">
-        <div className="ic-grid">
-          <div className="ic-span-12 lg:col-span-8">
-            <div className="flex flex-wrap items-start gap-5">
-              <Avatar
-                user={{
-                  firstName: user.firstName,
-                  lastName: user.lastName,
-                  avatarUrl: profile?.avatarUrl ?? null,
-                }}
-                size={80}
-              />
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h1 className="text-2xl font-bold tracking-tight">
-                    {user.firstName} {user.lastName}
-                  </h1>
-                  {user.foundingMember && (
-                    <Badge variant="sand">
-                      <Tr k="app.card.founding" />
-                    </Badge>
-                  )}
-                  {user.role === "admin" && (
-                    <Badge variant="electric">
-                      <Tr k="app.access.levelAdmin" />
-                    </Badge>
-                  )}
-                  {user.isDemo && (
-                    <Badge variant="outline">
-                      <Tr k="app.common.demo" />
-                    </Badge>
-                  )}
-                </div>
-                <p className="text-sm text-foreground-subtle">@{user.handle}</p>
-                {profile?.headline && (
-                  <p className="mt-2 text-base font-medium">{profile.headline}</p>
-                )}
-                <p className="mt-1 text-sm text-foreground-subtle">
-                  {[profile?.jobTitle, profile?.company, profile?.location].filter(Boolean).join(" · ")}
-                </p>
-
-                {(profile?.websiteUrl || profile?.xUrl || profile?.instagramUrl) && (
-                  <div className="mt-3 flex flex-wrap items-center gap-2">
-                    {profile.websiteUrl && (
-                      <ExternalLink
-                        href={profile.websiteUrl.startsWith("http") ? profile.websiteUrl : `https://${profile.websiteUrl}`}
-                        icon={<GlobeIcon size={13} />}
-                        label="Website"
-                      />
-                    )}
-                    {profile.xUrl && (
-                      <ExternalLink
-                        href={profile.xUrl.startsWith("http") ? profile.xUrl : `https://x.com/${profile.xUrl.replace(/^@/, "")}`}
-                        icon={<XSocialIcon size={12} />}
-                        label={profile.xUrl.startsWith("@") ? profile.xUrl : `@${profile.xUrl}`}
-                      />
-                    )}
-                    {profile.instagramUrl && (
-                      <ExternalLink
-                        href={
-                          profile.instagramUrl.startsWith("http")
-                            ? profile.instagramUrl
-                            : `https://instagram.com/${profile.instagramUrl.replace(/^@/, "")}`
-                        }
-                        icon={<InstagramIcon size={13} />}
-                        label={profile.instagramUrl.startsWith("@") ? profile.instagramUrl : `@${profile.instagramUrl}`}
-                      />
-                    )}
-                  </div>
-                )}
-              </div>
+    <div className="space-y-6">
+      {/* --------------------------------------- compact identity header */}
+      <Card className="p-5 sm:p-6">
+        <div className="flex min-w-0 items-center gap-4">
+          <Avatar
+            user={{
+              firstName: user.firstName,
+              lastName: user.lastName,
+              avatarUrl: profile?.avatarUrl ?? null,
+            }}
+            size={64}
+          />
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-xl font-bold tracking-tight sm:text-2xl">
+                {user.firstName} {user.lastName}
+              </h1>
+              {user.foundingMember && (
+                <Badge variant="sand">
+                  <Tr k="app.card.founding" />
+                </Badge>
+              )}
+              {user.role === "admin" && (
+                <Badge variant="electric">
+                  <Tr k="app.access.levelAdmin" />
+                </Badge>
+              )}
+              {user.isDemo && (
+                <Badge variant="outline">
+                  <Tr k="app.common.demo" />
+                </Badge>
+              )}
             </div>
-
-            {profile?.bio && (
-              <p className="ic-measure mt-5 whitespace-pre-wrap text-sm leading-6 text-foreground-muted">
-                {profile.bio}
-              </p>
+            <p className="text-sm text-foreground-subtle">@{user.handle}</p>
+            {profile?.headline && (
+              <p className="mt-1 truncate text-sm font-medium">{profile.headline}</p>
             )}
-          </div>
-
-          <div className="ic-span-12 lg:col-span-4">
-            <dl className="grid grid-cols-2 gap-3">
-              <StatCell labelKey="app.profile.metricFollowers" value={stats.followers} />
-              <StatCell labelKey="app.profile.statsFollowing" value={stats.following} />
-              <StatCell labelKey="app.profile.metricConnections" value={stats.connections} />
-              <div className="rounded-xl bg-surface-muted px-3 py-2">
-                <dt className="text-xs text-foreground-muted">
-                  <Tr k="app.trust.scoreTitle" />
-                </dt>
-                <dd className="mt-0.5 flex items-center gap-1.5 text-lg font-bold">
-                  {score === null ? (
-                    <span className="text-sm font-semibold text-foreground-muted">
-                      <Tr k="app.trust.noRatingsShort" />
-                    </span>
-                  ) : (
-                    <>
-                      {score.toFixed(1)}
-                      <RatingStars value={score} size={13} />
-                    </>
-                  )}
-                </dd>
-              </div>
-            </dl>
-
-            <div className="mt-4 flex flex-wrap gap-2">
-              <Button href="/app/profile/edit" size="sm">
-                <SparkleIcon size={15} />
-                <Tr k="app.common.edit" />
-              </Button>
-              <ShareProfileButton path={`/app/people/${user.handle}`} />
-              <Button href="/app/settings" size="sm" variant="ghost">
-                <SettingsIcon size={15} />
-                <Tr k="app.settings.title" />
-              </Button>
-            </div>
-
-            {profilePercent < 100 && (
-              <div className="mt-4 rounded-xl border border-border bg-surface-muted/50 p-3.5">
-                <Progress
-                  value={profilePercent}
-                  label={dict.app.profile.profileCompletion.replace("{percent}", String(profilePercent))}
-                />
-                <p className="mt-2 text-xs text-foreground-muted">
-                  <Tr k="app.profile.profileCompletionHint" />
-                </p>
-                <Link
-                  href="/app/profile/edit"
-                  className="mt-2 inline-block text-xs font-semibold text-electric-600 dark:text-electric-300"
-                >
-                  <Tr k="app.dashboard.profileCardCta" />
-                </Link>
-              </div>
-            )}
+            <p className="mt-0.5 truncate text-sm text-foreground-subtle">
+              {[profile?.jobTitle, profile?.company, profile?.location].filter(Boolean).join(" · ")}
+            </p>
           </div>
         </div>
+
+        {/* compact statistics row */}
+        <dl className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1.5 border-t border-border pt-3">
+          <StatInline labelKey="app.profile.metricFollowers" value={stats.followers} />
+          <StatDot />
+          <StatInline labelKey="app.profile.statsFollowing" value={stats.following} />
+          <StatDot />
+          <StatInline labelKey="app.profile.metricConnections" value={stats.connections} />
+          <StatDot />
+          <div className="inline-flex items-baseline gap-1.5 px-1">
+            <dt className="text-xs text-foreground-muted">
+              <Tr k="app.trust.scoreTitle" />
+            </dt>
+            <dd className="text-sm font-bold">
+              {score === null ? (
+                <span className="font-semibold text-foreground-muted">
+                  <Tr k="app.trust.noRatingsShort" />
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5">
+                  {score.toFixed(1)}
+                  <RatingStars value={score} size={12} />
+                </span>
+              )}
+            </dd>
+          </div>
+        </dl>
+
+        {/* separate small action row */}
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <Button href="/app/profile/edit" size="sm">
+            <SparkleIcon size={15} />
+            <Tr k="app.profile.editTitle" />
+          </Button>
+          <ShareProfileButton path={`/app/people/${user.handle}`} />
+          <Button href="/app/settings" size="sm" variant="ghost">
+            <SettingsIcon size={15} />
+            <Tr k="app.settings.title" />
+          </Button>
+        </div>
+
+        {/* deliberately small progress line */}
+        {profilePercent < 100 && (
+          <div className="mt-4">
+            <div
+              role="progressbar"
+              aria-valuenow={profilePercent}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label={dict.app.profile.profileCompletion.replace("{percent}", String(profilePercent))}
+              className="flex items-center justify-between gap-3 text-[11px] font-medium text-foreground-muted"
+            >
+              <span>
+                {dict.app.profile.profileCompletion.replace("{percent}", String(profilePercent))}
+              </span>
+              <span className="font-semibold text-foreground">{profilePercent} %</span>
+            </div>
+            <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-surface-muted">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-electric-500 to-electric-400"
+                style={{ width: `${profilePercent}%` }}
+              />
+            </div>
+          </div>
+        )}
       </Card>
 
-      {/* ------------------------------------------------------------ tabs */}
-      <nav
-        aria-label="Profil"
-        className="inline-flex flex-wrap gap-1 rounded-full border border-border bg-surface p-1"
-      >
-        {tabs.map((item) => (
-          <Link
-            key={item.key}
-            href={item.href}
-            aria-current={tab === item.key ? "page" : undefined}
-            className={`rounded-full px-4 py-1.5 text-sm font-semibold transition-colors ${
-              tab === item.key ? "bg-electric-500 text-white" : "text-foreground-muted hover:text-foreground"
-            }`}
-          >
-            <Tr k={item.labelKey} />
-          </Link>
-        ))}
+      {/* ------------------------- tabs as central horizontal navigation */}
+      <nav aria-label="Profil" className="flex justify-center">
+        <div className="inline-flex flex-wrap justify-center gap-1 rounded-full border border-border bg-surface p-1">
+          {tabs.map((item) => (
+            <Link
+              key={item.key}
+              href={item.href}
+              aria-current={tab === item.key ? "page" : undefined}
+              className={`rounded-full px-4 py-1.5 text-sm font-semibold transition-colors ${
+                tab === item.key ? "bg-electric-500 text-white" : "text-foreground-muted hover:text-foreground"
+              }`}
+            >
+              <Tr k={item.labelKey} />
+            </Link>
+          ))}
+        </div>
       </nav>
 
       {tab === "overview" && (
-        <div className="ic-grid">
-          <div className="ic-span-12 space-y-6 lg:col-span-8">
-            <Card className="space-y-5 p-6">
-              <TagBlock labelKey="app.profile.roles" items={roles} />
-              <TagBlock labelKey="app.discover.interests" items={interestLabels} />
-              <TagBlock labelKey="app.profile.goalsTitle" items={goalLabels} />
-              <TagBlock labelKey="app.profile.lookingFor" items={lookingFor} tone="electric" />
-              <TagBlock labelKey="app.profile.offering" items={offering} tone="forest" />
-              <TagBlock labelKey="app.profile.skills" items={skills} />
-            </Card>
-          </div>
-
-          <div className="ic-span-12 space-y-6 lg:col-span-4">
+        <div className="mx-auto w-full max-w-3xl space-y-3">
+          {profile?.bio && (
             <Card className="p-5">
-              <h2 className="text-sm font-bold tracking-tight">
-                <Tr k="app.profile.accountSection" />
-              </h2>
-              <p className="mt-1 text-xs leading-5 text-foreground-muted">
-                <Tr k="app.profile.accountLead" />
+              <p className="ic-measure whitespace-pre-wrap text-sm leading-6 text-foreground-muted">
+                {profile.bio}
               </p>
-              <ul className="mt-4 space-y-1.5">
-                <AccountLink href="/app/profile/edit" icon={<SparkleIcon size={15} />} labelKey="app.profile.editTitle" />
-                <AccountLink href="/app/card" icon={<TicketIcon size={15} />} labelKey="app.profile.accountCard" />
-                <AccountLink href="/app/billing" icon={<WalletIcon size={15} />} labelKey="app.profile.accountMembership" />
-                <AccountLink href="/app/trust" icon={<ChartIcon size={15} />} labelKey="app.profile.accountTrust" />
-                <AccountLink href="/app/settings" icon={<SettingsIcon size={15} />} labelKey="app.profile.accountSettings" />
-              </ul>
             </Card>
+          )}
 
-            <Card className="p-5">
-              <h2 className="text-sm font-bold tracking-tight">
-                <Tr k="app.profile.tabsPerformance" />
-              </h2>
-              <p className="mt-1 text-xs leading-5 text-foreground-muted">
-                <Tr k="app.profile.performanceLead" />
-              </p>
-              <Button href="/app/profile?tab=performance" size="sm" variant="secondary" className="mt-3">
-                <Tr k="app.common.viewAll" />
-              </Button>
-            </Card>
-          </div>
+          {/* secondary information as accordions, collapsed by default */}
+          <AccordionSection titleKey="app.profile.interestsSection">
+            <TagBlock labelKey="app.discover.interests" items={interestLabels} />
+            <TagBlock labelKey="app.profile.goalsTitle" items={goalLabels} />
+          </AccordionSection>
+
+          <AccordionSection titleKey="app.profile.seekingOffering">
+            <TagBlock labelKey="app.profile.lookingFor" items={lookingFor} tone="electric" />
+            <TagBlock labelKey="app.profile.offering" items={offering} tone="forest" />
+          </AccordionSection>
+
+          <AccordionSection titleKey="app.profile.rolesSkills">
+            <TagBlock labelKey="app.profile.roles" items={roles} />
+            <TagBlock labelKey="app.profile.skills" items={skills} />
+          </AccordionSection>
+
+          {(profile?.websiteUrl || profile?.xUrl || profile?.instagramUrl) && (
+            <AccordionSection titleKey="app.profile.links">
+              <div className="flex flex-wrap items-center gap-2">
+                {profile.websiteUrl && (
+                  <ExternalLink
+                    href={profile.websiteUrl.startsWith("http") ? profile.websiteUrl : `https://${profile.websiteUrl}`}
+                    icon={<GlobeIcon size={13} />}
+                    label="Website"
+                  />
+                )}
+                {profile.xUrl && (
+                  <ExternalLink
+                    href={profile.xUrl.startsWith("http") ? profile.xUrl : `https://x.com/${profile.xUrl.replace(/^@/, "")}`}
+                    icon={<XSocialIcon size={12} />}
+                    label={profile.xUrl.startsWith("@") ? profile.xUrl : `@${profile.xUrl}`}
+                  />
+                )}
+                {profile.instagramUrl && (
+                  <ExternalLink
+                    href={
+                      profile.instagramUrl.startsWith("http")
+                        ? profile.instagramUrl
+                        : `https://instagram.com/${profile.instagramUrl.replace(/^@/, "")}`
+                    }
+                    icon={<InstagramIcon size={13} />}
+                    label={profile.instagramUrl.startsWith("@") ? profile.instagramUrl : `@${profile.instagramUrl}`}
+                  />
+                )}
+              </div>
+            </AccordionSection>
+          )}
+
+          <AccordionSection titleKey="app.profile.accountSection">
+            <ul className="-mx-2 space-y-0.5">
+              <AccountLink href="/app/card" icon={<TicketIcon size={15} />} labelKey="app.profile.accountCard" />
+              <AccountLink href="/app/billing" icon={<WalletIcon size={15} />} labelKey="app.profile.accountMembership" />
+              <AccountLink href="/app/trust" icon={<ChartIcon size={15} />} labelKey="app.profile.accountTrust" />
+              <AccountLink href="/app/settings" icon={<SettingsIcon size={15} />} labelKey="app.profile.accountSettings" />
+            </ul>
+          </AccordionSection>
         </div>
       )}
 
@@ -592,14 +585,45 @@ function ExternalLink({ href, icon, label }: { href: string; icon: React.ReactNo
   );
 }
 
-function StatCell({ labelKey, value }: { labelKey: string; value: number }) {
+/** One compact inline statistic for the header row. */
+function StatInline({ labelKey, value }: { labelKey: string; value: number }) {
   return (
-    <div className="rounded-xl bg-surface-muted px-3 py-2">
+    <div className="inline-flex items-baseline gap-1.5 px-1">
       <dt className="text-xs text-foreground-muted">
         <Tr k={labelKey} />
       </dt>
-      <dd className="text-lg font-bold">{value}</dd>
+      <dd className="text-sm font-bold">{value}</dd>
     </div>
+  );
+}
+
+function StatDot() {
+  return (
+    <span aria-hidden="true" className="text-foreground-subtle">
+      ·
+    </span>
+  );
+}
+
+/**
+ * Collapsible section for secondary profile information – native
+ * `<details>`/`<summary>` so it works without client-side JavaScript and
+ * stays inside the server component.
+ */
+function AccordionSection({ titleKey, children }: { titleKey: string; children: React.ReactNode }) {
+  return (
+    <details className="group rounded-2xl border border-border bg-surface">
+      <summary className="flex cursor-pointer select-none items-center justify-between gap-3 rounded-2xl px-5 py-3.5 [&::-webkit-details-marker]:hidden">
+        <span className="text-sm font-bold tracking-tight">
+          <Tr k={titleKey} />
+        </span>
+        <ChevronDownIcon
+          size={16}
+          className="shrink-0 text-foreground-subtle transition-transform duration-200 group-open:rotate-180"
+        />
+      </summary>
+      <div className="space-y-5 border-t border-border px-5 py-4">{children}</div>
+    </details>
   );
 }
 

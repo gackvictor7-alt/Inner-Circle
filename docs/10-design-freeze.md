@@ -105,6 +105,30 @@ Feature-Auftrags sind **keine** gültigen Gründe.
   Empty-States und Sperrhinweise (Locked-State-Karten) bleibt bestehen.
 - Dateien: `src/components/app/**`, `src/components/ui/**`.
 
+### 1.11 Sprint-3-Follow-up: Start · Discover · Profil (2026-09-21)
+
+**Ausdrücklicher Gründerauftrag** (Fortsetzung des unterbrochenen UX-Auftrags,
+nach dem CPU-Incident-Fix PR #10) – nur diese drei Bereiche wurden angepasst,
+Designsprache, Navigation, Farben, Typografie und Komponenten bleiben
+unverändert:
+
+- **Start (`/app`):** sechs Kernbereiche statt 3×2 jetzt als **2×3-Raster**
+  (Desktop/Tablet 2 Spalten, Mobile 1 Spalte); Cards größer, ruhiger,
+  flächenfüllend (`ic-span-6`, größere Polster/Icons).
+- **Discover (`/app/discover`):** kompakte Filterleiste mit Standort, Umkreis,
+  Rolle und Branche; „Mehr Filter“-Panel (Interesse, Typ, Ich suche, Ich biete,
+  Investmentinteressen); aktive Filter als entfernbare Chips; „Filter
+  zurücksetzen“. Kartendesign und Empty-States unverändert, keine
+  Fake-Personen.
+- **Profil (`/app/profile`):** kompakter Identity-Header, Statistikzeile
+  (Follower · Folgt · Business Connections · Trust Score), separate
+  Action-Zeile, deutlich kleinerer Profilfortschritt, zentrierte
+  Tab-Navigation, Interessen & Ziele und sekundäre Informationen als
+  Accordions (native `<details>` im bestehenden Kartenstil).
+
+**Nicht angefasst:** öffentliche Homepage, Auth/Resend/Trial/Membership,
+App-Navigation (Sidebar/Bottom-Bar), Member Card, Einstellungen.
+
 ## 2. Ausdrücklich erlaubt (kein Designbruch)
 
 - Technische Responsive-Bugfixes (z. B. Überlauf, abgeschnittene Inhalte,

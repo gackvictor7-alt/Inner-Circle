@@ -6,9 +6,14 @@ import { requireUser } from "@/lib/access/server";
 import { listDiscoverCandidates } from "@/lib/platform/queries";
 import { industrySlug } from "@/lib/platform/queries";
 import {
+  INVESTMENT_INTEREST_SLUGS,
+  RADIUS_OPTIONS_KM,
   applyDiscoverFilters,
+  geocodeLocation,
   hasActiveFilters,
   isDiscoverFilterKind,
+  isInvestmentInterest,
+  radiusFromValue,
   matchPercentFromScore,
   rankCandidates,
   type DiscoverFilters,
@@ -39,7 +44,18 @@ function parseList(json: string | null | undefined): string[] {
 export default async function DiscoverPage({
   searchParams,
 }: {
-  searchParams: Promise<{ role?: string; location?: string; industry?: string; interest?: string; kind?: string }>;
+  searchParams: Promise<{
+    role?: string;
+    location?: string;
+    industry?: string;
+    interest?: string;
+    kind?: string;
+    lookingFor?: string;
+    offering?: string;
+    invest?: string;
+    radius?: string;
+    more?: string;
+  }>;
 }) {
   const access = await requireUser("/app/discover");
   if (!access.entitlements.networkDiscover) redirect("/app/billing?paywall=trial");
@@ -80,8 +96,13 @@ export default async function DiscoverPage({
     location: params.location?.trim() || undefined,
     industry: params.industry?.trim() || undefined,
     interest: params.interest?.trim() || undefined,
+    lookingFor: params.lookingFor?.trim() || undefined,
+    offering: params.offering?.trim() || undefined,
+    investInterest: isInvestmentInterest(params.invest) ? params.invest : undefined,
+    radius: radiusFromValue(params.radius),
     kind: isDiscoverFilterKind(params.kind) ? params.kind : undefined,
   };
+  const moreOpen = params.more === "1";
 
   const candidates = await listDiscoverCandidates({
     viewerId: access.user.id,
@@ -173,14 +194,37 @@ export default async function DiscoverPage({
         location: filters.location,
         industry: filters.industry,
         interest: filters.interest,
+        lookingFor: filters.lookingFor,
+        offering: filters.offering,
+        investInterest: filters.investInterest,
+        radius: filters.radius,
         kind: filters.kind,
       }}
+      moreOpen={moreOpen}
+      /** The radius only really works for cities in the offline table. */
+      locationGeocodable={geocodeLocation(filters.location) !== null}
       filterOptions={{
         industries: [...industryLabelBySlug.entries()].map(([value, label]) => ({ value, label })),
         interests: viewerInterests,
+        investmentInterests: investmentInterestOptions(interestTaxonomy, locale),
+        radiusKm: [...RADIUS_OPTIONS_KM],
       }}
     />
   );
+}
+
+/** Investment filter vocabulary = the curated subset of the interest taxonomy. */
+function investmentInterestOptions(
+  taxonomy: { slug: string; labelDe: string; labelEn: string }[],
+  locale: "de" | "en",
+) {
+  return INVESTMENT_INTEREST_SLUGS.map((slug) => {
+    const row = taxonomy.find((candidate) => candidate.slug === slug);
+    return {
+      value: slug,
+      label: row ? (locale === "de" ? row.labelDe : row.labelEn) : slug,
+    };
+  });
 }
 
 function candidateInterestOptions(
