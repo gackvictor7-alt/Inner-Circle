@@ -42,18 +42,15 @@ P2 mittelfristig · P3 Aufräumen.
 
 ## P1 – wichtig vor dem Launch
 
-### K-03 · Jahrespreis: Marketing-Text und Code widersprechen sich
+### K-03 · Jahrespreis: Marketing-Text und Code widersprechen sich — **ERLEDIGT (2026-09-21)**
 
-- **Symptom:** `/membership` sagt „Preis folgt / Der endgültige Jahrespreis ist
-  noch nicht festgelegt", während `src/lib/membership/plans.ts` **249,90 €/Jahr**
-  führt und `/app/billing` diesen Preis anzeigt.
-- **Betroffen:** `src/lib/i18n/dictionaries.ts` (`membershipAnnualNote`,
-  `membership.annual*`).
-- **Lösung:** Gründer entscheidet: Preis bestätigen oder Jahresplan im Billing
-  als „noch nicht verfügbar" kennzeichnen. Danach Texte angleichen
-  (redaktionelle Änderung, kein Redesign).
-- **Hinweis:** Nicht im Rahmen dieses Dokumentationsauftrags geändert
-  (Design-/Inhalts-Freeze).
+- **Auflösung:** Gründerentscheidung: 24,99 €/Monat und 249,90 €/Jahr sind die
+  kommunizierten Preise. `/membership`, die Homepage (`heroMembershipHint`,
+  `MembershipBlock`) und `/app/billing` nennen durchgehend denselben Preis;
+  der Jahresplan zeigt den Vorteil als „2 Monate geschenkt" (16 % Ersparnis).
+  Die alten „Preis folgt"-Keys (`home.membershipAnnual*`) sind gelöscht.
+- **Offen bleibt:**Stripe-Produkt/Preise sind noch nicht scharf geschaltet
+  (see `12-roadmap.md`, S-1) – Checkout läuft aktuell über Dev-Aktivierung.
 
 ### K-04 · OAuth-Buttons führen ins Leere (404)
 
