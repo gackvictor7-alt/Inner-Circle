@@ -31,7 +31,7 @@ export function SiteFooter() {
 
   return (
     <footer className="bg-midnight-900 text-paper-50">
-      <div className="mx-auto w-full max-w-6xl px-4 py-14 sm:px-6 sm:py-16 lg:px-8">
+      <div className="ic-shell py-14 sm:py-16">
         <div className="grid gap-10 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
           <div className="flex flex-col items-start gap-4">
             <div className="flex items-center gap-3">

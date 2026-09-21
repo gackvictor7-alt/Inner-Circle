@@ -34,7 +34,7 @@ Inner-Circle/
 ├── README.md                  # Einstieg für Menschen
 ├── docs/                      # verbindliche Dokumentation (dieses Verzeichnis)
 │   └── archive/               # historisches Fortschrittsprotokoll (deprecated als Statusquelle)
-├── public/                    # statische Assets: images/ (16 Bilder), _headers
+├── public/                    # statische Assets: images/ (17 + 4 Demo-Bilder + 7 Avatare), _headers
 ├── drizzle/                   # SQL-Migrationen + Meta-Snapshots
 ├── scripts/                   # Seed, D1-Bootstrap, Admin-Bootstrap, Outbox, Audits
 ├── src/

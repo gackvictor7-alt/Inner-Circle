@@ -5,13 +5,14 @@
 
 export const siteV2De = {
   home2: {
-    heroKicker: "Business-Plattform",
-    heroTitleA: "Finde Menschen und Chancen,",
-    heroTitleB: "die dein Business weiterbringen.",
+    heroKicker: "Business-Netzwerk",
+    heroTitleA: "Dein Business braucht die richtigen Köpfe.",
+    heroTitleB: "Keine zusätzlichen Kontakte.",
     heroLead:
-      "Eine Business-Plattform, auf der ambitionierte Menschen Kunden, Partner, Kapital, Investments, Wissen und neue Möglichkeiten finden.",
-    heroCtaPrimary: "INNER CIRCLE entdecken",
-    heroCtaSecondary: "48h Discovery starten",
+      "Kunden, Vertriebspartner, Kapital, Beteiligungen, Wissen und Projekte: INNER CIRCLE ist ein Netzwerk aus Gründern, Unternehmern, Investoren und Machern zwischen 20 und 35. Verbinden geht nur mit einer persönlichen Nachricht – Vollzugriff ab 24,99 € im Monat.",
+    heroCtaPrimary: "Drei Ergebnisse ansehen",
+    heroCtaSecondary: "48 Stunden kostenlos entdecken",
+    heroMembershipHint: "24,99 € im Monat oder 249,90 € im Jahr · monatlich kündbar",
     heroCtaTertiary: "Wie es funktioniert",
     heroTrialBadge: "48 Stunden Discovery inklusive",
     heroNote: "KI-generierte, vorläufige Marketingvisualisierung.",
@@ -75,8 +76,13 @@ export const siteV2De = {
     enablesKicker: "Sechs Kernbereiche",
     enablesTitle: "Was du hier konkret bekommst.",
     enablesLead:
-      "Kein Unterhaltungs-Feed. Wirtschaftliche Aktivität aus echten Beziehungen – in sechs Bereichen.",
+      "Kein Unterhaltungs-Feed: Kunden, Partner, Kapital, Wissen, Projekte und Abende, an denen Entscheidungen entstehen – in sechs Bereichen.",
     enablesCta: "Alle Bereiche ansehen",
+    howItWorksLink: "Mehr erfahren",
+    capitalKicker: "Kapital im Netzwerk",
+    capitalLine:
+      "20 % der Plattform-Einnahmen sind als Investmentbudget geplant – 25 % davon fließen zurück in Unternehmen und Projekte aus dem Netzwerk. Effektiv 5 %.",
+    capitalCta: "Modell ansehen",
     enablesNetworkTitle: "Network",
     enablesNetworkText:
       "Finde Geschäftspartner, Kunden und Experten, die zu deinen Zielen passen.",
@@ -144,12 +150,18 @@ export const siteV2De = {
     eventsPoint3: "Konzepte sind als Konzepte gekennzeichnet.",
     eventsCta: "Events ansehen",
     membershipKicker: "Membership",
-    membershipTitle: "Ein Zugang. 24,99 € im Monat.",
+    membershipTitle: "Ein Zugang. Alles drin.",
     membershipLead:
-      "Keine Stufen, keine künstlichen Pakete. Network, Deals, Jobs, Investments, Marketplace, Academy, Events und Trust in einer Membership. Der Preis ist die Eintrittshürde – nicht der Status.",
+      "Keine Stufen, keine künstlichen Pakete. Network, Deals, Jobs, Investments, Marketplace, Academy, Events und Trust in einer Mitgliedschaft – Abrechnungszeitraum wählbar.",
     membershipMonthly: "Monatlich",
     membershipAnnual: "Jährlich",
-    membershipAnnualBadge: "Bestes Verhältnis",
+    membershipAnnualBadge: "Preisvorteil",
+    membershipMonthlyEquivalent: "entspricht 20,83 € pro Monat",
+    membershipAnnualSavingHint:
+      "Gegenüber zwölf Monatszahlungen gespart – ohne Rabatt-Aktion, einfach gleiche Leistung.",
+    billingPeriodTitle: "Abrechnungszeitraum",
+    periodMonth: "/ Monat",
+    periodYear: "/ Jahr",
     membershipPopular: "Empfohlen",
     membershipIncluded: "Enthalten",
     membershipIncludedItems: [
@@ -250,13 +262,14 @@ export type SiteV2Dict = typeof siteV2De;
 
 export const siteV2En: SiteV2Dict = {
   home2: {
-    heroKicker: "Business platform",
-    heroTitleA: "Find the people and chances",
-    heroTitleB: "that move your business forward.",
+    heroKicker: "Business network",
+    heroTitleA: "Your business needs the right heads.",
+    heroTitleB: "Not more contacts.",
     heroLead:
-      "A business platform where ambitious people find customers, partners, capital, investments, knowledge and new opportunities.",
-    heroCtaPrimary: "Discover INNER CIRCLE",
-    heroCtaSecondary: "Start 48h Discovery",
+      "Customers, sales partners, capital, equity, knowledge and projects: INNER CIRCLE is a network of founders, entrepreneurs, investors and operators between 20 and 35. Connecting only works with a personal message – full access from €24.99 a month.",
+    heroCtaPrimary: "See the three outcomes",
+    heroCtaSecondary: "Start 48 hours free",
+    heroMembershipHint: "€24.99 a month or €249.90 a year · cancel monthly",
     heroCtaTertiary: "How it works",
     heroTrialBadge: "Includes 48 hours of discovery",
     heroNote: "AI-generated provisional marketing visual.",
@@ -320,8 +333,13 @@ export const siteV2En: SiteV2Dict = {
     enablesKicker: "Six core areas",
     enablesTitle: "What you actually get here.",
     enablesLead:
-      "Not an entertainment feed. Economic activity from real relationships – in six areas.",
+      "Not an entertainment feed: customers, partners, capital, knowledge, projects and evenings where decisions get made – in six areas.",
     enablesCta: "See all areas",
+    howItWorksLink: "Learn more",
+    capitalKicker: "Capital inside the network",
+    capitalLine:
+      "20% of platform revenue is planned as the investment budget – 25% of that flows back into companies and projects from the network. Effectively 5%.",
+    capitalCta: "See the model",
     enablesNetworkTitle: "Network",
     enablesNetworkText:
       "Find partners, customers and experts who match your goals.",
@@ -389,12 +407,18 @@ export const siteV2En: SiteV2Dict = {
     eventsPoint3: "Concepts are labelled as concepts.",
     eventsCta: "View events",
     membershipKicker: "Membership",
-    membershipTitle: "One access. €24.99 a month.",
+    membershipTitle: "One access. Everything inside.",
     membershipLead:
-      "No tiers, no artificial packages. Network, deals, jobs, investments, marketplace, academy, events and trust in one membership. The price is the entry – not the status.",
+      "No tiers, no artificial packages. Network, deals, jobs, investments, marketplace, academy, events and trust in one membership – you choose the billing period.",
     membershipMonthly: "Monthly",
     membershipAnnual: "Annual",
-    membershipAnnualBadge: "Best value",
+    membershipAnnualBadge: "Better value",
+    membershipMonthlyEquivalent: "equivalent to €20.83 a month",
+    membershipAnnualSavingHint:
+      "Compared to twelve monthly payments – no discount campaign, just the same access.",
+    billingPeriodTitle: "Billing period",
+    periodMonth: "/ month",
+    periodYear: "/ year",
     membershipPopular: "Recommended",
     membershipIncluded: "Included",
     membershipIncludedItems: [

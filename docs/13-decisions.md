@@ -192,3 +192,30 @@ stehen, sind aber unten ausdrücklich als ersetzt markiert – der **Code** und
 - **Konsequenz:** Keine neuen Bild-Assets, kein Risiko für Build-/CPU-Bilanz.
   Die Ersetzung erfolgt als separater, ausdrücklich beauftragter Schritt mit
   Sichtprüfung und geänderten `imageAlt`-Texten.
+- **Status:** durch **ADR-013 aufgelöst** (2026-09-21) – beauftragter Tausch ist
+  erfolgt.
+
+## ADR-013: Bildrichtung regeneriert, Demo-Content im Member-Bereich ergänzt (2026-09-21)
+
+- **Kontext:** Der Gründer hat die Bildsprache ausdrücklich neu beauftragt
+  (Menschen 20–35, internationale Gesichter, Architektur aus Glas/Beton/Stein,
+  kein Old Money, kein Loft/Ziegel/Holz, keine Fake-Handshakes, Site bleibt im
+  bisherigen Dark-Premium-Look) und zusätzlich verlangt, dass der
+  Mitgliederbereich gefüllte, glaubwürdige Demo-Ansichten zeigt.
+- **Entscheidung:**
+  - `public/images/{network,business,investments,marketplace,membership,events-vision}.jpg`
+    wurden ersetzt und komprimiert (16:9, 1376×768, ≤ 202 KB). `hero-home.jpg`
+    und `hero.jpg` bleiben unverändert (Design Freeze).
+  - Neue Avatare/Demo-Bilder: `public/images/avatars/avatar-7.jpg` und
+    `public/images/demo/{demo-event,demo-office,demo-project,demo-cover}.jpg`.
+    Sie sind **provisorische, KI-generierte Platzhalter** und ausschließlich
+    Demo-/Marketingbild – kein Mitglieder-Foto, kein realer Eventnachweis.
+  - Alle Demo-Profile bekommen eine englische Variante pro Freitextfeld
+    (`DemoProfile.en`) und ein `completion`-Feld; das Startprofil ist ein
+    Gründer (Julian Weiss) statt der vorherigen „Lena"-Persona.
+  - Bildkompositionen vermeiden die Lesart „Frau erklärt Mann etwas":
+    Präsentieren/Empfangen ist über die Bilder gemischt (z. B.
+    `marketplace.jpg` zeigt einen Mann, der einer Frau ein Laptop zeigt).
+- **Konsequenz:** ADR-012 ist erledigt. Weitere Bildtauschen oder -regenerations-
+  schritte brauchen erneut einen ausdrücklichen Gründungsauftrag; Alt-Texte
+  (`imageAlt*` in `src/lib/i18n/dictionaries.ts`) müssen mitziehen.

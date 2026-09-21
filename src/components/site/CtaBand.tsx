@@ -24,8 +24,8 @@ export function CtaBand({
   secondaryHref: string;
 }) {
   return (
-    <section className="border-b border-border/70 bg-background py-16 sm:py-24">
-      <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8">
+    <section className="border-b border-border/70 bg-background py-14 sm:py-16 lg:py-20">
+      <div className="ic-shell-wide">
         <Reveal>
           <div className="relative overflow-hidden rounded-3xl bg-midnight-900 px-6 py-14 text-center sm:px-12 sm:py-20">
             <div

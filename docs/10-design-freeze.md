@@ -27,10 +27,17 @@ Feature-Auftrags sind **keine** gültigen Gründe.
 
 ### 1.2 Bildsprache
 
-- Bestehende Bilder in `public/images/` (16 Stück) und `public/images/avatars/`
-  dürfen **nicht ausgetauscht, ersetzt oder neu generiert** werden.
+- **Ausdrücklicher Gründungsauftrag 2026-09-21:** die Public-Bilder wurden auf
+  die neue Bildrichtung regenerated (`docs/13-decisions.md`, ADR-013) und sind
+  ab jetzt **erneut eingefroren**: `hero-home.jpg` (unverändert), `network.jpg`,
+  `business.jpg`, `investments.jpg`, `marketplace.jpg`, `membership.jpg`,
+  `events-*.jpg`, `public/images/demo/*` (4 Bilder) und
+  `public/images/avatars/avatar-1..7.jpg`.
+- Uniformes Format: 1376×768 (16:9), JPEG `-sampling-factor 4:2:0 -strip
+  -quality 78 -interlace Plane`, 39–202 KB pro Datei. Keine HDR-/Aufheller-
+  Kurven – Helligkeit kommt aus dem Motiv, nicht aus der Nachbearbeitung.
 - Bildausschnitte (`object-cover`, Seitenverhältnisse), Overlays und Captions
-  bleiben unverändert.
+  bleiben unverändert; `hero.jpg` (OG-Preview) bleibt der bestehende Hero.
 
 ### 1.3 Farbwelt
 
@@ -153,6 +160,19 @@ App-Navigation (Sidebar/Bottom-Bar), Member Card, Einstellungen.
 - Entfernen oder Umstellen von Sprach-/Theme-Umschaltern.
 - Umgestaltung des Mitgliederbereichs (Sidebar-Typ, Kartenstil, Tabellenstil).
 - Änderungen an `src/app/globals.css`-Tokens ohne Designauftrag.
+
+### 3.1 Dokumentierte, ausdrücklich beauftragte Ausnahmen (2026-09-21)
+
+Beide Punkte sind Gründungsaufträge, nach `## 4` protokolliert und damit
+**erlaubt**; sie sind jetzt ihrerseits eingefroren:
+
+1. **Breiten-System (Public):** `.ic-shell`, `.ic-shell-wide`, `.ic-shell-prose`
+   in `src/app/globals.css` ersetzen das pauschale `max-w-6xl` pro Seite.
+   Kein Token wurde angefasst (Farben, Radien, Schatten, Schriftgrößen bleiben).
+2. **Hero-Preis + Bildrichtung:** der Hero nennt den Preis als Hinweiszeile
+   (24,99 €/249,90 €), und die Public-Bilder wurden nach neuer Bildrichtung
+   regeneriert (`13-decisions.md`, ADR-013). Hero-Bild `hero-home.jpg` selbst
+   ist unangetastet.
 
 ## 4. Wenn ein Designauftrag kommt
 

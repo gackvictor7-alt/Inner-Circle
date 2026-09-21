@@ -9,14 +9,21 @@ import {
   CheckIcon,
   InfoIcon,
   LockIcon,
-  SparkleIcon,
 } from "@/components/ui/icons";
 import { PageHero } from "@/components/site/PageHero";
-import { Section, SectionHeading } from "@/components/site/Section";
+import { Kicker, Section, SectionHeading } from "@/components/site/Section";
 import { Reveal } from "@/components/site/Reveal";
 import { Callout } from "@/components/site/blocks";
 import { CtaBand } from "@/components/site/CtaBand";
 
+/**
+ * Membership page: exactly one membership, two billing periods.
+ *
+ * Prices are read from `PLANS` (`src/lib/membership/plans.ts`) – the page can
+ * no longer claim "annual price to follow" while billing charges 249,90 €
+ * (known issue K-03, resolved by founder decision 2026-09-21). The annual
+ * advantage is labelled quietly as "Preisvorteil", not as a discount badge.
+ */
 export function MembershipContent() {
   const { t } = useI18n();
   const page = t.pages.membership;
@@ -41,20 +48,18 @@ export function MembershipContent() {
         }
       />
 
-      {/* Pricing */}
-      <Section bg="default">
-        <div className="relative mx-auto grid max-w-4xl gap-6 md:grid-cols-[1.15fr_1fr]">
-          {/* Background key image strip */}
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute -right-6 -top-6 hidden h-40 w-40 overflow-hidden rounded-full opacity-15 blur-[2px] lg:block"
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/images/membership.jpg" alt="" className="h-full w-full rounded-full object-cover" />
+      {/* Pricing – two periods, one membership */}
+      <Section bg="default" width="wide">
+        <Reveal>
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <Kicker>{t.home2.membershipKicker}</Kicker>
+            <p className="max-w-xl text-sm leading-6 text-foreground-muted">{page.pricePeriodHint}</p>
           </div>
+        </Reveal>
 
-          <Reveal>
-            <Card className="relative h-full border-electric-500/40 p-6 shadow-card sm:p-8">
+        <div className="mt-8 grid gap-6 lg:grid-cols-2">
+          <Reveal delay={40}>
+            <Card className="flex h-full flex-col border-electric-500/40 p-6 shadow-card sm:p-8">
               <div className="flex items-center justify-between gap-3">
                 <h2 className="text-lg font-bold tracking-tight">{page.monthlyTitle}</h2>
                 <Badge variant="electric">{page.monthlyBadge}</Badge>
@@ -64,7 +69,7 @@ export function MembershipContent() {
                 <span className="text-base text-foreground-muted">{page.period}</span>
               </div>
               <p className="mt-2 text-xs font-medium text-foreground-subtle">{page.billingNote}</p>
-              <p className="mt-6 text-sm font-bold uppercase tracking-[0.14em] text-foreground-subtle">
+              <p className="mt-7 text-sm font-bold uppercase tracking-[0.14em] text-foreground-subtle">
                 {page.includedTitle}
               </p>
               <ul className="mt-3 space-y-2.5">
@@ -76,8 +81,8 @@ export function MembershipContent() {
                 ))}
               </ul>
               <div className="mt-7">
-                <Button href="/register" size="lg" fullWidth>
-                  {t.nav.join}
+                <Button href="/register?billing=monthly" size="lg" fullWidth>
+                  {page.selectCta}
                   <ArrowRightIcon size={17} />
                 </Button>
                 <p className="mt-3 flex items-start gap-2 text-xs leading-5 text-foreground-subtle">
@@ -88,42 +93,37 @@ export function MembershipContent() {
             </Card>
           </Reveal>
 
-          <div className="flex flex-col gap-6">
-            <Reveal delay={100}>
-              <Card className="h-full overflow-hidden">
-                <div className="relative h-36 w-full overflow-hidden">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src="/images/membership.jpg"
-                    alt={t.common.imageNote}
-                    loading="lazy"
-                    className="h-full w-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-surface via-transparent to-transparent" />
+          <Reveal delay={100}>
+            <div className="flex h-full flex-col gap-6">
+              <Card className="flex flex-col border-forest-500/40 p-6 sm:p-8">
+                <div className="flex items-center justify-between gap-3">
+                  <h2 className="text-lg font-bold tracking-tight">{page.annualTitle}</h2>
+                  <Badge variant="forest">{page.annualBadge}</Badge>
                 </div>
-                <div className="p-6 sm:p-8 sm:pt-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <h2 className="text-lg font-bold tracking-tight">{page.annualTitle}</h2>
-                    <Badge variant="sand">
-                      <SparkleIcon size={13} />
-                      {page.annualBadge}
-                    </Badge>
-                  </div>
-                  <p className="mt-3 text-sm leading-6 text-foreground-muted">{page.annualText}</p>
-                  <p className="mt-4 inline-flex rounded-xl bg-surface-muted px-4 py-2.5 text-sm font-semibold text-foreground-subtle">
-                    {page.annualNote}
-                  </p>
+                <div className="mt-5 flex items-baseline gap-2">
+                  <span className="text-4xl font-bold tracking-tight sm:text-5xl">{page.annualPrice}</span>
+                  <span className="text-base text-foreground-muted">{page.annualPeriod}</span>
+                </div>
+                <p className="mt-2 text-xs font-medium text-forest-600 dark:text-forest-300">
+                  {page.annualEquivalent}
+                </p>
+                <p className="mt-5 text-sm leading-6 text-foreground-muted">{page.annualText}</p>
+                <p className="mt-3 text-xs leading-5 text-foreground-subtle">{page.annualNote}</p>
+                <div className="mt-7">
+                  <Button href="/register?billing=annual" size="lg" variant="secondary" fullWidth>
+                    {page.selectCta}
+                    <ArrowRightIcon size={17} />
+                  </Button>
+                  <p className="mt-3 text-xs leading-5 text-foreground-subtle">{page.selectedNote}</p>
                 </div>
               </Card>
-            </Reveal>
-            <Reveal delay={160}>
               <Callout
                 icon={<LockIcon size={20} />}
                 title={page.payNoteTitle}
                 text={page.payNote}
               />
-            </Reveal>
-          </div>
+            </div>
+          </Reveal>
         </div>
       </Section>
 
@@ -132,7 +132,7 @@ export function MembershipContent() {
         <Reveal>
           <SectionHeading kicker={page.kicker} title={page.faqTitle} />
         </Reveal>
-        <div className="mx-auto mt-10 max-w-3xl">
+        <div className="ic-shell-prose mt-10">
           {t.home.faq.map((item) => (
             <details
               key={item.q}

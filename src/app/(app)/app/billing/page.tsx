@@ -139,7 +139,8 @@ export default async function BillingPage({
             ))}
           </ul>
           <p className="mt-5 text-xs text-foreground-subtle">
-            Trial: {trialConfig.hours} h · {trialConfig.connectionRequestLimit} Kontaktanfragen
+            <Tr k="app.trial.title" /> · {trialConfig.hours} h · {trialConfig.connectionRequestLimit}{" "}
+            <Tr k="app.network.requestsTitle" />
           </p>
         </Card>
       </div>
@@ -165,6 +166,12 @@ export default async function BillingPage({
                     {plan.id === "annual" ? <Tr k="app.billing.perYear" /> : <Tr k="app.billing.perMonth" />}
                   </span>
                 </p>
+                {plan.id === "monthly" ? (
+                  <p className="mt-3 text-xs leading-5 text-foreground-subtle">
+                    <Tr k="app.billing.annualHint" /> ·{" "}
+                    {formatMoney(PLANS.annual.priceCents, PLANS.annual.currency, "de")}
+                  </p>
+                ) : null}
                 <form action="/api/billing/checkout" method="post" className="mt-6">
                   <input type="hidden" name="plan" value={plan.id} />
                   <Button type="submit" fullWidth>
@@ -208,7 +215,8 @@ export default async function BillingPage({
       </Card>
 
       <p className="text-xs leading-5 text-foreground-subtle">
-        {membershipPricing.monthly.cents / 100} € · {membershipPricing.annual.cents / 100} € ·{" "}
+        {formatMoney(membershipPricing.monthly.cents, membershipPricing.monthly.currency, "de")} ·{" "}
+        {formatMoney(membershipPricing.annual.cents, membershipPricing.annual.currency, "de")} ·{" "}
         {flags.devToolsVisible ? <Tr k="app.common.devMode" /> : null}
       </p>
     </div>

@@ -3,7 +3,9 @@
 **Diese Datei ist der verbindliche Einstiegspunkt für jeden Menschen und jeden
 KI-Agenten, der an diesem Repository arbeitet.**
 
-- **Stand:** 2026-09-21 (Sprint 4 – Homepage Conversion, Reason Why, Membership/Trust/20-%-Modell; Member-App nur gezielt)
+- **Stand:** 2026-09-21 (Sprint 4 – Homepage Conversion, Reason Why,
+  Membership/Trust/20-%-Modell; neue Bildrichtung per Gründungsauftrag
+  (ADR-013); Demo-Content im Member-Bereich ausgebaut)
 - **Technische Basis:** Branch `arena/01a0c434-inner-circle`, Basis `main` @
   `0babcb3`. Vorheriger dokumentierter Stand: `f22c19e` ("fix(auth): honest
   delivery states, protected dev outbox, working 48h trial start")
@@ -63,10 +65,10 @@ existiert. Backend + Daten + Berechtigungen + Nachweis gehören dazu.
 
 | Funktion | Status | Nachweis |
 | -------- | ------ | -------- |
-| Startseite `/` – Conversion-Flow (Hero Reason Why → 3 Outcomes → 6 Kernbereiche editorial → Audience → Flow → Trust → ein Membership-Preis → 20-%-Portfolio → Events → CTA) | WORKING | `src/app/(site)/HomeContent.tsx`; Hero-Bild unverändert; Preis nicht im Hero; **statisch vorgeneriert** |
+| Startseite `/` – Conversion-Flow (Hero mit 3 Outcomes + Preis-Hinweis → schmales 20-%-Kapital-Band → Membership-Preis → 6 Kernbereiche → Events → CTA) | WORKING | `src/app/(site)/HomeContent.tsx`; Hero-Bild unverändert, Hero nennt beide Preise (24,99 €/249,90 €); **statisch vorgeneriert** |
 | Preview-Seiten `/network`, `/business-deals`, `/investments`, `/marketplace`, `/events` | WORKING | statische Inhalte, nicht aktivierte Funktionen als „Demnächst verfügbar" gekennzeichnet; **statisch vorgeneriert** |
 | `/portfolio` – INNER CIRCLE Portfolio (Arbeitstitel) | WORKING | `src/app/(site)/portfolio/`; 20-%-/25-%-/75-%-Modell (bezogen auf 100 %: 5 % IC / 15 % extern) + 100-€-Beispiel; **kein Fonds, keine Renditeversprechen**; transparent als geplante strategische Zielallokation; **statisch vorgeneriert** |
-| `/membership` (Preise, Leistungen) | WORKING | 24,99 €/Monat aktiv; Jahrespreis im Marketing noch als „folgt" (siehe Known Issue) |
+| `/membership` (Preise, Leistungen) | WORKING | 24,99 €/Monat **und** 249,90 €/Jahr („2 Monate geschenkt"); K-03 gelöst, Checkout weiter Dev-Aktivierung bis Stripe scharf ist |
 | Auth-Seiten `/login`, `/register`, `/forgot-password`, `/reset-password`, `/verify` | WORKING | siehe Bereich B |
 | Rechts-Platzhalter `/imprint`, `/privacy`, `/terms` | PARTIAL | bewusst Platzhalter, kein geprüfter Rechtstext |
 | `/design` (internes Design-System) | WORKING | nur Styleguide, kein Produktfeature |
@@ -218,6 +220,28 @@ existiert. Backend + Daten + Berechtigungen + Nachweis gehören dazu.
 | Lint | PARTIAL | **15 bestehende Hinweise (5 Fehler, 10 Warnungen)** – Stand unverändert gegenüber dem Incident-Fix; keine neuen Befunde aus diesem Sprint |
 | Monitoring/Alerting | PREPARED | Observability im Worker aktiv, keine Alarme |
 
+## 4a. Demo-Content (verbindliche Regeln)
+
+- **Quelle:** alles Fiktive lebt zentral in `src/lib/demo/index.ts`
+  (`DEMO_CONTENT_ENABLED` als Notausschalter) und wird über
+  `src/components/app/DemoSections.tsx` gerendert.
+- **Gating:** echte Daten verdrängen Demo-Daten. `/app/network` zeigt die
+  Beispielprofile nur, wenn die echte Mitgliederliste leer ist; `/app/profile`
+  blendet die Beispielbeiträge **unter** den echten Beiträgen ein.
+- **Sichtbarkeit:** Badge „Demo"/„Beispiel"/„DEMO-PROFIL", Hinweistext
+  `app.demo.notice` bzw. `app.profile.activityLead`; Demo-Posts tragen
+  „Demo · keine echten Reaktionen".
+- **Verboten:** keine DB-Schreibvorgänge, keine erfundenen Umsätze, Trust-Scores,
+  Bewertungen, Verifizierungen oder Engagement-Zahlen; Demo-Profile werden nie
+  in Statistiken gezählt.
+- **Bilder:** `public/images/demo/*` und `public/images/avatars/*` sind
+  provisorische, KI-generierte Platzhalter (kein reales Mitglied, kein
+  Event-Nachweis) und bleiben als solche gekennzeichnet.
+- **Zweisprachig:** Demo-Profile tragen eine englische Variante je Freitextfeld
+  (`DemoProfile.en`); neue Demo-Texte immer DE **und** EN (i18n-Parity-Test).
+
+---
+
 ## 4b. Informationsarchitektur ab Sprint 3
 
 **Public-Website-Performance (Incident-Fix 2026-09-21, Error 1102):** Die
@@ -238,11 +262,11 @@ Bereiche:**
 | # | Bereich | Route | Inhalt |
 | - | ------- | ----- | ------ |
 | 1 | **Start** | `/app` | kompakte Kopfzeile (`Hallo, <Name>` + Trial-Chip + Inbox-Shortcut) und die sechs Kernbereichs-Karten als **2×3-Raster auf Desktop** (Tablet ebenfalls 2-spaltig, Mobile 1-spaltig) – größere, ruhigere Cards |
-| 2 | **Discover** | `/app/discover` | Business-Karten mit Pflicht-Connect-Nachricht, Relevanz-Ranking, **kompakte Filterleiste** (Standort, Umkreis, Rolle, Branche) + „Mehr Filter“ (Interesse, Typ, Ich suche, Ich biete, Investmentinteressen), aktive Filter als entfernbare Chips, „Filter zurücksetzen“, ehrliche Leerzustände – keine Fake-Personen |
+| 2 | **Discover** | `/app/discover` | Business-Karten mit Pflicht-Connect-Nachricht, Relevanz-Ranking, **kompakte Filterleiste** (Standort, Umkreis, Rolle, Branche) + „Mehr Filter“ (Interesse, Typ, Ich suche, Ich biete, Investmentinteressen), aktive Filter als entfernbare Chips, „Filter zurücksetzen“, ehrliche Leerzustände – echte Treffer haben Vorrang, Demonstration nur im Leerzustand (`DiscoverDemoSection`) |
 | 3 | **Erstellen** | Create-Sheet (Desktop-Button / Mobile `+`) | Business Deal · Job/Projekt · Investment · Marketplace-Angebot · Kurs · Beitrag |
 | 4 | **Inbox** | `/app/inbox` | Nachrichten · Anfragen · Benachrichtigungen (Segmented Control) |
 | 5 | **Events** | `/app/events` | kommende Events, Bewerbungen, eigene Teilnahme – kuratiert von INNER CIRCLE |
-| 6 | **Profil** | `/app/profile` | Business Identity: kompakten Header (Avatar, Name, Handle, Positionierung), Statistikzeile (Follower · Folgt · Business Connections · Trust Score), separate Action-Zeile (Profil bearbeiten · Profil teilen · Einstellungen), schmaler Profilfortschritt, Tabs Übersicht · Aktivitäten · Performance · Angebote zentriert; Interessen & Ziele und sekundäre Infos als Accordions (eingeklappt) |
+| 6 | **Profil** | `/app/profile` | Business Identity: kompakten Header (Avatar, Name, Handle, Positionierung), Statistikzeile (Follower · Folgt · Business Connections · Trust Score), separate Action-Zeile (Profil bearbeiten · Profil teilen · Einstellungen), schmaler Profilfortschritt, Tabs Beiträge · Übersicht · Performance · Angebote zentriert (Beiträge = Standard, echte Posts oben, darunter klar markierte Beispielbeiträge); Interessen & Ziele und sekundäre Infos als Accordions (eingeklappt) |
 
 **UX-Follow-up (2026-09-21, ausdrücklicher Gründerauftrag):** Start zeigt die
 sechs Kernbereiche jetzt als **2×3-Raster** (Desktop/Tablet 2 Spalten, Mobile

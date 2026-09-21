@@ -13,9 +13,11 @@ import {
   DEMO_COURSES,
   DEMO_DEALS,
   DEMO_EVENTS,
+  DEMO_INBOX_THREADS,
   DEMO_JOBS,
   DEMO_LISTINGS,
   DEMO_PROFILES,
+  DEMO_PROFILE_POSTS,
   PORTFOLIO_DASHBOARD_PREVIEW,
   type DemoProfile,
 } from "@/lib/demo";
@@ -63,6 +65,25 @@ function SectionBlock({
   );
 }
 
+/**
+ * Demo profiles are written in German with an English variant for every
+ * free-text field (`profile.en`). This keeps the two languages in sync
+ * without duplicating the whole demo dataset at every render.
+ */
+function demoText(profile: DemoProfile, locale: string) {
+  const en = locale === "en";
+  return {
+    role: en ? profile.roleEn : profile.role,
+    company: en ? (profile.en.company ?? profile.company) : profile.company,
+    positioning: en ? profile.en.positioning : profile.positioning,
+    bio: en ? profile.en.bio : profile.bio,
+    interests: en ? profile.en.interests : profile.interests,
+    lookingFor: en ? profile.en.lookingFor : profile.lookingFor,
+    offering: en ? profile.en.offering : profile.offering,
+    skills: en ? profile.en.skills : profile.skills,
+  };
+}
+
 /* ------------------------------------------------------------------ *
  * NETWORK DEMO
  * ------------------------------------------------------------------ */
@@ -89,7 +110,15 @@ export function NetworkDemoSection() {
 }
 
 function DemoProfileCard({ profile }: { profile: DemoProfile }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
+  const text = demoText(profile, locale);
+  const filled = [
+    { label: t.app.demo.networkInterests, values: text.interests },
+    { label: t.app.demo.networkLookingFor, values: text.lookingFor },
+    { label: t.app.demo.networkOffering, values: text.offering },
+    { label: t.app.demo.networkSkills, values: text.skills },
+  ].filter((field) => field.values.length > 0);
+
   return (
     <Card className="flex h-full flex-col overflow-hidden">
       <div className="flex items-start gap-4 p-5 pb-4">
@@ -106,22 +135,25 @@ function DemoProfileCard({ profile }: { profile: DemoProfile }) {
             </p>
             <Badge variant="sand">{t.app.demo.networkBadge}</Badge>
           </div>
-          <p className="mt-0.5 text-sm font-medium text-foreground-muted">{profile.role}</p>
-          <p className="mt-0.5 truncate text-xs text-foreground-subtle">{profile.company}</p>
-          <p className="mt-1 flex items-center gap-1 text-xs text-foreground-subtle">
-            <MapPinIcon size={12} />
-            {profile.location}
+          <p className="mt-0.5 text-sm font-medium text-foreground-muted">{text.role}</p>
+          <p className="mt-0.5 truncate text-xs text-foreground-subtle">{text.company}</p>
+          <p className="mt-1 flex items-center gap-2 text-xs text-foreground-subtle">
+            <span className="inline-flex items-center gap-1">
+              <MapPinIcon size={12} />
+              {profile.location}
+            </span>
+            <span aria-hidden="true">·</span>
+            <span className="font-medium">{`${t.app.demo.networkCompletion}: ${profile.completion} %`}</span>
           </p>
         </div>
       </div>
 
       <div className="flex-1 px-5">
-        <p className="text-sm leading-6 text-foreground-muted">{profile.positioning}</p>
+        <p className="text-sm leading-6 text-foreground-muted">{text.positioning}</p>
         <dl className="mt-4 space-y-3 text-sm">
-          <DemoProfileField label={t.app.demo.networkInterests} values={profile.interests} />
-          <DemoProfileField label={t.app.demo.networkLookingFor} values={profile.lookingFor} />
-          <DemoProfileField label={t.app.demo.networkOffering} values={profile.offering} />
-          <DemoProfileField label={t.app.demo.networkSkills} values={profile.skills} />
+          {filled.map((field) => (
+            <DemoProfileField key={field.label} label={field.label} values={field.values} />
+          ))}
           <div>
             <dt className="text-[11px] font-bold uppercase tracking-wide text-foreground-subtle">
               {t.app.demo.networkTrustEmpty}
@@ -159,14 +191,15 @@ function DemoProfileField({ label, values }: { label: string; values: string[] }
  * ------------------------------------------------------------------ */
 
 export function DiscoverDemoSection() {
-  const { t } = useI18n();
-  const [current, setCurrent] = useState(DEMO_PROFILES[0]);
+  const { t, locale } = useI18n();
+  const [current, setCurrent] = useState<DemoProfile | null>(DEMO_PROFILES[0]);
   const [finished, setFinished] = useState(false);
 
   if (!DEMO_CONTENT_ENABLED) return null;
 
+  const text = demoText(current ?? DEMO_PROFILES[0], locale);
   const skip = () => {
-    const index = DEMO_PROFILES.findIndex((profile) => profile.key === current.key);
+    const index = DEMO_PROFILES.findIndex((profile) => profile.key === current?.key);
     const next = DEMO_PROFILES[index + 1];
     if (next) {
       setCurrent(next);
@@ -184,7 +217,7 @@ export function DiscoverDemoSection() {
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
         {/* Demo deck */}
         <div>
-          {!finished && current ? (
+          {current && !finished ? (
             <article className="overflow-hidden rounded-2xl border border-border bg-surface">
               <div className="grid gap-0 sm:grid-cols-[10rem_1fr]">
                 <div className="relative">
@@ -195,7 +228,7 @@ export function DiscoverDemoSection() {
                     className="aspect-[4/5] h-full w-full object-cover"
                   />
                   <span className="absolute left-2 top-2 rounded-full bg-midnight-950/75 px-2.5 py-1 text-[11px] font-bold text-paper-50 backdrop-blur">
-                    100 %
+                    {current.completion} % {t.app.demo.networkCompletionShort}
                   </span>
                 </div>
                 <div className="p-5">
@@ -205,15 +238,16 @@ export function DiscoverDemoSection() {
                     </h3>
                     <Badge variant="sand">{t.app.demo.networkBadge}</Badge>
                   </div>
-                  <p className="mt-1 text-sm font-medium text-foreground-muted">{current.role}</p>
+                  <p className="mt-1 text-sm font-medium text-foreground-muted">{text.role}</p>
                   <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-foreground-muted">
-                    {current.company && <span>{current.company}</span>}
+                    {text.company && <span>{text.company}</span>}
                     <span className="inline-flex items-center gap-1">
                       <MapPinIcon size={13} />
                       {current.location}
                     </span>
                   </p>
-                  <p className="mt-3 text-sm leading-6 text-foreground-muted">{current.positioning}</p>
+                  <p className="mt-3 text-sm leading-6 text-foreground-muted">{text.positioning}</p>
+                  <p className="mt-2 text-sm leading-6 text-foreground-muted">{text.bio}</p>
 
                   <div className="mt-4 rounded-xl border border-border bg-surface-muted/50 p-3">
                     <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-foreground-subtle">
@@ -222,19 +256,16 @@ export function DiscoverDemoSection() {
                     <ul className="mt-2 flex flex-wrap gap-1.5">
                       <li>
                         <span className="inline-flex rounded-full bg-electric-500/10 px-2.5 py-1 text-xs font-medium text-electric-600 dark:text-electric-300">
-                          {t.app.demo.discoverSharedInterest}: {current.interests[0]}
+                          {t.app.demo.discoverSharedInterest}: {text.interests[0]}
                         </span>
                       </li>
-                      <li>
-                        <span className="inline-flex rounded-full bg-electric-500/10 px-2.5 py-1 text-xs font-medium text-electric-600 dark:text-electric-300">
-                          {t.app.demo.networkInterests}: {current.interests.slice(0, 2).join(", ")}
-                        </span>
-                      </li>
-                      <li>
-                        <span className="inline-flex rounded-full bg-electric-500/10 px-2.5 py-1 text-xs font-medium text-electric-600 dark:text-electric-300">
-                          {t.app.demo.networkSkills}: {current.skills.slice(0, 2).join(", ")}
-                        </span>
-                      </li>
+                      {text.lookingFor.slice(0, 2).map((item) => (
+                        <li key={item}>
+                          <span className="inline-flex rounded-full border border-border bg-surface px-2.5 py-1 text-xs font-medium text-foreground-muted">
+                            {t.app.demo.discoverLookingFor}: {item}
+                          </span>
+                        </li>
+                      ))}
                     </ul>
                   </div>
                 </div>
@@ -274,19 +305,18 @@ export function DiscoverDemoSection() {
           )}
         </div>
 
-        {/* How it works steps */}
+        {/* What the demo shows – and what it deliberately does not */}
         <aside className="space-y-3">
-          <h3 className="text-sm font-bold tracking-tight">{t.app.demo.discoverHowTitle}</h3>
+          <h3 className="text-sm font-bold tracking-tight">{t.app.demo.discoverAsideTitle}</h3>
           <ul className="space-y-2">
             {[
-              { icon: UsersIcon, text: t.app.demo.discoverSkip },
-              { icon: CompassIcon, text: t.app.demo.discoverView },
-              { icon: CheckIcon, text: t.app.demo.discoverConnect },
-            ].map((step, index) => (
-              <li key={index}>
+              { icon: CheckIcon, text: t.app.demo.discoverAsideReal },
+              { icon: UsersIcon, text: t.app.demo.discoverAsideFake },
+            ].map((row) => (
+              <li key={row.text}>
                 <span className="flex items-start gap-3 rounded-xl border border-border bg-surface p-3 text-sm text-foreground-muted">
-                  <step.icon size={16} className="mt-0.5 shrink-0 text-electric-500" />
-                  {step.text}
+                  <row.icon size={16} className="mt-0.5 shrink-0 text-electric-500" />
+                  {row.text}
                 </span>
               </li>
             ))}
@@ -309,7 +339,7 @@ export function DiscoverDemoSection() {
                 : "border-border bg-surface text-foreground-muted hover:text-foreground"
             }`}
           >
-            {profile.firstName} · {profile.role}
+            {profile.firstName} · {locale === "en" ? profile.roleEn : profile.role}
           </button>
         ))}
       </div>
@@ -529,24 +559,104 @@ export function EventsDemoSection() {
  * ------------------------------------------------------------------ */
 
 export function InboxDemoPreview() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
+  const isEn = locale === "en";
   if (!DEMO_CONTENT_ENABLED) return null;
+
+  const kindLabel = {
+    message: t.app.inbox.tabMessages,
+    request: t.app.inbox.tabRequests,
+    notification: t.app.inbox.tabNotifications,
+  } as const;
 
   return (
     <div className="rounded-2xl border border-sand-400/30 bg-surface p-5">
-      <div className="flex items-start gap-4">
-        <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-sand-400/15 text-sand-600 dark:text-sand-300">
-          <InboxIcon size={20} />
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="inline-flex items-center gap-2 text-sm font-bold tracking-tight">
+          <InboxIcon size={16} className="text-sand-600 dark:text-sand-300" />
+          {t.app.inbox.demoPreviewTitle}
         </span>
-        <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="font-bold tracking-tight">{t.app.inbox.demoPreviewTitle}</p>
-            <Badge variant="sand">{t.app.demo.badge}</Badge>
-          </div>
-          <p className="mt-1 text-sm leading-6 text-foreground-muted">{t.app.inbox.demoPreviewText}</p>
-        </div>
+        <Badge variant="sand">{t.app.demo.badge}</Badge>
       </div>
+      <p className="mt-1 max-w-2xl text-sm leading-6 text-foreground-muted">{t.app.inbox.demoPreviewText}</p>
+      <ul className="mt-4 divide-y divide-border">
+        {DEMO_INBOX_THREADS.map((thread) => (
+          <li key={thread.key} className="flex flex-wrap items-baseline gap-x-3 gap-y-1 py-2.5">
+            <span className="inline-flex min-w-[6.5rem] items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-foreground-subtle">
+              {kindLabel[thread.kind]}
+            </span>
+            <span className="min-w-0 flex-1 text-sm leading-6">
+              <span className="font-semibold">{isEn ? thread.fromEn : thread.fromDe}</span>
+              <span className="text-foreground-muted"> · {isEn ? thread.textEn : thread.textDe}</span>
+            </span>
+            <span className="text-xs text-foreground-subtle">{isEn ? thread.timeEn : thread.timeDe}</span>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-3 text-xs leading-5 text-foreground-subtle">{t.app.demo.notice}</p>
     </div>
+  );
+}
+
+/* ------------------------------------------------------------------ *
+ * PROFILE DEMO POSTS – example contributions under the member profile
+ * ------------------------------------------------------------------ */
+
+export function ProfilePostsDemoSection({ asOf }: { asOf: Date }) {
+  const { t, locale } = useI18n();
+  if (!DEMO_CONTENT_ENABLED) return null;
+
+  const isEn = locale === "en";
+  const localeTag = isEn ? "en-GB" : "de-DE";
+  const now = asOf.getTime();
+
+  return (
+    <section
+      aria-labelledby="profile-demo-posts"
+      className="rounded-2xl border border-sand-400/30 bg-surface p-5 sm:p-6"
+    >
+      <div className="flex flex-wrap items-center gap-2">
+        <h3 id="profile-demo-posts" className="text-sm font-bold uppercase tracking-[0.16em] text-foreground-subtle">
+          {t.app.demo.profilePostsTitle}
+        </h3>
+        <Badge variant="sand">{t.app.demo.sampleBadge}</Badge>
+      </div>
+      <p className="mt-2 max-w-2xl text-sm leading-6 text-foreground-muted">{t.app.demo.profilePostsLead}</p>
+
+      <ul className="mt-5 grid gap-4 lg:grid-cols-2">
+        {DEMO_PROFILE_POSTS.map((post) => {
+          const date = new Date(now - post.daysAgo * 86_400_000);
+          return (
+            <li
+              key={post.key}
+              className="flex flex-col overflow-hidden rounded-2xl border border-border bg-background"
+            >
+              {post.image ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={post.image}
+                  alt={isEn ? post.imageAltEn ?? "" : post.imageAltDe ?? ""}
+                  loading="lazy"
+                  className="h-40 w-full object-cover sm:h-44"
+                />
+              ) : null}
+              <div className="flex flex-1 flex-col p-4">
+                <p className="flex flex-wrap items-center gap-2 text-[11px] font-bold uppercase tracking-[0.14em] text-foreground-subtle">
+                  <span className="rounded-full bg-surface-muted px-2 py-0.5">
+                    {isEn ? post.categoryEn : post.categoryDe}
+                  </span>
+                  <span>{date.toLocaleDateString(localeTag, { day: "2-digit", month: "short" })}</span>
+                </p>
+                <p className="mt-2.5 flex-1 text-sm leading-6">{isEn ? post.bodyEn : post.bodyDe}</p>
+                <p className="mt-3 border-t border-border pt-2.5 text-[11px] text-foreground-subtle">
+                  {t.app.demo.profilePostsDemoLine}
+                </p>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
   );
 }
 
@@ -555,7 +665,7 @@ export function InboxDemoPreview() {
  * ------------------------------------------------------------------ */
 
 export function PortfolioSection() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   if (!DEMO_CONTENT_ENABLED) return null;
 
   return (
@@ -564,19 +674,20 @@ export function PortfolioSection() {
       title={t.app.demo.portfolioTitle}
       lead={t.app.demo.portfolioLead}
     >
-      <div className="grid gap-3 sm:grid-cols-3">
-        <Card className="p-4 text-center">
-          <p className="text-2xl font-bold tracking-tight text-electric-600 dark:text-electric-300">20 %</p>
-          <p className="mt-1 text-xs text-foreground-muted">der Plattform-Einnahmen → Investmentbudget</p>
-        </Card>
-        <Card className="p-4 text-center">
-          <p className="text-2xl font-bold tracking-tight">5 %</p>
-          <p className="mt-1 text-xs text-foreground-muted">INNER-CIRCLE-Unternehmen & Projekte</p>
-        </Card>
-        <Card className="p-4 text-center">
-          <p className="text-2xl font-bold tracking-tight">15 %</p>
-          <p className="mt-1 text-xs text-foreground-muted">externe Investments</p>
-        </Card>
+      <div className="flex flex-wrap items-center gap-x-8 gap-y-4 rounded-xl border border-border bg-surface-muted/40 px-5 py-4">
+        {[
+          { value: "20 %", labelDe: "der Einnahmen → Investmentbudget", labelEn: "of revenue → investment budget" },
+          { value: "25 %", labelDe: "davon zurück ins Netzwerk", labelEn: "of that back into the network" },
+          { value: "5 %", labelDe: "effektiv in IC-Unternehmen", labelEn: "effectively into IC companies" },
+          { value: "15 %", labelDe: "extern investiert (geplant)", labelEn: "invested externally (planned)" },
+        ].map((row) => (
+          <div key={row.value} className="min-w-[8rem]">
+            <p className="text-xl font-bold tracking-tight text-electric-600 dark:text-electric-300">{row.value}</p>
+            <p className="mt-0.5 text-xs leading-5 text-foreground-muted">
+              {locale === "en" ? row.labelEn : row.labelDe}
+            </p>
+          </div>
+        ))}
       </div>
 
       <div className="mt-5">

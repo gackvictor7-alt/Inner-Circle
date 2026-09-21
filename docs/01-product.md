@@ -19,9 +19,8 @@ Die Plattform verbindet **Netzwerk**, **Geschäfte**, **Wissen**,
 
 ## 2. Geschäftsmodell (Zielbild)
 
-1. **Mitgliedschaft:** 24,99 €/Monat, Jahresabo mit Preisvorteil
-   (im Code: 249,90 €/Jahr; Marketingtext nennt „Jahrespreis folgt" – siehe
-   Known Issue K-03).
+1. **Mitgliedschaft:** 24,99 €/Monat und 249,90 €/Jahr („2 Monate geschenkt",
+   16 % Vorteil) – identisch auf Homepage, `/membership` und `/app/billing`.
 2. **Deal-Provisionen:** erfolgsbasiert, kategorieabhängig (Engine statt
    Hardcoding) – **noch nicht implementiert**.
 3. **Marktplatz-Provisionen:** kategorieabhängig – **noch nicht implementiert**.

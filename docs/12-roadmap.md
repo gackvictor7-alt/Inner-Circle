@@ -35,7 +35,7 @@ machen.
 | Thema | Inhalt | Abhängigkeit |
 | ----- | ------ | ------------ |
 | **S-1 Stripe scharf schalten** | Produkt + Preise (24,99 €/Monat, 249,90 €/Jahr), Webhook registrieren, Testkauf, Billing-Portal | Stripe-Konto (Test zuerst) |
-| **S-2 Jahrespreis klären** | Marketingtext und tatsächlichen Preis angleichen (K-03) | Gründer-Entscheidung |
+| **S-2 Jahrespreis kommunizieren** | 249,90 €/Jahr ist textlich übernommen (K-03 gelöst); Stripe-Produkt mit diesem Preis anlegen | S-1 |
 | **S-3 Telefon-Registrierung** | Entweder vollständig implementieren (SMS + Schema `email = null`) oder Umschalter deaktivieren (K-05) | Twilio (optional) |
 | **S-4 OAuth oder ehrlicher Zustand** | Buttons deaktivieren (Dead-Link-Regel) **oder** Google-Login implementieren (K-04) | Google-Client |
 | **S-5 Datenschutz wirksam machen** | `PrivacySettings` in allen Queries erzwingen + Tests (K-06) | – |
