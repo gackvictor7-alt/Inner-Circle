@@ -4,7 +4,7 @@ import { and, desc, eq, isNull } from "drizzle-orm";
 import { db } from "@/db/client";
 import { verificationCodes } from "@/db/schema";
 import { idFor } from "@/db/ids";
-import { flags, trialConfig } from "@/lib/env";
+import { flags, trialConfig, type DeliveryMode } from "@/lib/env";
 import { generateOtp, hashOtp } from "./crypto";
 import { sendVerificationCodeEmail, sendVerificationCodeSms } from "@/lib/messages/templates";
 import { consumeRateLimit } from "@/lib/rate-limit";
@@ -15,12 +15,20 @@ export type OtpPurpose = "verify_account" | "phone_change" | "login_2fa";
 
 export type IssueResult = {
   ok: boolean;
-  /** "provider" = real delivery, "dev" = recorded in the development outbox. */
-  mode: "provider" | "dev" | "none";
+  /**
+   * "provider" = real delivery, "dev" = recorded in the development outbox,
+   * "none" = no delivery channel exists (nothing was sent or recorded).
+   */
+  mode: DeliveryMode;
   /** Only returned in development mode, clearly labelled in the UI. */
   devCode?: string;
   expiresAt?: Date;
-  error?: "rate_limited" | "no_target" | "send_failed";
+  /**
+   * `not_configured` – neither a provider nor the dev outbox can carry the
+   * message (e.g. production without RESEND_API_KEY); `send_failed` – the
+   * configured provider rejected the message.
+   */
+  error?: "rate_limited" | "no_target" | "send_failed" | "not_configured";
   retryAfterSeconds?: number;
 };
 
@@ -109,11 +117,18 @@ export async function issueVerificationCode(params: {
           ttlMinutes: trialConfig.otpTtlMinutes,
         });
 
-  if (!send.ok) return { ok: false, mode: send.mode, error: "send_failed" };
+  if (!send.ok) {
+    // The plaintext never reached anyone – a code nobody can know must not stay
+    // valid, and the next attempt must issue a fresh one.
+    await db.update(verificationCodes).set({ consumedAt: new Date() }).where(eq(verificationCodes.id, recordId));
+    return { ok: false, mode: send.mode, error: send.mode === "none" ? "not_configured" : "send_failed" };
+  }
 
   return {
     ok: true,
     mode: send.mode,
+    // The code itself is only ever returned to local development tooling
+    // (NODE_ENV !== "production") – never in a deployed build.
     devCode: send.mode === "dev" && flags.devToolsVisible ? code : undefined,
     expiresAt,
   };

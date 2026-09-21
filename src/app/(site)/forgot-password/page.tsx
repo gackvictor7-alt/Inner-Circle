@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { ForgotPasswordForm } from "@/components/auth/AuthForms";
+import { getCurrentUser } from "@/lib/auth/session";
+import { canOpenDevOutbox, deliveryModeFor } from "@/lib/env";
 import { dictionaries } from "@/lib/i18n/dictionaries";
 
 export const metadata: Metadata = {
@@ -7,6 +9,8 @@ export const metadata: Metadata = {
   description: dictionaries.de.app.auth.forgot.lead,
 };
 
-export default function ForgotPasswordPage() {
-  return <ForgotPasswordForm />;
+export default async function ForgotPasswordPage() {
+  const sessionUser = await getCurrentUser();
+  // Configuration-level status only (never account-specific → no enumeration).
+  return <ForgotPasswordForm delivery={deliveryModeFor("email")} devOutboxAccessible={canOpenDevOutbox(sessionUser)} />;
 }

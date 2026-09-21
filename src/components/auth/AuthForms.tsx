@@ -20,6 +20,7 @@ import {
   verifyCodeAction,
 } from "@/app/actions/auth";
 import { initialAuthState, type AuthState } from "@/app/actions/auth-state";
+import type { DeliveryMode } from "@/lib/env";
 
 /** Shared shell for all authentication screens. */
 function AuthCard({
@@ -96,23 +97,54 @@ function fieldMessage(
   return (t.app.auth.errors as Record<string, string>)[key] ?? t.app.errors.validation;
 }
 
-/** Development-only hint that shows the captured OTP and links to the outbox. */
-function DevCodeNotice({ state }: { state: AuthState }) {
+/**
+ * Truthful delivery status for verification codes.
+ *
+ *  * `dev`  – the code was only recorded in the protected development outbox.
+ *             The link to it appears solely when the current account can open
+ *             it (administrators); the code itself is shown inline only in
+ *             local development builds.
+ *  * `none` – nothing was sent or recorded (no provider, outbox disabled).
+ *  * `provider` – nothing to add; the footer already says it was sent.
+ */
+function DeliveryNotice({
+  mode,
+  devCode,
+  devOutboxAccessible,
+}: {
+  mode: DeliveryMode | undefined;
+  devCode?: string;
+  devOutboxAccessible?: boolean;
+}) {
   const { t } = useI18n();
-  if (!state.devCode && state.messageMode !== "dev") return null;
+  if (mode === "none") {
+    return (
+      <div className="flex items-start gap-2.5 rounded-xl border border-warning-500/30 bg-warning-500/10 px-3.5 py-3 text-xs leading-5 text-warning-500">
+        <AlertIcon size={16} className="mt-0.5 shrink-0" />
+        <div>
+          <p className="font-semibold">{t.app.auth.verify.unavailableTitle}</p>
+          <p className="mt-1">{t.app.auth.verify.unavailableText}</p>
+        </div>
+      </div>
+    );
+  }
+  if (mode !== "dev" && !devCode) return null;
   return (
     <div className="rounded-xl border border-warning-500/30 bg-warning-500/10 px-3.5 py-3 text-xs leading-5 text-warning-500">
       <p className="font-semibold">{t.app.common.devMode}</p>
       <p className="mt-1">{t.app.auth.verify.sentDev}</p>
-      {state.devCode && (
+      {devCode && (
         <p className="mt-1.5">
           {t.app.auth.verify.devCodeNotice}{" "}
-          <span className="font-mono text-base font-bold tracking-[0.2em]">{state.devCode}</span>
+          <span className="font-mono text-base font-bold tracking-[0.2em]">{devCode}</span>
         </p>
       )}
-      <Link href="/dev/outbox" className="mt-1.5 inline-block font-semibold underline">
-        {t.app.auth.verify.openDevOutbox}
-      </Link>
+      {!devCode && <p className="mt-1">{t.app.auth.verify.sentDevAdminHint}</p>}
+      {devOutboxAccessible && (
+        <Link href="/dev/outbox" className="mt-1.5 inline-block font-semibold underline">
+          {t.app.auth.verify.openDevOutbox}
+        </Link>
+      )}
     </div>
   );
 }
@@ -378,10 +410,16 @@ export function VerifyForm({
   channel,
   userId,
   maskedTarget,
+  delivery,
+  devOutboxAccessible = false,
 }: {
   channel: "email" | "phone";
   userId?: string;
   maskedTarget: string | null;
+  /** Server-resolved delivery status for this environment/recipient. */
+  delivery: DeliveryMode;
+  /** True only when the signed-in account may open /dev/outbox. */
+  devOutboxAccessible?: boolean;
 }) {
   const { t, tf } = useI18n();
   const router = useRouter();
@@ -405,32 +443,44 @@ export function VerifyForm({
     return () => clearInterval(timer);
   }, [cooldown]);
 
-  const errorKey = state.errorCode;
-  const errorText = errorKey
-    ? errorKey === "invalid"
-      ? t.app.auth.verify.errors.invalid
-      : errorKey === "expired"
-        ? t.app.auth.verify.errors.expired
-        : errorKey === "too_many_attempts"
-          ? t.app.auth.verify.errors.tooMany
-          : errorKey === "not_found"
-            ? t.app.auth.verify.errors.notFound
-            : errorKey === "tooMany"
-              ? t.app.auth.verify.errors.tooMany
-              : t.app.errors.generic
-    : undefined;
+  const verifyErrors = t.app.auth.verify.errors;
+  const errorMessages: Record<string, string> = {
+    invalid: verifyErrors.invalid,
+    expired: verifyErrors.expired,
+    too_many_attempts: verifyErrors.tooMany,
+    tooMany: verifyErrors.tooMany,
+    not_found: verifyErrors.notFound,
+    deliveryUnavailable: verifyErrors.deliveryUnavailable,
+    codeFailed: verifyErrors.codeFailed,
+    rateLimited: tf(t.app.auth.errors.rateLimited, { seconds: resendState.errorParams?.seconds ?? 60 }),
+  };
+  const errorKey = state.errorCode ?? (resendState.status === "error" ? resendState.errorCode : undefined);
+  const errorText = errorKey ? (errorMessages[errorKey] ?? t.app.errors.generic) : undefined;
 
   const attemptsLeft = state.errorParams?.count;
 
+  // The latest server answer wins: a resend result is authoritative for the
+  // current code; before that the page-level delivery status applies.
+  const lastAction = resendState.status !== "idle" ? resendState : state;
+  const effectiveMode: DeliveryMode = lastAction.messageMode ?? delivery;
+  const outboxAccessible = lastAction.devOutboxAccessible ?? devOutboxAccessible;
+  const lead =
+    effectiveMode === "none"
+      ? t.app.auth.verify.leadUnavailable
+      : effectiveMode === "dev"
+        ? t.app.auth.verify.leadDev
+        : channel === "phone"
+          ? t.app.auth.verify.leadPhone
+          : t.app.auth.verify.leadEmail;
+  const footer =
+    effectiveMode === "provider"
+      ? t.app.auth.verify.sentProvider
+      : effectiveMode === "dev"
+        ? t.app.auth.verify.sentDev
+        : t.app.auth.verify.unavailableTitle;
+
   return (
-    <AuthCard
-      title={t.app.auth.verify.title}
-      lead={
-        channel === "phone"
-          ? tf(t.app.auth.verify.leadPhone, { target: maskedTarget ?? "…" })
-          : tf(t.app.auth.verify.leadEmail, { target: maskedTarget ?? "…" })
-      }
-    >
+    <AuthCard title={t.app.auth.verify.title} lead={tf(lead, { target: maskedTarget ?? "…" })}>
       <form action={action} className="flex flex-col gap-5" noValidate>
         <input type="hidden" name="channel" value={channel} />
         {userId && <input type="hidden" name="userId" value={userId} />}
@@ -447,7 +497,7 @@ export function VerifyForm({
             </span>
           </div>
         )}
-        <DevCodeNotice state={resendState.status === "success" ? resendState : state} />
+        <DeliveryNotice mode={effectiveMode} devCode={lastAction.devCode} devOutboxAccessible={outboxAccessible} />
         <Input
           label={t.app.auth.verify.codeLabel}
           name="code"
@@ -473,8 +523,12 @@ export function VerifyForm({
       </form>
 
       <p className="mt-5 flex items-start gap-2 text-xs leading-5 text-foreground-subtle">
-        <MailIcon size={14} className="mt-0.5 shrink-0" />
-        {t.app.auth.verify.sentProvider}
+        {effectiveMode === "none" ? (
+          <AlertIcon size={14} className="mt-0.5 shrink-0" />
+        ) : (
+          <MailIcon size={14} className="mt-0.5 shrink-0" />
+        )}
+        {footer}
       </p>
     </AuthCard>
   );
@@ -482,7 +536,14 @@ export function VerifyForm({
 
 /* ------------------------------------------------------------ password reset */
 
-export function ForgotPasswordForm() {
+export function ForgotPasswordForm({
+  delivery = "provider",
+  devOutboxAccessible = false,
+}: {
+  /** Configuration-level e-mail delivery status (never account-specific). */
+  delivery?: DeliveryMode;
+  devOutboxAccessible?: boolean;
+}) {
   const { t, locale } = useI18n();
   const [state, action, pending] = useActionState(requestPasswordResetAction, initialAuthState);
 
@@ -497,13 +558,21 @@ export function ForgotPasswordForm() {
           </Link>
         }
       >
-        {state.messageMode === "dev" && (
+        {delivery === "dev" && (
           <div className="rounded-xl border border-warning-500/30 bg-warning-500/10 px-3.5 py-3 text-xs leading-5 text-warning-500">
             <p className="font-semibold">{t.app.common.devMode}</p>
             <p className="mt-1">{t.app.auth.forgot.sentDev}</p>
-            <Link href="/dev/outbox" className="mt-1.5 inline-block font-semibold underline">
-              {t.app.auth.verify.openDevOutbox}
-            </Link>
+            {devOutboxAccessible && (
+              <Link href="/dev/outbox" className="mt-1.5 inline-block font-semibold underline">
+                {t.app.auth.verify.openDevOutbox}
+              </Link>
+            )}
+          </div>
+        )}
+        {delivery === "none" && (
+          <div className="flex items-start gap-2.5 rounded-xl border border-warning-500/30 bg-warning-500/10 px-3.5 py-3 text-xs leading-5 text-warning-500">
+            <AlertIcon size={16} className="mt-0.5 shrink-0" />
+            <p>{t.app.auth.forgot.sentUnavailable}</p>
           </div>
         )}
       </AuthCard>
@@ -689,7 +758,10 @@ export function InterestOnboardingForm({
             </div>
           </section>
 
-          {/* Hidden inputs carry the selection to the server action */}
+          {/* Hidden inputs carry the selection to the server action. `startTrial`
+              asks the server to begin the 48-hour discovery period – the server
+              still decides (verified account, no active membership, once only). */}
+          <input type="hidden" name="startTrial" value="1" />
           {selectedInterests.map((id) => (
             <input key={id} type="hidden" name="interests" value={id} />
           ))}

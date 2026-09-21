@@ -34,6 +34,11 @@
   "vars": {
     "NEXTJS_ENV": "production"
   },
+  // Keep plain-text variables that were added in the dashboard
+  // (NEXT_PUBLIC_SITE_URL, EMAIL_FROM, ENABLE_DEV_OUTBOX, DEV_OUTBOX_RECIPIENTS, …).
+  // Without this flag every `wrangler deploy` (also Workers Builds) treats the
+  // `vars` block above as the complete list and DELETES dashboard variables.
+  "keep_vars": true,
   /**
    * D1 database (SQLite at the edge). The application accesses it through the
    * `DB` binding – keep that name. No `database_id` is required: Wrangler's

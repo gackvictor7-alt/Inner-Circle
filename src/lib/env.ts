@@ -94,8 +94,27 @@ export const storage = {
   },
 };
 
+/**
+ * Optional recipient allow-list for the development outbox
+ * (`DEV_OUTBOX_RECIPIENTS`, comma-separated). Entries are full e-mail
+ * addresses / phone numbers or a whole domain written as `@example.com`.
+ * When the list is set, messages to anyone else are NOT recorded – so a
+ * public test deployment never collects codes of real sign-ups.
+ */
+export const devOutboxRecipients: string[] = (read("DEV_OUTBOX_RECIPIENTS") ?? "")
+  .split(",")
+  .map((entry) => entry.trim().toLowerCase())
+  .filter((entry) => entry.length > 0);
+
 export const flags = {
-  /** Local dev outbox so verification can be tested without a mail provider. */
+  /**
+   * Development outbox so verification can be tested without a mail provider.
+   *
+   * Local development (`next dev`, tests) enables it automatically while no
+   * provider is configured. Production builds (Cloudflare Worker) only enable
+   * it with the explicit variable `ENABLE_DEV_OUTBOX=true` – and even then the
+   * outbox page is admin-only (see src/app/(site)/dev/outbox/page.tsx).
+   */
   devOutboxEnabled:
     read("ENABLE_DEV_OUTBOX") === "true" || (!email.configured && process.env.NODE_ENV !== "production"),
   /**
@@ -107,6 +126,42 @@ export const flags = {
     read("ALLOW_DEV_MEMBERSHIP_ACTIVATION") !== "false" && !stripe.configured && !isProduction,
   devToolsVisible: process.env.NODE_ENV !== "production",
 };
+
+/** True when the development outbox may record a message for this recipient. */
+export function devOutboxAccepts(recipient: string): boolean {
+  if (!flags.devOutboxEnabled) return false;
+  if (devOutboxRecipients.length === 0) return true;
+  const normalized = recipient.trim().toLowerCase();
+  return devOutboxRecipients.some((entry) =>
+    entry.startsWith("@") ? normalized.endsWith(entry) : normalized === entry,
+  );
+}
+
+/**
+ * How a message on the given channel is delivered right now:
+ *   * `provider` – a real provider is configured (Resend / Twilio),
+ *   * `dev`      – recorded in the development outbox (never a real delivery),
+ *   * `none`     – no channel at all; the message cannot reach anyone.
+ * The UI uses this to describe the verification status truthfully.
+ */
+export type DeliveryMode = "provider" | "dev" | "none";
+
+export function deliveryModeFor(channel: "email" | "phone" | "sms", recipient?: string): DeliveryMode {
+  const providerConfigured = channel === "email" ? email.configured : sms.configured;
+  if (providerConfigured) return "provider";
+  if (recipient === undefined ? flags.devOutboxEnabled : devOutboxAccepts(recipient)) return "dev";
+  return "none";
+}
+
+/**
+ * Only administrators may open the development outbox (it lists every recorded
+ * message). Links to it are shown solely when the current account can actually
+ * use it – a public deployment never advertises a route that would 404 or
+ * expose other people's codes.
+ */
+export function canOpenDevOutbox(user: { role: string } | null | undefined): boolean {
+  return flags.devOutboxEnabled && user?.role === "admin";
+}
 
 export const membershipPricing = {
   monthly: { cents: 2499, currency: "EUR", interval: "month" as const },
@@ -131,6 +186,7 @@ export const integrationStatus = () => ({
   appleOAuthConfigured: oauth.apple.configured,
   storageConfigured: storage.configured,
   devOutboxEnabled: flags.devOutboxEnabled,
+  devOutboxRestricted: devOutboxRecipients.length > 0,
   devMembershipActivation: flags.devMembershipActivation,
   authSecretIsFallback,
 });

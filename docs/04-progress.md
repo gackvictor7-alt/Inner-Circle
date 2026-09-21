@@ -1,5 +1,79 @@
 # Entwicklungsfortschritt
 
+## Hotfix – Verifizierung ohne E-Mail-Provider / Dev-Postausgang 404 (✅ 2026-09-21)
+
+- **Anlass (erster echter Registrierungstest auf dem Worker):** Registrierung
+  und Weiterleitung nach `/verify` funktionierten, der Link „Dev-Postausgang
+  öffnen“ führte aber auf `/dev/outbox` → **404**; gleichzeitig behauptete die
+  Seite oben „keine echte Nachricht versendet“ und unten „Code wurde über den
+  konfigurierten Anbieter versendet“.
+- **Ursache:** Im Produktions-Build ist `flags.devOutboxEnabled` ohne die
+  Variable `ENABLE_DEV_OUTBOX` bewusst `false` (→ `notFound()` auf
+  `/dev/outbox`). Der Nachrichten-Transport lieferte in genau diesem Zustand
+  (kein `RESEND_API_KEY`, Postausgang aus) trotzdem `ok: true, mode: "dev"`:
+  Der Code wurde als Hash gespeichert, der Klartext aber weder versendet noch
+  abgelegt – **stiller Verlust**. Die UI zeigte deshalb den Dev-Hinweis samt
+  Link auf eine nicht existierende Route; der Fußtext war ein statischer String.
+- **Behoben:**
+  - `src/lib/messages/transport.ts`: dritter Zustellmodus `none` – ohne
+    Provider und ohne (erlaubten) Postausgang gibt es `ok: false,
+    error: "no_delivery_channel"`; ein fehlgeschlagener Outbox-Write wird nicht
+    mehr als „abgelegt“ gemeldet.
+  - `src/lib/auth/otp.ts`: nicht zustellbare Codes werden sofort entwertet
+    (`not_configured`); `devCode` weiterhin nur bei `NODE_ENV !== production`.
+  - `src/lib/env.ts`: `deliveryModeFor()`, `canOpenDevOutbox()` (nur Admin +
+    Postausgang aktiv), Empfänger-Allowlist `DEV_OUTBOX_RECIPIENTS`
+    (`devOutboxAccepts()`), `integrationStatus().devOutboxRestricted`.
+  - `/verify`, `/forgot-password`: Zustellstatus wird serverseitig ermittelt;
+    Lead-, Hinweis- und Fußtext folgen dem tatsächlichen Modus
+    (provider / dev / none). Der Link zum Postausgang erscheint nur, wenn das
+    Konto ihn öffnen kann. „Code erneut senden“ meldet bei fehlendem
+    Versandweg `deliveryUnavailable` statt eines Dev-Hinweises; ein Cooldown
+    verändert den Zustellstatus nicht.
+  - `/dev/outbox`: weiterhin 404 ohne Flag und **immer admin-only**; neu:
+    `noindex`, Produktions-Warnbanner, Anzeige der Allowlist, Texte über i18n.
+  - `wrangler.jsonc`: `keep_vars: true` – ohne dieses Flag löscht jeder Deploy
+    (auch Workers Builds) die im Dashboard angelegten Text-Variablen
+    (`NEXT_PUBLIC_SITE_URL`, `ENABLE_DEV_OUTBOX`, …).
+  - `scripts/show-outbox.ts` (fehlte, obwohl `npm run dev:outbox` darauf
+    zeigte): liest den Postausgang lokal, aus der lokalen D1-Emulation oder
+    per `--remote` aus der Produktions-D1 (`--to=`, `--limit=`).
+  - **Onboarding (Schritt „Interessen → 48-h-Trial“):** Das Formular sendete
+    kein `startTrial`, die Action startete den Trial deshalb nie (Dashboard
+    zeigte einem neuen Konto „Deine Discovery-Phase ist beendet“); außerdem
+    schickte die Seite Taxonomie-IDs, die Action suchte nach Slugs → Interessen
+    und Ziele wurden nie gespeichert. Beides behoben (hidden `startTrial=1`,
+    Action akzeptiert IDs und Slugs).
+  - Doku: `docs/09-deployment.md` (Abschnitt „Testbetrieb ohne
+    E-Mail-Provider“, `keep_vars`, Admin-Hinweis), `.env.example`,
+    `.dev.vars.example`, README, `tests/README.md`, ADR-009.
+- **Tests:** neu `tests/integration/message-delivery.test.ts` (8 Tests:
+  produktionsnahe Konfiguration → ehrliches `none`, kein hängender Code,
+  Registrierung meldet `deliveryUnavailable`; `ENABLE_DEV_OUTBOX` +
+  Allowlist; Code nie an den Browser; Resend-Cooldown ≠ fehlender Versandweg;
+  Outbox-Link nur Admin) und `tests/integration/onboarding.test.ts` (3 Tests:
+  Auswahl per ID/Slug gespeichert, Trial startet genau einmal und nur mit
+  Flag, unverifiziert/anonym abgewiesen). `npm test` = 12 Dateien / 56 Tests,
+  `npm run typecheck`, `npm run cf:build`, `wrangler deploy --dry-run` grün;
+  `npm run lint` unverändert (21 bestehende Hinweise, keine neuen).
+- **Manuell in `workerd` (`wrangler dev` gegen lokale D1, Produktions-Build):**
+  - Ohne Flag: `/dev/outbox` 404, Registrierung legt Konto an, `/verify`
+    zeigt „Versand noch nicht eingerichtet“ ohne Link, Resend meldet
+    „kein Code zugestellt“, `DevOutbox` leer, keine offenen Codes.
+  - Mit `ENABLE_DEV_OUTBOX=true` + `DEV_OUTBOX_RECIPIENTS`: dasselbe, zuvor
+    angelegte Konto → Resend → Eintrag im Postausgang; als Nicht-Admin kein
+    Link und `/dev/outbox` → 307; nach `cf:admin` Link sichtbar,
+    `/dev/outbox` 200 mit Code (auch per `npm run dev:outbox -- --local`);
+    Code eingeben → `/onboarding/interests` (enthält `startTrial`) →
+    „Discovery starten“ → Trial `active`, 48 h, 3 Interessen + 1 Ziel
+    gespeichert → `/app` mit Countdown „47h 59m“; fremde Adresse außerhalb
+    der Allowlist wird nicht aufgezeichnet.
+- **Offen (Gründer, Dashboard):** `ENABLE_DEV_OUTBOX=true` und
+  `DEV_OUTBOX_RECIPIENTS=<eigene Testadresse>` setzen, Testkonto per
+  D1-Konsole/`cf:admin` zum Admin machen, Merge nach `main` abwarten
+  (Workers Builds), dann Resend → Code aus `/dev/outbox`. Vor dem Launch
+  `RESEND_API_KEY` setzen und `ENABLE_DEV_OUTBOX` entfernen.
+
 ## Deployment – Cloudflare Workers + D1 (✅ vorbereitet, 2026-09-20)
 
 - **Ziel:** Den fehlgeschlagenen Cloudflare-Deploy („Could not detect a

@@ -10,7 +10,7 @@ import { LocalizedPageHeader, Tr } from "@/components/app/localized";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { InfoRow } from "@/components/app/ui";
-import { flags } from "@/lib/env";
+import { canOpenDevOutbox } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 
@@ -121,7 +121,7 @@ export default async function SettingsPage() {
         )}
       </Card>
 
-      {flags.devToolsVisible && (
+      {canOpenDevOutbox(user) && (
         <Card className="p-5">
           <p className="text-xs leading-5 text-foreground-subtle">
             <Tr k="app.common.devMode" /> ·{" "}

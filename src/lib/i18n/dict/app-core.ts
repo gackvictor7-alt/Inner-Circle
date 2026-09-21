@@ -181,20 +181,30 @@ export const appCoreDe = {
       title: "Bestätige dein Konto",
       leadEmail: "Wir haben einen sechsstelligen Code an {target} gesendet.",
       leadPhone: "Wir haben einen sechsstelligen Code per SMS an {target} gesendet.",
+      leadDev: "Für {target} wurde ein sechsstelliger Code erzeugt – Entwicklungsmodus, kein echter Versand.",
+      leadUnavailable: "Für {target} konnte noch kein Code zugestellt werden.",
       codeLabel: "Bestätigungscode",
       submit: "Bestätigen",
       resend: "Code erneut senden",
       resendIn: "Erneut senden in {seconds}s",
-      sentProvider: "Code wurde über den konfigurierten Anbieter versendet.",
-      sentDev: "Entwicklungsmodus: Der Code wurde im Dev-Postausgang abgelegt – es wurde keine echte Nachricht versendet.",
+      sentProvider: "Der Code wurde über den konfigurierten Anbieter versendet. Bitte prüfe auch den Spam-Ordner.",
+      sentDev: "Entwicklungsmodus: Der Code wurde nur im geschützten Dev-Postausgang abgelegt – es wurde keine echte Nachricht versendet.",
+      sentDevAdminHint:
+        "Der Dev-Postausgang ist nur für Administratoren sichtbar. Der Code kann dort oder direkt in der Datenbank (Tabelle DevOutbox) abgelesen werden.",
       devCodeNotice: "Entwicklungsmodus – dieser Code ist nur lokal sichtbar:",
       openDevOutbox: "Dev-Postausgang öffnen",
+      unavailableTitle: "Versand noch nicht eingerichtet",
+      unavailableText:
+        "Für diese Umgebung ist noch kein E-Mail-/SMS-Anbieter konfiguriert und der geschützte Dev-Postausgang ist deaktiviert. Es wurde kein Code versendet oder abgelegt. Dein Konto bleibt bestehen – sobald der Versand eingerichtet ist, kannst du hier einen neuen Code anfordern.",
       errors: {
         invalid: "Der Code ist nicht korrekt.",
         expired: "Der Code ist abgelaufen. Bitte fordere einen neuen an.",
         tooMany: "Zu viele Fehlversuche. Bitte fordere einen neuen Code an.",
         notFound: "Kein aktiver Code vorhanden. Bitte neuen Code anfordern.",
         attemptsLeft: "Noch {count} Versuche.",
+        deliveryUnavailable:
+          "Es konnte kein Code zugestellt werden: In dieser Umgebung ist noch kein Versandweg eingerichtet.",
+        codeFailed: "Der Versand ist fehlgeschlagen. Bitte versuche es später erneut.",
       },
       verified: "Konto bestätigt.",
       continueOnboarding: "Interessen wählen",
@@ -207,7 +217,9 @@ export const appCoreDe = {
       sentText:
         "Wenn ein Konto mit dieser E-Mail existiert, wurde ein Link versendet. Aus Sicherheitsgründen zeigen wir nicht, ob die Adresse registriert ist.",
       sentDev:
-        "Entwicklungsmodus: Der Reset-Link liegt im Dev-Postausgang (kein echter E-Mail-Versand).",
+        "Entwicklungsmodus: Der Reset-Link liegt im geschützten Dev-Postausgang (kein echter E-Mail-Versand).",
+      sentUnavailable:
+        "Hinweis: In dieser Umgebung ist noch kein E-Mail-Versand eingerichtet. Ein Reset-Link kann derzeit nicht zugestellt werden – bitte wende dich an die Administration.",
       backToLogin: "Zurück zum Login",
       resetTitle: "Neues Passwort vergeben",
       resetLead: "Wähle ein neues Passwort für dein Konto.",
@@ -389,6 +401,14 @@ export const appCoreDe = {
     testAccountNotice:
       "Diese Konten werden ausschließlich für lokale Tests erzeugt (Passwort aus SEED_DEMO_PASSWORD). Sie sind nicht Teil eines Produktivbetriebs.",
     errorLog: "Letzte Admin-Aktionen",
+    adminOnly: "Nur für Administratoren sichtbar.",
+    productionWarning:
+      "Dieser Bereich ist in einer produktiven Umgebung aktiv (ENABLE_DEV_OUTBOX=true). Er dient ausschließlich dem Testbetrieb ohne E-Mail-Anbieter. Vor dem öffentlichen Start deaktivieren oder RESEND_API_KEY setzen – dann werden Nachrichten wieder echt versendet und hier nicht mehr abgelegt.",
+    recipientsRestricted: "Aufzeichnung beschränkt auf: {list}",
+    recipientsOpen:
+      "Aufzeichnung für alle Empfänger aktiv. Empfehlung für öffentliche Testumgebungen: DEV_OUTBOX_RECIPIENTS auf eigene Testadressen setzen.",
+    messages: "Nachrichten ({count})",
+    to: "An",
   },
 };
 
@@ -571,20 +591,29 @@ export const appCoreEn: AppCoreDict = {
       title: "Verify your account",
       leadEmail: "We sent a six-digit code to {target}.",
       leadPhone: "We sent a six-digit code by SMS to {target}.",
+      leadDev: "A six-digit code was generated for {target} – development mode, no real delivery.",
+      leadUnavailable: "No code could be delivered to {target} yet.",
       codeLabel: "Verification code",
       submit: "Verify",
       resend: "Resend code",
       resendIn: "Resend in {seconds}s",
-      sentProvider: "The code was sent through the configured provider.",
-      sentDev: "Development mode: the code was placed in the dev outbox – no real message was delivered.",
+      sentProvider: "The code was sent through the configured provider. Please also check your spam folder.",
+      sentDev: "Development mode: the code was only placed in the protected dev outbox – no real message was delivered.",
+      sentDevAdminHint:
+        "The dev outbox is visible to administrators only. The code can be read there or directly in the database (table DevOutbox).",
       devCodeNotice: "Development mode – this code is visible locally only:",
       openDevOutbox: "Open dev outbox",
+      unavailableTitle: "Delivery not set up yet",
+      unavailableText:
+        "No e-mail/SMS provider is configured for this environment and the protected dev outbox is disabled. No code was sent or recorded. Your account is kept – as soon as delivery is set up you can request a new code here.",
       errors: {
         invalid: "The code is not correct.",
         expired: "The code has expired. Please request a new one.",
         tooMany: "Too many failed attempts. Please request a new code.",
         notFound: "No active code. Please request a new one.",
         attemptsLeft: "{count} attempts left.",
+        deliveryUnavailable: "No code could be delivered: no delivery channel is set up in this environment yet.",
+        codeFailed: "Sending failed. Please try again later.",
       },
       verified: "Account verified.",
       continueOnboarding: "Choose interests",
@@ -596,7 +625,9 @@ export const appCoreEn: AppCoreDict = {
       sentTitle: "Request received",
       sentText:
         "If an account exists for this e-mail, a link has been sent. For security reasons we do not reveal whether the address is registered.",
-      sentDev: "Development mode: the reset link is in the dev outbox (no real e-mail was sent).",
+      sentDev: "Development mode: the reset link is in the protected dev outbox (no real e-mail was sent).",
+      sentUnavailable:
+        "Note: e-mail delivery is not set up in this environment yet. A reset link cannot be delivered right now – please contact the administration.",
       backToLogin: "Back to sign-in",
       resetTitle: "Choose a new password",
       resetLead: "Select a new password for your account.",
@@ -780,5 +811,13 @@ export const appCoreEn: AppCoreDict = {
     testAccountNotice:
       "These accounts are created for local testing only (password from SEED_DEMO_PASSWORD). They are not part of a production environment.",
     errorLog: "Recent admin actions",
+    adminOnly: "Visible to administrators only.",
+    productionWarning:
+      "This area is active in a production environment (ENABLE_DEV_OUTBOX=true). It exists solely for test operation without an e-mail provider. Disable it before the public launch or set RESEND_API_KEY – messages are then really sent and no longer recorded here.",
+    recipientsRestricted: "Recording restricted to: {list}",
+    recipientsOpen:
+      "Recording active for all recipients. Recommendation for public test environments: set DEV_OUTBOX_RECIPIENTS to your own test addresses.",
+    messages: "Messages ({count})",
+    to: "To",
   },
 };

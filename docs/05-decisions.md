@@ -83,3 +83,32 @@ Gründer-Freigabe.
   Entwicklung. Grenzen: D1 hat kein Transaktions-API (die App nutzt
   keine Transaktionen); Bildoptimierung bewusst deaktiviert.
   ADR-007 (Vercel) ist damit ersetzt.
+
+## ADR-009: Kein stiller Nachrichtenverlust – Dev-Postausgang nur explizit, admin-only, mit Allowlist (2026-09-21)
+
+- **Kontext:** Auf dem ersten Cloudflare-Deploy gab es weder `RESEND_API_KEY`
+  noch `ENABLE_DEV_OUTBOX`. Der Transport meldete trotzdem „dev“, die UI
+  verlinkte einen Postausgang, der in Produktion bewusst 404 liefert, und
+  Verifizierungscodes gingen unbemerkt verloren. Gleichzeitig darf ein
+  öffentlich erreichbarer Worker niemals einen frei zugänglichen Postausgang
+  mit den Codes aller Nutzer zeigen.
+- **Entscheidung:**
+  1. Der Nachrichten-Transport kennt drei ehrliche Zustände: `provider`
+     (wirklich versendet), `dev` (nur im Postausgang abgelegt), `none`
+     (kein Kanal – Fehler, kein Erfolg). Ein Code, der niemanden erreichen
+     kann, wird sofort entwertet.
+  2. Der Dev-Postausgang existiert in Produktions-Builds nur mit
+     `ENABLE_DEV_OUTBOX=true`, ist immer auf die Rolle `admin` beschränkt,
+     gibt den Code nie an den Browser zurück und kann per
+     `DEV_OUTBOX_RECIPIENTS` auf eigene Testadressen begrenzt werden.
+  3. Die UI beschreibt den Zustellstatus aus der Serverkonfiguration; Links
+     zu Entwicklungsrouten erscheinen nur, wenn das aktuelle Konto sie
+     tatsächlich öffnen kann.
+  4. `wrangler.jsonc` setzt `keep_vars: true`, damit im Dashboard gepflegte
+     Variablen (auch die Test-Schalter) einen Deploy überleben.
+- **Konsequenz:** Der Ablauf Registrierung → Verifizierung → Interessen →
+  48-h-Trial ist ohne E-Mail-Provider sicher testbar (Code über
+  Admin-Seite, D1-Konsole oder `npm run dev:outbox -- --remote`), ohne dass
+  Codes öffentlich werden. Sobald ein Provider konfiguriert ist, hat er
+  Vorrang; der Postausgang ist vor dem Launch zu deaktivieren
+  (`docs/09-deployment.md`).

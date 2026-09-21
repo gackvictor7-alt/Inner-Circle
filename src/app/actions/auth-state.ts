@@ -15,8 +15,14 @@ export type AuthState = {
   fieldErrors?: Record<string, string>;
   /** Development-only: the generated code, shown in a clearly marked dev box. */
   devCode?: string;
-  /** "dev" = recorded in the development outbox, never presented as delivered. */
+  /**
+   * How the last message was handled: "provider" = really sent, "dev" =
+   * recorded in the development outbox (never presented as delivered),
+   * "none" = no delivery channel exists – nothing was sent or recorded.
+   */
   messageMode?: "provider" | "dev" | "none";
+  /** True only when the current account may open /dev/outbox (admin + outbox enabled). */
+  devOutboxAccessible?: boolean;
   redirectTo?: string;
   /** Masked e-mail the code was sent to (verify page). */
   target?: string;

@@ -25,7 +25,8 @@ npm test        # Unit- + Integrationstests (Wegwerf-Datenbank)
 Umgebungsvariablen: `.env.example` nach `.env` kopieren (lokal genügt
 `AUTH_SECRET`; alle weiteren Integrationen sind optional und laufen ohne
 Schlüssel im gekennzeichneten Dev-Modus). Lokale Datenbank:
-`npm run db:push && npm run db:seed`.
+`npm run db:push && npm run db:seed`. Verifizierungscodes ohne
+E-Mail-Provider: `npm run dev:outbox` (Dev-Postausgang, nie echt versendet).
 
 ## Deployment (Cloudflare Workers + D1)
 
@@ -37,7 +38,8 @@ npm run cf:deploy     # Build + Deployment (nach `npx wrangler login`)
 
 Produktion läuft als Cloudflare Worker (OpenNext-Adapter) mit einer
 D1-Datenbank (Binding `DB`, Migrationen in `drizzle/`). Erstinbetriebnahme,
-Secrets, Build-Einstellungen und Admin-Bootstrap: `docs/09-deployment.md`.
+Secrets, Build-Einstellungen, Admin-Bootstrap und der geschützte Testbetrieb
+ohne E-Mail-Provider: `docs/09-deployment.md`.
 
 ## Struktur
 

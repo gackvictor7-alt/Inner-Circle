@@ -1,3 +1,5 @@
+import { __setTestHeaders } from "./stubs/next-headers";
+
 /**
  * Shared test environment.
  *
@@ -13,3 +15,9 @@ process.env.ENABLE_DEV_OUTBOX = "true";
 process.env.ALLOW_DEV_MEMBERSHIP_ACTIVATION = "true";
 delete process.env.STRIPE_SECRET_KEY;
 delete process.env.RESEND_API_KEY;
+
+// Every test file acts as its own client: the per-IP rate limits of the auth
+// actions (register 8/h, forgot 6/h, …) are stored in the shared test database
+// and must not add up across files that run in parallel.
+const octet = () => 1 + Math.floor(Math.random() * 253);
+__setTestHeaders({ "x-forwarded-for": `10.${octet()}.${octet()}.${octet()}` });
