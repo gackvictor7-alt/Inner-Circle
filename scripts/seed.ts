@@ -180,15 +180,6 @@ const METRICS: {
 
 /* -------------------------------------------------------------------- helpers */
 
-const avatarPool = [
-  "/images/avatars/avatar-1.jpg",
-  "/images/avatars/avatar-2.jpg",
-  "/images/avatars/avatar-6.jpg",
-  "/images/avatars/avatar-3.jpg",
-  "/images/avatars/avatar-5.jpg",
-  "/images/avatars/avatar-4.jpg",
-];
-
 async function ensureTaxonomy() {
   const interestMap = new Map<string, string>();
   for (const [index, [slug, labelDe, labelEn, groupDe, groupEn]] of INTERESTS.entries()) {
@@ -377,7 +368,7 @@ const DEMO_MEMBERS: DemoMember[] = [
     skills: ["Real Estate", "Deal Structuring", "Finance"],
     interests: ["real-estate", "investing", "private-equity", "finance"],
     goals: ["invest", "find-partners", "raise-capital"],
-    avatar: "/images/avatars/avatar-4.jpg",
+    avatar: "/images/avatars/avatar-7.jpg",
     devMembership: true,
   },
   {

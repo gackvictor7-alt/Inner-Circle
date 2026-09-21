@@ -215,11 +215,6 @@ const siteDe = {
       "Persönliches Reputationssystem & Auszeichnungen",
       "Deutsch & Englisch · Light & Dark Mode",
     ],
-    membershipAnnualTitle: "Jahresmitgliedschaft",
-    membershipAnnualBadge: "Preis folgt",
-    membershipAnnualDesc:
-      "Zusätzlich geplant: eine Jahresmitgliedschaft mit Preisvorteil gegenüber der Monatszahlung.",
-    membershipAnnualNote: "Der endgültige Jahrespreis ist noch nicht festgelegt.",
     membershipCta: "Mitglied werden",
     membershipLoginCta: "Du hast bereits ein Konto? Login",
     membershipFootnote:
@@ -257,7 +252,8 @@ const siteDe = {
       metaTitle: "Network – INNER CIRCLE",
       metaDescription:
         "Entdecke Unternehmer, Geschäftspartner und Menschen mit ähnlichen Ambitionen im INNER-CIRCLE-Netzwerk.",
-      imageAlt: "Zwei Fachleute im Gespräch in einer hochwertigen Lounge",
+      imageAlt: "Zwei junge Business-Personen schauen gemeinsam auf ein Tablet in einem hellen Büro mit Glasfassade",
+      howItWorksLink: "Wie Netzwerk, Kontakte und Vertrauen hier funktionieren",
       features: [
         {
           title: "Entdecken",
@@ -274,21 +270,6 @@ const siteDe = {
         {
           title: "Reputation sichtbar",
           desc: "Sternebewertungen und Auszeichnungen aus bestätigten Zusammenarbeiten – auf jedem Profil.",
-        },
-      ],
-      stepsTitle: "So wird es funktionieren",
-      steps: [
-        {
-          title: "Profil aufbauen",
-          desc: "Erzähle, wer du bist, was du machst und wonach du suchst.",
-        },
-        {
-          title: "Menschen finden",
-          desc: "Entdecke passende Mitglieder über Suche, Filter und Vorschläge.",
-        },
-        {
-          title: "Verbinden & sprechen",
-          desc: "Sende eine Anfrage, werde bestätigt und starte den direkten Austausch.",
         },
       ],
       comingSoonTitle: "Was hier später entsteht",
@@ -310,13 +291,16 @@ const siteDe = {
       metaTitle: "Business Deals – INNER CIRCLE",
       metaDescription:
         "Entdecke Geschäftsmöglichkeiten im INNER CIRCLE: Kooperationen, Aufträge, Partnerschaften und Nachfolgen mit klarem Bewerbungsprozess.",
-      imageAlt: "Zwei Fachleute schließen eine Vereinbarung in einem Penthouse-Büro ab",
+      imageAlt: "Zwei junge Projektentwickler besprechen Baupläne auf einer modernen Beton-Baustelle",
       formatsTitle: "Geplante Deal-Formate",
+      formatsLead: "Sechs Formate sind für den Start geplant. Alle sind noch in Vorbereitung – nichts davon ist heute buchungsfähig.",
       formats: [
-        "Kooperationen & Joint Ventures",
-        "Projektaufträge & Ausschreibungen",
-        "Vertriebs- & Channel-Partnerschaften",
-        "Unternehmensnachfolgen",
+        "Kooperation",
+        "Beteiligung",
+        "Joint Venture",
+        "Unternehmensverkauf",
+        "Unternehmensnachfolge",
+        "Strategische Partnerschaft",
       ],
       processTitle: "So läuft ein Deal ab",
       features: [
@@ -358,7 +342,11 @@ const siteDe = {
       metaTitle: "Investments – INNER CIRCLE",
       metaDescription:
         "Geprüfte Investment-Chancen und strukturierte Investoren-Anfragen – diskret und mit klarem Prozess.",
-      imageAlt: "Investoren besprechen Unterlagen in einem Konferenzraum bei Abendlicht",
+      imageAlt: "Drei junge Professionals prüfen Investment-Unterlagen an einem Tisch mit Glasfassade",
+      allocationTitle: "So denkt INNER CIRCLE Kapital",
+      allocationLead:
+        "Kein Fonds und keine Renditenzahl, sondern ein definiertes Modell: 20 % der Plattform-Einnahmen sind als Investmentbudget geplant – davon 25 % in Unternehmen und Projekte aus dem Netzwerk, 75 % extern.",
+      allocationCta: "Modell ansehen",
       features: [
         {
           title: "Geprüfte Chancen",
@@ -406,7 +394,7 @@ const siteDe = {
       metaTitle: "Marketplace & Academy – INNER CIRCLE",
       metaDescription:
         "Lerne neue Fähigkeiten, verkaufe dein Wissen und entdecke professionelle Dienstleistungen der INNER-CIRCLE-Community.",
-      imageAlt: "Expertin hält eine kleine Masterclass für aufmerksame Teilnehmer",
+      imageAlt: "Zwei junge Kolleg:innen besprechen Produktverpackungen und Layouts an einem Studio-Tisch",
       tabMarketplace: "Marketplace",
       tabAcademy: "Academy",
       marketplaceTab: {
@@ -488,7 +476,7 @@ const siteDe = {
       visionDisclaimer:
         "Hinweis: Geplante Formate und konzeptionelle Vision – noch keine bestätigten Veranstaltungen.",
       imageRegularAlt: "Networking-Abend auf einer Dachterrasse mit Stadtlichtern",
-      imageVisionAlt: "Exklusives Abendessen auf einer Klippenterrasse am Meer",
+      imageVisionAlt: "Business-Dinner an einer langen Tafel in einem hellen, modernen Restaurant",
       ctaTitle: "Dabei sein, wenn es startet.",
       ctaText:
         "Mitglieder erhalten vorrangigen Zugang zu allen Events. Sichere dir deinen Platz im Kreis.",
@@ -499,12 +487,19 @@ const siteDe = {
       lead: "INNER CIRCLE bewusst exklusiv, aber zugänglich: eine einheitliche Mitgliedschaft eröffnet alle regulären Funktionen – Netzwerk, Deals, Investments, Marktplatz, Academy und Events.",
       metaTitle: "Membership – INNER CIRCLE",
       metaDescription:
-        "Die INNER-CIRCLE-Mitgliedschaft: 24,99 € pro Monat, monatlich kündbar. Jahresmitgliedschaft mit Preisvorteil geplant.",
+        "Die INNER-CIRCLE-Mitgliedschaft: 24,99 € pro Monat oder 249,90 € pro Jahr – eine Mitgliedschaft, beide Abrechnungszeiträume.",
       monthlyTitle: "Monatsmitgliedschaft",
       monthlyBadge: "Standard",
       price: "24,99 €",
       period: "/ Monat",
       billingNote: "Monatlich kündbar · Zahlung startet erst mit Kontoführung",
+      annualPrice: "249,90 €",
+      annualPeriod: "/ Jahr",
+      annualEquivalent: "entspricht 20,83 € pro Monat",
+      pricePeriodTitle: "Abrechnungszeitraum",
+      pricePeriodHint: "Eine Mitgliedschaft, zwei Zeiträume – umschaltbar bei der Buchung in der App.",
+      selectCta: "Auswählen und registrieren",
+      selectedNote: "Wir starten mit 48 Stunden Discovery – Zahlungsdaten erst danach.",
       includedTitle: "Enthalten in jeder Mitgliedschaft",
       included: [
         "Vollzugang zum Netzwerk & Mitgliederverzeichnis",
@@ -515,10 +510,10 @@ const siteDe = {
         "Persönliches Reputationssystem & Auszeichnungen",
       ],
       annualTitle: "Jahresmitgliedschaft",
-      annualBadge: "Preis folgt",
+      annualBadge: "Preisvorteil",
       annualText:
-        "Zusätzlich geplant: eine Jahresmitgliedschaft mit Preisvorteil gegenüber der Monatszahlung – für alle, die langfristig dabei bleiben wollen.",
-      annualNote: "Der endgültige Jahrespreis ist noch nicht festgelegt.",
+        "Gleiche Mitgliedschaft, ein Zahlungstermin: 249,90 € pro Jahr statt 24,99 € pro Monat – gespart wird gegenüber zwölf Monatszahlungen.",
+      annualNote: "Kündbar zum Periodenende. Der Preisvorteil ist fest eingeplant, keine Aktion.",
       trialNote: "Jedes neue Konto beginnt mit einer kostenlosen 48-Stunden-Entdeckungsphase.",
       payNoteTitle: "Ehrlich gesagt:",
       payNote:
@@ -526,6 +521,24 @@ const siteDe = {
       faqTitle: "Häufige Fragen",
       ctaTitle: "Bereit für den inneren Kreis?",
       ctaText: "Erstelle dein Konto, sobald die Registrierung startet – und wachse mit der Community.",
+    },
+    howItWorks: {
+      kicker: "Wie es funktioniert",
+      title: "Für wen das hier ist, wie es läuft und was Vertrauen bedeutet.",
+      lead:
+        "Alle Erklärungen, die nicht auf die Startseite gehören – an einem Ort, damit die Homepage kurz bleibt.",
+      metaTitle: "Wie INNER CIRCLE funktioniert – INNER CIRCLE",
+      metaDescription:
+        "Für wen INNER CIRCLE gebaut ist, wie Join → Discover → Connect → Build läuft und wie Reputation hier entsteht.",
+      audienceLead: "Offen für alle, die etwas aufbauen. Status und Reputation entstehen durch echte Arbeit.",
+      flowLead:
+        "Vier Schritte, keine Abkürzung nach oben: Profil, relevante Menschen, echte Gespräche, daraus entstehende Zusammenarbeit.",
+      trustLead:
+        "Verifizierung, Trust Score und Bewertungen nach realen Outcomes. Follower und Profilbilder zählen nicht.",
+      portfolioTitle: "Und was passiert mit den Einnahmen?",
+      portfolioText:
+        "20 % der Plattform-Einnahmen sind als Investmentbudget geplant: 25 % in Unternehmen und Projekte aus dem Netzwerk, 75 % extern – bezogen auf 100 % sind das 5 % und 15 %.",
+      joinCta: "Konto erstellen",
     },
     login: {
       kicker: "Login",
@@ -898,11 +911,6 @@ const siteEnRaw: SiteDictionary = {
       "Personal reputation system & awards",
       "German & English · light & dark mode",
     ],
-    membershipAnnualTitle: "Annual membership",
-    membershipAnnualBadge: "Pricing to follow",
-    membershipAnnualDesc:
-      "Also planned: an annual membership with a saving compared to monthly billing.",
-    membershipAnnualNote: "The final annual price has not been set yet.",
     membershipCta: "Become a member",
     membershipLoginCta: "Already have an account? Log in",
     membershipFootnote:
@@ -933,6 +941,24 @@ const siteEnRaw: SiteDictionary = {
     finalSecondary: "View membership",
   },
   pages: {
+    howItWorks: {
+      kicker: "How it works",
+      title: "Who it is for, how it runs and what trust means.",
+      lead:
+        "All the explanation that does not belong on the homepage – in one place, so the homepage stays short.",
+      metaTitle: "How INNER CIRCLE works – INNER CIRCLE",
+      metaDescription:
+        "Who INNER CIRCLE is built for, how join, discover, connect and build work and how reputation is earned.",
+      audienceLead: "Open to anyone who builds. Status and reputation are earned through real work.",
+      flowLead:
+        "Four steps, no shortcut to the top: a profile, relevant people, real conversations, collaboration that grows from them.",
+      trustLead:
+        "Verification, trust score and reviews after real outcomes. Followers and profile pictures do not count.",
+      portfolioTitle: "And what happens to the revenue?",
+      portfolioText:
+        "20% of platform revenue is planned as the investment budget: 25% into companies and projects from the network, 75% external – relative to 100% that is 5% and 15%.",
+      joinCta: "Create an account",
+    },
     network: {
       kicker: "Network",
       title: "People who genuinely move your business forward.",
@@ -940,7 +966,8 @@ const siteEnRaw: SiteDictionary = {
       metaTitle: "Network – INNER CIRCLE",
       metaDescription:
         "Meet founders, business partners and people with similar ambitions in the INNER CIRCLE network.",
-      imageAlt: "Two professionals in conversation in an upscale lounge",
+      imageAlt: "Two young business people reviewing numbers on a tablet in a bright glass-fronted office",
+      howItWorksLink: "How network, contacts and trust work here",
       features: [
         {
           title: "Discover",
@@ -957,21 +984,6 @@ const siteEnRaw: SiteDictionary = {
         {
           title: "Visible reputation",
           desc: "Star ratings and awards from verified collaborations – on every profile.",
-        },
-      ],
-      stepsTitle: "How it will work",
-      steps: [
-        {
-          title: "Build your profile",
-          desc: "Tell people who you are, what you do and what you are looking for.",
-        },
-        {
-          title: "Find people",
-          desc: "Discover matching members via search, filters and suggestions.",
-        },
-        {
-          title: "Connect & talk",
-          desc: "Send a request, get confirmed and start the direct conversation.",
         },
       ],
       comingSoonTitle: "What will live here",
@@ -993,13 +1005,16 @@ const siteEnRaw: SiteDictionary = {
       metaTitle: "Business Deals – INNER CIRCLE",
       metaDescription:
         "Discover business opportunities inside INNER CIRCLE: cooperations, projects, partnerships and successions with a clear application process.",
-      imageAlt: "Two professionals closing an agreement in a penthouse office",
+      imageAlt: "Two young project developers reviewing floor plans on a modern concrete construction site",
       formatsTitle: "Planned deal formats",
+      formatsLead: "Six formats are planned for launch. All are still in preparation – none is bookable today.",
       formats: [
-        "Cooperations & joint ventures",
-        "Projects & tenders",
-        "Sales & channel partnerships",
-        "Business successions",
+        "Cooperation",
+        "Equity participation",
+        "Joint venture",
+        "Company sale",
+        "Business succession",
+        "Strategic partnership",
       ],
       processTitle: "How a deal flows",
       features: [
@@ -1041,7 +1056,11 @@ const siteEnRaw: SiteDictionary = {
       metaTitle: "Investments – INNER CIRCLE",
       metaDescription:
         "Reviewed investment opportunities and structured investor inquiries – discreet and with a clear process.",
-      imageAlt: "Investors reviewing documents in a conference room at dusk",
+      imageAlt: "Three young professionals checking investment documents at a table with a glass façade",
+      allocationTitle: "How INNER CIRCLE thinks about capital",
+      allocationLead:
+        "No fund and no return figure, just a defined model: 20% of platform revenue is planned as the investment budget – 25% of it into companies and projects from the network, 75% external.",
+      allocationCta: "See the model",
       features: [
         {
           title: "Reviewed opportunities",
@@ -1089,7 +1108,7 @@ const siteEnRaw: SiteDictionary = {
       metaTitle: "Marketplace & Academy – INNER CIRCLE",
       metaDescription:
         "Learn new skills, sell your knowledge and discover professional services from the INNER CIRCLE community.",
-      imageAlt: "An expert leading a small masterclass with attentive participants",
+      imageAlt: "Two young colleagues discussing packaging prototypes and layouts at a studio table",
       tabMarketplace: "Marketplace",
       tabAcademy: "Academy",
       marketplaceTab: {
@@ -1171,7 +1190,7 @@ const siteEnRaw: SiteDictionary = {
       visionDisclaimer:
         "Note: planned formats and conceptual vision – no confirmed events yet.",
       imageRegularAlt: "Rooftop networking evening with city lights",
-      imageVisionAlt: "Exclusive cliffside dinner terrace by the sea",
+      imageVisionAlt: "Business dinner at a long table in a bright, modern restaurant",
       ctaTitle: "Be there when it starts.",
       ctaText:
         "Members get priority access to all events. Secure your place in the circle.",
@@ -1182,12 +1201,19 @@ const siteEnRaw: SiteDictionary = {
       lead: "Deliberately exclusive, yet accessible: one uniform membership unlocks all regular features – network, deals, investments, marketplace, academy and events.",
       metaTitle: "Membership – INNER CIRCLE",
       metaDescription:
-        "The INNER CIRCLE membership: €24.99 per month, cancel monthly. Annual membership with a saving is planned.",
+        "The INNER CIRCLE membership: €24.99 per month or €249.90 per year – one membership, both billing periods.",
       monthlyTitle: "Monthly membership",
       monthlyBadge: "Standard",
       price: "€24.99",
       period: "/ month",
       billingNote: "Cancel monthly · Billing starts only once accounts go live",
+      annualPrice: "€249.90",
+      annualPeriod: "/ year",
+      annualEquivalent: "equivalent to €20.83 per month",
+      pricePeriodTitle: "Billing period",
+      pricePeriodHint: "One membership, two periods – switchable when you book in the app.",
+      selectCta: "Select and register",
+      selectedNote: "You start with 48 hours of discovery – payment details only after that.",
       includedTitle: "Included in every membership",
       included: [
         "Full access to the network & member directory",
@@ -1198,10 +1224,10 @@ const siteEnRaw: SiteDictionary = {
         "Personal reputation system & awards",
       ],
       annualTitle: "Annual membership",
-      annualBadge: "Pricing to follow",
+      annualBadge: "Better value",
       annualText:
-        "Also planned: an annual membership with a saving compared to monthly billing – for everyone staying for the long run.",
-      annualNote: "The final annual price has not been set yet.",
+        "Same membership, one payment date: €249.90 per year instead of €24.99 per month – the saving is against twelve monthly payments.",
+      annualNote: "Cancellable at the end of the period. The advantage is a fixed price, not a campaign.",
       trialNote: "Every new account starts with a free 48-hour discovery phase.",
       payNoteTitle: "To be fully transparent:",
       payNote:

@@ -34,7 +34,8 @@ export type DemoProfile = {
   key: string;
   firstName: string;
   lastName: string;
-  role: string; // DE label for the role (localised below by page)
+  role: string; // DE label for the role
+  roleEn: string; // EN label for the role
   roleKey: "founder" | "investor" | "creator" | "consultant" | "freelancer" | "entrepreneur";
   company: string;
   location: string;
@@ -44,106 +45,317 @@ export type DemoProfile = {
   lookingFor: string[];
   offering: string[];
   skills: string[];
+  /**
+   * Profile completion of this demo account. Deliberately uneven: a real
+   * directory is not 100 % everywhere, and demo data should not pretend
+   * otherwise. Never shown as a trust value.
+   */
+  completion: number;
   /** Avatars are provisional AI-generated placeholder visuals. */
   avatarUrl: string;
+  /**
+   * English rendering of the free-text fields. The demo profiles stay in the
+   * same order in both languages; only the wording differs.
+   */
+  en: {
+    positioning: string;
+    bio: string;
+    interests: string[];
+    lookingFor: string[];
+    offering: string[];
+    skills: string[];
+    /** Company / working title, e.g. "freelance" instead of "freiberuflich". */
+    company?: string;
+  };
 };
 
 export const DEMO_PROFILES: DemoProfile[] = [
   {
-    key: "demo-founder-lena",
-    firstName: "Lena",
-    lastName: "Schmidt",
+    key: "demo-founder-julian",
+    firstName: "Julian",
+    lastName: "Weiss",
     role: "Founder",
+    roleEn: "Founder",
     roleKey: "founder",
-    company: "Northbeam (B2B SaaS)",
-    location: "Berlin",
-    positioning: "Gründerin einer B2B-SaaS-Plattform für den Mittelstand.",
-    bio: "Baue mit einem kleinen Team Software für Field-Service-Teams. Wir wachsen organisch und suchen jetzt Partner für den DACH-Vertrieb.",
-    interests: ["SaaS", "Vertrieb", "Bootstrapping", "KI"],
-    lookingFor: ["Vertriebspartner DACH", "späte Seed-Runde"],
-    offering: ["Produkt-Demo", "Partnermodell"],
-    skills: ["Product", "B2B Sales", "Positionierung"],
-    avatarUrl: "/images/avatars/avatar-1.jpg",
+    company: "Rohbau.Koordination (Bau-Software)",
+    location: "Stuttgart",
+    positioning: "Gründer: Software für Bau-Projektkoordination.",
+    bio: "Wir koordinieren Nachunternehmer, Termine und Mängel auf der Baustelle. 14 Kunden im Süden, jetzt suchen wir einen Vertriebspartner für NRW.",
+    interests: ["Proptech", "B2B Vertrieb", "Projektentwicklung"],
+    lookingFor: ["Vertriebspartner DACH", "Seed-Ticket bis 300k"],
+    offering: ["Produkt-Demo", "Reseller-Modell"],
+    skills: ["Product", "B2B Sales", "Bauleitung"],
+    completion: 78,
+    avatarUrl: "/images/avatars/avatar-7.jpg",
+    en: {
+      positioning: "Founder: software for construction-site coordination.",
+      bio: "We coordinate subcontractors, dates and defects on site. 14 customers in the south, now we are looking for a sales partner for NRW.",
+      interests: ["Proptech", "B2B sales", "Real estate development"],
+      lookingFor: ["Sales partner DACH", "Seed ticket up to 300k"],
+      offering: ["Product demo", "Reseller model"],
+      skills: ["Product", "B2B sales", "Site management"],
+    },
   },
   {
     key: "demo-investor-marc",
     firstName: "Marc",
     lastName: "Dubois",
     role: "Investor",
+    roleEn: "Investor",
     roleKey: "investor",
     company: "Atelier Capital",
     location: "Paris",
-    positioning: "Angel-Investor für Seed- und Pre-Seed-Teams in Europa.",
-    bio: "Investiere in Teams mit klarem Kundenproblem und ersten Umsätzen – Schwerpunkt Software, Climate und Fintech.",
-    interests: ["Venture Capital", "Climate Tech", "Fintech"],
-    lookingFor: ["Team mit Traction", "Co-Investoren"],
-    offering: ["Seed-Ticket", "Go-to-Market-Erfahrung"],
-    skills: ["Fundraising", "Due Diligence", "Netzwerk"],
+    positioning: "Angel für Seed und Pre-Seed in Europa.",
+    bio: "Ich schaue auf Teams mit echtem Kundenproblem, nicht auf Folien. Zwei Tickets im Quartal, Software und Climate.",
+    interests: ["Venture Capital", "Climate Tech"],
+    lookingFor: ["Deals mit First Revenue", "Co-Investoren in Frankreich"],
+    offering: ["Seed-Ticket", "Go-to-Market-Spitzen"],
+    skills: ["Fundraising", "Due Diligence"],
+    completion: 92,
     avatarUrl: "/images/avatars/avatar-2.jpg",
+    en: {
+      positioning: "Angel for seed and pre-seed in Europe.",
+      bio: "I look for teams with a real customer problem, not slides. Two tickets a quarter, software and climate.",
+      interests: ["Venture capital", "Climate tech"],
+      lookingFor: ["Deals with first revenue", "Co-investors in France"],
+      offering: ["Seed ticket", "Go-to-market sparring"],
+      skills: ["Fundraising", "Due diligence"],
+    },
   },
   {
     key: "demo-creator-maya",
     firstName: "Maya",
     lastName: "Okafor",
     role: "Creator",
+    roleEn: "Creator",
     roleKey: "creator",
     company: "Maya Studio",
     location: "London",
     positioning: "Content- und Brand-Creatorin für Tech-Marken.",
-    bio: "Produziere Kurzvideos und Markeninhalte für SaaS- und D2C-Teams. Über 100 Kampagnen, Fokus auf Messaging statt Reichweite.",
-    interests: ["Content", "Personal Branding", "Video"],
+    bio: "Kurzvideos und Markenauftritte für SaaS- und D2C-Teams. Über 100 Kampagnen, Fokus auf Messaging statt Reichweite.",
+    interests: ["Content", "Personal Branding", "Video", "Design"],
     lookingFor: ["Brand-Partner", "Lizenz-Projekte"],
-    offering: ["Creative Direction", "Content-Systeme"],
+    offering: ["Creative Direction", "Content-Systeme", "Workshops"],
     skills: ["Storytelling", "Video", "Brand"],
+    completion: 100,
     avatarUrl: "/images/avatars/avatar-3.jpg",
+    en: {
+      positioning: "Content and brand creator for tech brands.",
+      bio: "Short videos and brand identities for SaaS and D2C teams. Over 100 campaigns, focus on messaging rather than reach.",
+      interests: ["Content", "Personal branding", "Video", "Design"],
+      lookingFor: ["Brand partners", "Licensed projects"],
+      offering: ["Creative direction", "Content systems", "Workshops"],
+      skills: ["Storytelling", "Video", "Brand"],
+    },
   },
   {
     key: "demo-consultant-david",
     firstName: "David",
     lastName: "Reyes",
     role: "Consultant",
+    roleEn: "Consultant",
     roleKey: "consultant",
     company: "Reyes Advisory",
     location: "Barcelona",
-    positioning: "Berater für B2B-Vertrieb und RevOps.",
-    bio: "Helfe B2B-Teams, Vertrieb wiederholbar zu machen – Pipeline, ICP, CRM und Enablement in einem klaren Playbook.",
-    interests: ["B2B Vertrieb", "RevOps", "CRM"],
-    lookingFor: ["Mandate Q3", "Portfolio-Unternehmen"],
+    positioning: "B2B-Vertrieb und RevOps.",
+    bio: "Ich mache Vertrieb wiederholbar: ICP, Pipeline, CRM, Enablement. Kein Papier, sondern ein Playbook, das das Team nutzt.",
+    interests: ["B2B Vertrieb", "RevOps"],
+    lookingFor: ["Zwei Mandate ab Q4"],
     offering: ["Sales-Audit", "RevOps-Programm"],
-    skills: ["Sales Ops", "Pipeline", "Enablement"],
+    skills: ["Sales Ops", "Pipeline", "Enablement", "CRM"],
+    completion: 54,
     avatarUrl: "/images/avatars/avatar-4.jpg",
+    en: {
+      positioning: "B2B sales and RevOps.",
+      bio: "I make sales repeatable: ICP, pipeline, CRM, enablement. Not paper, but a playbook the team actually uses.",
+      interests: ["B2B sales", "RevOps"],
+      lookingFor: ["Two mandates from Q4"],
+      offering: ["Sales audit", "RevOps programme"],
+      skills: ["Sales ops", "Pipeline", "Enablement", "CRM"],
+    },
   },
   {
     key: "demo-freelancer-nina",
     firstName: "Nina",
     lastName: "Kovač",
     role: "Freelancer",
+    roleEn: "Freelancer",
     roleKey: "freelancer",
     company: "freiberuflich",
-    location: "Remote (Wien)",
-    positioning: "Freelance Performance & CRM Marketing.",
-    bio: "Setze E-Mail- und Retention-Systeme für E-Commerce-Marken auf – von der Kohortenanalyse bis zur Automation.",
+    location: "Wien",
+    positioning: "Performance- und CRM-Marketing für E-Commerce.",
+    bio: "E-Mail- und Retention-Strecken für D2C-Marken – von der Kohortenanalyse bis zur Automation.",
     interests: ["E-Commerce", "Retention", "Marketing Automation"],
-    lookingFor: ["Projektmandate", "Dauerhafte Kunden"],
-    offering: ["Retention-Audit", "CRM-Setup"],
-    skills: ["Klaviyo", "Analytics", "Automation"],
+    lookingFor: ["Projektmandate", "Retainer", "Kooperationen mit Agenturen"],
+    offering: ["Retention-Audit"],
+    skills: ["Klaviyo", "Analytics"],
+    completion: 71,
     avatarUrl: "/images/avatars/avatar-5.jpg",
+    en: {
+      positioning: "Performance and CRM marketing for e-commerce.",
+      bio: "Email and retention journeys for D2C brands – from cohort analysis to automation.",
+      company: "freelance",
+      interests: ["E-commerce", "Retention", "Marketing automation"],
+      lookingFor: ["Project mandates", "Retainers", "Agency partnerships"],
+      offering: ["Retention audit"],
+      skills: ["Klaviyo", "Analytics"],
+    },
   },
   {
     key: "demo-entrepreneur-constantin",
     firstName: "Constantin",
     lastName: "Weber",
     role: "Unternehmer",
+    roleEn: "Owner / Operator",
     roleKey: "entrepreneur",
     company: "Weber Gruppe",
     location: "München",
-    positioning: "Inhaber eines mittelständischen Logistikunternehmens.",
-    bio: "Führe ein Logistikunternehmen mit 120 Mitarbeitenden. Interessiere mich für Digitalisierung, Nachfolge und Investments im Mittelstand.",
-    interests: ["Mittelstand", "Logistik", "Nachfolge"],
-    lookingFor: ["Digital-Partner", "M&A-Kontakte"],
+    positioning: "Inhaber eines Logistikunternehmens mit 120 Köpfen.",
+    bio: "Digitalisierung, Nachfolge und Beteiligungen im Mittelstand sind meine drei Themen. Ich mag Gespräche mit Zahlen, nicht mit Buzzwords.",
+    interests: ["Mittelstand", "Logistik", "Nachfolge", "Beteiligungen"],
+    lookingFor: ["Digital-Partner", "Käufer für ein Tochterunternehmen"],
     offering: ["Branchen-Know-how", "Kapital für Beteiligungen"],
-    skills: ["Operations", "Unternehmensführung", "Finanzen"],
+    skills: ["Operations", "Unternehmensführung"],
+    completion: 66,
     avatarUrl: "/images/avatars/avatar-6.jpg",
+    en: {
+      positioning: "Owner of a logistics company with 120 people.",
+      bio: "Digitalisation, succession and minority stakes in the mid-market are my three topics. I like conversations with numbers, not buzzwords.",
+      interests: ["Mid-market", "Logistics", "Succession", "Equity stakes"],
+      lookingFor: ["Digital partner", "Buyer for a subsidiary"],
+      offering: ["Industry know-how", "Capital for stakes"],
+      skills: ["Operations", "Company management"],
+    },
+  },
+];
+
+/* ------------------------------------------------------------------ *
+ * PROFILE DEMO POSTS – example contributions for a member profile.
+ * They create no likes, no revenue, no trust value and no real
+ * engagement; they only show what a filled profile looks like.
+ * ------------------------------------------------------------------ */
+
+export type DemoProfilePost = {
+  key: string;
+  categoryDe: string;
+  categoryEn: string;
+  /** Days in the past – rendered relative, so the demo never looks stale. */
+  daysAgo: number;
+  bodyDe: string;
+  bodyEn: string;
+  image?: string;
+  imageAltDe?: string;
+  imageAltEn?: string;
+};
+
+export const DEMO_PROFILE_POSTS: DemoProfilePost[] = [
+  {
+    key: "post-milestone",
+    categoryDe: "Meilenstein",
+    categoryEn: "Milestone",
+    daysAgo: 2,
+    bodyDe:
+      "14. Kunde unterschrieben. Zwei Filialen in NRW koordinieren jetzt ihre Nachunternehmer über uns – ohne Excel-Chaos. Nächster Schritt: ein Vertriebspartner für den Westen.",
+    bodyEn:
+      "Signed our 14th customer. Two branches in NRW now coordinate their subcontractors through us – no spreadsheet chaos. Next step: a sales partner for the west.",
+  },
+  {
+    key: "post-search",
+    categoryDe: "Suche",
+    categoryEn: "Looking for",
+    daysAgo: 5,
+    bodyDe:
+      "Wir suchen jemanden, der Bau-Software an Niederlassungen verkauft, ohne jedes Mal die Baustelle neu erklären zu müssen. Provision ist möglich, Partnerschaft besser.",
+    bodyEn:
+      "Looking for someone who sells construction software to regional offices without having to re-explain the job site every time. Commission possible, partnership better.",
+  },
+  {
+    key: "post-project",
+    categoryDe: "Projekt",
+    categoryEn: "Project",
+    daysAgo: 9,
+    bodyDe:
+      "Neues Büro in Stuttgart bezogen – klein, hell, direkt neben dem Projektbüro, in dem wir montags mit den Bauleitern sitzen. Fühlt sich weniger nach Start-up an, mehr nach Werkzeug.",
+    image: "/images/demo/demo-office.jpg",
+    imageAltDe: "Team in einem hellen, modernen Büro mit Glasfront",
+    imageAltEn: "A team in a bright, modern office with glass walls",
+    bodyEn:
+      "Moved into the new Stuttgart office – small, bright, right next to the project room where we sit with the site managers on Mondays. Less startup cosplay, more tool shed.",
+  },
+  {
+    key: "post-event",
+    categoryDe: "Event",
+    categoryEn: "Event",
+    daysAgo: 16,
+    bodyDe:
+      "Business Dinner in Stuttgart: acht Personen, ein Tisch, keine Visitenkarten-Runde. Ich habe einen Projektentwickler aus Frankfurt und einen Steuerberater mit Mittelstands-Fokus mitgenommen. Zwei Gespräche laufen weiter.",
+    image: "/images/demo/demo-event.jpg",
+    imageAltDe: "Business-Dinner an einer langen Tafel",
+    imageAltEn: "A business dinner at a long table",
+    bodyEn:
+      "Business dinner in Stuttgart: eight people, one table, no business-card roulette. I left with a developer from Frankfurt and a tax adviser who actually knows mid-market. Two conversations are still going.",
+  },
+  {
+    key: "post-project-site",
+    categoryDe: "Vor Ort",
+    categoryEn: "On site",
+    daysAgo: 24,
+    bodyDe:
+      "Baustelle in Vaihingen: 60 Einheiten, sechs Nachunternehmer, ein Zeitplan, der hält. Genau dafür bauen wir das Tool.",
+    image: "/images/demo/demo-project.jpg",
+    imageAltDe: "Zwei Personen mit Helm prüfen Baupläne auf einer Beton-Baustelle",
+    imageAltEn: "Two people in helmets reviewing floor plans on a concrete site",
+    bodyEn:
+      "Site in Vaihingen: 60 units, six subcontractors, one schedule that is actually holding. This is exactly what we build the tool for.",
+  },
+];
+
+/* ------------------------------------------------------------------ *
+ * INBOX DEMO – what a filled inbox looks like (previews only).
+ * Nothing here is stored, sent or counted.
+ * ------------------------------------------------------------------ */
+
+export type DemoInboxThread = {
+  key: string;
+  kind: "message" | "request" | "notification";
+  fromDe: string;
+  fromEn: string;
+  textDe: string;
+  textEn: string;
+  timeDe: string;
+  timeEn: string;
+};
+
+export const DEMO_INBOX_THREADS: DemoInboxThread[] = [
+  {
+    key: "inbox-msg-julian",
+    kind: "message",
+    fromDe: "Julian Weiss",
+    fromEn: "Julian Weiss",
+    textDe: "Deine Nachricht zu NRW – ich schicke dir morgen die zwei Referenzen und die Provisionstabelle.",
+    textEn: "Your note about NRW – I'll send you the two references and the commission table tomorrow.",
+    timeDe: "vor 2 Std.",
+    timeEn: "2 h ago",
+  },
+  {
+    key: "inbox-req-marc",
+    kind: "request",
+    fromDe: "Marc Dubois",
+    fromEn: "Marc Dubois",
+    textDe: "Möchte sich vernetzen: „Ich schaue mir gerne Euer Koordinations-Tool an, bevor die Runde schließt.“",
+    textEn: "Wants to connect: “Happy to look at your coordination tool before the round closes.”",
+    timeDe: "gestern",
+    timeEn: "yesterday",
+  },
+  {
+    key: "inbox-notif-dinner",
+    kind: "notification",
+    fromDe: "INNER CIRCLE",
+    fromEn: "INNER CIRCLE",
+    textDe: "Business Dinner Stuttgart: 3 Plätze frei geworden, Anmeldungen bis Freitag.",
+    textEn: "Business Dinner Stuttgart: 3 seats opened up, sign-ups close Friday.",
+    timeDe: "Mo",
+    timeEn: "Mon",
   },
 ];
 
@@ -312,7 +524,7 @@ export const DEMO_LISTINGS: DemoListing[] = [
   {
     key: "listing-digital-product",
     title: "Digital Product: Pricing-Vorlagen-Paket",
-    creator: "Lena Schmidt (Beispiel)",
+    creator: "Julian Weiss (Beispiel)",
     price: "149 €",
     category: "Digital Product",
     ratingLabel: "Beispiel-Bewertung: 4,6",

@@ -12,6 +12,8 @@ import { dictionaries } from "@/lib/i18n/dictionaries";
 import { Avatar } from "@/components/app/AppShell";
 import { ShareProfileButton } from "@/components/app/ShareProfileButton";
 import { LocalizedEmptyState, Tr } from "@/components/app/localized";
+import { ProfilePostsDemoSection } from "@/components/app/DemoSections";
+import { DEMO_CONTENT_ENABLED } from "@/lib/demo";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -71,9 +73,9 @@ export default async function OwnProfilePage({
   const profile = user.profile;
   const params = await searchParams;
   const tab: ProfileTab =
-    params.tab === "activity" || params.tab === "performance" || params.tab === "offers"
+    params.tab === "overview" || params.tab === "performance" || params.tab === "offers"
       ? params.tab
-      : "overview";
+      : "activity";
 
   const [stats, trust, posts, counts, offerings, privacy] = await Promise.all([
     profileStats(user.id),
@@ -119,8 +121,8 @@ export default async function OwnProfilePage({
   });
 
   const tabs: { key: ProfileTab; href: string; labelKey: string }[] = [
-    { key: "overview", href: "/app/profile", labelKey: "app.profile.tabsOverview" },
-    { key: "activity", href: "/app/profile?tab=activity", labelKey: "app.profile.tabsActivity" },
+    { key: "activity", href: "/app/profile", labelKey: "app.profile.tabsPosts" },
+    { key: "overview", href: "/app/profile?tab=overview", labelKey: "app.profile.tabsOverview" },
     { key: "performance", href: "/app/profile?tab=performance", labelKey: "app.profile.tabsPerformance" },
     { key: "offers", href: "/app/profile?tab=offers", labelKey: "app.profile.tabsOffers" },
   ];
@@ -323,31 +325,39 @@ export default async function OwnProfilePage({
       )}
 
       {tab === "activity" && (
-        <section className="space-y-3">
-          <p className="max-w-2xl text-sm leading-6 text-foreground-muted">
-            <Tr k="app.profile.activityLead" />
-          </p>
+        <section className="space-y-5">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-bold tracking-tight">
+                <Tr k="app.profile.tabsPosts" />
+              </h2>
+              <p className="mt-1 max-w-2xl text-sm leading-6 text-foreground-muted">
+                <Tr k="app.profile.activityLead" />
+              </p>
+            </div>
+            <Button href="/app/create/post" size="sm" variant="secondary">
+              <Tr k="app.posts.createTitle" />
+            </Button>
+          </div>
+
           {posts.length === 0 ? (
-            <LocalizedEmptyState
-              icon="sparkle"
-              titleKey="app.profile.activityEmpty"
-              textKey="app.profile.activityEmptyText"
-              action={{ labelKey: "app.posts.createTitle", href: "/app/create/post" }}
-            />
+            <p className="rounded-2xl border border-border bg-surface px-5 py-4 text-sm leading-6 text-foreground-muted">
+              <Tr k="app.profile.activityEmptyText" />
+            </p>
           ) : (
-            <ul className="space-y-3">
+            <ul className="divide-y divide-border rounded-2xl border border-border bg-surface">
               {posts.map((post) => (
-                <li key={post.id}>
-                  <Card className="p-4">
-                    <p className="whitespace-pre-wrap text-sm leading-6">{post.body}</p>
-                    <p className="mt-2 text-xs text-foreground-subtle">
-                      {post.createdAt.toLocaleDateString(locale)}
-                    </p>
-                  </Card>
+                <li key={post.id} className="px-5 py-4">
+                  <p className="whitespace-pre-wrap text-[15px] leading-7">{post.body}</p>
+                  <p className="mt-2 text-xs text-foreground-subtle">
+                    {post.createdAt.toLocaleDateString(locale, { day: "2-digit", month: "short", year: "numeric" })}
+                  </p>
                 </li>
               ))}
             </ul>
           )}
+
+          {DEMO_CONTENT_ENABLED && <ProfilePostsDemoSection asOf={new Date()} />}
         </section>
       )}
 
