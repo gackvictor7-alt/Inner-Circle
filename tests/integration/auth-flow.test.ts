@@ -20,6 +20,8 @@ import {
   verifyCodeAction,
 } from "@/app/actions/auth";
 import { initialAuthState } from "@/app/actions/auth-state";
+import { idFor } from "@/db/ids";
+import { hashPassword } from "@/lib/auth/crypto";
 import { deleteTestUser } from "../helpers";
 
 const PASSWORD = "Testing!2026";
@@ -197,5 +199,67 @@ describe("password recovery", () => {
     );
     expect(state.status).toBe("error");
     expect(state.errorCode).toBe("tokenInvalid");
+  });
+});
+
+describe("login & reset error handling (sprint: login UX)", () => {
+  it("reports missing and malformed inputs as distinct field errors", async () => {
+    const empty = await loginAction(initialAuthState, form({ identifier: "", password: "" }));
+    expect(empty.status).toBe("error");
+    expect(empty.errorCode).toBe("validation");
+    expect(empty.fieldErrors?.identifier).toBe("required");
+    expect(empty.fieldErrors?.password).toBe("required");
+
+    const malformed = await loginAction(initialAuthState, form({ identifier: "keine-email", password: "Irgendwas1" }));
+    expect(malformed.status).toBe("error");
+    expect(malformed.errorCode).toBe("validation");
+    expect(malformed.fieldErrors?.identifier).toBe("invalidEmail");
+    expect(malformed.fieldErrors?.password).toBeUndefined();
+  });
+
+  it("answers identically for unknown accounts and wrong passwords (no enumeration)", async () => {
+    const email = `enum-${Date.now()}@innercircle.test`;
+    await registerAction(initialAuthState, registerForm(email));
+
+    const unknownAccount = await loginAction(initialAuthState, form({ identifier: "gibt-es-nicht@innercircle.test", password: "FalschesPasswort1" }));
+    const wrongPassword = await loginAction(initialAuthState, form({ identifier: email, password: "FalschesPasswort1" }));
+
+    expect(unknownAccount.errorCode).toBe("invalidCredentials");
+    expect(wrongPassword.errorCode).toBe("invalidCredentials");
+  });
+
+  it("reports suspended accounts honestly", async () => {
+    // Inserted directly (not via registerAction) so the per-IP registration
+    // rate limit of the surrounding tests cannot interfere.
+    const email = `suspended-${Date.now()}@innercircle.test`;
+    createdEmails.push(email);
+    const id = idFor.user();
+    await db.insert(users).values({
+      id,
+      email,
+      firstName: "Susi",
+      lastName: "Suspended",
+      handle: `suspended-${id.slice(-6)}`,
+      passwordHash: await hashPassword(PASSWORD),
+      role: "user",
+      status: "suspended",
+      emailVerifiedAt: new Date(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    const state = await loginAction(initialAuthState, form({ identifier: email, password: PASSWORD }));
+    expect(state.status).toBe("error");
+    expect(state.errorCode).toBe("accountSuspended");
+  });
+
+  it("explains exactly which password requirement is missing on reset", async () => {
+    const short = await resetPasswordAction(initialAuthState, form({ token: "x", password: "Ab1", passwordConfirm: "Ab1" }));
+    expect(short.errorCode).toBe("passwordTooShort");
+
+    const noDigit = await resetPasswordAction(initialAuthState, form({ token: "x", password: "NurBuchstaben", passwordConfirm: "NurBuchstaben" }));
+    expect(noDigit.errorCode).toBe("passwordNeedsBoth");
+
+    const mismatch = await resetPasswordAction(initialAuthState, form({ token: "x", password: "Ab12345678", passwordConfirm: "Ab12345679" }));
+    expect(mismatch.errorCode).toBe("passwordMismatch");
   });
 });

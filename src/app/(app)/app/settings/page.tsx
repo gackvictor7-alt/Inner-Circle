@@ -7,6 +7,7 @@ import { loadNotificationPreferences, loadPrivacy } from "@/lib/platform/queries
 import { requestAccountDeletionAction, updateNotificationPreferencesAction, updatePrivacyAction } from "@/app/actions/profile";
 import { ActionForm, type FormField } from "@/components/app/forms";
 import { AppearanceControl } from "@/components/app/AppearanceControl";
+import { LocaleSwitch } from "@/components/app/LocaleSwitch";
 import { LocalizedPageHeader, Tr } from "@/components/app/localized";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
@@ -86,6 +87,12 @@ export default async function SettingsPage() {
           <InfoRow label={<Tr k="app.dev.role" />} value={user.role} />
         </dl>
       </Card>
+
+      <section>
+        <h2 className="mb-2 text-lg font-bold tracking-tight"><Tr k="app.settings.languageTitle" /></h2>
+        <p className="mb-4 max-w-2xl text-sm leading-6 text-foreground-muted"><Tr k="app.settings.languageLead" /></p>
+        <LocaleSwitch />
+      </section>
 
       <section>
         <h2 className="mb-2 text-lg font-bold tracking-tight"><Tr k="app.settings.appearanceTitle" /></h2>

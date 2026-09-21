@@ -1,12 +1,12 @@
 # 08 – Test- und Qualitätssicherung
 
-**Stand:** 2026-09-21 (Sprint 3) · Lauf auf Branch
-`arena/01a0c434-inner-circle` (Basis `main` @ `0babcb3`):
-`npm test` = **17 Dateien / 80 Tests grün**, `npx tsc --noEmit` grün,
+**Stand:** 2026-09-21 (Sprint 5 – Mobile UX, Login-UX, Public-Polish) · Lauf auf
+Branch `arena/01a0c5b7-inner-circle` (Basis `main` @ `c211e20`):
+`npm test` = **20 Dateien / 106 Tests grün**, `npx tsc --noEmit` grün,
 `npm run cf:build` grün, `npx wrangler deploy --dry-run` grün
-(8 592 kB, Bindings `DB`/`ASSETS`/`NEXTJS_ENV`), `npm run lint` =
-**14 bestehende Hinweise (4 Fehler, 10 Warnungen)** – vorbestehend, siehe K-15;
-**keine** neuen Befunde aus diesem Sprint.
+(9 228 kB / gzip 1 850 kB, Bindings `DB`/`ASSETS`/`NEXTJS_ENV`),
+`npm run lint` = **13 bestehende Hinweise (5 Fehler, 8 Warnungen)** –
+vorbestehend, siehe K-15; **keine** neuen Befunde aus diesem Sprint.
 
 ---
 
@@ -42,10 +42,12 @@
 | ----- | ------ | --- |
 | `tests/unit/auth-crypto.test.ts` | scrypt-Hashing/Vergleich, Session-Token-Hash, OTP-Erzeugung | Unit |
 | `tests/unit/access-levels.test.ts` | Entitlement-Matrix free/trial/member/admin | Unit |
-| `tests/unit/membership-plans.test.ts` | 24,99 €/249,90 €, Jahresvorteil, Provider-Status-Mapping | Unit |
+| `tests/unit/membership-plans.test.ts` | 24,99 €/249,90 €, Jahresvorteil, Provider-Status-Mapping; **Sprint 5**: Preisstrings (`formatMoney`) und Homepage-Hinweis in DE/EN zitieren exakt die SoT-Preise | Unit |
 | `tests/unit/trial-rules.test.ts` | 48 h, Verbindungslimit, OTP-Grenzen | Unit |
 | `tests/unit/i18n-parity.test.ts` | DE/EN gleiche Struktur, keine leeren Strings | Unit |
-| `tests/integration/auth-flow.test.ts` | Registrierung, OTP-Verifizierung, Login-Routing, Recovery (Dev-Postausgang) | Integration (DB) |
+| `tests/integration/auth-flow.test.ts` | Registrierung, OTP-Verifizierung, Login-Routing, Recovery (Dev-Postausgang); **Sprint 5**: fehlende/ungültige Login-Eingaben als Feldfehler, identische Antwort für unbekanntes Konto und falsches Passwort (keine Enumeration), gesperrte Konten (`accountSuspended`), Passwortregeln-Fehlercodes beim Reset (`passwordTooShort`/`passwordNeedsBoth`/`passwordMismatch`) | Integration (DB) |
+| `tests/unit/password-rules.test.ts` | **Sprint 5**: eine gemeinsame Quelle für Client-Checkliste und Server-Validierung (≥10 Zeichen, Buchstabe + Ziffer), Regelzustände pro Zeichen, gleiche Fehlercodes wie die Actions, DE/EN-Beschriftungen für jede Regel | Unit |
+| `tests/unit/auth-error-messages.test.ts` | **Sprint 5**: jeder von `src/app/actions/auth.ts` zurückgebbare Fehlercode hat eine echte DE- **und** EN-Meldung (oder dokumentiertes Handling), Feldfehler-Codes vorhanden, `serverError`-Meldung vorhanden | Unit (Quelltext + Wörterbücher) |
 | `tests/integration/onboarding.test.ts` | Interessen/Ziele per ID **und** Slug, Trial startet genau einmal, unverifiziert/anonym abgewiesen | Integration (DB) |
 | `tests/integration/trial.test.ts` | Trial-Start, einmal pro Konto, Fingerprint-Missbrauch, Anfragenlimit | Integration (DB) |
 | `tests/integration/membership.test.ts` | Aktivierung, Karte, Kündigung zum Periodenende, Ablauf, Zahlungsfehler, Rechnungs-Idempotenz | Integration (DB) |
@@ -80,6 +82,8 @@ Legende: **AUT** = automatisiert vorhanden · **MAN** = manuell verifiziert
 | Auth | Registrierung (Erfolg, Validierungsfehler, E-Mail belegt) | AUT |
 | Auth | Verifizierung (OTP korrekt, falsch, abgelaufen, zu viele Versuche) | AUT |
 | Auth | Login-Routing (unverifiziert → `/verify`, verifiziert → `/onboarding` bzw. `/app`) | AUT |
+| Auth | Login-Fehlermeldungen (Feldfehler, keine Enumeration, `accountSuspended`, DE/EN-Abdeckung aller Codes) | AUT (Sprint 5) |
+| Auth | Passwortregeln identisch in UI-Checkliste und Server-Validierung (≥10 Zeichen, Buchstabe + Ziffer) | AUT (Sprint 5) |
 | Auth | Logout/Session-Widerruf | OFFEN (Code vorhanden, kein Test) |
 | Auth | Passwort-Reset (Antwort ohne Enumeration, Token, Session-Widerruf) | AUT (teilweise: Request + Token-Fluss) |
 | Auth | Rate-Limits greifen (Register/Login/Verify/Forgot) | AUT indirekt (Limits im Code, Tests nutzen eigene IPs) |

@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useI18n } from "@/lib/i18n/context";
 import { Logo } from "./Logo";
-import { ThemeLanguageControls } from "./ThemeLanguageControls";
+import { ThemeLanguageControls, localeFlags, localeShort } from "./ThemeLanguageControls";
 import { Button } from "@/components/ui/Button";
 import { MenuIcon, XIcon } from "@/components/ui/icons";
 import type { AccessLevel } from "@/lib/access/levels";
@@ -234,7 +234,10 @@ export function SiteHeader({ level = "visitor" as AccessLevel }: { level?: Acces
                       locale === option ? "bg-surface text-foreground shadow-card" : "text-foreground-muted"
                     }`}
                   >
-                    {option}
+                    <span className="flex items-center gap-1.5">
+                      <span aria-hidden="true">{localeFlags[option]}</span>
+                      {localeShort[option]}
+                    </span>
                   </button>
                 ))}
               </div>

@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { ArrowRightIcon, CheckIcon, CompassIcon, MapPinIcon, UsersIcon } from "@/components/ui/icons";
+import { Dialog } from "@/components/ui/Dialog";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -18,7 +19,12 @@ import {
   DEMO_LISTINGS,
   DEMO_PROFILES,
   DEMO_PROFILE_POSTS,
+  PORTFOLIO_ALLOCATION,
   PORTFOLIO_DASHBOARD_PREVIEW,
+  type DemoCourse,
+  type DemoDeal,
+  type DemoEvent,
+  type DemoListing,
   type DemoProfile,
 } from "@/lib/demo";
 
@@ -36,6 +42,51 @@ function DemoNotice() {
     <p className="rounded-xl border border-sand-400/40 bg-sand-200/40 px-4 py-3 text-xs leading-5 text-sand-800 dark:bg-sand-400/10 dark:text-sand-100">
       {t.app.demo.notice}
     </p>
+  );
+}
+
+/**
+ * Shared detail view for demo entries. Demo content has no database rows, so
+ * "view" actions open this dialog instead of navigating nowhere (founder
+ * request 2026-09-21: no dead buttons). Nothing here can trigger a real
+ * contact request or transaction.
+ */
+function DemoDetailDialog({
+  open,
+  onClose,
+  title,
+  badges,
+  image,
+  imageAlt,
+  children,
+}: {
+  open: boolean;
+  onClose: () => void;
+  title: string;
+  badges: string[];
+  image?: string;
+  imageAlt?: string;
+  children: React.ReactNode;
+}) {
+  const { t } = useI18n();
+  return (
+    <Dialog open={open} onClose={onClose} title={title} closeLabel={t.app.common.close}>
+      <div className="flex flex-wrap items-center gap-2">
+        {badges.map((badge) => (
+          <Badge key={badge} variant={badge === t.app.demo.badge || badge === t.app.demo.sampleBadge || badge === t.app.demo.eventsBadge ? "sand" : "outline"}>
+            {badge}
+          </Badge>
+        ))}
+      </div>
+      {image && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={image} alt={imageAlt ?? ""} className="mt-4 h-40 w-full rounded-xl object-cover sm:h-48" />
+      )}
+      <div className="mt-4">{children}</div>
+      <div className="mt-5">
+        <DemoNotice />
+      </div>
+    </Dialog>
   );
 }
 
@@ -194,6 +245,7 @@ export function DiscoverDemoSection() {
   const { t, locale } = useI18n();
   const [current, setCurrent] = useState<DemoProfile | null>(DEMO_PROFILES[0]);
   const [finished, setFinished] = useState(false);
+  const [detailOpen, setDetailOpen] = useState(false);
 
   if (!DEMO_CONTENT_ENABLED) return null;
 
@@ -275,7 +327,7 @@ export function DiscoverDemoSection() {
                 <Button variant="secondary" size="sm" onClick={skip}>
                   {t.app.demo.discoverSkip}
                 </Button>
-                <Button variant="ghost" size="sm" href="/app/discover">
+                <Button variant="ghost" size="sm" onClick={() => setDetailOpen(true)}>
                   <CompassIcon size={15} />
                   {t.app.demo.discoverView}
                 </Button>
@@ -343,6 +395,49 @@ export function DiscoverDemoSection() {
           </button>
         ))}
       </div>
+
+      <DemoDetailDialog
+        open={detailOpen && current !== null}
+        onClose={() => setDetailOpen(false)}
+        title={current ? `${current.firstName} ${current.lastName}` : ""}
+        badges={current ? [t.app.demo.badge, locale === "en" ? current.roleEn : current.role] : []}
+        image={current?.avatarUrl}
+        imageAlt=""
+      >
+        {current && (
+          <>
+            <p className="text-sm leading-6 text-foreground-muted">{demoText(current, locale).positioning}</p>
+            <p className="mt-2 text-sm leading-6 text-foreground-muted">{demoText(current, locale).bio}</p>
+            <dl className="mt-4 space-y-3 text-sm">
+              {[
+                { label: t.app.demo.networkInterests, values: demoText(current, locale).interests },
+                { label: t.app.demo.networkLookingFor, values: demoText(current, locale).lookingFor },
+                { label: t.app.demo.networkOffering, values: demoText(current, locale).offering },
+                { label: t.app.demo.networkSkills, values: demoText(current, locale).skills },
+              ]
+                .filter((field) => field.values.length > 0)
+                .map((field) => (
+                  <div key={field.label}>
+                    <dt className="text-[11px] font-bold uppercase tracking-wide text-foreground-subtle">
+                      {field.label}
+                    </dt>
+                    <dd className="mt-1.5 flex flex-wrap gap-1.5">
+                      {field.values.map((value) => (
+                        <span
+                          key={value}
+                          className="rounded-full bg-surface-muted px-2.5 py-1 text-[11px] font-medium text-foreground-muted"
+                        >
+                          {value}
+                        </span>
+                      ))}
+                    </dd>
+                  </div>
+                ))}
+            </dl>
+            <p className="mt-4 text-xs leading-5 text-foreground-subtle">{t.app.demo.discoverDemoNotice}</p>
+          </>
+        )}
+      </DemoDetailDialog>
     </SectionBlock>
   );
 }
@@ -352,8 +447,13 @@ export function DiscoverDemoSection() {
  * ------------------------------------------------------------------ */
 
 export function DealsDemoSection() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
+  const [selected, setSelected] = useState<DemoDeal | null>(null);
   if (!DEMO_CONTENT_ENABLED) return null;
+
+  const en = locale === "en";
+  const text = (deal: DemoDeal) => (en ? deal.en : deal);
+  const current = selected ? text(selected) : null;
 
   return (
     <SectionBlock kicker={t.app.demo.sampleBadge} title={t.app.demo.dealsTitle} lead={t.app.demo.dealsLead}>
@@ -363,32 +463,32 @@ export function DealsDemoSection() {
             <Card className="flex h-full flex-col p-5">
               <div className="flex flex-wrap items-center gap-2">
                 <Badge variant="sand">{t.app.demo.badge}</Badge>
-                <Badge variant="outline">{deal.category}</Badge>
+                <Badge variant="outline">{text(deal).category}</Badge>
               </div>
-              <h3 className="mt-3 text-base font-bold tracking-tight">{deal.title}</h3>
-              <p className="mt-2 flex-1 text-sm leading-6 text-foreground-muted">{deal.description}</p>
+              <h3 className="mt-3 text-base font-bold tracking-tight">{text(deal).title}</h3>
+              <p className="mt-2 flex-1 text-sm leading-6 text-foreground-muted">{text(deal).description}</p>
               <dl className="mt-4 grid gap-2 text-xs text-foreground-subtle">
                 <div className="flex justify-between gap-3 border-b border-border pb-2">
                   <dt>{t.app.common.location}</dt>
-                  <dd className="text-right font-medium text-foreground">{deal.location}</dd>
+                  <dd className="text-right font-medium text-foreground">{text(deal).location}</dd>
                 </div>
                 <div className="flex justify-between gap-3 border-b border-border pb-2">
                   <dt>{t.app.demo.dealsSizeLabel}</dt>
-                  <dd className="text-right font-medium text-foreground">{deal.sizeLabel}</dd>
+                  <dd className="text-right font-medium text-foreground">{text(deal).sizeLabel}</dd>
                 </div>
                 <div className="flex justify-between gap-3 border-b border-border pb-2">
                   <dt>{t.app.demo.dealsRoleLabel}</dt>
-                  <dd className="text-right font-medium text-foreground">{deal.seekingRole}</dd>
+                  <dd className="text-right font-medium text-foreground">{text(deal).seekingRole}</dd>
                 </div>
                 <div className="flex justify-between gap-3">
                   <dt>{t.app.demo.dealsStatusLabel}</dt>
                   <dd className="text-right">
-                    <Badge variant="neutral">{deal.status}</Badge>
+                    <Badge variant="neutral">{text(deal).status}</Badge>
                   </dd>
                 </div>
               </dl>
               <div className="mt-4">
-                <Button size="sm" variant="secondary" href="/app/opportunities">
+                <Button size="sm" variant="secondary" onClick={() => setSelected(deal)}>
                   {t.app.demo.dealsCta}
                   <ArrowRightIcon size={14} />
                 </Button>
@@ -397,6 +497,44 @@ export function DealsDemoSection() {
           </li>
         ))}
       </ul>
+
+      <DemoDetailDialog
+        open={selected !== null}
+        onClose={() => setSelected(null)}
+        title={current?.title ?? ""}
+        badges={selected ? [t.app.demo.badge, current?.category ?? ""] : []}
+      >
+        {selected && current && (
+          <>
+            <p className="text-sm leading-6 text-foreground-muted">{current.description}</p>
+            <dl className="mt-4 grid gap-2 text-xs text-foreground-subtle">
+              {[
+                { label: t.app.demo.dealsIndustryLabel, value: current.industry },
+                { label: t.app.common.location, value: current.location },
+                { label: t.app.demo.dealsRoleLabel, value: current.seekingRole },
+                { label: t.app.demo.dealsSizeLabel, value: current.sizeLabel },
+                { label: t.app.demo.dealsStatusLabel, value: current.status },
+                { label: t.app.demo.dealsContactLabel, value: t.app.demo.dealsContactValue },
+              ].map((row) => (
+                <div key={row.label} className="flex justify-between gap-3 border-b border-border pb-2">
+                  <dt>{row.label}</dt>
+                  <dd className="text-right font-medium text-foreground">{row.value}</dd>
+                </div>
+              ))}
+            </dl>
+            <p className="mt-4 text-xs font-bold uppercase tracking-[0.14em] text-foreground-subtle">
+              {t.app.demo.dealsNextLabel}
+            </p>
+            <p className="mt-1.5 text-sm leading-6 text-foreground-muted">{t.app.demo.dealsNextText}</p>
+            <div className="mt-4">
+              <Button size="sm" variant="secondary" href="/app/opportunities/new">
+                {t.app.create.opportunity}
+                <ArrowRightIcon size={14} />
+              </Button>
+            </div>
+          </>
+        )}
+      </DemoDetailDialog>
     </SectionBlock>
   );
 }
@@ -439,8 +577,13 @@ export function JobsDemoSection() {
  * ------------------------------------------------------------------ */
 
 export function MarketplaceDemoSection() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
+  const [selected, setSelected] = useState<DemoListing | null>(null);
   if (!DEMO_CONTENT_ENABLED) return null;
+
+  const en = locale === "en";
+  const text = (listing: DemoListing) => (en ? listing.en : listing);
+  const current = selected ? text(selected) : null;
 
   return (
     <SectionBlock
@@ -454,16 +597,16 @@ export function MarketplaceDemoSection() {
             <Card className="flex h-full flex-col p-5">
               <div className="flex flex-wrap items-center gap-2">
                 <Badge variant="sand">{t.app.demo.badge}</Badge>
-                <Badge variant="outline">{listing.category}</Badge>
+                <Badge variant="outline">{text(listing).category}</Badge>
               </div>
-              <h3 className="mt-3 text-base font-bold tracking-tight">{listing.title}</h3>
-              <p className="mt-2 flex-1 text-sm leading-6 text-foreground-muted">{listing.creator}</p>
-              <p className="mt-2 text-sm font-bold">{listing.price}</p>
+              <h3 className="mt-3 text-base font-bold tracking-tight">{text(listing).title}</h3>
+              <p className="mt-2 flex-1 text-sm leading-6 text-foreground-muted">{text(listing).creator}</p>
+              <p className="mt-2 text-sm font-bold">{text(listing).price}</p>
               <div className="mt-2">
-                <Badge variant="neutral">{listing.ratingLabel}</Badge>
+                <Badge variant="neutral">{text(listing).ratingLabel}</Badge>
               </div>
               <div className="mt-4">
-                <Button size="sm" variant="secondary" href="/app/marketplace">
+                <Button size="sm" variant="secondary" onClick={() => setSelected(listing)}>
                   {t.app.demo.marketplaceCta}
                   <ArrowRightIcon size={14} />
                 </Button>
@@ -472,6 +615,28 @@ export function MarketplaceDemoSection() {
           </li>
         ))}
       </ul>
+
+      <DemoDetailDialog
+        open={selected !== null}
+        onClose={() => setSelected(null)}
+        title={current?.title ?? ""}
+        badges={selected ? [t.app.demo.badge, current?.category ?? ""] : []}
+      >
+        {selected && current && (
+          <dl className="grid gap-2 text-xs text-foreground-subtle">
+            {[
+              { label: t.app.marketplace.detail.seller, value: current.creator },
+              { label: t.app.marketplace.detail.price, value: current.price },
+              { label: t.app.demo.marketplaceRating, value: current.ratingLabel },
+            ].map((row) => (
+              <div key={row.label} className="flex justify-between gap-3 border-b border-border pb-2">
+                <dt>{row.label}</dt>
+                <dd className="text-right font-medium text-foreground">{row.value}</dd>
+              </div>
+            ))}
+          </dl>
+        )}
+      </DemoDetailDialog>
     </SectionBlock>
   );
 }
@@ -481,8 +646,13 @@ export function MarketplaceDemoSection() {
  * ------------------------------------------------------------------ */
 
 export function AcademyDemoSection() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
+  const [selected, setSelected] = useState<DemoCourse | null>(null);
   if (!DEMO_CONTENT_ENABLED) return null;
+
+  const en = locale === "en";
+  const text = (course: DemoCourse) => (en ? course.en : course);
+  const current = selected ? text(selected) : null;
 
   return (
     <SectionBlock
@@ -498,12 +668,12 @@ export function AcademyDemoSection() {
                 <Badge variant="sand">{t.app.demo.badge}</Badge>
                 <Badge variant="outline">{t.app.demo.academyMeta}</Badge>
               </div>
-              <h3 className="mt-3 text-base font-bold tracking-tight">{course.title}</h3>
-              <p className="mt-2 flex-1 text-sm leading-6 text-foreground-muted">{course.summary}</p>
-              <p className="mt-3 text-xs text-foreground-subtle">{course.metaLabel}</p>
+              <h3 className="mt-3 text-base font-bold tracking-tight">{text(course).title}</h3>
+              <p className="mt-2 flex-1 text-sm leading-6 text-foreground-muted">{text(course).summary}</p>
+              <p className="mt-3 text-xs text-foreground-subtle">{text(course).metaLabel}</p>
               <div className="mt-4">
-                <Button size="sm" variant="secondary" href="/app/learn">
-                  {t.app.demo.marketplaceCta}
+                <Button size="sm" variant="secondary" onClick={() => setSelected(course)}>
+                  {t.app.demo.academyCta}
                   <ArrowRightIcon size={14} />
                 </Button>
               </div>
@@ -511,6 +681,20 @@ export function AcademyDemoSection() {
           </li>
         ))}
       </ul>
+
+      <DemoDetailDialog
+        open={selected !== null}
+        onClose={() => setSelected(null)}
+        title={current?.title ?? ""}
+        badges={selected ? [t.app.demo.badge, t.app.demo.academyMeta] : []}
+      >
+        {selected && current && (
+          <>
+            <p className="text-sm leading-6 text-foreground-muted">{current.summary}</p>
+            <p className="mt-3 text-xs text-foreground-subtle">{current.metaLabel}</p>
+          </>
+        )}
+      </DemoDetailDialog>
     </SectionBlock>
   );
 }
@@ -520,8 +704,13 @@ export function AcademyDemoSection() {
  * ------------------------------------------------------------------ */
 
 export function EventsDemoSection() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
+  const [selected, setSelected] = useState<DemoEvent | null>(null);
   if (!DEMO_CONTENT_ENABLED) return null;
+
+  const en = locale === "en";
+  const text = (event: DemoEvent) => (en ? event.en : event);
+  const current = selected ? text(selected) : null;
 
   return (
     <SectionBlock
@@ -535,21 +724,58 @@ export function EventsDemoSection() {
       <ul className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {DEMO_EVENTS.map((event) => (
           <li key={event.key}>
-            <Card className="flex h-full flex-col p-5">
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge variant="sand">{t.app.demo.eventsBadge}</Badge>
-                <Badge variant="outline">{event.type}</Badge>
+            <Card className="flex h-full flex-col overflow-hidden">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={event.image}
+                alt={en ? event.imageAltEn : event.imageAltDe}
+                loading="lazy"
+                className="h-32 w-full object-cover"
+              />
+              <div className="flex flex-1 flex-col p-5">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant="sand">{t.app.demo.eventsBadge}</Badge>
+                  <Badge variant="outline">{text(event).type}</Badge>
+                </div>
+                <h3 className="mt-3 text-base font-bold tracking-tight">{text(event).title}</h3>
+                <p className="mt-2 flex-1 text-sm leading-6 text-foreground-muted">{text(event).summary}</p>
+                <p className="mt-3 flex items-center gap-1 text-xs text-foreground-subtle">
+                  <MapPinIcon size={12} />
+                  {event.city}
+                </p>
+                <div className="mt-4">
+                  <Button size="sm" variant="secondary" onClick={() => setSelected(event)}>
+                    {t.app.demo.eventsCta}
+                    <ArrowRightIcon size={14} />
+                  </Button>
+                </div>
               </div>
-              <h3 className="mt-3 text-base font-bold tracking-tight">{event.title}</h3>
-              <p className="mt-2 flex-1 text-sm leading-6 text-foreground-muted">{event.summary}</p>
-              <p className="mt-3 flex items-center gap-1 text-xs text-foreground-subtle">
-                <MapPinIcon size={12} />
-                {event.city}
-              </p>
             </Card>
           </li>
         ))}
       </ul>
+
+      <DemoDetailDialog
+        open={selected !== null}
+        onClose={() => setSelected(null)}
+        title={current?.title ?? ""}
+        badges={selected ? [t.app.demo.eventsBadge, current?.type ?? ""] : []}
+        image={selected?.image}
+        imageAlt={selected ? (en ? selected.imageAltEn : selected.imageAltDe) : undefined}
+      >
+        {selected && current && (
+          <>
+            <p className="text-sm leading-6 text-foreground-muted">{current.summary}</p>
+            <p className="mt-3 flex items-center gap-1 text-xs text-foreground-subtle">
+              <MapPinIcon size={12} />
+              {selected.city}
+            </p>
+            <p className="mt-4 rounded-xl border border-sand-400/40 bg-sand-200/40 px-4 py-3 text-xs leading-5 text-sand-800 dark:bg-sand-400/10 dark:text-sand-100">
+              {t.app.demo.eventsDisclaimer}
+            </p>
+          </>
+        )}
+      </DemoDetailDialog>
     </SectionBlock>
   );
 }
@@ -674,7 +900,38 @@ export function PortfolioSection() {
       title={t.app.demo.portfolioTitle}
       lead={t.app.demo.portfolioLead}
     >
-      <div className="flex flex-wrap items-center gap-x-8 gap-y-4 rounded-xl border border-border bg-surface-muted/40 px-5 py-4">
+      {/* Small visualisation of the planned target allocation (CSS only, no
+          chart library). Percentages come from PORTFOLIO_ALLOCATION. */}
+      <div>
+        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-foreground-subtle">
+          {t.app.demo.portfolioBarTitle}
+        </p>
+        <div
+          role="img"
+          aria-label={t.app.demo.portfolioBarTitle}
+          className="mt-2 flex h-3 w-full overflow-hidden rounded-full bg-surface-muted"
+        >
+          <span className="h-full bg-electric-500" style={{ width: `${PORTFOLIO_ALLOCATION.networkSharePercentOfRevenue}%` }} />
+          <span className="h-full bg-forest-500" style={{ width: `${PORTFOLIO_ALLOCATION.externalSharePercentOfRevenue}%` }} />
+          <span className="h-full flex-1 bg-surface-muted" />
+        </div>
+        <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-foreground-muted">
+          <li className="flex items-center gap-1.5">
+            <span aria-hidden="true" className="h-2 w-2 rounded-full bg-electric-500" />
+            {t.app.demo.portfolioBarNetwork}
+          </li>
+          <li className="flex items-center gap-1.5">
+            <span aria-hidden="true" className="h-2 w-2 rounded-full bg-forest-500" />
+            {t.app.demo.portfolioBarExternal}
+          </li>
+          <li className="flex items-center gap-1.5">
+            <span aria-hidden="true" className="h-2 w-2 rounded-full bg-surface-muted ring-1 ring-border" />
+            {t.app.demo.portfolioBarPlatform}
+          </li>
+        </ul>
+      </div>
+
+      <div className="mt-5 flex flex-wrap items-center gap-x-8 gap-y-4 rounded-xl border border-border bg-surface-muted/40 px-5 py-4">
         {[
           { value: "20 %", labelDe: "der Einnahmen → Investmentbudget", labelEn: "of revenue → investment budget" },
           { value: "25 %", labelDe: "davon zurück ins Netzwerk", labelEn: "of that back into the network" },

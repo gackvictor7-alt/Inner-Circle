@@ -2,17 +2,23 @@
 
 import type { ReactNode } from "react";
 import { useI18n } from "@/lib/i18n/context";
-import { locales } from "@/lib/i18n/dictionaries";
+import { locales, type Locale } from "@/lib/i18n/dictionaries";
 import { useTheme, type Theme } from "@/components/ThemeProvider";
 import { Dropdown, DropdownItem } from "@/components/ui/Dropdown";
 import { CheckIcon, GlobeIcon, MonitorIcon, MoonIcon, SunIcon } from "@/components/ui/icons";
 
-const localeLabels: Record<string, string> = { de: "Deutsch", en: "English" };
-const localeShort: Record<string, string> = { de: "DE", en: "EN" };
+/** Endonyms – identical in both dictionaries by design. */
+export const localeLabels: Record<Locale, string> = { de: "Deutsch", en: "English" };
+export const localeShort: Record<Locale, string> = { de: "DE", en: "EN" };
+/** Flag emoji per supported locale (decorative; the text label is authoritative). */
+export const localeFlags: Record<Locale, string> = { de: "🇩🇪", en: "🇬🇧" };
 
 /**
  * Language + appearance controls (shared by desktop header and mobile menu).
  * Language toggle and light/dark/system switch from Step 01, kept intact.
+ * Founder request 2026-09-21: the chooser shows flag + written language name
+ * next to the short code; the switching logic and `ic-locale` persistence
+ * (see `src/lib/i18n/context.tsx`) are unchanged.
  */
 export function ThemeLanguageControls({ compact = false }: { compact?: boolean }) {
   const { locale, setLocale, t } = useI18n();
@@ -36,8 +42,9 @@ export function ThemeLanguageControls({ compact = false }: { compact?: boolean }
         menuLabel={t.nav.languageLabel}
         trigger={
           <>
-            <GlobeIcon size={16} />
-            {compact ? localeShort[locale] : <span className="hidden lg:inline">{localeShort[locale]}</span>}
+            <GlobeIcon size={16} className="hidden sm:inline" />
+            <span aria-hidden="true">{localeFlags[locale]}</span>
+            <span className={compact ? "" : "hidden lg:inline"}>{localeShort[locale]}</span>
           </>
         }
       >
@@ -51,7 +58,10 @@ export function ThemeLanguageControls({ compact = false }: { compact?: boolean }
                 close();
               }}
             >
-              {localeLabels[l]}
+              <span className="flex items-center gap-2.5">
+                <span aria-hidden="true">{localeFlags[l]}</span>
+                {localeLabels[l]}
+              </span>
             </DropdownItem>
           ))
         }

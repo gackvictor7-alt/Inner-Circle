@@ -9,13 +9,14 @@ export const siteV2De = {
     heroTitleA: "Dein Business braucht die richtigen Köpfe.",
     heroTitleB: "Keine zusätzlichen Kontakte.",
     heroLead:
-      "Kunden, Vertriebspartner, Kapital, Beteiligungen, Wissen und Projekte: INNER CIRCLE ist ein Netzwerk aus Gründern, Unternehmern, Investoren und Machern zwischen 20 und 35. Verbinden geht nur mit einer persönlichen Nachricht – Vollzugriff ab 24,99 € im Monat.",
-    heroCtaPrimary: "Drei Ergebnisse ansehen",
+      "Finde Kunden, Geschäftspartner, Kapital und neue Business-Chancen – alles an einem Ort.",
+    heroCtaPrimary: "INNER CIRCLE entdecken",
     heroCtaSecondary: "48 Stunden kostenlos entdecken",
     heroMembershipHint: "24,99 € im Monat oder 249,90 € im Jahr · monatlich kündbar",
     heroCtaTertiary: "Wie es funktioniert",
     heroTrialBadge: "48 Stunden Discovery inklusive",
-    heroNote: "KI-generierte, vorläufige Marketingvisualisierung.",
+    heroImageAlt:
+      "Fünf junge Gründerinnen und Unternehmer im lockeren Gespräch auf einer Dachterrasse mit Stadt-Skyline.",
     heroFacts: {
       people: "Kunden und Partner",
       deals: "Deals und Projekte",
@@ -86,21 +87,27 @@ export const siteV2De = {
     enablesNetworkTitle: "Network",
     enablesNetworkText:
       "Finde Geschäftspartner, Kunden und Experten, die zu deinen Zielen passen.",
+    enablesNetworkShort: "Die passenden Köpfe für deinen nächsten Schritt.",
     enablesOpportunitiesTitle: "Deals",
     enablesOpportunitiesText:
       "Stelle konkret, was du suchst oder anbietest – und bewirb dich auf Chancen anderer.",
+    enablesOpportunitiesShort: "Konkrete Chancen suchen, finden und bewerben.",
     enablesInvestmentsTitle: "Investments",
     enablesInvestmentsText:
       "Sieh geprüfte Investment Opportunities und bekunde Interesse – ohne Renditeversprechen.",
+    enablesInvestmentsShort: "Geprüfte Opportunities – ohne Renditeversprechen.",
     enablesMarketplaceTitle: "Marketplace",
     enablesMarketplaceText:
       "Buche Services, verkaufe eigene Leistungen oder lerne in der Academy.",
+    enablesMarketplaceShort: "Services buchen, Wissen lernen, Eigenes anbieten.",
     enablesJobsTitle: "Jobs & Projekte",
     enablesJobsText:
       "Finde den Vertriebspartner, Co-Founder oder das Mandat für den nächsten Schritt.",
+    enablesJobsShort: "Menschen für Projekte, Mandate und Teams.",
     enablesEventsTitle: "Events",
     enablesEventsText:
       "Business Dinner, Networking und ausgewählte Experiences – als bestätigt oder Konzept gekennzeichnet.",
+    enablesEventsShort: "Begegnungen, aus denen Zusammenarbeit wird.",
     communityKicker: "Community",
     communityTitle: "Menschen auf Augenhöhe – vom ersten Kunden bis zum Exit.",
     communityLead:
@@ -266,13 +273,14 @@ export const siteV2En: SiteV2Dict = {
     heroTitleA: "Your business needs the right heads.",
     heroTitleB: "Not more contacts.",
     heroLead:
-      "Customers, sales partners, capital, equity, knowledge and projects: INNER CIRCLE is a network of founders, entrepreneurs, investors and operators between 20 and 35. Connecting only works with a personal message – full access from €24.99 a month.",
-    heroCtaPrimary: "See the three outcomes",
+      "Find customers, business partners, capital and new opportunities – all in one place.",
+    heroCtaPrimary: "Discover INNER CIRCLE",
     heroCtaSecondary: "Start 48 hours free",
     heroMembershipHint: "€24.99 a month or €249.90 a year · cancel monthly",
     heroCtaTertiary: "How it works",
     heroTrialBadge: "Includes 48 hours of discovery",
-    heroNote: "AI-generated provisional marketing visual.",
+    heroImageAlt:
+      "Five young founders and entrepreneurs talking on a rooftop terrace with a city skyline.",
     heroFacts: {
       people: "Customers and partners",
       deals: "Deals and projects",
@@ -343,21 +351,27 @@ export const siteV2En: SiteV2Dict = {
     enablesNetworkTitle: "Network",
     enablesNetworkText:
       "Find partners, customers and experts who match your goals.",
+    enablesNetworkShort: "The right people for your next step.",
     enablesOpportunitiesTitle: "Deals",
     enablesOpportunitiesText:
       "State what you need or offer – and apply to other members’ opportunities.",
+    enablesOpportunitiesShort: "Find, post and apply for concrete opportunities.",
     enablesInvestmentsTitle: "Investments",
     enablesInvestmentsText:
       "See reviewed investment opportunities and express interest – no return promises.",
+    enablesInvestmentsShort: "Reviewed opportunities – no return promises.",
     enablesMarketplaceTitle: "Marketplace",
     enablesMarketplaceText:
       "Book services, sell your own work or learn in the Academy.",
+    enablesMarketplaceShort: "Book services, learn, offer your own work.",
     enablesJobsTitle: "Jobs & projects",
     enablesJobsText:
       "Find the sales partner, co-founder or mandate for the next step.",
+    enablesJobsShort: "People for projects, mandates and teams.",
     enablesEventsTitle: "Events",
     enablesEventsText:
       "Business dinners, networking and selected experiences – labelled as confirmed or concept.",
+    enablesEventsShort: "Encounters that turn into collaboration.",
     communityKicker: "Community",
     communityTitle: "People at eye level – from first customer to exit.",
     communityLead:

@@ -52,19 +52,20 @@ P2 mittelfristig · P3 Aufräumen.
 - **Offen bleibt:**Stripe-Produkt/Preise sind noch nicht scharf geschaltet
   (see `12-roadmap.md`, S-1) – Checkout läuft aktuell über Dev-Aktivierung.
 
-### K-04 · OAuth-Buttons führen ins Leere (404)
+### K-04 · OAuth-Buttons führen ins Leere (404) — **BEHOBEN (Sprint 5)**
 
-- **Symptom:** „Google"/„Apple" auf `/login` und `/register` sind als
-  „Einrichtung erforderlich" gekennzeichnet, verlinken aber auf
-  `/api/auth/oauth/google` bzw. `/api/auth/oauth/apple` – **diese Routen
-  existieren nicht** → 404. Der Button „Telefon" verlinkt auf `/login?method=phone`
-  und bewirkt nichts.
+- **Symptom (historisch):** „Google"/„Apple" auf `/login` und `/register` waren
+  als „Einrichtung erforderlich" gekennzeichnet, verlinkten aber auf
+  `/api/auth/oauth/google` bzw. `/api/auth/oauth/apple` – diese Routen
+  existieren nicht → 404. Der Button „Telefon" verlinkte auf
+  `/login?method=phone` und bewirkte nichts.
 - **Ursache:** UI-Vorbereitung (auth §B) ohne Backend.
-- **Regelverstoß:** Projektregel „keine Dead Buttons" – der Hinweis „Einrichtung
-  erforderlich" ist vorhanden, der Link ist trotzdem ein toter Pfad.
-- **Empfohlene Lösung (separater Auftrag):** Buttons als echte `disabled`-Elemente
-  rendern (ohne Navigationsziel) **oder** Route implementieren. Keine
-  Designänderung nötig – das Aussehen bleibt gleich.
+- **Lösung (Sprint 5, 2026-09-21):** `ProviderButton` in
+  `src/components/auth/AuthForms.tsx` rendert die drei Methoden jetzt als
+  **echte deaktivierte Elemente** (`span` mit `cursor-not-allowed` +
+  Badge „Einrichtung erforderlich") – kein Navigationsziel, kein 404,
+  Aussehen unverändert. Die Implementierung der OAuth-Routen bleibt ein
+  separater Auftrag.
 
 ### K-05 · Registrierung per Telefonnummer funktioniert nicht
 
@@ -150,13 +151,15 @@ P2 mittelfristig · P3 Aufräumen.
 
 ### K-15 · Lint nicht fehlerfrei (vorbestehend)
 
-- `npm run lint` meldet aktuell **14 Probleme**: 4 Fehler („setState in effect"
-  in `SiteHeader` und `StatsSection`; „impure function during render"
-  (`Date.now()`) in `app/events/page.tsx`; `module`-Zuweisung in
-  `scripts/seed.ts`) und 10 Warnungen (ungenutzte Importe/Variablen).
-- Verlauf: 21 (7 Fehler / 14 Warnungen) → 15 (5 / 10) → **14 (4 / 10)**.
-  Sprint 3 hat **keine** neuen Befunde eingeführt; die zuvor von `AppShell`,
-  `DiscoverDeck` und `AuthForms` gemeldeten Effekte sind behoben bzw. umgebaut.
+- `npm run lint` meldet aktuell **13 Probleme**: 5 Fehler („setState in effect"
+  in `SiteHeader`, `StatsSection` und `lib/auth/presence.ts`; „impure function
+  during render" (`Date.now()`) in `app/events/page.tsx`; `module`-Zuweisung in
+  `scripts/seed.ts`) und 8 Warnungen (ungenutzte Importe/Variablen).
+- Verlauf: 21 (7 Fehler / 14 Warnungen) → 15 (5 / 10) → 14 (4 / 10) →
+  **13 (5 / 8)**. Sprint 5 hat **keine** neuen Befunde eingeführt; die
+  Mount-Prüfung der Auth-Formulare nutzt `useSyncExternalStore` statt eines
+  Effekts, und zwei Warnungen wurden nebenbei beseitigt. Der `presence.ts`-
+  Fehler war bereits vorher vorhanden (Dokumentation zählte ihn bislang nicht).
 - **Wichtig:** Die verbleibenden Hinweise sind **vorbestehend** und betreffen
   Dateien, deren Verhalten eine eigene Prüfung braucht (Sichtbarkeit des
   Headers beim Scrollen, Zählanimation der Statistiken, Seed-Skript).

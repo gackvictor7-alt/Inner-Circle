@@ -17,8 +17,10 @@ Feature-Auftrags sind **keine** gültigen Gründe.
 
 ### 1.1 Öffentliche Startseite
 
-- Reihenfolge und Aufbau der Sektionen: Hero → Säulen („Was dir ermöglicht
-  wird") → Trust & Reputation → Events & Community → Membership → FAQ → CTA.
+- Reihenfolge und Aufbau der Sektionen (Desktop): Hero → Säulen („Was dir
+  ermöglicht wird") → Trust & Reputation → Events & Community → Membership →
+  FAQ → CTA. Mobile gilt die kompakte Reihenfolge aus Abschnitt 1.12
+  (Gründerauftrag Sprint 5).
 - Hero-Bildsprache, Headline-Größe, Abstände, CTA-Anordnung.
 - Kennzahlen-Sektion (`StatsSection`) inkl. Zähl-Animation und
   `reduced-motion`-Verhalten.
@@ -136,6 +138,45 @@ unverändert:
 **Nicht angefasst:** öffentliche Homepage, Auth/Resend/Trial/Membership,
 App-Navigation (Sidebar/Bottom-Bar), Member Card, Einstellungen.
 
+### 1.12 Sprint 5: Mobile-Startseite · Hero · Sprachwahl · Auth-Formulare (2026-09-21)
+
+**Ausdrücklicher Gründerauftrag** (Mobile UX, Login UX, Public-Polish) – nur
+die folgenden Punkte wurden geändert; Farbwelt, Typografie, Bildsprache und
+Premium-Stil bleiben unverändert. Dieser Stand ist seinerseits eingefroren:
+
+- **Öffentliche Startseite mobil (`<lg`):** kompakter Hero (kürzerer Sublead
+  „Finde Kunden, Geschäftspartner, Kapital und neue Business Opportunities an
+  einem Ort." statt Marketing-Frage), drei Ergebnisse komprimiert, sechs
+  Kernbereiche als klickbare Übersicht (Titel + Ein-Zeilen-Nutzen +
+  „Mehr erfahren"-Link) statt sechs gestapelter Bild-Text-Sektionen,
+  Membership mit Preis + CTA, Footer. **Desktop (`lg+`) behält** die reiche
+  Bild-Text-Struktur (die ausführlichen Sektionen sind `hidden lg:block`).
+- **Hero:** Headline unverändert („Dein Business braucht die richtigen
+  Köpfe. Keine zusätzlichen Kontakte."), Text auf Desktop Richtung
+  Bildmitte verschoben, mobil kompakt.
+- **Sprachumschalter:** zeigt Flagge + vollen Sprachnamen (🇩🇪 Deutsch /
+  🇬🇧 English) – Public (Header) **und** Member-Bereich (Account-Sheet +
+  Einstellungen, `LocaleSwitch`). Nur die tatsächlich unterstützten Locales
+  `de`/`en`; Umschalt- und Persistenzlogik (`ic-locale`) unverändert.
+- **KI-/Marketing-Hinweis:** nicht mehr prominent am Hero-Bild, sondern als
+  sachlicher Hinweis im Footer (`footer.disclaimer`); Demo-Inhalte im
+  Member-Bereich bleiben mit Badges + Hinweisen gekennzeichnet.
+- **Auth-Formulare:** Eingaben bleiben bei Fehlern erhalten (kein Reload),
+  Fehlermeldung am Formular, Passwortregeln sichtbar (Live-Checkliste,
+  Ein-/Ausblenden), OAuth-Buttons als echte `disabled`-Elemente (K-04).
+  Aussehen unverändert.
+- **Demo-Detail-Dialoge:** „Ansehen"-CTAs der Demo-Sektionen (Deals,
+  Marketplace, Academy, Events, Discover) öffnen einen Modal-Dialog mit
+  vollständigen (Demo-)Details statt toter Links; Next-Actions zeigen
+  ehrlich den Weg zur echten Funktion (z. B. `/app/opportunities/new`).
+- **Event-Bilder im Member-Bereich:** Karten (`/app/events`) und Detailseite
+  zeigen die vorhandenen `imageUrl`-Bilder (wie die öffentliche Seite).
+- **Kleine Visualisierungen:** Ziel-Allokationsbalken im Portfolio-Panel
+  (CSS-only, klar als Ziel/Demo gekennzeichnet), Deal-Typ-Chips mit echten
+  Zählungen auf `/app/opportunities` (nur wenn echte Daten existieren),
+  Profil-Vollständigkeit (bestand bereits). Keine erfundenen Umsätze,
+  Renditen oder Erfolgszahlen; keine neuen Dashboard-Sektionen.
+
 ## 2. Ausdrücklich erlaubt (kein Designbruch)
 
 - Technische Responsive-Bugfixes (z. B. Überlauf, abgeschnittene Inhalte,
@@ -163,7 +204,7 @@ App-Navigation (Sidebar/Bottom-Bar), Member Card, Einstellungen.
 
 ### 3.1 Dokumentierte, ausdrücklich beauftragte Ausnahmen (2026-09-21)
 
-Beide Punkte sind Gründungsaufträge, nach `## 4` protokolliert und damit
+Alle Punkte sind Gründungsaufträge, nach `## 4` protokolliert und damit
 **erlaubt**; sie sind jetzt ihrerseits eingefroren:
 
 1. **Breiten-System (Public):** `.ic-shell`, `.ic-shell-wide`, `.ic-shell-prose`
@@ -173,6 +214,11 @@ Beide Punkte sind Gründungsaufträge, nach `## 4` protokolliert und damit
    (24,99 €/249,90 €), und die Public-Bilder wurden nach neuer Bildrichtung
    regeneriert (`13-decisions.md`, ADR-013). Hero-Bild `hero-home.jpg` selbst
    ist unangetastet.
+3. **Sprint 5 (Mobile UX · Login UX · Public-Polish):** alle Änderungen sind
+   in Abschnitt 1.12 einzeln dokumentiert und eingefroren (mobile
+   Startseiten-Kompaktierung, Hero-Kürzung, Sprachwahl mit Flagge + Name,
+   KI-Hinweis im Footer, Auth-Formular-Härtung, Demo-Detail-Dialoge,
+   Event-Bilder im Member-Bereich, kleine Visualisierungen).
 
 ## 4. Wenn ein Designauftrag kommt
 

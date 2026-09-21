@@ -647,3 +647,22 @@ export function HouseIcon({ size, className, strokeWidth = 1.8 }: P) {
     </svg>
   );
 }
+export function EyeIcon({ size, className, strokeWidth = 1.8 }: P) {
+  return (
+    <svg {...px(size)} strokeWidth={strokeWidth} className={className} aria-hidden="true">
+      <path d="M2 12s3.5-6.5 10-6.5S22 12 22 12s-3.5 6.5-10 6.5S2 12 2 12Z" />
+      <circle cx="12" cy="12" r="2.8" />
+    </svg>
+  );
+}
+
+export function EyeOffIcon({ size, className, strokeWidth = 1.8 }: P) {
+  return (
+    <svg {...px(size)} strokeWidth={strokeWidth} className={className} aria-hidden="true">
+      <path d="M4 4l16 16" />
+      <path d="M10.6 5.8A10.7 10.7 0 0 1 12 5.5c6.5 0 10 6.5 10 6.5a17.6 17.6 0 0 1-3.2 3.9" />
+      <path d="M6.4 6.9A17.2 17.2 0 0 0 2 12s3.5 6.5 10 6.5a10.4 10.4 0 0 0 4.2-.9" />
+      <path d="M9.9 10.1a2.8 2.8 0 0 0 3.9 3.9" />
+    </svg>
+  );
+}

@@ -6,6 +6,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { useI18n } from "@/lib/i18n/context";
 import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
+import { LocaleSwitch } from "@/components/app/LocaleSwitch";
 import {
   BriefcaseIcon,
   CalendarIcon,
@@ -477,6 +478,12 @@ export function AppShell({
             </li>
           )}
         </ul>
+        <div className="mt-5">
+          <p className="mb-2 text-xs font-bold uppercase tracking-[0.14em] text-foreground-subtle">
+            {t.app.settings.languageTitle}
+          </p>
+          <LocaleSwitch />
+        </div>
         <form action="/api/auth/logout" method="post" className="mt-4">
           <Button type="submit" variant="secondary" fullWidth>
             {t.app.nav.signOut}

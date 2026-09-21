@@ -19,6 +19,9 @@ import { idFor } from "@/db/ids";
 import { audit } from "@/lib/admin/audit";
 import { defaultLocale, type Locale } from "@/lib/i18n/dictionaries";
 import { hashAuthToken, hashPassword, randomToken, verifyPassword } from "@/lib/auth/crypto";
+// Password rules live in one module so the visible checklist in the auth
+// forms and the server validation cannot drift apart.
+import { passwordProblem } from "@/lib/auth/password-rules";
 import { issueVerificationCode, verifyCode } from "@/lib/auth/otp";
 import { createSession, destroySession, revokeAllSessions } from "@/lib/auth/session";
 import { consumeRateLimit } from "@/lib/rate-limit";
@@ -49,12 +52,7 @@ async function clientIpKey(prefix: string): Promise<string> {
   return `${prefix}:${ip}`;
 }
 
-function passwordProblem(password: string, confirm: string): string | null {
-  if (password.length < 10) return "passwordTooShort";
-  if (!/[A-Za-zÄÖÜäöüß]/.test(password) || !/[0-9]/.test(password)) return "passwordNeedsBoth";
-  if (password !== confirm) return "passwordMismatch";
-  return null;
-}
+
 
 async function uniqueHandle(firstName: string, lastName: string): Promise<string> {
   const base = handleify(firstName, lastName) || "member";
@@ -173,8 +171,14 @@ export async function loginAction(_prev: AuthState, formData: FormData): Promise
 
   const email = (field(formData, "identifier", 160) || field(formData, "email", 160)).toLowerCase();
   const password = field(formData, "password", 200);
-  if (!EMAIL_RE.test(email) || password.length === 0) {
-    return { status: "error", errorCode: "validation", fieldErrors: { identifier: "required", password: "required" } };
+  // Honest, distinct field errors – the UI keeps both inputs filled, so the
+  // user only has to correct what is actually wrong (sprint: login UX).
+  if (email.length === 0 || password.length === 0 || !EMAIL_RE.test(email)) {
+    const fieldErrors: Record<string, string> = {};
+    if (email.length === 0) fieldErrors.identifier = "required";
+    else if (!EMAIL_RE.test(email)) fieldErrors.identifier = "invalidEmail";
+    if (password.length === 0) fieldErrors.password = "required";
+    return { status: "error", errorCode: "validation", fieldErrors };
   }
 
   const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);

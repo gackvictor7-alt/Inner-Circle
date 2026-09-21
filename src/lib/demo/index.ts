@@ -372,6 +372,18 @@ export type DemoDeal = {
   sizeLabel: string; // illustrative size – NOT a real transaction
   seekingRole: string;
   status: string;
+  industry: string;
+  /** English variant of every free-text field (demo parity rule). */
+  en: {
+    title: string;
+    category: string;
+    description: string;
+    location: string;
+    sizeLabel: string;
+    seekingRole: string;
+    status: string;
+    industry: string;
+  };
 };
 
 export const DEMO_DEALS: DemoDeal[] = [
@@ -385,6 +397,18 @@ export const DEMO_DEALS: DemoDeal[] = [
     sizeLabel: "Beispielgröße: 6-stelliger Umsatz",
     seekingRole: "Growth-Partner",
     status: "Beispiel",
+    industry: "E-Commerce / Supplements",
+    en: {
+      title: "E-commerce brand seeks growth partner",
+      category: "Growth & partnership",
+      description:
+        "A D2C supplements brand is looking for a partner for paid acquisition and CRO – on revenue share.",
+      location: "DACH, remote",
+      sizeLabel: "Example size: six-figure revenue",
+      seekingRole: "Growth partner",
+      status: "Example",
+      industry: "E-commerce / supplements",
+    },
   },
   {
     key: "deal-saas-sales",
@@ -396,6 +420,18 @@ export const DEMO_DEALS: DemoDeal[] = [
     sizeLabel: "Beispielgröße: Provision ca. 20–25 %",
     seekingRole: "Vertriebsagentur",
     status: "Beispiel",
+    industry: "B2B-Software",
+    en: {
+      title: "SaaS company seeks sales partner DACH",
+      category: "Channel & sales",
+      description:
+        "A B2B SaaS with 40 existing customers is looking for agencies with mid-market access for the German market.",
+      location: "Germany / DACH",
+      sizeLabel: "Example size: commission approx. 20–25%",
+      seekingRole: "Sales agency",
+      status: "Example",
+      industry: "B2B software",
+    },
   },
   {
     key: "deal-realestate-jv",
@@ -407,6 +443,18 @@ export const DEMO_DEALS: DemoDeal[] = [
     sizeLabel: "Beispielgröße: 24 Wohneinheiten",
     seekingRole: "Kapitalpartner",
     status: "Beispiel",
+    industry: "Immobilien",
+    en: {
+      title: "Real-estate project seeks joint-venture partner",
+      category: "Real estate & JV",
+      description:
+        "A residential project with building permission seeks a capital and development partner for financing and sales.",
+      location: "Frankfurt am Main",
+      sizeLabel: "Example size: 24 residential units",
+      seekingRole: "Capital partner",
+      status: "Example",
+      industry: "Real estate",
+    },
   },
   {
     key: "deal-agency-buyer",
@@ -418,6 +466,18 @@ export const DEMO_DEALS: DemoDeal[] = [
     sizeLabel: "Beispielgröße: 7-stelliger Umsatz",
     seekingRole: "Strategischer Käufer",
     status: "Beispiel",
+    industry: "Digitalagentur",
+    en: {
+      title: "Agency seeks strategic buyer",
+      category: "M&A / succession",
+      description:
+        "A digital agency (18 people, profitable) is looking for a strategic partner for succession.",
+      location: "Hamburg, Germany",
+      sizeLabel: "Example size: seven-figure revenue",
+      seekingRole: "Strategic buyer",
+      status: "Example",
+      industry: "Digital agency",
+    },
   },
 ];
 
@@ -486,6 +546,8 @@ export type DemoListing = {
   category: string;
   /** Rating shown ONLY as a labelled demo value. */
   ratingLabel: string;
+  /** English variant (demo parity rule). */
+  en: { title: string; creator: string; price: string; category: string; ratingLabel: string };
 };
 
 export const DEMO_LISTINGS: DemoListing[] = [
@@ -496,7 +558,7 @@ export const DEMO_LISTINGS: DemoListing[] = [
     price: "ab 1.900 €",
     category: "Marketing Service",
     ratingLabel: "Beispiel-Bewertung: 4,8",
-  },
+  en: { title: "Marketing service: 30-day channel audit", creator: "Nina Kovač (example)", price: "from €1,900", category: "Marketing service", ratingLabel: "Example rating: 4.8" },  },
   {
     key: "listing-webdesign",
     title: "Webdesign: Landing-Page & Brand-Guide",
@@ -504,7 +566,7 @@ export const DEMO_LISTINGS: DemoListing[] = [
     price: "ab 3.500 €",
     category: "Webdesign",
     ratingLabel: "Beispiel-Bewertung: 4,9",
-  },
+  en: { title: "Web design: landing page & brand guide", creator: "Maya Studio (example)", price: "from €3,500", category: "Web design", ratingLabel: "Example rating: 4.9" },  },
   {
     key: "listing-consulting",
     title: "Consulting: B2B Sales Playbook",
@@ -512,7 +574,7 @@ export const DEMO_LISTINGS: DemoListing[] = [
     price: "ab 890 €",
     category: "Consulting",
     ratingLabel: "Beispiel-Bewertung: 4,7",
-  },
+  en: { title: "Consulting: B2B sales playbook", creator: "Reyes Advisory (example)", price: "from €890", category: "Consulting", ratingLabel: "Example rating: 4.7" },  },
   {
     key: "listing-coaching",
     title: "Business Coaching: 6 Wochen Klarheit",
@@ -520,7 +582,7 @@ export const DEMO_LISTINGS: DemoListing[] = [
     price: "ab 1.450 €",
     category: "Business Coaching",
     ratingLabel: "Beispiel-Bewertung: 4,8",
-  },
+  en: { title: "Business coaching: 6 weeks of clarity", creator: "Maya Okafor (example)", price: "from €1,450", category: "Business coaching", ratingLabel: "Example rating: 4.8" },  },
   {
     key: "listing-digital-product",
     title: "Digital Product: Pricing-Vorlagen-Paket",
@@ -528,7 +590,7 @@ export const DEMO_LISTINGS: DemoListing[] = [
     price: "149 €",
     category: "Digital Product",
     ratingLabel: "Beispiel-Bewertung: 4,6",
-  },
+  en: { title: "Digital product: pricing template pack", creator: "Julian Weiss (example)", price: "€149", category: "Digital product", ratingLabel: "Example rating: 4.6" },  },
   {
     key: "listing-design-service",
     title: "Design Service: Pitch-Deck & Visual Identity",
@@ -536,7 +598,7 @@ export const DEMO_LISTINGS: DemoListing[] = [
     price: "ab 2.400 €",
     category: "Design Service",
     ratingLabel: "Beispiel-Bewertung: 4,9",
-  },
+  en: { title: "Design service: pitch deck & visual identity", creator: "Maya Studio (example)", price: "from €2,400", category: "Design service", ratingLabel: "Example rating: 4.9" },  },
 ];
 
 /* ------------------------------------------------------------------ *
@@ -549,6 +611,8 @@ export type DemoCourse = {
   summary: string;
   /** Illustrative info, NOT real sales numbers. */
   metaLabel: string;
+  /** English variant (demo parity rule). */
+  en: { title: string; summary: string; metaLabel: string };
 };
 
 export const DEMO_COURSES: DemoCourse[] = [
@@ -557,31 +621,31 @@ export const DEMO_COURSES: DemoCourse[] = [
     title: "Startup Finance Basics",
     summary: "Cap Table, Runway und KPIs verstehen – kompakt für Gründer ohne Finance-Background.",
     metaLabel: "Beispiel: 4 Module",
-  },
+  en: { title: "Startup Finance Basics", summary: "Understand cap table, runway and KPIs – compact for founders without a finance background.", metaLabel: "Example: 4 modules" },  },
   {
     key: "course-b2b-sales",
     title: "B2B Sales Playbook",
     summary: "Von der ICP-Definition bis zur wiederholbaren Pipeline – ein praktisches Vertriebssystem.",
     metaLabel: "Beispiel: 6 Module",
-  },
+  en: { title: "B2B Sales Playbook", summary: "From ICP definition to a repeatable pipeline – a practical sales system.", metaLabel: "Example: 6 modules" },  },
   {
     key: "course-personal-branding",
     title: "Personal Branding",
     summary: "Positionierung, Profil und Content-Strategie für Gründer und Berater.",
     metaLabel: "Beispiel: 3 Module",
-  },
+  en: { title: "Personal Branding", summary: "Positioning, profile and content strategy for founders and consultants.", metaLabel: "Example: 3 modules" },  },
   {
     key: "course-real-estate",
     title: "Real Estate Fundamentals",
     summary: "Projektentwicklung, Finanzierung und Due Diligence – Grundlagen für Einsteiger.",
     metaLabel: "Beispiel: 5 Module",
-  },
+  en: { title: "Real Estate Fundamentals", summary: "Project development, financing and due diligence – basics for newcomers.", metaLabel: "Example: 5 modules" },  },
   {
     key: "course-ai-automation",
     title: "AI Automation for Business",
     summary: "Praxisnahe Automation von Vertriebs- und Marketingprozessen mit KI-Tools.",
     metaLabel: "Beispiel: 4 Module",
-  },
+  en: { title: "AI Automation for Business", summary: "Hands-on automation of sales and marketing processes with AI tools.", metaLabel: "Example: 4 modules" },  },
 ];
 
 /* ------------------------------------------------------------------ *
@@ -595,6 +659,12 @@ export type DemoEvent = {
   type: string;
   city: string;
   summary: string;
+  /** Existing public image reused in the member area (no new assets). */
+  image: string;
+  imageAltDe: string;
+  imageAltEn: string;
+  /** English variant (demo parity rule). */
+  en: { title: string; type: string; summary: string };
 };
 
 export const DEMO_EVENTS: DemoEvent[] = [
@@ -604,42 +674,60 @@ export const DEMO_EVENTS: DemoEvent[] = [
     type: "Business Dinner",
     city: "Stuttgart",
     summary: "Geführtes Dinner mit acht Plätzen, einem Thema pro Tisch – Formatvorschau.",
-  },
+  image: "/images/events-vision.jpg",
+  imageAltDe: "Gedeckter Dinner-Tisch in einem hellen, modernen Raum",
+  imageAltEn: "Set dinner table in a bright, modern room",
+  en: { title: "INNER CIRCLE Business Dinner – Stuttgart", type: "Business dinner", summary: "Guided dinner with eight seats, one topic per table – format preview." },  },
   {
     key: "demo-event-berlin",
     title: "Founder & Investor Night – Berlin",
     type: "Networking-Abend",
     city: "Berlin",
     summary: "Kuratierter Abend mit kurzen Impulsen und Gesprächen in kleiner Runde.",
-  },
+  image: "/images/events-networking.jpg",
+  imageAltDe: "Menschen im Gespräch bei einem Networking-Abend",
+  imageAltEn: "People in conversation at a networking evening",
+  en: { title: "Founder & Investor Night – Berlin", type: "Networking evening", summary: "Curated evening with short impulses and conversations in a small group." },  },
   {
     key: "demo-event-monaco",
     title: "Monaco Networking Weekend",
     type: "Weekend",
     city: "Monaco",
     summary: "Mehrtägiges Format für Mitglieder und eingeladene Gäste – Konzept.",
-  },
+  image: "/images/events-experience.jpg",
+  imageAltDe: "Networking-Abend auf einer Dachterrasse",
+  imageAltEn: "Networking evening on a rooftop terrace",
+  en: { title: "Monaco Networking Weekend", type: "Weekend", summary: "Multi-day format for members and invited guests – concept." },  },
   {
     key: "demo-event-golf",
     title: "Golf & Business Day",
     type: "Sport & Business",
     city: "München",
     summary: "Gemeinsame Golfrunde mit anschließendem Netzwerken – Konzept.",
-  },
+  image: "/images/events-sport.jpg",
+  imageAltDe: "Sport-Session im Freien mit Business-Gesprächen",
+  imageAltEn: "Outdoor sports session with business conversations",
+  en: { title: "Golf & Business Day", type: "Sport & business", summary: "Joint golf round with networking afterwards – concept." },  },
   {
     key: "demo-event-cote-dazur",
     title: "Private Summer Dinner – Côte d’Azur",
     type: "Dinner",
     city: "Côte d’Azur",
     summary: "Abendessen im kleinen Kreis an besonderem Ort – Formatvorschau.",
-  },
+  image: "/images/events-experience.jpg",
+  imageAltDe: "Networking-Abend auf einer Dachterrasse",
+  imageAltEn: "Networking evening on a rooftop terrace",
+  en: { title: "Private Summer Dinner – Côte d’Azur", type: "Dinner", summary: "Small-circle dinner at a special location – format preview." },  },
   {
     key: "demo-event-summit",
     title: "INNER CIRCLE Annual Summit",
     type: "Summit",
     city: "Berlin",
     summary: "Jahresformat mit Talks, Workshops und Community – Planung.",
-  },
+  image: "/images/community-meetup.jpg",
+  imageAltDe: "Community-Abend in einem modernen Raum",
+  imageAltEn: "Community evening in a modern space",
+  en: { title: "INNER CIRCLE Annual Summit", type: "Summit", summary: "Annual format with talks, workshops and community – planning." },  },
 ];
 
 /* ------------------------------------------------------------------ *

@@ -103,6 +103,39 @@ export default async function OpportunitiesPage({
         </form>
       </Card>
 
+      {/* Real-data overview: categories that actually exist right now, as
+          functional filter chips (no invented numbers; demo deals never
+          render here because the demo section only appears when empty). */}
+      {rows.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs font-bold uppercase tracking-[0.14em] text-foreground-subtle">
+            <Tr k="app.common.type" />
+          </span>
+          {Object.entries(
+            rows.reduce<Record<string, number>>((acc, row) => {
+              acc[row.type] = (acc[row.type] ?? 0) + 1;
+              return acc;
+            }, {}),
+          )
+            .sort((a, b) => b[1] - a[1])
+            .map(([type, count]) => (
+              <Link
+                key={type}
+                href={`/app/opportunities?type=${type}`}
+                aria-current={params.type === type ? "page" : undefined}
+                className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
+                  params.type === type
+                    ? "bg-electric-500 text-white"
+                    : "border border-border bg-surface text-foreground-muted hover:text-foreground"
+                }`}
+              >
+                <Tr k={`app.opportunities.type.${type}` as "app.opportunities.type.co_founder"} />
+                <span className="ml-1.5 opacity-70">{count}</span>
+              </Link>
+            ))}
+        </div>
+      )}
+
       {rows.length === 0 ? (
         <>
           <LocalizedEmptyState

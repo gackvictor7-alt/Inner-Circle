@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { requireUser } from "@/lib/access/server";
 import { myEventApplications, upcomingEvents } from "@/lib/platform/queries";
@@ -97,7 +98,18 @@ export default async function EventsPage({
         <ul className="grid gap-4 lg:grid-cols-2">
           {shown.map((event) => (
             <li key={event.id}>
-              <Card className="flex h-full flex-col p-5">
+              <Card className="flex h-full flex-col overflow-hidden">
+                {event.imageUrl ? (
+                  <Image
+                    src={event.imageUrl}
+                    alt=""
+                    width={800}
+                    height={450}
+                    sizes="(min-width: 1024px) 50vw, 100vw"
+                    className="h-36 w-full object-cover sm:h-40"
+                  />
+                ) : null}
+                <div className="flex flex-1 flex-col p-5">
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant={stateVariant[event.state as keyof typeof stateVariant] ?? "outline"}>
                     <Tr k={`app.events.state.${event.state}`} />
@@ -117,6 +129,7 @@ export default async function EventsPage({
                   <Button href={`/app/events/${event.slug}`} size="sm" variant="secondary">
                     <Tr k="app.common.details" />
                   </Button>
+                </div>
                 </div>
               </Card>
             </li>
