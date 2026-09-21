@@ -212,11 +212,23 @@ summary {
   list-style: none;
 }
 
-/* ---------- Layout helpers ---------- */
+/* ---------- Layout helpers ----------
+ *
+ * Width system for the public site (compression + width sprint). Three
+ * semantic containers replace the old one-size-fits-all `max-w-6xl` (72rem),
+ * which made every section equally narrow on large desktop screens:
+ *
+ *   .ic-shell          – standard public container (nav, footer, text sections)
+ *   .ic-shell-wide     – visual sections: image/lead combos, media bands
+ *   .ic-shell-prose    – editorial copy only (never a full-bleed paragraph)
+ *
+ * Gutters grow with the viewport but never explode; line lengths inside
+ * `.ic-shell-prose` stay at a readable measure on purpose.
+ */
 
 .ic-shell {
   width: 100%;
-  max-width: 76rem;
+  max-width: 80rem;
   margin-inline: auto;
   padding-inline: 1rem;
 }
@@ -227,6 +239,64 @@ summary {
 }
 @media (min-width: 1024px) {
   .ic-shell {
+    padding-inline: 2rem;
+    max-width: 88rem; /* 1408px content on 1440+ screens */
+  }
+}
+@media (min-width: 1536px) {
+  .ic-shell {
+    padding-inline: 3rem;
+    max-width: 104rem; /* 1664px on ultrawide – balanced gutters, no dead edges */
+  }
+}
+@media (min-width: 1920px) {
+  .ic-shell {
+    max-width: 110rem;
+  }
+}
+
+.ic-shell-wide {
+  width: 100%;
+  max-width: 80rem;
+  margin-inline: auto;
+  padding-inline: 1rem;
+}
+@media (min-width: 640px) {
+  .ic-shell-wide {
+    padding-inline: 1.5rem;
+  }
+}
+@media (min-width: 1024px) {
+  .ic-shell-wide {
+    padding-inline: 2.5rem;
+    max-width: 96rem; /* 1536px – media and image bands breathe on desktop */
+  }
+}
+@media (min-width: 1536px) {
+  .ic-shell-wide {
+    padding-inline: 4rem;
+    max-width: 112rem; /* 1792px */
+  }
+}
+@media (min-width: 1920px) {
+  .ic-shell-wide {
+    max-width: 120rem; /* 1920px: full-bleed feel with restrained gutters */
+  }
+}
+
+.ic-shell-prose {
+  width: 100%;
+  max-width: 46rem;
+  margin-inline: auto;
+  padding-inline: 1rem;
+}
+@media (min-width: 640px) {
+  .ic-shell-prose {
+    padding-inline: 1.5rem;
+  }
+}
+@media (min-width: 1024px) {
+  .ic-shell-prose {
     padding-inline: 2rem;
   }
 }
