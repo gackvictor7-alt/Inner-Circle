@@ -1,7 +1,7 @@
 /**
  * INNER CIRCLE – relational schema (Sprint 2.0).
  *
- * Stack decision: libSQL/SQLite via Drizzle ORM (see docs/05-decisions.md).
+ * Stack decision: libSQL/SQLite via Drizzle ORM (see docs/13-decisions.md, ADR-008).
  * The Prisma engine binaries are not reachable in every environment; Drizzle +
  * libSQL installs purely from npm and is fully provider-portable — switching to
  * PostgreSQL later only requires changing the driver and the column builders.

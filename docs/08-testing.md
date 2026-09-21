@@ -1,70 +1,123 @@
-# Test- & Abnahmeverfahren
+# 08 – Test- und Qualitätssicherung
 
-## Definition of Done (jede Funktion)
+**Stand:** 2026-09-21 · Aktueller Lauf auf `main` @ `f22c19e`:
+`npm test` = **12 Dateien / 56 Tests grün**, `npm run typecheck` grün,
+`npm run cf:build` grün, `npm run lint` = 21 bestehende Hinweise
+(7 Fehler, 14 Warnungen – vorbestehend, siehe K-15).
 
-- [ ] Bedienbar (UI + Fehlerfälle) und responsiv (mobil/desktop).
+---
+
+## 1. Definition of Done (jede Funktion)
+
+- [ ] Bedienbar (UI + Fehlerfälle), responsiv (mobil/desktop).
 - [ ] Backend-Verhalten korrekt, Daten persistent.
-- [ ] Berechtigungen server-seitig erzwungen (Besucher/Registriert/
-      Mitglied + Freigaben), nicht nur versteckt.
-- [ ] DE + EN (kein Hardcodetext), Light + Dark lesbar.
-- [ ] Basis-Barrierefreiheit (Labels, Fokus, Kontraste, Reduced-Motion).
-- [ ] Relevante Tests/Prüfprotokolle vorhanden.
+- [ ] Berechtigungen **serverseitig** erzwungen (nicht nur versteckt).
+- [ ] DE + EN vollständig (zentrales i18n, kein Hardcodetext).
+- [ ] Light + Dark lesbar, Fokus/Labels/Kontraste gegeben, Reduced-Motion respektiert.
+- [ ] Relevante Tests oder dokumentiertes manuelles Prüfprotokoll vorhanden.
 - [ ] Keine bekannten kritischen Sicherheitsprobleme.
-- [ ] Externe Abhängigkeit benannt: Code fertig vs. Sandbox-getestet
-      vs. Produktion-aktiv (drei Stufen, ehrlich unterscheiden).
+- [ ] Status korrekt klassifiziert (WORKING/PARTIAL/PREPARED/BLOCKED).
+- [ ] Dokumentation aktualisiert (`docs/00-SOURCE-OF-TRUTH.md` + Detaildokument).
 
-## Standard-Verifikation pro Schritt
+## 2. Befehle
 
-1. `npm run lint` grün.
-2. `npm run build` grün.
-3. Manuelle Klickpfade der Phase in DE + EN, hell + dunkel, mobil + desktop.
-4. Negativtests: verbotene Zugriffe (URL direkt aufrufen, fremde IDs,
-   abgelaufene Trials, stornierte Zahlungen) werden abgewiesen.
-5. Fortschrittseintrag in `04-progress.md` + Commit.
+| Befehl | Wirkung |
+| ------ | ------- |
+| `npm test` | Vitest, alle Unit- und Integrationstests gegen Wegwerf-DB |
+| `npm run test:watch` | Watch-Modus |
+| `npm run typecheck` | `tsc --noEmit` |
+| `npm run lint` | ESLint (bekannte Hinweise siehe oben) |
+| `npm run test:keys` | jede im Code referenzierte i18n-Kodierung existiert in DE + EN |
+| `npm run i18n:audit` | DE/EN-Struktur und Schlüsselzahlen |
+| `npm run cf:dry-run` | Build + `wrangler deploy --dry-run` (Bindings prüfen, kein Upload) |
+| `npm run cf:preview` | App in `workerd` gegen lokale D1 (Port 8787) |
+| `npm run dev:outbox` | Dev-Postausgang lesen (`--local`, `--remote`, `--to=`, `--limit=`) |
 
-## Phasen-Checklisten (Auszug)
+## 3. Automatisierte Tests (Bestand)
 
-- **04 Auth:** Registrieren→Verifizieren→Login→Logout→Recovery;
-  Rate-Limits; keine Enumeration sensibler Infos.
-- **05 Abo:** Trial-Ablauf 48 h; Webhook-Tests (Zahlung/Storno/Refund);
-  kein Abo über Erfolgs-URL erschleichbar.
-- **07 Netzwerk:** Zwei Testkonten: Anfrage→Annahme→Chat; Blockieren;
-  Fremde können nicht schreiben.
-- **09–10 Deals:** Restricted-Inhalte erst nach Freigabe; Dokument-
-  Widerruf; Audit-Historie.
-- **11 Investments:** Unberechtigte sehen keine Details; kein
-  Empfehlungs-/Rendite-Wording irgendwo.
-- **12–13 Kauf:** Testkauf + Storno + Auszahlung; Provision je Kategorie.
-- **14 Referral:** Attribution→Zahlung→Provision; Selbst-/Doppel-
-  schutz; Storno kehrt Provision um.
-- **16 Events:** Buchen→Ticket→QR-Check-in; Kapazität/Warteliste.
-- **19 Security:** Routen-/API-Audit, OWASP-Basics, Backup-Nachweis.
+| Datei | Umfang | Art |
+| ----- | ------ | --- |
+| `tests/unit/auth-crypto.test.ts` | scrypt-Hashing/Vergleich, Session-Token-Hash, OTP-Erzeugung | Unit |
+| `tests/unit/access-levels.test.ts` | Entitlement-Matrix free/trial/member/admin | Unit |
+| `tests/unit/membership-plans.test.ts` | 24,99 €/249,90 €, Jahresvorteil, Provider-Status-Mapping | Unit |
+| `tests/unit/trial-rules.test.ts` | 48 h, Verbindungslimit, OTP-Grenzen | Unit |
+| `tests/unit/i18n-parity.test.ts` | DE/EN gleiche Struktur, keine leeren Strings | Unit |
+| `tests/integration/auth-flow.test.ts` | Registrierung, OTP-Verifizierung, Login-Routing, Recovery (Dev-Postausgang) | Integration (DB) |
+| `tests/integration/onboarding.test.ts` | Interessen/Ziele per ID **und** Slug, Trial startet genau einmal, unverifiziert/anonym abgewiesen | Integration (DB) |
+| `tests/integration/trial.test.ts` | Trial-Start, einmal pro Konto, Fingerprint-Missbrauch, Anfragenlimit | Integration (DB) |
+| `tests/integration/membership.test.ts` | Aktivierung, Karte, Kündigung zum Periodenende, Ablauf, Zahlungsfehler, Rechnungs-Idempotenz | Integration (DB) |
+| `tests/integration/webhook.test.ts` | ohne Signatur/Secret niemals ein „verifiziertes" Event | Integration (DB) |
+| `tests/integration/messaging-authorization.test.ts` | Messaging nur zwischen bestätigten Verbindungen, Blockierung in beide Richtungen | Integration (DB) |
+| `tests/integration/message-delivery.test.ts` | produktionsnaher Zustand → ehrliches `none`, kein hängender Code, `ENABLE_DEV_OUTBOX` + Allowlist, Code nie an den Browser, Cooldown ≠ fehlender Versandweg, Outbox-Link nur Admin | Integration (DB) |
 
-## Testdaten-Regel
+**Testinfrastruktur:** `tests/global-setup.ts` löscht `.test.db`, erzeugt das
+Schema per `drizzle-kit push`; `tests/setup.ts` setzt `AUTH_SECRET`, Test-DB,
+Dev-Flags, löscht `STRIPE_*`/`RESEND_*` und vergibt pro Testdatei eine eigene
+Fake-IP (Rate-Limits addieren sich nicht über Dateien).
+Stubs: `server-only` und `next/headers` (`tests/stubs/*`).
 
-Testkonten klar als solche kennzeichnen (z. B. `test+…`), niemals als
-echte Mitglieder/Erfolge präsentieren. Keine Produktionsdaten in Tests.
+## 4. Testmatrix (Bereiche × Abdeckung)
 
-## Automatisierte Tests (Sprint 2.0)
+Legende: **AUT** = automatisiert vorhanden · **MAN** = manuell verifiziert
+(dokumentiert in [`archive/04-progress-log.md`](archive/04-progress-log.md)) ·
+**OFFEN** = nicht abgedeckt.
 
-```bash
-npm test            # Vitest, alle Unit- und Integrationstests
-npm run test:watch  # Watch-Modus
-npm run typecheck   # tsc --noEmit
-npm run test:keys   # jede im Code referenzierte i18n-Kodierung existiert in DE + EN
-npm run i18n:audit  # DE/EN-Struktur + Schlüsselzahlen
-```
+| Bereich | Prüfpunkt | Status |
+| ------- | --------- | ------ |
+| Public | Startseite lädt (DE/EN), Navigation, alle Routen erreichbar | MAN (HTTP-Smoke 25 Routen war grün) |
+| Public | DE/EN-Umschaltung + Persistenz | OFFEN (nur Dictionary-Parität AUT) |
+| Public | Light/Dark/System + Persistenz | OFFEN |
+| Public | Responsive 320–430 px, kein horizontales Scrollen | OFFEN (Prüfung nur über Tailwind-Klassen und Code-Review, kein Browser in der Sandbox) |
+| Public | Bilder werden ausgeliefert | MAN |
+| Auth | Registrierung (Erfolg, Validierungsfehler, E-Mail belegt) | AUT |
+| Auth | Verifizierung (OTP korrekt, falsch, abgelaufen, zu viele Versuche) | AUT |
+| Auth | Login-Routing (unverifiziert → `/verify`, verifiziert → `/onboarding` bzw. `/app`) | AUT |
+| Auth | Logout/Session-Widerruf | OFFEN (Code vorhanden, kein Test) |
+| Auth | Passwort-Reset (Antwort ohne Enumeration, Token, Session-Widerruf) | AUT (teilweise: Request + Token-Fluss) |
+| Auth | Rate-Limits greifen (Register/Login/Verify/Forgot) | AUT indirekt (Limits im Code, Tests nutzen eigene IPs) |
+| Auth | E-Mail-Zustellung über echten Provider | OFFEN / BLOCKED (kein Key) |
+| Auth | Google/Apple-Login | nicht implementiert |
+| Trial | Interessen-Auswahl speichert | AUT |
+| Trial | Trial startet genau einmal, 48 h, Flag-Abhängigkeit | AUT |
+| Trial | Trial-Ablauf und Rückfall auf `free` | AUT (Regeln) / MAN (lazy Expiry im UI) |
+| Trial | Einschränkungen (3 Anfragen, kein Messaging/Posten) | AUT (Entitlements) + MAN |
+| Member | Dashboard lädt | MAN |
+| Member | Profil ansehen/bearbeiten | MAN (Action-Test nicht vorhanden) |
+| Member | Follow / Connect / Annehmen / Ablehnen / Zurückziehen | AUT (Autorisierung) + MAN |
+| Member | Messaging nur mit Verbindung | AUT |
+| Member | Notifications lesen/als gelesen markieren | MAN |
+| Member | Mitgliedskarte + öffentliche Verifizierung | MAN |
+| Member | Paywall-Weiterleitungen | MAN |
+| Business | Opportunity anlegen/veröffentlichen | MAN |
+| Business | Bewerbung + Antwort des Owners | MAN |
+| Business | Deal Rooms | nicht implementiert |
+| Marketplace | Listing anlegen (Kurse erzeugen `Course`) | MAN |
+| Marketplace | Kurs-Enrollment + Lektionsfortschritt | MAN |
+| Marketplace | Kauf/Bezahlung | nicht implementiert |
+| Investments | Einreichen + Admin-Freigabe + Sichtbarkeit | MAN |
+| Investments | Absichtserklärung | MAN |
+| Events | Bewerbung/Abbestätigung mit Authentifizierung | AUT (Autorisierung) + MAN |
+| Trust | Leerer Score ohne Bewertungen | MAN |
+| Admin | Zugriff nur mit Rolle `admin` (307 sonst) | MAN |
+| Admin | Sperren, Founding Member, Prüfungen, Audit-Einträge | MAN |
+| Infra | D1-Schema/Migration anwenden (`--local`) | AUT-ähnlich via global-setup (drizzle-kit push) |
+| Infra | Cloudflare-Build (`npm run cf:build`) | MAN (in dieser Session erneut grün) |
+| Infra | Deploy (`cf:release`) inkl. Migrationen | MAN (Gründer, Dashboard) |
+| Infra | Typecheck/Lint | AUT (`typecheck` grün, `lint` mit bekannten Hinweisen) |
 
-Aufbau, Umfang und Grenzen stehen in [`tests/README.md`](../tests/README.md):
+## 5. Nicht abgedeckt (bewusst)
 
-- **Unit:** Passwort-/Session-Hashing, OTP-Erzeugung, Entitlement-Matrix
-  (Free/Trial/Member/Admin), Pläne (24,99 € / 249,90 €, Jahresvorteil),
-  Trial-Regeln (48 h, 3 Anfragen), DE/EN-Parität der Wörterbücher.
-- **Integration (Wegwerf-Datenbank `.test.db`):** Mitgliedschaft anlegen,
-  Karte ausstellen, Kündigung zum Periodenende, sofortiger Ablauf,
-  Zahlungsfehler, Rechnungs-Idempotenz, Trial-Start/Limit-/Missbrauchsschutz,
-  Webhook-Signaturprüfung, Verbindungs- und Nachrichten-Autorisierung.
-- **Bewusst nicht automatisiert:** alles, was einen Browser braucht
-  (Hamburger-Menü, Theme-Wechsel, Swipe-Gesten, Breakpoints) – dafür gilt
-  weiterhin die manuelle Checkliste; Server-Actions mit Next-Request-Kontext
-  (Registrierung, Login, Anfragen) werden manuell mit den Testkonten geprüft.
+- **Browserverhalten:** Hamburger-Menü, Theme-Wechsel, Swipe-Gesten,
+  Breakpoints, Fokus-Fallen. In der Sandbox ist kein Chromium installierbar;
+  diese Punkte bleiben manuelle Prüfung.
+- **Server Actions mit Next-Request-Kontext** (Registrierung, Login, Connect)
+  laufen in Tests über die Service-Ebene; der vollständige HTTP-Pfad wird
+  manuell gegen `npm run cf:preview` geprüft.
+- **Externe Provider** (Resend, Twilio, Stripe live): erst nach Schlüsseln
+  testbar; bis dahin gilt die Regel „ehrlicher Zustand statt Fake-Erfolg".
+
+## 6. Testdaten-Regel
+
+Testkonten klar kennzeichnen (z. B. `…@innercircle.test`), niemals als echte
+Mitglieder oder Erfolge präsentieren. Keine Produktionsdaten in Tests.
+Seed-Daten sind fiktiv und im Schema als Demo markiert (`isDemo`, `seedTag`).

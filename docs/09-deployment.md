@@ -1,212 +1,150 @@
-# Deployment-Strategie
+# 09 – Deployment & Betrieb (Cloudflare Workers + D1)
 
-**Ziel-Plattform: Cloudflare Workers** (OpenNext-Adapter) mit
-**Cloudflare D1** als Produktionsdatenbank. Vercel war der ursprüngliche
-Kandidat (ADR-007); die Umstellung ist in ADR-008 begründet.
+**Stand:** 2026-09-21 · geprüft gegen `package.json`, `wrangler.jsonc`,
+`open-next.config.ts` und `next.config.ts` auf `main` @ `f22c19e`.
 
-## Umgebungen
+**Ziel-Plattform: Cloudflare Workers** (OpenNext-Adapter) mit **Cloudflare D1**
+als Produktionsdatenbank. Vercel/Postgres (ADR-007) ist ersetzt (ADR-008).
 
-| Umgebung | Branch / Start | Laufzeit | Datenbank | URL |
-| -------- | -------------- | -------- | --------- | --- |
-| Lokal (Dev) | `npm run dev` | Node.js | libSQL `file:./dev.db` | `http://localhost:3000` |
-| Lokal (Workers-Vorschau) | `npm run cf:preview` | `workerd` (identisch zu Produktion) | lokale D1-Emulation (`.wrangler/state`) | `http://localhost:8787` |
-| Preview | jeder Push auf einen Nicht-`main`-Branch (Workers Builds) | Cloudflare Workers | D1 (Binding `DB`) | Preview-URL der Version |
-| Produktion | `main` | Cloudflare Workers | D1 `inner-circle-db` | `https://inner-circle.<account>.workers.dev` → eigene Domain (Schritt 20) |
+---
 
-## Bausteine im Repository
+## 1. Verifizierte Angaben (Repository-Abgleich)
 
-| Datei | Zweck |
-| ----- | ----- |
-| `wrangler.jsonc` | Worker-Definition: Name, `nodejs_compat`, Assets-Verzeichnis, **D1-Binding `DB`** (per `database_name`, keine id nötig), Observability |
-| `open-next.config.ts` | OpenNext-Adapter (statischer Asset-Cache, kein R2/Queue nötig – alle Routen sind dynamisch) |
-| `next.config.ts` | `serverExternalPackages` für libSQL; `initOpenNextCloudflareForDev()` nur in `next dev` |
-| `src/db/client.ts` | Wählt zur Laufzeit den Treiber: **D1** in Workers, **libSQL** in Node.js (Dev, Tests, Skripte) |
-| `drizzle/` | Versionierte SQL-Migrationen (Drizzle Kit) – werden mit `wrangler d1 migrations apply` eingespielt |
-| `public/_headers` | Cache-Header für unveränderliche `_next/static`-Assets |
-| `scripts/d1-bootstrap.ts` | Basistaxonomie (Interessen, Ziele, Badges) in D1 anlegen – idempotent |
-| `scripts/admin-bootstrap.ts` | Registriertes Konto zum Admin machen (erster Admin in Produktion) |
-| `scripts/show-outbox.ts` | Dev-Postausgang lesen (`npm run dev:outbox`, lokal oder `--remote` gegen D1) |
-| `.env.example` / `.dev.vars.example` | Alle Variablen als Platzhalter (Node bzw. Workers-Vorschau) |
+| Angabe | Wert im Repository | Status |
+| ------ | ------------------ | ------ |
+| Build command | `npm run cf:build` → `next build` + `opennextjs-cloudflare build` | ✅ |
+| Deploy command | `npm run cf:release` → `opennextjs-cloudflare deploy` + `wrangler d1 migrations apply DB --remote` + `tsx scripts/d1-bootstrap.ts --remote` | ✅ |
+| Version command (Preview-Branches) | `npx opennextjs-cloudflare upload` (Skript `cf:upload`; alternativ `npx wrangler versions upload`) | ✅ |
+| Production branch | `main` | ✅ |
+| Datenbank | D1 `inner-circle-db`, Binding `DB`, `migrations_dir: drizzle` | ✅ |
+| Worker-Name | `inner-circle` | ✅ |
+| Compatibility | `compatibility_date: 2026-09-01`, Flags `nodejs_compat` + `global_fetch_strictly_public` | ✅ |
+| Observability | aktiviert (`wrangler.jsonc → observability.enabled`) | ✅ |
+| Dashboard-Variablen | bleiben dank `keep_vars: true` erhalten | ✅ |
+| Build-Variable | `NODE_VERSION` = `22` (Dashboard, Node ≥ 20 erforderlich) | ⚠️ im Dashboard zu setzen |
+| Lokale Prüfung | `npm run cf:build` in dieser Session grün (Worker-Bundle `./.open-next/worker.js`) | ✅ |
 
-## npm-Skripte
+## 2. Umgebungen
+
+| Umgebung | Start | Laufzeit | Datenbank | URL |
+| -------- | ----- | -------- | --------- | --- |
+| Lokal (Node) | `npm run dev` (bindet 0.0.0.0) | Node.js ≥ 20 | libSQL `file:./dev.db` | `http://localhost:3000` |
+| Lokal (Worker) | `npm run cf:preview` | `workerd` | lokale D1-Emulation (`.wrangler/state`) | `http://localhost:8787` |
+| Tests | `npm test` | Node | Wegwerf-`.test.db` | – |
+| Preview | Nicht-`main`-Branches (Workers Builds) | Cloudflare Workers | D1 `inner-circle-db` | Preview-URL der Version |
+| Produktion | `main` | Cloudflare Workers | D1 `inner-circle-db` | `https://inner-circle.<account>.workers.dev` → später eigene Domain |
+
+## 3. npm-Skripte (aus `package.json`)
 
 | Skript | Was passiert |
 | ------ | ------------ |
-| `npm run cf:build` | `next build` + OpenNext-Bundle → `.open-next/` |
-| `npm run cf:preview` | Build + App lokal in `workerd` (Port 8787), Secrets aus `.dev.vars` |
-| `npm run cf:dry-run` | Build + `wrangler deploy --dry-run` (Konfiguration/Bundle prüfen, kein Upload) |
-| `npm run cf:release` | **Deploy-Befehl für Workers Builds:** `opennextjs-cloudflare deploy` → D1-Migrationen → Taxonomie (kein Build; idempotent) |
-| `npm run cf:deploy` | Build + `cf:release` von der eigenen Maschine (benötigt `wrangler login`) |
-| `npm run cf:upload` | Build + neue Version hochladen ohne sie zu aktivieren (Preview-Branches) |
-| `npm run cf:typegen` | `cloudflare-env.d.ts` mit typisierten Bindings erzeugen (lokal, gitignored) |
-| `npm run cf:d1:create` | D1-Datenbank `inner-circle-db` manuell anlegen (optional – der erste Deploy legt sie sonst automatisch an) |
-| `npm run cf:d1:migrate:local` / `:remote` | Migrationen aus `drizzle/` einspielen (remote läuft auch in `cf:release`) |
-| `npm run cf:d1:bootstrap:local` / `:remote` | Basistaxonomie einspielen (remote läuft auch in `cf:release`) |
-| `npm run cf:admin -- --email=… --remote` | Konto zum Admin machen (Alternative: D1-Konsole im Dashboard) |
-| `npm run dev:outbox -- --remote [--to=…]` | Einträge des Dev-Postausgangs aus D1 lesen (nur mit `ENABLE_DEV_OUTBOX=true`) |
+| `cf:build` | `opennextjs-cloudflare build` (führt intern `next build` aus) |
+| `cf:preview` | Build + App lokal in `workerd`, Secrets aus `.dev.vars` |
+| `cf:dry-run` | Build + `wrangler deploy --dry-run` (kein Upload) |
+| `cf:release` | **Deploy-Befehl:** Deploy + D1-Migrationen + Taxonomie-Bootstrap (idempotent, **ohne** Build) |
+| `cf:deploy` | Build + `cf:release` von einer Maschine mit `wrangler login` |
+| `cf:upload` | Build + Version hochladen ohne Aktivierung |
+| `cf:typegen` | `cloudflare-env.d.ts` erzeugen (gitignored) |
+| `cf:d1:create` | D1 `inner-circle-db` manuell anlegen (optional – der erste Deploy provisioniert) |
+| `cf:d1:migrate:local` / `:remote` | Migrationen aus `drizzle/` anwenden |
+| `cf:d1:bootstrap:local` / `:remote` | Interessen/Ziele/Badges einspielen (idempotent) |
+| `cf:admin -- --email=… --remote` | Konto zum Admin machen |
+| `dev:outbox -- [--local\|--remote]` | Dev-Postausgang lesen |
 
-## Erstinbetriebnahme (Reihenfolge)
+## 4. Erstinbetriebnahme (Dashboard-Weg, ohne lokale Installation)
 
-Alles Folgende geht komplett im Cloudflare-Dashboard – ohne lokale
-Installation. `wrangler login` wird nur gebraucht, wenn du die
-`cf:*`-Skripte von deinem Rechner aus ausführen willst.
+1. **Worker mit GitHub verbinden:** *Workers & Pages* → *Create* →
+   *Import a repository* → `Inner-Circle` (existiert der Worker `inner-circle`
+   bereits: Worker öffnen → *Settings* → *Build*).
+2. **Build-Einstellungen:** Build command `npm run cf:build`,
+   Deploy command `npm run cf:release`, Non-production deploy command
+   `npx opennextjs-cloudflare upload`, Root directory `/`,
+   Production branch `main`, Build-Variable `NODE_VERSION` = `22`.
+3. **Variablen/Secrets** (Settings → *Variables and Secrets*):
+   - `AUTH_SECRET` – Secret, Pflicht, ≥ 32 Zufallszeichen.
+   - `NEXT_PUBLIC_SITE_URL` – Text, z. B.
+     `https://inner-circle.<account>.workers.dev`.
+   - Optional Secrets: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`,
+     `RESEND_API_KEY`, `TWILIO_*`, `GOOGLE_*`, `APPLE_*`.
+   - Optional Text: `EMAIL_FROM`, `STRIPE_PUBLISHABLE_KEY`.
+   - **Nicht setzen:** `ALLOW_DEV_MEMBERSHIP_ACTIVATION`.
+     `ENABLE_DEV_OUTBOX` nur bewusst für den Testbetrieb ohne Mailanbieter.
+   Vollständige Liste inkl. Pflicht/Optional: [`14-environment.md`](14-environment.md).
+4. **Deploy auslösen:** *Retry build* oder Push nach `main`. `cf:release`
+   veröffentlicht den Worker, legt/verbindet die D1-Datenbank (Wrangler
+   Provisioning über `database_name`), wendet Migrationen an und spielt die
+   Taxonomie ein.
+5. **E-Mail-Versand aktivieren** (Pflicht für echte Verifizierung): Resend-Konto,
+   Domain verifizieren, `RESEND_API_KEY` (Secret) + `EMAIL_FROM` (Text) setzen.
+   Ohne Provider sagt `/verify` offen „Versand noch nicht eingerichtet".
+6. **Ersten Admin anlegen:** im Live-System registrieren und verifizieren, dann
+   entweder D1-Konsole (`UPDATE User SET role = 'admin' WHERE email = '…';`)
+   oder `npm run cf:admin -- --email=… --remote`.
+   Notlösung ohne Mailanbieter: `emailVerifiedAt = strftime('%s','now') * 1000`
+   setzen – besser aber den Dev-Postausgang nutzen (Abschnitt 5).
+7. **Stripe-Webhook:** Endpoint `https://<worker-url>/api/webhooks/stripe`,
+   Signing-Secret als `STRIPE_WEBHOOK_SECRET`.
 
-1. **Worker mit GitHub verbinden** (falls noch nicht geschehen):
-   Dashboard → *Workers & Pages* → *Create* → *Import a repository* →
-   GitHub → `Inner-Circle`. Ist der Worker `inner-circle` schon vorhanden:
-   Worker öffnen → *Settings* → *Build*.
-2. **Build-Einstellungen** (Worker → *Settings* → *Build* → *Build
-   configuration* → *Edit*):
-   - Build command: `npm run cf:build`
-   - Deploy command: `npm run cf:release`
-   - Non-production branch deploy command: `npx opennextjs-cloudflare upload`
-   - Root directory: `/` (leer lassen) · Production branch: `main`
-   - Build variables (*Variables and Secrets* im Build-Abschnitt):
-     `NODE_VERSION` = `22`
-   Der frühere Fehler *„Could not detect a directory containing static
-   files“* stammte aus einem Setup ohne Worker-Konfiguration und
-   Build-Befehl. Mit `wrangler.jsonc` + Build-Befehl tritt er nicht mehr auf.
-3. **Laufzeit-Variablen und Secrets** (Worker → *Settings* → *Variables and
-   Secrets* → *Add*):
-   - `AUTH_SECRET` – Typ **Secret**, Pflicht, ≥ 32 zufällige Zeichen
-     (`openssl rand -base64 48` oder ein Passwort-Generator). Ohne ihn
-     läuft die App mit dem Entwicklungs-Fallback – niemals in Produktion.
-   - `NEXT_PUBLIC_SITE_URL` – Typ Text, z. B.
-     `https://inner-circle.<account>.workers.dev` (später die eigene Domain).
-   - Optional (Typ Secret): `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`,
-     `RESEND_API_KEY`, `TWILIO_*`, `GOOGLE_*`/`APPLE_*`; Typ Text:
-     `EMAIL_FROM`, `STRIPE_PUBLISHABLE_KEY`. Ohne Schlüssel bleibt die
-     jeweilige Funktion ehrlich im Zustand „Einrichtung erforderlich“.
-   - **Nicht** setzen: `ALLOW_DEV_MEMBERSHIP_ACTIVATION`. `ENABLE_DEV_OUTBOX`
-     nur bewusst für den Testbetrieb ohne E-Mail-Anbieter (Abschnitt
-     „Testbetrieb ohne E-Mail-Provider“) – vor dem öffentlichen Start
-     wieder entfernen.
-   - Text-Variablen aus dem Dashboard bleiben nur erhalten, weil
-     `wrangler.jsonc` `"keep_vars": true` setzt. Ohne dieses Flag löscht
-     jeder Deploy (auch Workers Builds) alle im Dashboard angelegten
-     Text-Variablen – Secrets sind davon nicht betroffen.
-   *Deploy* klicken (Variablen werden mit dem nächsten Deploy aktiv).
-4. **Deploy auslösen:** Worker → *Deployments* → *Retry build* beim letzten
-   Build – oder ein Push nach `main`. Der Deploy-Befehl erledigt
-   automatisch: Worker veröffentlichen → D1-Datenbank `inner-circle-db`
-   anlegen bzw. per Name verbinden (Wrangler-Provisioning) →
-   Migrationen aus `drizzle/` anwenden → Basistaxonomie einspielen.
-   Es ist **kein weiterer Commit** und keine `database_id` nötig; die
-   Datenbank erscheint unter *Storage & Databases* → *D1*.
-5. **E-Mail-Versand aktivieren** (nötig für Verifizierungscodes – ohne
-   Provider kann sich in Produktion niemand verifizieren; Codes werden dort
-   bewusst nie im Browser angezeigt): Resend-Konto (Free-Tier) → API-Key →
-   Secret `RESEND_API_KEY` + Text-Variable `EMAIL_FROM`
-   (z. B. `INNER CIRCLE <onboarding@resend.dev>` zum Testen an die eigene
-   Adresse; für echte Mitglieder eigene Domain in Resend verifizieren).
-   Solange kein Provider existiert, sagt `/verify` das offen („Versand noch
-   nicht eingerichtet“) – für den Test davor siehe den Abschnitt
-   „Testbetrieb ohne E-Mail-Provider“.
-6. **Ersten Admin anlegen:** im Live-System normal registrieren und den
-   Code bestätigen, dann Rolle setzen – entweder
-   - Dashboard → *Storage & Databases* → *D1* → `inner-circle-db` →
-     *Console*: `UPDATE User SET role = 'admin' WHERE email = 'deine@mail';`
-   - oder lokal: `npx wrangler login` und
-     `npm run cf:admin -- --email=deine@mail --remote`.
-   Die Rolle wird bei jeder Anfrage frisch aus der Datenbank gelesen – ein
-   erneutes Anmelden ist nicht nötig, schadet aber auch nicht.
-   Notlösung ohne E-Mail-Provider (nur für das allererste Konto): in der
-   D1-Konsole zusätzlich `emailVerifiedAt = strftime('%s','now') * 1000`
-   setzen – oder besser den geschützten Dev-Postausgang (nächster
-   Abschnitt) verwenden, damit der Verify-Schritt selbst getestet wird.
-7. **Stripe-Webhook** (sobald Stripe-Schlüssel gesetzt): Endpoint
-   `https://<worker-url>/api/webhooks/stripe`, Signing-Secret als
-   `STRIPE_WEBHOOK_SECRET` speichern.
+## 5. Testbetrieb ohne E-Mail-Anbieter (geschützter Dev-Postausgang)
 
-## Testbetrieb ohne E-Mail-Provider (geschützter Dev-Postausgang)
+Regeln, alle serverseitig erzwungen:
 
-Ohne `RESEND_API_KEY` kann der Worker keine Codes zustellen. Damit der
-Ablauf *Registrierung → Verifizierung → Interessen → 48-h-Trial* trotzdem
-vollständig getestet werden kann, gibt es den **Dev-Postausgang**: erzeugte
-E-Mails/SMS werden in der Tabelle `DevOutbox` abgelegt statt versendet.
-Sicherheitsregeln (alle serverseitig erzwungen):
+- `/dev/outbox` existiert in Produktions-Builds **nur** mit
+  `ENABLE_DEV_OUTBOX=true`, sonst 404 – und zeichnet auch nichts auf.
+- **Immer** Rolle `admin` erforderlich; der Code wird nie an einen Browser
+  zurückgegeben.
+- `DEV_OUTBOX_RECIPIENTS` (kommagetrennt, `@domain` erlaubt) beschränkt die
+  Aufzeichnung auf eigene Testadressen; fremde Registrierungen erhalten
+  ehrlich „Versand noch nicht eingerichtet".
+- Kann keine Nachricht zugestellt werden, wird der Code sofort entwertet.
 
-- **Aus, solange nichts gesetzt ist.** In Produktions-Builds existiert
-  `/dev/outbox` nur mit der Variable `ENABLE_DEV_OUTBOX=true` – sonst 404,
-  und es wird auch nichts aufgezeichnet. Die App behauptet dann nicht mehr,
-  ein Code läge „im Dev-Postausgang“; `/verify` zeigt stattdessen „Versand
-  noch nicht eingerichtet“, und der Link zum Postausgang erscheint nur für
-  Konten, die ihn wirklich öffnen können.
-- **Nur Administratoren.** `/dev/outbox` verlangt immer die Rolle `admin`.
-  Der Code wird in Produktion nie an den Browser zurückgegeben (kein
-  Inline-Code wie in der lokalen Entwicklung).
-- **Empfänger-Allowlist.** `DEV_OUTBOX_RECIPIENTS=deine@mail,@deine-domain.de`
-  beschränkt die Aufzeichnung auf eigene Testadressen. Registriert sich
-  während des Tests eine fremde Person, wird ihr Code **nicht** gespeichert
-  (sie sieht ehrlich „Versand noch nicht eingerichtet“). Für den öffentlich
-  erreichbaren Worker dringend empfohlen.
-- **Ein Code, der niemanden erreicht, bleibt nicht gültig.** Kann weder
-  Provider noch Postausgang die Nachricht tragen, wird der erzeugte Code
-  sofort entwertet; der nächste Versuch erzeugt einen neuen.
+Ablauf: Variable setzen → *Deploy* → Testkonto zum Admin machen → `/verify` →
+„Code erneut senden" → Code über `/dev/outbox`, D1-Konsole
+(`SELECT "to","body","createdAt" FROM DevOutbox ORDER BY createdAt DESC LIMIT 5;`)
+oder `npm run dev:outbox -- --remote` lesen.
+**Zurückbauen vor dem Launch:** `RESEND_API_KEY` setzen,
+`ENABLE_DEV_OUTBOX` entfernen, Postausgang leeren.
 
-**Einrichtung (Dashboard, kein lokales Tooling nötig):**
+## 6. Laufender Betrieb
 
-1. Worker → *Settings* → *Variables and Secrets*: `ENABLE_DEV_OUTBOX` = `true`
-   und `DEV_OUTBOX_RECIPIENTS` = eigene Testadresse(n), beide Typ Text →
-   *Deploy*. (Bleiben dank `keep_vars` über spätere Deploys erhalten.)
-2. Testkonto zum Admin machen (Schritt 6 oben; D1-Konsole oder `cf:admin`).
-   Ein unbestätigtes Konto darf Admin sein – die Rolle ist unabhängig von
-   der Verifizierung.
-3. Im Browser mit dem Testkonto anmelden → `/verify` → **„Code erneut
-   senden“**. Der neue Code landet im Postausgang; jetzt erscheint auch der
-   Link „Dev-Postausgang öffnen“.
-4. Code ablesen – einer der drei geschützten Wege:
-   - `/dev/outbox` (nur Admin),
-   - D1-Konsole: `SELECT "to", "body", "createdAt" FROM DevOutbox ORDER BY createdAt DESC LIMIT 5;`
-   - lokal: `npx wrangler login` und `npm run dev:outbox -- --remote --to=deine@mail`.
-5. Code eingeben → `/onboarding/interests` → „Discovery starten“ → Dashboard
-   mit laufendem 48-h-Countdown.
-
-**Zurückbauen:** Sobald `RESEND_API_KEY` gesetzt ist, gehen Nachrichten
-automatisch über Resend und der Postausgang zeichnet nichts mehr auf.
-Spätestens vor dem öffentlichen Start `ENABLE_DEV_OUTBOX` entfernen und im
-Postausgang „Postausgang leeren“ ausführen (oder `DELETE FROM DevOutbox;`).
-
-## Laufender Betrieb
-
-- **Deploy:** Push/Merge nach `main` → Workers Builds baut (`cf:build`)
-  und veröffentlicht (`cf:release`). Alternativ lokal `npm run cf:deploy`.
-- **Migrationen:** Schemaänderung in `src/db/schema.ts` →
-  `npm run db:generate` (neue Datei in `drizzle/`) → committen. Der nächste
-  Deploy wendet sie automatisch an (`d1_migrations`-Tabelle verhindert
-  Doppelausführung). Bei nicht abwärtskompatiblen Änderungen vorher
-  manuell `npm run cf:d1:migrate:remote` ausführen. Migrationen sind
-  additiv; nie destruktiv ohne Backup
-  (`npx wrangler d1 export DB --remote --output=backup.sql`).
-- **Logs:** Dashboard → Worker → *Observability* / *Logs* (aktiviert in
-  `wrangler.jsonc`), lokal `npx wrangler tail`.
+- **Deploy:** Merge/Push nach `main` → Workers Builds baut (`cf:build`) und
+  veröffentlicht (`cf:release`). Alternativ lokal `npm run cf:deploy`.
+- **Migrationen:** Schema ändern → `npm run db:generate` → Migration committen.
+  Der nächste Deploy wendet sie automatisch an (`d1_migrations` verhindert
+  Doppelausführung). Nicht abwärtskompatible Änderungen vorher manuell mit
+  `npm run cf:d1:migrate:remote` prüfen. Migrationen sind additiv.
+- **Logs:** Dashboard → Worker → *Observability* / *Logs*; lokal
+  `npx wrangler tail`.
 - **Rollback:** Dashboard → Worker → *Deployments* → frühere Version
-  aktivieren, oder `main` revertieren.
-- **Lokale Prüfung vor dem Merge:** `npm run typecheck`, `npm test`,
-  `npm run cf:dry-run`, optional `npm run cf:preview`.
+  aktivieren; oder `main` revertieren und neu deployen. Datenbank-Rollback nur
+  über Export/Import (`npx wrangler d1 export DB --remote --output=backup.sql`)
+  – D1 Time Travel im Dashboard für kurzfristige Wiederherstellung.
+- **Lokale Prüfung vor jedem Merge:** `npm run typecheck`, `npm test`,
+  `npm run cf:dry-run` (optional `npm run cf:preview`).
 
-## Konfiguration & Regeln
+## 7. Häufige Fehler und Gegenmaßnahmen
 
-- Alle Geheimnisse ausschließlich als Worker-Secrets bzw. lokal in
-  `.env`/`.dev.vars` (beide gitignored). `.env.example` und
-  `.dev.vars.example` enthalten nur Platzhalter.
-- `wrangler.jsonc` enthält keine Secrets und keine Konto-IDs – nur
-  Bindings, Flags und den D1-Datenbanknamen. `keep_vars: true` sorgt dafür,
-  dass im Dashboard gepflegte Text-Variablen einen Deploy überleben.
-- Der Cloudflare-Build darf keine `.env`-Datei sehen (OpenNext würde die
-  Werte einbetten) – im Repo liegt keine.
-- Bildoptimierung (`IMAGES`-Binding) ist bewusst aus; Bilder werden
-  unverändert ausgeliefert (statische Dateien in `public/`).
+| Symptom | Ursache | Lösung |
+| ------- | ------- | ------ |
+| „Could not detect a directory containing static files" | Projekt ohne Worker-Konfiguration/Build-Befehl angebunden | `wrangler.jsonc` + `main: .open-next/worker.js` + Build-Befehl `npm run cf:build` (heute vorhanden) |
+| Deploy erfolgreich, aber Dashboard-Variablen verschwunden | fehlendes `keep_vars` | `keep_vars: true` ist gesetzt – nicht entfernen |
+| `/verify` zeigt „Versand noch nicht eingerichtet" | kein `RESEND_API_KEY`, Dev-Postausgang aus | Resend-Key setzen oder Testbetrieb (Abschnitt 5) |
+| Verifizierungscode erscheint nirgends | Postausgang aus und Allowlist greift | `ENABLE_DEV_OUTBOX=true` + eigene Adresse in `DEV_OUTBOX_RECIPIENTS` |
+| Auth-Actions schlagen im Produktions-Build fehl („A 'use server' file can only export async functions") | Nicht-Async-Export aus einer `"use server"`-Datei | Zustandstypen in eigene Datei auslagern (erledigt: `actions/auth-state.ts`) |
+| „D1 binding DB is missing" | falscher/fehlender Binding-Name oder Deploy ohne Provisioning | `wrangler.jsonc → d1_databases[0].binding` muss `DB` heißen; Deploy über `cf:release` |
+| Nebenwirkungen auf Karten/Mitgliedschaft nach Neustart des Trials | Trial-Status `converted` | erwartetes Verhalten, kein Fehler |
+| `npm run dev` von außen nicht erreichbar | Bind-Adresse | Skripte binden bereits `0.0.0.0` |
+| Build bricht mit DB-Zugriff ab | `.env` im Cloudflare-Build sichtbar | im Repo liegt keine `.env`; OpenNext würde Werte einbetten – keine `.env` committen |
 
-## Produktions-Checkliste (Schritt 19/20)
+## 8. Produktions-Checkliste
 
-- [ ] `AUTH_SECRET` gesetzt, Worker-Secrets vollständig (DB, Mail, Stripe-Live, Storage).
-- [ ] Stripe-Webhooks auf Produktions-URL registriert + signiert getestet.
-- [ ] Domain + TLS (Worker → *Settings* → *Domains & Routes*), www/non-www.
-- [ ] E-Mail-Absenderdomain verifiziert (SPF/DKIM/DMARC).
-- [ ] D1-Backups/Export-Routine nachgewiesen (Time Travel ist für D1 aktiv).
-- [ ] Monitoring: Observability aktiv, Fehlerbudget/Alarme definiert.
-- [ ] Rate-Limits + Security-Header aktiv.
-- [ ] Rechtstexte (AGB, Datenschutz, Mitglieds-/Marktplatzbedingungen) geprüft live.
-- [ ] Smoke-Tests in Produktion + Rollback-Plan (Deployments-Historie, DB-Export).
-- [ ] Betriebs-Checkliste: Support-Weg, Moderations-Bereitschaft, Payout-Freigaben.
+- [ ] `AUTH_SECRET` gesetzt (kein Dev-Fallback).
+- [ ] `NEXT_PUBLIC_SITE_URL` auf die echte Domain gesetzt.
+- [ ] `RESEND_API_KEY` + verifizierte Absenderdomain (SPF/DKIM/DMARC).
+- [ ] `ENABLE_DEV_OUTBOX` entfernt, `DevOutbox` geleert.
+- [ ] Stripe-Webhook registriert und signiert getestet; Live erst nach Freigabe.
+- [ ] Domain + TLS am Worker.
+- [ ] D1-Backup-Routine nachgewiesen.
+- [ ] Observability + Alarme definiert.
+- [ ] Rechtstexte ersetzt (Impressum, Datenschutz, AGB).
+- [ ] Smoke-Test aller öffentlichen Routen + Auth-Flow in Produktion.

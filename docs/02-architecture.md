@@ -1,104 +1,192 @@
-# Technische Architektur
+# 02 – Technische Architektur (Ist-Zustand)
 
-**Stand:** Schritt 01 (Fundament) · Letzte Aktualisierung: 2026-09-20
+**Stand:** 2026-09-21 · Branch `main`, Commit `f22c19e` · ersetzt die frühere
+Fassung vom 2026-09-20 (die noch Auth.js, Prisma/Postgres und Vercel als
+Zielbild beschrieb – siehe ADR-008 in [`13-decisions.md`](13-decisions.md)).
 
-## 1. Technologie-Entscheidung
+## 1. Technologie-Stack (tatsächlich im Einsatz)
 
-| Schicht              | Wahl (Start)                                  | Warum                                                      |
-| -------------------- | --------------------------------------------- | ---------------------------------------------------------- |
-| Web-App              | **Next.js (App Router) + React + TypeScript** | Ein Codebase für Marketing-Seiten + App, Server-Actions/APIs inklusive, exzellentes KI-Tooling, Vercel-Deployment |
-| UI-Styling           | **Tailwind CSS v4**                           | Utility-first, Dark-Mode via CSS-Variablen, Design-Token-fähig |
-| Internationalisierung| **Zentrales Wörterbuch-Modul** (`src/lib/i18n`) | DE/EN ab Tag 1, kein verstreuter Hardcodetext; Migration auf next-intl/Routing möglich |
-| Theme                | Eigener `ThemeProvider` (light/dark/system)   | Keine Abhängigkeit, FOUC-frei, persistiert                  |
-| Datenbank            | **SQLite via Drizzle ORM** – **Cloudflare D1** in Produktion, libSQL-Datei lokal (ADR-008) | Relational, migrationsbasiert (`drizzle/`), gleiches Schema in Dev/Test/Prod, Free-Tier |
-| Auth (ab St. 04)     | **Auth.js (NextAuth)**                        | E-Mail+Passwort zuerst, OAuth (Google/Apple) + 2FA nachrüstbar, keine eigene Krypto |
-| E-Mail (ab St. 04)   | Transaktions-Mailer (z. B. Resend Free-Tier)  | Verifizierung, Recovery, Benachrichtigungen                |
-| Abos (ab St. 05)     | **Stripe** (Testmodus → Live)                 | Karten, Apple/Google Pay; Webhook-verifizierter Abo-Status; PayPal ergänzbar |
-| Marktplatz (ab St.12)| Vorauss. **Stripe Connect**                   | Finale Wahl in Schritt 12 (Auszahlungen, KYC, Disputes)    |
-| Storage (ab St. 06)  | S3-kompatibler Object Storage                 | Avatare, Kursvideos, Deal-Dokumente (privat vs. öffentlich getrennt) |
-| Hosting              | **Cloudflare Workers** via OpenNext (ADR-008) | Workers Builds pro Branch/PR, D1 im selben Konto, Free-Tier-Start; Runbook `09-deployment.md` |
-| Mobile (später)      | Responsives Web zuerst; nativ später          | API-/Server-Logik wiederverwendbar                         |
+| Schicht | Umgesetzt mit | Ort im Code |
+| ------- | ------------- | ----------- |
+| Web-App | Next.js 16.3.5 (App Router), React 19.2.8, TypeScript 5 (strict) | `src/app/**` |
+| Styling | Tailwind CSS v4 + eigene Design-Tokens | `src/app/globals.css`, `src/components/ui/*` |
+| Schrift | Inter, self-hosted über `next/font/local` (SIL OFL 1.1) | `src/app/fonts.ts`, `src/app/fonts/InterVariable.woff2` |
+| i18n | Eigenes Wörterbuch-Modul, kein next-intl | `src/lib/i18n/**` |
+| Theme | Eigener `ThemeProvider` (light/dark/system, FOUC-frei) | `src/components/ThemeProvider.tsx` |
+| Datenbank | Drizzle ORM 0.45 auf SQLite: **D1** (`DB`-Binding) in Workers, **libSQL** in Node | `src/db/schema.ts`, `src/db/client.ts` |
+| Migrationen | Drizzle Kit (`drizzle-kit generate` → SQL in `drizzle/`) | `drizzle/0000_init.sql` |
+| Authentifizierung | **Eigene** Implementierung: scrypt-Passwort-Hashes, 6-stellige OTPs, Session-Token (SHA-256, httpOnly-Cookie) | `src/lib/auth/**` |
+| Validierung/Env | `zod` (vorhanden), zentrale Env-Fassade | `src/lib/env.ts` |
+| Zahlungen | Stripe SDK 18 (Checkout + signierte Webhooks) – inaktiv ohne Schlüssel | `src/lib/payments/stripe.ts`, `/api/billing/checkout`, `/api/webhooks/stripe` |
+| QR-Codes | `qrcode` (Mitgliedskarte) | `src/components/app/MemberCard*` |
+| Hosting | Cloudflare Workers via `@opennextjs/cloudflare` 1.20 | `wrangler.jsonc`, `open-next.config.ts` |
+| Tests | Vitest 3 (Unit + Integration gegen Wegwerf-SQLite) | `tests/**` |
+| Tooling | ESLint 9 (`eslint-config-next`), `tsx` für Skripte, Wrangler 4 | `eslint.config.mjs`, `scripts/**` |
 
-**Prinzip:** Monolith-first (eine Next.js-App, ein Schema), keine
-Microservices. Skalierung über managed Services + Caching, nicht über
-verteilte Systeme.
+**Nicht im Einsatz (entgegen älteren Dokumenten):** Auth.js/NextAuth, Prisma,
+PostgreSQL, Vercel, next-intl.
 
-## 2. Repository-Struktur
+## 2. Verzeichnisstruktur
 
 ```
 Inner-Circle/
-├── docs/                  # Verbindliche Projektspezifikation (diese Dateien)
-├── public/                # Statische Assets (brand/ für Logo/Medien)
-├── drizzle/               # SQL-Migrationen (Drizzle Kit) für D1/libSQL
+├── AGENTS.md                  # Startanweisung für KI-Agenten
+├── README.md                  # Einstieg für Menschen
+├── docs/                      # verbindliche Dokumentation (dieses Verzeichnis)
+│   └── archive/               # historisches Fortschrittsprotokoll (deprecated als Statusquelle)
+├── public/                    # statische Assets: images/ (16 Bilder), _headers
+├── drizzle/                   # SQL-Migrationen + Meta-Snapshots
+├── scripts/                   # Seed, D1-Bootstrap, Admin-Bootstrap, Outbox, Audits
 ├── src/
-│   ├── app/               # Next.js App Router (Routen, Layouts)
+│   ├── app/
+│   │   ├── (site)/            # öffentliche Website + Auth-Seiten + Checkout-Rückleitungen
+│   │   ├── (app)/             # Mitgliederbereich /app/*, Onboarding, Admin-Layout
+│   │   ├── admin/             # Admin-Konsole /admin/*
+│   │   ├── actions/           # Server Actions (auth, network, messages, business, …)
+│   │   ├── api/               # API-Routen (Logout, Checkout, Stripe-Webhook)
+│   │   ├── globals.css        # Design-Tokens + Utility-Klassen (.ic-*)
+│   │   ├── layout.tsx         # Root-Layout (Theme, i18n, Font, Toaster)
+│   │   └── fonts.ts
 │   ├── components/
-│   │   └── ui/            # (ab Schritt 02) wiederverwendbare UI-Primitiven
-│   ├── domains/           # Fachlogik je Produktbereich (A–J), siehe README dort
-│   └── lib/
-│       ├── i18n/          # Zentrale DE/EN-Wörterbücher + Provider (aktiv)
-│       ├── auth/          # Session-/Passwort-/OTP-Logik
-│       └── db/            # Hinweise; Client + Schema liegen in src/db/
-├── wrangler.jsonc         # Cloudflare-Worker-Konfiguration (D1-Binding DB)
-├── open-next.config.ts    # OpenNext-Adapter für Cloudflare
-├── .env.example           # Alle Umgebungsvariablen (ohne Geheimnisse)
-└── README.md
+│   │   ├── ui/                # Designsystem-Primitiven (Button, Card, Dialog, …)
+│   │   ├── site/              # Website-Bausteine (Header, Footer, Section, …)
+│   │   ├── app/               # Mitgliederbereich-Komponenten
+│   │   ├── auth/              # Auth-Formulare
+│   │   ├── billing/           # Checkout-Status
+│   │   └── dev/               # Dev-Postausgang
+│   ├── db/                    # schema.ts, client.ts, queries.ts, ids.ts
+│   ├── lib/
+│   │   ├── access/            # Level + Entitlements + Server-Guards
+│   │   ├── admin/             # Audit-Log
+│   │   ├── auth/              # crypto, otp, session
+│   │   ├── i18n/              # Wörterbücher DE/EN + Provider
+│   │   ├── membership/        # Pläne + Membership-Service
+│   │   ├── messages/          # Templates + Transport (Resend/Twilio/Outbox)
+│   │   ├── notifications/     # Notification-Service
+│   │   ├── payments/          # Stripe-Integration
+│   │   ├── platform/          # Queries für den Mitgliederbereich
+│   │   ├── trial/             # Trial-Service
+│   │   ├── env.ts             # zentrale Env-/Integrations-Fassade
+│   │   ├── rate-limit.ts      # DB-gestütztes Fixed-Window-Limit
+│   │   └── utils.ts
+│   └── domains/               # Platzhalter-Ordner je Produktbereich (README + .gitkeep)
+├── tests/                     # Unit + Integration, Stubs, global-setup
+├── wrangler.jsonc             # Worker: Name, Bindings, D1, Observability
+├── open-next.config.ts        # OpenNext-Adapter (statischer Asset-Cache)
+└── next.config.ts             # serverExternalPackages + Dev-Bindings
 ```
 
-## 3. Datenmodell (Zielbild, phasenweise eingeführt)
+## 3. Laufzeit- und Schichtenmodell
 
-Entitäten laut Spezifikation Teil 17 – **nicht alle sofort**.
-Einführungsplan:
+```
+Browser
+  │  (React Server Components + Server Actions, httpOnly-Cookie ic_session)
+  ▼
+Next.js (App Router, alle App-Routen force-dynamic)
+  ├── Layouts/Guards          src/lib/access/server.ts  (requireUser/requireAccess/requireAdmin)
+  ├── Server Actions          src/app/actions/*.ts      (validieren → autorisieren → schreiben)
+  ├── API-Routen              src/app/api/*             (Logout, Checkout, Stripe-Webhook)
+  └── Domänen-Services         src/lib/{trial,membership,messages,notifications,payments}
+                                     │
+                                     ▼
+                        src/db/client.ts (lazy Proxy)
+                        ├── Worker → D1-Binding "DB"
+                        └── Node   → libSQL (DATABASE_URL)
+```
 
-- **Schritt 04:** User, AuthIdentity (via Auth.js-Adapter), VerificationToken,
-  Session (falls DB-Sessions), Profile-Stub.
-- **Schritt 05:** Membership, Subscription, BillingEvent, TrialRecord.
-- **Schritt 06:** Profile, ProfessionalRole, Company, CompanyAffiliation.
-- **Schritt 07:** Follow, ConnectionRequest, Connection, Message,
-  Conversation, Post, Group, GroupMembership.
-- **Schritt 08:** Company-Erweiterungen, GroupApplication, Moderation.
-- **Schritt 09–10:** BusinessOpportunity, DealApplication, DealRoom,
-  DealParticipant, DealDocument, DealStatusHistory, CommissionAgreement,
-  CommissionRecord.
-- **Schritt 11:** InvestmentOpportunity, InvestmentApplication,
-  InvestorProfile (Discovery-Stufe, keine Ausführung).
-- **Schritt 12–13:** Seller, Product, Course, Lesson, Enrollment,
-  LessonProgress, Order, Payment, Refund, Booking, Proposal.
-- **Schritt 14:** CreatorApplication, ReferralLink, ReferralAttribution,
-  CreatorCommission, Payout.
-- **Schritt 15:** CollaborationReview, TrustScore, ProductReview,
-  PerformanceRecord, Badge, BadgeAward, LeaderboardOptIn.
-- **Schritt 16:** Event, EventApplication, Ticket, Attendance,
-  EventParticipant, EventMedia.
-- **Schritt 17:** AdminRole, AdminAction (Audit-Log), Report, ReportCase,
-  CommissionRule, FinancialReport-Sichten.
-- **Querschnitt:** Notification (ab 07), AuditLog (ab 04 für Admin-Aktionen).
+**Verbindliche Regeln, die im Code gelten:**
 
-Regeln: explizite Relationen, Indizes für Suche/Fremdschlüssel,
-Zugriffskontrolle auf API-/DB-Ebene (niemals nur Frontend-Verstecken),
-Migrationen versioniert, keine Duplikation geschäftskritischer Daten.
+1. **Server ist die Autorität.** Jede geschützte Route ruft einen Guard auf
+   (`requireUser`, `requireVerifiedUser`, `requireAccess`, `requireAdmin`);
+   jede Server Action prüft `getAccessContext()` erneut. Die UI versteckt
+   lediglich Aktionen (`entitlements`), sie autorisiert nicht.
+2. **Kein Datenbankzugriff beim Build.** `db` ist ein Lazy-Proxy; der Treiber
+   wird pro Aufruf im Request-Kontext bestimmt. Deshalb läuft `next build` /
+   `cf:build` ohne Datenbank.
+3. **Keine stillen Erfolge.** Nachrichten melden `provider` / `dev` / `none`
+   (ADR-009); Mitgliedschaften entstehen ausschließlich über den
+   Membership-Service, im Produktivpfad nur aus signierten Webhooks.
+4. **Zeit ist serverseitig.** Trial-Ablauf, OTP-Ablauf und Periodenenden werden
+   ausschließlich auf dem Server berechnet.
+5. **Zentrale Texte.** Alle sichtbaren Texte kommen aus `src/lib/i18n`
+   (DE = Standard, EN = vollständig, geprüft durch `tests/unit/i18n-parity.test.ts`).
 
-## 4. Sicherheit (Pflicht ab Schritt 04, Prinzip ab sofort)
+## 4. Datenzugriff
 
-- Server-seitige Autorisierung auf jeder geschützten Route/API/Server-Action.
-- Mitgliedsstufen (Besucher/Registriert/Mitglied) + Aktivitätsfreigaben
-  (Verkäufer, Creator, Investoren-Eignung) als **zwei getrennte Achsen**.
-- Datei-Uploads: Typ-/Größenprüfung, private Buckets mit signierten URLs,
-  widerrufbare Deal-Dokument-Zugriffe.
-- Rate-Limits für sensible Aktionen (Login, Registrierung, Nachrichten,
-  Bewerbungen), Spam-/Missbrauchsmeldungen mit Moderations-Queue.
-- Zahlung/Webhooks: ausschließlich signaturverifizierte Provider-Events
-  schalten Abos/Rechte frei – niemals „Erfolgsseiten".
-- Geheimnisse nur in Env-Variablen; `.env.local` nie committen.
-- Audit-Logs für Admin-Aktionen, Finanzanpassungen, Freigaben.
-- Backups + Recovery (Provider-PITR) ab Produktionsnähe (Schritt 19).
+- **Schema:** `src/db/schema.ts` – 50 Tabellen, IDs als cuid-ähnliche Text-IDs
+  (`src/db/ids.ts`), Zeitstempel als Integer-Millisekunden, Booleans 0/1,
+  Enums als Textspalten, JSON-Felder als Text.
+- **Queries:** `src/db/queries.ts` (Nutzerkontext, Karten, Kurse),
+  `src/lib/platform/queries.ts` (Verzeichnis, Nachrichten, Notifications,
+  Profile, Statistiken, Events, Trust).
+- **Migrationen:** `drizzle/0000_init.sql` (50 Tabellen, 85 Indizes, 136
+  Statements). Anwendung: `wrangler d1 migrations apply DB --remote` – fester
+  Teil von `npm run cf:release`.
+- **Details:** [`05-database.md`](05-database.md).
 
-## 5. Umgebungen
+## 5. Authentifizierung (Kurzfassung)
 
-- **Lokal:** `npm run dev` (diese Sandbox / Gründer-Rechner).
-- **Workers-Vorschau:** `npm run cf:preview` (App in `workerd` + lokale D1).
-- **Preview:** Cloudflare Workers Builds pro Branch/PR (Versions-Upload).
-- **Produktion:** `main`-Branch, eigene Env-Variablen, Stripe-Live erst
-  nach Freigabe + Tests (Schritt 20).
+- Registrierung legt `User`, `Profile`, `PrivacySettings`,
+  `NotificationPreferences` an und erstellt eine Session.
+- Passwörter: scrypt (N=16384, r=8, p=1), selbstbeschreibendes Format
+  `scrypt$N$r$p$salt$key`.
+- Sessions: 30 Tage, Token nur als SHA-256-Hash in der DB,
+  httpOnly + sameSite=lax + secure in Produktion, Cookie `ic_session`.
+- Verifizierung: 6-stelliger Code, gepeppert gehasht, 15 Minuten TTL,
+  5 Versuche, 60-s-Resend-Cooldown, 6 Codes/Stunde/Account.
+- Rate-Limits (DB-gestützt, Tabelle `RateLimit`): Registrierung 8/h pro IP,
+  Login 12/15 min pro IP, Verify 12/15 min pro Nutzer, Forgot 6/h pro IP,
+  Checkout 10/10 min, OTP 6/h + Cooldown 60 s.
+- Details: [`04-auth-membership.md`](04-auth-membership.md),
+  [`06-permissions.md`](06-permissions.md).
 
-Details: `09-deployment.md`, `07-external-services.md`.
+## 6. Internationalisierung und Theming
+
+- Wörterbücher: `src/lib/i18n/dictionaries.ts` (Basis) +
+  `dict/{app-core,app-social,app-business,site-v2}.ts`.
+  **DE und EN müssen identisch strukturiert sein** (Test erzwingt Parität).
+- Sprache und Theme werden im Browser persistiert; Default-Sprache ist Deutsch,
+  Default-Theme folgt dem System.
+- `scripts/check-keys.ts` und `scripts/i18n-audit.ts` prüfen referenzierte
+  Schlüssel und Struktur.
+
+## 7. Sicherheit (Ist-Zustand)
+
+| Mechanismus | Umsetzung |
+| ----------- | --------- |
+| Autorisierung | serverseitige Guards + erneute Prüfung in jeder Action |
+| Passwörter | scrypt mit Salt, keine Klartextspeicherung |
+| Session-Token | zufällig (32 Byte), nur gehasht gespeichert, widerrufbar (`revokedAt`) |
+| OTP | gepeppert gehasht, TTL, Versuchszähler, Invalidierung alter Codes |
+| Enumeration | Passwort-Reset antwortet immer identisch |
+| Webhooks | Stripe-Signaturprüfung, Idempotenz über `providerEventId` |
+| Sperren/Blockieren | `Block` wirkt in beide Richtungen (Integrationstest) |
+| Messaging | nur zwischen bestätigten Verbindungen (Integrationstest) |
+| Dev-Werkzeuge | `/dev/outbox` nur mit `ENABLE_DEV_OUTBOX=true` **und** Rolle `admin`, optional Empfänger-Allowlist, Codes nie an den Browser in Produktion |
+| Rate-Limits | zentrale Tabelle + `consumeRateLimit()` |
+| Audit | `AdminAuditLog` für Auth-, Membership-, Admin- und Trial-Ereignisse |
+
+Bekannte Lücken: keine 2FA, kein CSRF-Token zusätzlich zu sameSite-Cookies,
+Privacy-Einstellungen werden nicht in allen Queries erzwungen, kein CI.
+Siehe [`11-known-issues.md`](11-known-issues.md).
+
+## 8. Umgebungen
+
+| Umgebung | Start | Laufzeit | Datenbank |
+| -------- | ----- | -------- | --------- |
+| Lokal (Node) | `npm run dev` (bindet 0.0.0.0:3000) | Node.js 22 | libSQL `file:./dev.db` |
+| Lokal (Worker) | `npm run cf:preview` | `workerd`, Port 8787 | lokale D1-Emulation (`.wrangler/state`) |
+| Tests | `npm test` | Node | Wegwerf-`.test.db` |
+| Preview | Nicht-`main`-Branches (Workers Builds, `upload`) | Cloudflare Workers | D1 `inner-circle-db` |
+| Produktion | `main` | Cloudflare Workers | D1 `inner-circle-db` (Binding `DB`) |
+
+## 9. Offene Architekturpunkte
+
+- **E-Mail-/SMS-Versand** ist die einzige fehlende Infrastruktur, die den
+  Kern-Flow (Verifizierung) blockiert.
+- **Stripe** ist implementiert, aber ungetestet gegen einen echten Account.
+- **Storage** (Avatare, Kursvideos, Dokumente) ist nicht angebunden.
+- **Kein ISR/Caching:** alle Seiten sind dynamisch; der OpenNext-Cache nutzt
+  ausschließlich statische Assets (kein R2, keine Queues).
+- **Keine Transaktionen:** D1 bietet kein Transaktions-API; mehrstufige
+  Schreibvorgänge sind bewusst sequenziell und idempotent gehalten.
