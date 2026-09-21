@@ -27,7 +27,14 @@ export type NotificationItem = {
   createdAt: string;
 };
 
-export function NotificationsView({ notifications }: { notifications: NotificationItem[] }) {
+export function NotificationsView({
+  notifications,
+  embedded = false,
+}: {
+  notifications: NotificationItem[];
+  /** Rendered inside `/app/inbox` – no own page header. */
+  embedded?: boolean;
+}) {
   const { t, tf } = useI18n();
   const router = useRouter();
   const [readState, markRead] = useActionState(markNotificationReadAction, initialActionState);
@@ -44,18 +51,29 @@ export function NotificationsView({ notifications }: { notifications: Notificati
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title={t.app.notifications.title}
-        lead={t.app.notifications.lead}
-        action={
+      {embedded ? (
+        <div className="flex justify-end">
           <form action={markAll}>
             <Button type="submit" variant="secondary" size="sm" disabled={unread === 0}>
               <CheckCheckIcon size={16} />
               {t.app.notifications.markAllRead}
             </Button>
           </form>
-        }
-      />
+        </div>
+      ) : (
+        <PageHeader
+          title={t.app.notifications.title}
+          lead={t.app.notifications.lead}
+          action={
+            <form action={markAll}>
+              <Button type="submit" variant="secondary" size="sm" disabled={unread === 0}>
+                <CheckCheckIcon size={16} />
+                {t.app.notifications.markAllRead}
+              </Button>
+            </form>
+          }
+        />
+      )}
 
       {unread > 0 && (
         <p className="text-sm font-medium text-electric-600 dark:text-electric-300">

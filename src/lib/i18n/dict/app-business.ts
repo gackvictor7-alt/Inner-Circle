@@ -299,6 +299,7 @@ export const appBusinessDe = {
     results: "{count} Chancen",
     empty: "Aktuell sind keine Chancen veröffentlicht.",
     emptyText: "Chancen erscheinen, sobald die Administration sie geprüft und freigegeben hat.",
+    submitTitle: "Chance einreichen",
     noResults: "Keine Chance passt zu diesem Filter.",
     stage: {
       pre_seed: "Pre-Seed",
@@ -419,6 +420,8 @@ export const appBusinessDe = {
     emptyPast: "Noch keine dokumentierten Events.",
     emptyMy: "Du hast dich für kein Event angemeldet.",
     emptyMyCta: "Events ansehen",
+    curatedNotice:
+      "INNER CIRCLE Events werden ausschließlich vom INNER CIRCLE Team kuratiert und freigegeben. Mitglieder können Events ansehen, sich bewerben, Tickets erwerben und teilnehmen – aber keine eigenen öffentlichen Events veröffentlichen.",
     ticketsNotice:
       "Bezahlte Tickets benötigen die Zahlungsanbieter-Einrichtung und sind derzeit deaktiviert. Anfragen und Bestätigungen funktionieren bereits.",
   },
@@ -962,6 +965,7 @@ export const appBusinessEn: AppBusinessDict = {
     results: "{count} opportunities",
     empty: "No opportunities are published right now.",
     emptyText: "Opportunities appear once administration has reviewed and approved them.",
+    submitTitle: "Submit an opportunity",
     noResults: "No opportunity matches this filter.",
     stage: {
       pre_seed: "Pre-seed",
@@ -1082,6 +1086,8 @@ export const appBusinessEn: AppBusinessDict = {
     emptyPast: "No documented events yet.",
     emptyMy: "You have not registered for any event.",
     emptyMyCta: "View events",
+    curatedNotice:
+      "INNER CIRCLE events are curated and released exclusively by the INNER CIRCLE team. Members can view events, apply, buy tickets and take part – but cannot publish their own public events.",
     ticketsNotice:
       "Paid tickets require the payment provider setup and are currently disabled. Requests and confirmations already work.",
   },

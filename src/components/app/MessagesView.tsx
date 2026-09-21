@@ -40,6 +40,7 @@ export function MessagesView({
   viewerId,
   canMessage,
   blockedReason,
+  embedded = false,
 }: {
   conversations: ConversationListItem[];
   selectedId: string | null;
@@ -47,8 +48,13 @@ export function MessagesView({
   viewerId: string;
   canMessage: boolean;
   blockedReason: "notConnected" | "membership" | null;
+  /** Rendered inside `/app/inbox` – no own page header, inbox-relative links. */
+  embedded?: boolean;
 }) {
   const { t, tf } = useI18n();
+  const conversationHref = (conversationId: string) =>
+    embedded ? `/app/inbox?tab=messages&c=${conversationId}` : `/app/messages?c=${conversationId}`;
+  const connectionsHref = embedded ? "/app/inbox?tab=requests&sub=connections" : "/app/connections";
   const router = useRouter();
   const [sendState, send, sending] = useActionState(sendMessageAction, initialActionState);
   const [deleteState, remove] = useActionState(deleteMessageAction, initialActionState);
@@ -73,7 +79,7 @@ export function MessagesView({
 
   return (
     <div className="space-y-6">
-      <PageHeader title={t.app.messages.title} lead={t.app.messages.lead} />
+      {!embedded && <PageHeader title={t.app.messages.title} lead={t.app.messages.lead} />}
 
       <div className="grid gap-5 lg:grid-cols-[20rem_1fr]">
         <section aria-label={t.app.messages.title} className="space-y-2">
@@ -82,7 +88,7 @@ export function MessagesView({
               icon={MessageIcon}
               title={t.app.messages.empty}
               text={t.app.messages.emptyText}
-              action={<Button href="/app/connections" size="sm" variant="secondary">{t.app.connections.tabConnections}</Button>}
+              action={<Button href={connectionsHref} size="sm" variant="secondary">{t.app.connections.tabConnections}</Button>}
             />
           ) : (
             <ul className="space-y-2">
@@ -91,7 +97,7 @@ export function MessagesView({
                 return (
                   <li key={conversation.id}>
                     <Link
-                      href={`/app/messages?c=${conversation.id}`}
+                      href={conversationHref(conversation.id)}
                       aria-current={active ? "true" : undefined}
                       className={`flex items-center gap-3 rounded-2xl border p-3 transition-colors ${
                         active ? "border-electric-500/50 bg-electric-500/5" : "border-border bg-surface hover:bg-surface-muted"
@@ -134,7 +140,7 @@ export function MessagesView({
               <div>
                 <p className="font-semibold">{t.app.messages.selectConversation}</p>
                 <p className="mt-2 text-sm text-foreground-muted">{t.app.messages.selectConversationText}</p>
-                <Button href="/app/connections" variant="secondary" size="sm" className="mt-5">
+                <Button href={connectionsHref} variant="secondary" size="sm" className="mt-5">
                   {t.app.connections.tabConnections}
                 </Button>
               </div>

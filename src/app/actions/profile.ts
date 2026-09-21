@@ -1,16 +1,42 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { eq } from "drizzle-orm";
+import { asc, eq, inArray, or } from "drizzle-orm";
 import { db } from "@/db/client";
-import { accountDeletionRequests, notificationPreferences, privacySettings, profiles, users } from "@/db/schema";
+import {
+  accountDeletionRequests,
+  goals,
+  interests,
+  notificationPreferences,
+  privacySettings,
+  profiles,
+  userGoals,
+  userInterests,
+  users,
+} from "@/db/schema";
 import { audit } from "@/lib/admin/audit";
 import { idFor } from "@/db/ids";
 import { getAccessContext } from "@/lib/access/server";
 import { consumeRateLimit } from "@/lib/rate-limit";
 import { fail, done, bool, text, type ActionState } from "./state";
+import { PROFILE_METRIC_KEYS, VISIBILITY_LEVELS, type ProfileMetricKey } from "@/lib/platform/rules";
 
-const VISIBILITY = ["public", "members", "connections", "private"] as const;
+const VISIBILITY = VISIBILITY_LEVELS;
+
+/**
+ * Reads the per-metric visibility selections. An absent field means "keep the
+ * global performance visibility", so the stored object stays small.
+ */
+function parseMetricsVisibility(formData: FormData): Partial<Record<ProfileMetricKey, string>> {
+  const result: Partial<Record<ProfileMetricKey, string>> = {};
+  for (const key of PROFILE_METRIC_KEYS) {
+    const raw = text(formData, `metric_${key}`, 24);
+    if ((VISIBILITY as readonly string[]).includes(raw)) {
+      result[key] = raw;
+    }
+  }
+  return result;
+}
 
 /** Updates the member profile (members only for the full profile, spec §19/§26). */
 export async function updateProfileAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
@@ -46,6 +72,7 @@ export async function updateProfileAction(_prev: ActionState, formData: FormData
   const roles = listFrom("roles", 8);
   const skills = listFrom("skills", 12);
   const lookingFor = listFrom("lookingFor", 8);
+  const offering = listFrom("offering", 8);
 
   const complete = Boolean(headline && bio && location);
 
@@ -64,6 +91,7 @@ export async function updateProfileAction(_prev: ActionState, formData: FormData
     rolesJson: JSON.stringify(roles),
     skillsJson: JSON.stringify(skills),
     lookingForJson: JSON.stringify(lookingFor),
+    offeringJson: JSON.stringify(offering),
     // Interests chosen during onboarding stay untouched; completion is recorded once.
     onboardingCompletedAt: complete ? (existing?.onboardingCompletedAt ?? new Date()) : existing?.onboardingCompletedAt ?? null,
     updatedAt: new Date(),
@@ -78,6 +106,7 @@ export async function updateProfileAction(_prev: ActionState, formData: FormData
   await db.update(users).set({ firstName, lastName, updatedAt: new Date() }).where(eq(users.id, access.user.id));
 
   revalidatePath("/app/profile");
+  revalidatePath("/app/discover");
   revalidatePath("/app");
   revalidatePath(`/app/people/${access.user.handle}`);
   return done({ messageCode: "saved", redirectTo: "/app/profile?saved=1" });
@@ -94,9 +123,12 @@ export async function updatePrivacyAction(_prev: ActionState, formData: FormData
     ? performanceVisibilityRaw
     : "connections";
 
+  const metricsVisibility = parseMetricsVisibility(formData);
+
   const values = {
     profileVisibility,
     performanceVisibility,
+    metricsVisibilityJson: JSON.stringify(metricsVisibility),
     showLocation: bool(formData, "showLocation"),
     contactVisibility: ["public", "members", "connections", "private"].includes(
       text(formData, "contactVisibility", 24),
@@ -246,4 +278,92 @@ export async function requestAccountDeletionAction(
 
   revalidatePath("/app/settings");
   return done({ messageCode: "saved" });
+}
+
+
+/**
+ * Interests & goals can be changed after onboarding (spec §23). It reuses the
+ * exact onboarding taxonomy (`Interest` / `Goal`) – no second system.
+ */
+export async function updateInterestsAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const access = await getAccessContext();
+  if (!access.user) return fail("unauthorized");
+  if (!access.verified) return fail("verificationRequired");
+
+  const user = access.user;
+
+  const limit = await consumeRateLimit(`profile:${user.id}`, 40, 3600);
+  if (!limit.allowed) return fail("rateLimited");
+
+  const selectedInterests = formData
+    .getAll("interests")
+    .filter((value): value is string => typeof value === "string")
+    .slice(0, 24);
+  const selectedGoals = formData
+    .getAll("goals")
+    .filter((value): value is string => typeof value === "string")
+    .slice(0, 24);
+
+  // Same rule as onboarding: at least three interests keep recommendations useful.
+  if (selectedInterests.length < 3) return fail("validation");
+
+  const now = new Date();
+
+  const interestRows = selectedInterests.length
+    ? await db
+        .select({ id: interests.id })
+        .from(interests)
+        .where(or(inArray(interests.slug, selectedInterests), inArray(interests.id, selectedInterests)))
+    : [];
+  const goalRows = selectedGoals.length
+    ? await db
+        .select({ id: goals.id })
+        .from(goals)
+        .where(or(inArray(goals.slug, selectedGoals), inArray(goals.id, selectedGoals)))
+    : [];
+
+  await db.delete(userInterests).where(eq(userInterests.userId, user.id));
+  if (interestRows.length > 0) {
+    await db.insert(userInterests).values(
+      interestRows.map((row) => ({
+        id: idFor.userInterest(),
+        userId: user.id,
+        interestId: row.id,
+        createdAt: now,
+      })),
+    );
+  }
+
+  await db.delete(userGoals).where(eq(userGoals.userId, user.id));
+  if (goalRows.length > 0) {
+    await db.insert(userGoals).values(
+      goalRows.map((row) => ({
+        id: idFor.userGoal(),
+        userId: user.id,
+        goalId: row.id,
+        createdAt: now,
+      })),
+    );
+  }
+
+  await audit({
+    actorId: user.id,
+    action: "profile.interests_updated",
+    entityType: "User",
+    entityId: user.id,
+  });
+
+  revalidatePath("/app/profile");
+  revalidatePath("/app/discover");
+  revalidatePath("/app");
+  return done({ messageCode: "saved", redirectTo: "/app/profile/edit?saved=interests" });
+}
+
+/** Interest + goal taxonomy for the profile editor (same source as onboarding). */
+export async function interestTaxonomy() {
+  const [interestRows, goalRows] = await Promise.all([
+    db.select().from(interests).orderBy(asc(interests.position)),
+    db.select().from(goals).orderBy(asc(goals.position)),
+  ]);
+  return { interests: interestRows, goals: goalRows };
 }

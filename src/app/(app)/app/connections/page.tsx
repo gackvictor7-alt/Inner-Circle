@@ -1,62 +1,22 @@
+import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/access/server";
-import { connectionsFor, pendingRequestsFor, sentRequestsFor } from "@/lib/platform/queries";
-import { ConnectionsView } from "@/components/app/ConnectionsView";
 
 export const dynamic = "force-dynamic";
 
-export default async function ConnectionsPage({
+/**
+ * Legacy route. Requests and connections moved into the Inbox (Sprint 3,
+ * spec §9/§34) – the previous `?tab=` values are mapped onto `?sub=`.
+ */
+export default async function ConnectionsRedirect({
   searchParams,
 }: {
   searchParams: Promise<{ tab?: string }>;
 }) {
-  const access = await requireUser("/app/connections");
+  await requireUser("/app/inbox");
   const params = await searchParams;
-  const tab = params.tab === "sent" ? "sent" : params.tab === "requests" ? "requests" : "connections";
-
-  const [receivedRows, sentRows, connectionRows] = await Promise.all([
-    pendingRequestsFor(access.user.id),
-    sentRequestsFor(access.user.id),
-    connectionsFor(access.user.id),
-  ]);
-
-  return (
-    <ConnectionsView
-      tab={tab}
-      received={receivedRows.map((row) => ({
-        id: row.fromUserId,
-        requestId: row.id,
-        firstName: row.firstName,
-        lastName: row.lastName,
-        handle: row.handle,
-        avatarUrl: row.avatarUrl,
-        headline: row.headline,
-        message: row.message,
-        fromTrial: row.fromTrial,
-        isDemo: row.isDemo,
-        createdAt: row.createdAt.toISOString(),
-      }))}
-      sent={sentRows.map((row) => ({
-        id: row.toUserId,
-        requestId: row.id,
-        firstName: row.firstName,
-        lastName: row.lastName,
-        handle: row.handle,
-        avatarUrl: row.avatarUrl,
-        headline: row.headline,
-        status: row.status,
-        message: row.message,
-        createdAt: row.createdAt.toISOString(),
-      }))}
-      connections={connectionRows.map((row) => ({
-        id: row.id,
-        firstName: row.firstName,
-        lastName: row.lastName,
-        handle: row.handle,
-        avatarUrl: row.avatarUrl,
-        headline: row.headline,
-        isDemo: row.isDemo,
-        connectedSince: row.connectedSince ? row.connectedSince.toISOString() : null,
-      }))}
-    />
-  );
+  const sub =
+    params.tab === "sent" || params.tab === "connections" || params.tab === "requests"
+      ? params.tab
+      : "requests";
+  redirect(`/app/inbox?tab=requests&sub=${sub}`);
 }

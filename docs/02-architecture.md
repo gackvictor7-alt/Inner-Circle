@@ -59,12 +59,13 @@ Inner-Circle/
 │   │   ├── access/            # Level + Entitlements + Server-Guards
 │   │   ├── admin/             # Audit-Log
 │   │   ├── auth/              # crypto, otp, session
+│   │   ├── discover/          # Sprint 3: reines Matching/Ranking für /app/discover
 │   │   ├── i18n/              # Wörterbücher DE/EN + Provider
 │   │   ├── membership/        # Pläne + Membership-Service
 │   │   ├── messages/          # Templates + Transport (Resend/Twilio/Outbox)
 │   │   ├── notifications/     # Notification-Service
 │   │   ├── payments/          # Stripe-Integration
-│   │   ├── platform/          # Queries für den Mitgliederbereich
+│   │   ├── platform/          # Queries für den Mitgliederbereich + rules.ts (geteilte Konstanten, server- und client-sicher)
 │   │   ├── trial/             # Trial-Service
 │   │   ├── env.ts             # zentrale Env-/Integrations-Fassade
 │   │   ├── rate-limit.ts      # DB-gestütztes Fixed-Window-Limit

@@ -5,8 +5,19 @@ import { LocalizedEmptyState, LocalizedPageHeader } from "@/components/app/local
 
 export const dynamic = "force-dynamic";
 
-export default async function NewListingPage() {
+const LISTING_KINDS = ["course", "coaching", "workshop", "consulting", "service"] as const;
+
+/** The create menu deep-links a kind (e.g. `?kind=course`) – it is preselected. */
+export default async function NewListingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ kind?: string }>;
+}) {
   const access = await requireUser("/app/marketplace/new");
+  const params = await searchParams;
+  const preselectedKind = (LISTING_KINDS as readonly string[]).includes(params.kind ?? "")
+    ? params.kind!
+    : "service";
 
   if (!access.entitlements.marketplaceSell) {
     return (
@@ -32,7 +43,7 @@ export default async function NewListingPage() {
         { value: "consulting", labelKey: "app.marketplace.kinds.consulting" },
         { value: "service", labelKey: "app.marketplace.kinds.service" },
       ],
-      defaultValue: "service",
+      defaultValue: preselectedKind,
     },
     { name: "summary", kind: "textarea", rows: 3, labelKey: "app.marketplace.summaryField", required: true, maxLength: 300 },
     { name: "description", kind: "textarea", rows: 8, labelKey: "app.marketplace.descriptionField", required: true, maxLength: 4000 },

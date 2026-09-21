@@ -5,8 +5,28 @@ import { LocalizedEmptyState, LocalizedPageHeader } from "@/components/app/local
 
 export const dynamic = "force-dynamic";
 
-export default async function NewOpportunityPage() {
+const OPPORTUNITY_TYPES = [
+  "co_founder",
+  "strategic_partnership",
+  "joint_venture",
+  "freelance",
+  "customers",
+  "job",
+  "investment",
+  "other",
+] as const;
+
+/** The create menu deep-links a type (e.g. `?type=job`) – it is preselected. */
+export default async function NewOpportunityPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ type?: string }>;
+}) {
   const access = await requireUser("/app/opportunities/new");
+  const params = await searchParams;
+  const preselectedType = (OPPORTUNITY_TYPES as readonly string[]).includes(params.type ?? "")
+    ? params.type!
+    : "strategic_partnership";
 
   if (!access.entitlements.opportunitiesManage) {
     return (
@@ -35,7 +55,7 @@ export default async function NewOpportunityPage() {
         { value: "investment", labelKey: "app.opportunities.type.investment" },
         { value: "other", labelKey: "app.opportunities.type.other" },
       ],
-      defaultValue: "strategic_partnership",
+      defaultValue: preselectedType,
     },
     { name: "summary", labelKey: "app.opportunities.formSummary", kind: "textarea", rows: 3, required: true, maxLength: 300 },
     { name: "description", labelKey: "app.opportunities.formDescription", kind: "textarea", rows: 8, required: true, maxLength: 4000 },

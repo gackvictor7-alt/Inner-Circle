@@ -1,19 +1,17 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { ConnectDialog } from "@/components/app/ConnectDialog";
 import { useTr } from "@/components/app/localized";
-import {
-  blockMemberAction,
-  followAction,
-  sendConnectionRequestAction,
-} from "@/app/actions/network";
+import { blockMemberAction, followAction } from "@/app/actions/network";
 import { initialActionState } from "@/app/actions/state";
 
 /** Follow / connect / message / block actions on a member profile. */
 export function ProfileActions({
   userId,
   handle,
+  firstName,
   isConnected,
   isBlocked,
   canFollow,
@@ -22,6 +20,7 @@ export function ProfileActions({
 }: {
   userId: string;
   handle: string;
+  firstName: string;
   isConnected: boolean;
   isBlocked: boolean;
   canFollow: boolean;
@@ -29,27 +28,24 @@ export function ProfileActions({
   canMessage: boolean;
 }) {
   const tr = useTr();
+  const [connectOpen, setConnectOpen] = useState(false);
   const [followState, follow, followPending] = useActionState(followAction, initialActionState);
-  const [connectState, connect, connectPending] = useActionState(sendConnectionRequestAction, initialActionState);
   const [blockState, block, blockPending] = useActionState(blockMemberAction, initialActionState);
 
-  const errorCode = followState.errorCode ?? connectState.errorCode ?? blockState.errorCode;
+  const errorCode = followState.errorCode ?? blockState.errorCode;
 
   return (
     <div className="flex flex-wrap items-center gap-2">
       {isConnected && canMessage && (
-        <Button href={`/app/messages?to=${userId}`} size="sm">
+        <Button href={`/app/inbox?tab=messages&to=${userId}`} size="sm">
           {tr("app.connections.message")}
         </Button>
       )}
 
       {!isConnected && canConnect && !isBlocked && (
-        <form action={connect}>
-          <input type="hidden" name="userId" value={userId} />
-          <Button type="submit" size="sm" loading={connectPending}>
-            {tr("app.network.connectCta")}
-          </Button>
-        </form>
+        <Button size="sm" onClick={() => setConnectOpen(true)}>
+          {tr("app.network.connectCta")}
+        </Button>
       )}
 
       {canFollow && (
@@ -79,6 +75,13 @@ export function ProfileActions({
           {tr("app.network.followCta")}
         </span>
       )}
+
+      {/* Connection requests always require a personal message (spec §7). */}
+      <ConnectDialog
+        open={connectOpen}
+        onClose={() => setConnectOpen(false)}
+        target={{ id: userId, handle, firstName }}
+      />
     </div>
   );
 }

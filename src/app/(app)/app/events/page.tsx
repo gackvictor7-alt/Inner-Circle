@@ -34,6 +34,11 @@ export default async function EventsPage({
     <div className="space-y-8">
       <LocalizedPageHeader titleKey="app.events.title" leadKey="app.events.lead" />
 
+      {/* Events are curated by INNER CIRCLE – members never publish them (spec §14). */}
+      <p className="rounded-xl border border-sand-400/40 bg-sand-200/30 px-4 py-3 text-sm leading-6 text-sand-800 dark:bg-sand-400/10 dark:text-sand-100">
+        <Tr k="app.events.curatedNotice" />
+      </p>
+
       <nav aria-label="Events" className="flex flex-wrap gap-2">
         {[
           { key: "upcoming", labelKey: "app.events.upcoming", href: "/app/events" },

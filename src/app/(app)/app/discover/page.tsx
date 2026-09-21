@@ -1,35 +1,166 @@
+import { asc } from "drizzle-orm";
 import { redirect } from "next/navigation";
+import { db } from "@/db/client";
+import { goals, interests } from "@/db/schema";
 import { requireUser } from "@/lib/access/server";
-import { listDirectoryMembers } from "@/lib/platform/queries";
-import { DiscoverDeck } from "@/components/app/DiscoverDeck";
-import { LocalizedEmptyState } from "@/components/app/localized";
+import { listDiscoverCandidates } from "@/lib/platform/queries";
+import { industrySlug } from "@/lib/platform/queries";
+import {
+  applyDiscoverFilters,
+  hasActiveFilters,
+  isDiscoverFilterKind,
+  matchPercentFromScore,
+  rankCandidates,
+  type DiscoverFilters,
+  type ProfileSignals,
+} from "@/lib/discover/matching";
+import { DiscoverDeck, type DiscoverCardData } from "@/components/app/DiscoverDeck";
+import { LocalizedEmptyState, LocalizedPageHeader } from "@/components/app/localized";
 
 export const dynamic = "force-dynamic";
 
-/** Swipe discovery – trial and members only (entitlement `networkDiscover`). */
-export default async function DiscoverPage() {
+function parseList(json: string | null | undefined): string[] {
+  if (!json) return [];
+  try {
+    const value = JSON.parse(json);
+    return Array.isArray(value) ? value.map(String).filter(Boolean) : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Discover (spec §5–§8) – relevance-first people discovery.
+ *
+ * Ranking is rule-based on existing profile data only (interests, goals,
+ * industry, location, "looking for"/"offering"). No invented signals, no
+ * placeholder members: an empty community renders an honest empty state.
+ */
+export default async function DiscoverPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ role?: string; location?: string; industry?: string; interest?: string; kind?: string }>;
+}) {
   const access = await requireUser("/app/discover");
   if (!access.entitlements.networkDiscover) redirect("/app/billing?paywall=trial");
 
-  const members = await listDirectoryMembers({
+  const params = await searchParams;
+  const locale = access.user.locale === "en" ? "en" : "de";
+
+  const [interestTaxonomy, goalTaxonomy] = await Promise.all([
+    db.select().from(interests).orderBy(asc(interests.position)),
+    db.select().from(goals).orderBy(asc(goals.position)),
+  ]);
+
+  const industryLabelBySlug = new Map<string, string>();
+  for (const interest of interestTaxonomy) {
+    const slug = industrySlug(interest.groupEn);
+    if (!industryLabelBySlug.has(slug)) {
+      industryLabelBySlug.set(slug, locale === "de" ? interest.groupDe : interest.groupEn);
+    }
+  }
+  const groupByInterestSlug = new Map(interestTaxonomy.map((row) => [row.slug, industrySlug(row.groupEn)]));
+
+  const viewer: ProfileSignals = {
+    interestSlugs: access.user.interests.map((interest) => interest.slug),
+    goalSlugs: access.user.goals.map((goal) => goal.slug),
+    industrySlugs: access.user.interests
+      .map((interest) => groupByInterestSlug.get(interest.slug))
+      .filter((slug): slug is string => Boolean(slug)),
+    roles: parseList(access.user.profile?.rolesJson),
+    skills: parseList(access.user.profile?.skillsJson),
+    lookingFor: parseList(access.user.profile?.lookingForJson),
+    offering: parseList(access.user.profile?.offeringJson),
+    location: access.user.profile?.location ?? null,
+    company: access.user.profile?.company ?? null,
+  };
+
+  const filters: DiscoverFilters = {
+    role: params.role?.trim() || undefined,
+    location: params.location?.trim() || undefined,
+    industry: params.industry?.trim() || undefined,
+    interest: params.interest?.trim() || undefined,
+    kind: isDiscoverFilterKind(params.kind) ? params.kind : undefined,
+  };
+
+  const candidates = await listDiscoverCandidates({
     viewerId: access.user.id,
-    limit: access.level === "trial" ? 12 : 50,
+    limit: access.level === "trial" ? 24 : 120,
   });
 
-  if (members.length === 0) {
+  const filtered = applyDiscoverFilters(candidates, filters);
+  const ranked = rankCandidates(viewer, filtered);
+
+  const viewerInterestSlugs = new Set(viewer.interestSlugs);
+  const interestLabelBySlug = new Map(
+    interestTaxonomy.map((row) => [row.slug, locale === "de" ? row.labelDe : row.labelEn]),
+  );
+  const goalLabelBySlug = new Map(
+    goalTaxonomy.map((row) => [row.slug, locale === "de" ? row.labelDe : row.labelEn]),
+  );
+
+  const cards: DiscoverCardData[] = ranked.map(({ candidate, score, signals }) => ({
+    id: candidate.id,
+    firstName: candidate.firstName,
+    lastName: candidate.lastName,
+    handle: candidate.handle,
+    avatarUrl: candidate.avatarUrl,
+    headline: candidate.headline,
+    jobTitle: candidate.jobTitle,
+    company: candidate.company,
+    location: candidate.location,
+    bio: candidate.bio,
+    isDemo: candidate.isDemo,
+    foundingMember: candidate.foundingMember,
+    roles: candidate.roles,
+    skills: candidate.skills,
+    interests: candidate.interestLabels,
+    lookingFor: candidate.lookingFor,
+    offering: candidate.offering,
+    trustScore10: candidate.trustScore10,
+    metrics: candidate.metrics,
+    sharedConnectionCount: candidate.sharedConnectionCount,
+    sharedInterests: signals.sharedInterests
+      .map((slug) => interestLabelBySlug.get(slug) ?? slug)
+      .slice(0, 6),
+    sharedGoals: signals.sharedGoals.map((slug) => goalLabelBySlug.get(slug) ?? slug).slice(0, 4),
+    supplyDemand: signals.supplyDemand > 0,
+    sameLocation: signals.sameLocation,
+    matchPercent: matchPercentFromScore(score),
+    isFollowing: candidate.isFollowing,
+    isConnected: candidate.isConnected,
+    requestPending: candidate.requestPending,
+  }));
+
+  // The viewer's own interests are the most useful filter vocabulary.
+  const viewerInterests = candidateInterestOptions(interestTaxonomy, viewerInterestSlugs, locale);
+
+  if (cards.length === 0) {
     return (
-      <LocalizedEmptyState
-        icon="compass"
-        titleKey="app.discover.emptyTitle"
-        textKey="app.discover.emptyText"
-        action={{ labelKey: "app.network.title", href: "/app/network" }}
-      />
+      <div className="space-y-6">
+        <LocalizedPageHeader titleKey="app.discover.title" leadKey="app.discover.leadShort" />
+        {hasActiveFilters(filters) ? (
+          <LocalizedEmptyState
+            icon="search"
+            titleKey="app.discover.filtersEmpty"
+            textKey="app.discover.filtersEmptyText"
+            action={{ labelKey: "app.discover.filtersClear", href: "/app/discover" }}
+          />
+        ) : (
+          <LocalizedEmptyState
+            icon="compass"
+            titleKey="app.discover.emptyTitle"
+            textKey="app.discover.emptyText"
+            action={{ labelKey: "app.network.title", href: "/app/network" }}
+          />
+        )}
+      </div>
     );
   }
 
   return (
     <DiscoverDeck
-      members={members}
+      members={cards}
       canFollow={access.entitlements.follow}
       canConnect={access.entitlements.connect !== "no"}
       trialRemaining={
@@ -37,6 +168,27 @@ export default async function DiscoverPage() {
           ? access.trial.connectionRequestLimit - access.trial.connectionRequestsUsed
           : null
       }
+      filters={{
+        role: filters.role,
+        location: filters.location,
+        industry: filters.industry,
+        interest: filters.interest,
+        kind: filters.kind,
+      }}
+      filterOptions={{
+        industries: [...industryLabelBySlug.entries()].map(([value, label]) => ({ value, label })),
+        interests: viewerInterests,
+      }}
     />
   );
+}
+
+function candidateInterestOptions(
+  taxonomy: { slug: string; labelDe: string; labelEn: string }[],
+  viewerSlugs: Set<string>,
+  locale: "de" | "en",
+) {
+  const wanted = taxonomy.filter((row) => viewerSlugs.has(row.slug));
+  const source = wanted.length > 0 ? wanted : taxonomy;
+  return source.map((row) => ({ value: row.slug, label: locale === "de" ? row.labelDe : row.labelEn }));
 }

@@ -11,7 +11,10 @@ import {
   events,
   eventApplications,
   follows,
+  goals,
   interests,
+  investmentOpportunities,
+  marketplaceListings,
   messages,
   notificationPreferences,
   notifications,
@@ -24,6 +27,7 @@ import {
   trustScoreSummaries,
   userBadges,
   badges,
+  userGoals,
   userInterests,
   users,
 } from "@/db/schema";
@@ -615,3 +619,321 @@ export async function pendingReviewCount() {
 }
 
 export { connectionPair };
+
+/* ---------------------------------------------------- Discover (Sprint 3) */
+
+export type DiscoverCandidate = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  handle: string;
+  avatarUrl: string | null;
+  headline: string | null;
+  jobTitle: string | null;
+  company: string | null;
+  location: string | null;
+  bio: string | null;
+  isDemo: boolean;
+  foundingMember: boolean;
+  interestSlugs: string[];
+  interestLabels: string[];
+  goalSlugs: string[];
+  goalLabels: string[];
+  industrySlugs: string[];
+  industryLabels: string[];
+  roles: string[];
+  skills: string[];
+  lookingFor: string[];
+  offering: string[];
+  trustScore10: number | null;
+  metrics: {
+    connections: number;
+    opportunities: number;
+    listings: number;
+    verifiedRecords: number;
+  };
+  sharedConnectionCount: number;
+  sharedConnectionNames: string[];
+  isFollowing: boolean;
+  isConnected: boolean;
+  requestPending: boolean;
+};
+
+function parseJsonList(json: string | null | undefined): string[] {
+  if (!json) return [];
+  try {
+    const value = JSON.parse(json);
+    return Array.isArray(value) ? value.map(String).filter(Boolean) : [];
+  } catch {
+    return [];
+  }
+}
+
+type CountRow = { ownerId?: string; sellerId?: string; userId?: string; userAId?: string; userBId?: string; value: number };
+
+function toCountMap(rows: CountRow[], key: "ownerId" | "sellerId" | "userId"): Map<string, number> {
+  const map = new Map<string, number>();
+  for (const row of rows) {
+    const id = row[key];
+    if (id) map.set(id, Number(row.value));
+  }
+  return map;
+}
+
+/**
+ * Loads every member that may appear in Discover together with the raw signals
+ * the ranking needs. Ranking itself is pure (`src/lib/discover/matching.ts`).
+ */
+export async function listDiscoverCandidates(options: {
+  viewerId: string;
+  limit: number;
+}): Promise<DiscoverCandidate[]> {
+  const viewerId = options.viewerId;
+
+  const rows = await db
+    .select({
+      id: users.id,
+      firstName: users.firstName,
+      lastName: users.lastName,
+      handle: users.handle,
+      isDemo: users.isDemo,
+      foundingMember: users.foundingMember,
+      lastLoginAt: users.lastLoginAt,
+      createdAt: users.createdAt,
+      avatarUrl: profiles.avatarUrl,
+      headline: profiles.headline,
+      jobTitle: profiles.jobTitle,
+      company: profiles.company,
+      location: profiles.location,
+      bio: profiles.bio,
+      rolesJson: profiles.rolesJson,
+      skillsJson: profiles.skillsJson,
+      lookingForJson: profiles.lookingForJson,
+      offeringJson: profiles.offeringJson,
+      discoverable: privacySettings.discoverable,
+    })
+    .from(users)
+    .leftJoin(profiles, eq(profiles.userId, users.id))
+    .leftJoin(privacySettings, eq(privacySettings.userId, users.id))
+    .where(and(ne(users.id, viewerId), eq(users.status, "active")))
+    .orderBy(desc(users.lastLoginAt), desc(users.createdAt));
+
+  const discoverable = rows.filter((row) => row.discoverable !== false);
+  const ids = discoverable.map((row) => row.id);
+  if (ids.length === 0) return [];
+
+  const [interestRows, goalRows, trustRows, connectionRows, followRows, pendingRows, opportunityRows, listingRows, verifiedRows] =
+    await Promise.all([
+      db
+        .select({
+          userId: userInterests.userId,
+          slug: interests.slug,
+          labelDe: interests.labelDe,
+          labelEn: interests.labelEn,
+          groupDe: interests.groupDe,
+          groupEn: interests.groupEn,
+        })
+        .from(userInterests)
+        .innerJoin(interests, eq(interests.id, userInterests.interestId)),
+      db
+        .select({ userId: userGoals.userId, slug: goals.slug, labelDe: goals.labelDe, labelEn: goals.labelEn })
+        .from(userGoals)
+        .innerJoin(goals, eq(goals.id, userGoals.goalId)),
+      db.select({ userId: trustScoreSummaries.userId, score10: trustScoreSummaries.score10 }).from(trustScoreSummaries),
+      db
+        .select({ userAId: connections.userAId, userBId: connections.userBId })
+        .from(connections)
+        .where(isNull(connections.endedAt)),
+      db.select({ followingId: follows.followingId }).from(follows).where(eq(follows.followerId, viewerId)),
+      db
+        .select({ fromUserId: connectionRequests.fromUserId, toUserId: connectionRequests.toUserId })
+        .from(connectionRequests)
+        .where(eq(connectionRequests.status, "pending")),
+      db
+        .select({ ownerId: businessOpportunities.ownerId, value: count() })
+        .from(businessOpportunities)
+        .where(and(isNull(businessOpportunities.deletedAt), eq(businessOpportunities.status, "published")))
+        .groupBy(businessOpportunities.ownerId),
+      db
+        .select({ sellerId: marketplaceListings.sellerId, value: count() })
+        .from(marketplaceListings)
+        .where(eq(marketplaceListings.status, "published"))
+        .groupBy(marketplaceListings.sellerId),
+      db
+        .select({ userId: performanceRecords.userId, value: count() })
+        .from(performanceRecords)
+        .where(eq(performanceRecords.verification, "verified"))
+        .groupBy(performanceRecords.userId),
+    ]);
+
+  const interestsByUser = new Map<string, typeof interestRows>();
+  for (const row of interestRows) {
+    const list = interestsByUser.get(row.userId) ?? [];
+    list.push(row);
+    interestsByUser.set(row.userId, list);
+  }
+  // The seed (and some older profiles) store goal *slugs* in the free-text
+  // "looking for"/"offering" lists – map them back to readable labels.
+  const goalLabelBySlug = new Map(goalRows.map((row) => [row.slug, row.labelDe]));
+  const humanise = (values: string[]) => values.map((value) => goalLabelBySlug.get(value) ?? value);
+
+  const goalsByUser = new Map<string, typeof goalRows>();
+  for (const row of goalRows) {
+    const list = goalsByUser.get(row.userId) ?? [];
+    list.push(row);
+    goalsByUser.set(row.userId, list);
+  }
+  const trustByUser = new Map(trustRows.map((row) => [row.userId, row.score10]));
+  const opportunityCounts = toCountMap(opportunityRows, "ownerId");
+  const listingCounts = toCountMap(listingRows, "sellerId");
+  const verifiedCounts = toCountMap(verifiedRows, "userId");
+
+  const following = new Set(followRows.map((row) => row.followingId));
+  const pendingSet = new Set(pendingRows.flatMap((row) => [row.fromUserId, row.toUserId]));
+
+  const neighboursOf = new Map<string, Set<string>>();
+  for (const row of connectionRows) {
+    const a = neighboursOf.get(row.userAId) ?? new Set<string>();
+    a.add(row.userBId);
+    neighboursOf.set(row.userAId, a);
+    const b = neighboursOf.get(row.userBId) ?? new Set<string>();
+    b.add(row.userAId);
+    neighboursOf.set(row.userBId, b);
+  }
+  const myNeighbours = neighboursOf.get(viewerId) ?? new Set<string>();
+  const nameById = new Map(rows.map((row) => [row.id, `${row.firstName} ${row.lastName}`.trim()]));
+
+  return discoverable.slice(0, options.limit).map((row) => {
+    const myInterests = interestsByUser.get(row.id) ?? [];
+    const myGoals = goalsByUser.get(row.id) ?? [];
+    const neighbours = neighboursOf.get(row.id) ?? new Set<string>();
+    const shared = [...myNeighbours].filter((id) => neighbours.has(id));
+
+    return {
+      id: row.id,
+      firstName: row.firstName,
+      lastName: row.lastName,
+      handle: row.handle,
+      avatarUrl: row.avatarUrl,
+      headline: row.headline,
+      jobTitle: row.jobTitle,
+      company: row.company,
+      location: row.location,
+      bio: row.bio,
+      isDemo: row.isDemo,
+      foundingMember: row.foundingMember,
+      interestSlugs: myInterests.map((interest) => interest.slug),
+      interestLabels: myInterests.map((interest) => interest.labelDe),
+      goalSlugs: myGoals.map((goal) => goal.slug),
+      goalLabels: myGoals.map((goal) => goal.labelDe),
+      industrySlugs: [...new Set(myInterests.map((interest) => industrySlug(interest.groupEn)))],
+      industryLabels: [...new Set(myInterests.map((interest) => interest.groupDe))],
+      roles: parseJsonList(row.rolesJson),
+      skills: parseJsonList(row.skillsJson),
+      lookingFor: humanise(parseJsonList(row.lookingForJson)),
+      offering: humanise(parseJsonList(row.offeringJson)),
+      trustScore10: trustByUser.get(row.id) ?? null,
+      metrics: {
+        connections: neighbours.size,
+        opportunities: opportunityCounts.get(row.id) ?? 0,
+        listings: listingCounts.get(row.id) ?? 0,
+        verifiedRecords: verifiedCounts.get(row.id) ?? 0,
+      },
+      sharedConnectionCount: shared.length,
+      sharedConnectionNames: shared.slice(0, 3).map((id) => nameById.get(id) ?? ""),
+      isFollowing: following.has(row.id),
+      isConnected: myNeighbours.has(row.id),
+      requestPending: pendingSet.has(row.id),
+    };
+  });
+}
+
+/** Taxonomy group name → stable slug used for the industry filter. */
+export function industrySlug(groupEn: string): string {
+  return groupEn
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+/**
+ * Performance numbers for the own profile ("Performance" tab). Only real,
+ * confirmed platform data – nothing is invented or extrapolated.
+ */
+export async function performanceCountsFor(userId: string) {
+  const [
+    [{ value: connectionsTotal } = { value: 0 }],
+    [{ value: opportunitiesTotal } = { value: 0 }],
+    [{ value: listingsTotal } = { value: 0 }],
+    [{ value: courseListings } = { value: 0 }],
+    [{ value: investmentsTotal } = { value: 0 }],
+    [{ value: eventsTotal } = { value: 0 }],
+    [{ value: verifiedTotal } = { value: 0 }],
+    [{ value: followersTotal } = { value: 0 }],
+  ] = await Promise.all([
+    db.select({ value: count() }).from(connections).where(and(isNull(connections.endedAt), or(eq(connections.userAId, userId), eq(connections.userBId, userId)))),
+    db.select({ value: count() }).from(businessOpportunities).where(and(eq(businessOpportunities.ownerId, userId), isNull(businessOpportunities.deletedAt), eq(businessOpportunities.status, "published"))),
+    db.select({ value: count() }).from(marketplaceListings).where(and(eq(marketplaceListings.sellerId, userId), eq(marketplaceListings.status, "published"))),
+    db.select({ value: count() }).from(marketplaceListings).where(and(eq(marketplaceListings.sellerId, userId), eq(marketplaceListings.status, "published"), eq(marketplaceListings.kind, "course"))),
+    db.select({ value: count() }).from(investmentOpportunities).where(and(eq(investmentOpportunities.submittedById, userId), eq(investmentOpportunities.status, "approved"))),
+    db.select({ value: count() }).from(eventApplications).where(and(eq(eventApplications.userId, userId), eq(eventApplications.status, "confirmed"))),
+    db.select({ value: count() }).from(performanceRecords).where(and(eq(performanceRecords.userId, userId), eq(performanceRecords.verification, "verified"))),
+    db.select({ value: count() }).from(follows).where(eq(follows.followingId, userId)),
+  ]);
+
+  return {
+    connections: Number(connectionsTotal),
+    followers: Number(followersTotal),
+    opportunities: Number(opportunitiesTotal),
+    listings: Number(listingsTotal),
+    courseListings: Number(courseListings),
+    investments: Number(investmentsTotal),
+    events: Number(eventsTotal),
+    verifiedRecords: Number(verifiedTotal),
+  };
+}
+
+/** Own listings/investments/events for the profile "Angebote" tab. */
+export async function ownOfferingsFor(userId: string) {
+  const [opportunityRows, listingRows, investmentRows] = await Promise.all([
+    db
+      .select({
+        id: businessOpportunities.id,
+        slug: businessOpportunities.slug,
+        title: businessOpportunities.title,
+        type: businessOpportunities.type,
+        status: businessOpportunities.status,
+        createdAt: businessOpportunities.createdAt,
+      })
+      .from(businessOpportunities)
+      .where(and(eq(businessOpportunities.ownerId, userId), isNull(businessOpportunities.deletedAt)))
+      .orderBy(desc(businessOpportunities.createdAt))
+      .limit(12),
+    db
+      .select({
+        id: marketplaceListings.id,
+        slug: marketplaceListings.slug,
+        title: marketplaceListings.title,
+        kind: marketplaceListings.kind,
+        status: marketplaceListings.status,
+        createdAt: marketplaceListings.createdAt,
+      })
+      .from(marketplaceListings)
+      .where(eq(marketplaceListings.sellerId, userId))
+      .orderBy(desc(marketplaceListings.createdAt))
+      .limit(12),
+    db
+      .select({
+        id: investmentOpportunities.id,
+        title: investmentOpportunities.publicName,
+        status: investmentOpportunities.status,
+        createdAt: investmentOpportunities.createdAt,
+      })
+      .from(investmentOpportunities)
+      .where(eq(investmentOpportunities.submittedById, userId))
+      .orderBy(desc(investmentOpportunities.createdAt))
+      .limit(12),
+  ]);
+
+  return { opportunities: opportunityRows, listings: listingRows, investments: investmentRows };
+}

@@ -1,9 +1,12 @@
 # 08 – Test- und Qualitätssicherung
 
-**Stand:** 2026-09-21 · Aktueller Lauf auf `main` @ `f22c19e` (+ Resend-Test):
-`npm test` = **13 Dateien / 61 Tests grün**, `npm run typecheck` grün,
-`npm run cf:build` grün, `npm run lint` = 21 bestehende Hinweise
-(7 Fehler, 14 Warnungen – vorbestehend, siehe K-15).
+**Stand:** 2026-09-21 (Sprint 3) · Lauf auf Branch
+`arena/01a0c434-inner-circle` (Basis `main` @ `0babcb3`):
+`npm test` = **17 Dateien / 80 Tests grün**, `npx tsc --noEmit` grün,
+`npm run cf:build` grün, `npx wrangler deploy --dry-run` grün
+(8 592 kB, Bindings `DB`/`ASSETS`/`NEXTJS_ENV`), `npm run lint` =
+**14 bestehende Hinweise (4 Fehler, 10 Warnungen)** – vorbestehend, siehe K-15;
+**keine** neuen Befunde aus diesem Sprint.
 
 ---
 
@@ -49,6 +52,10 @@
 | `tests/integration/webhook.test.ts` | ohne Signatur/Secret niemals ein „verifiziertes" Event | Integration (DB) |
 | `tests/integration/messaging-authorization.test.ts` | Messaging nur zwischen bestätigten Verbindungen, Blockierung in beide Richtungen | Integration (DB) |
 | `tests/integration/message-delivery.test.ts` | produktionsnaher Zustand → ehrliches `none`, kein hängender Code, `ENABLE_DEV_OUTBOX` + Allowlist, Code nie an den Browser, Cooldown ≠ fehlender Versandweg, Outbox-Link nur Admin | Integration (DB) |
+| `tests/unit/discover-matching.test.ts` | **Sprint 3**: `scoreMatch`/`rankCandidates` (Interessen, Ziele, Branche, Suche↔Biete, Rolle, Skill, Standort, Firma), Filter nach Rolle/Branche/Standort/Interesse/Typ, `matchPercentFromScore`-Grenzen | Unit |
+| `tests/unit/event-permissions.test.ts` | **Sprint 3**: keine `eventsCreate`-Freigabe in der Matrix, keine `insert`/`update`/`delete` auf `events` in Server-Actions, deaktivierter Create-Eintrag in `AppShell`, Kuratoren-Hinweis auf `/app/events` | Unit (Quelltext) |
+| `tests/integration/connection-request.test.ts` | **Sprint 3**: Anfrage **ohne** Nachricht wird abgelehnt (`connectionMessageRequired`), mit gültiger Nachricht wird `ConnectionRequest` + Benachrichtigung geschrieben, Trial-Limit wird verbraucht | Integration (DB) |
+| `tests/integration/profile-preferences.test.ts` | **Sprint 3**: „Ich biete" wird gespeichert, Kennzahlen-Sichtbarkeit je Metrik (ungültige Werte verworfen, Fallback `performanceVisibility`), Interessen/Ziele nach dem Onboarding änderbar | Integration (DB) |
 | `tests/integration/resend-provider.test.ts` | konfigurierter `RESEND_API_KEY` → Versand über die Resend-API (Endpoint, Auth-Header, Absender `EMAIL_FROM` bzw. `onboarding@resend.dev`), Code bleibt gültig, Ablehnung durch Resend → ehrliches `send_failed` + Entwertung, „Code erneut senden" geht an Resend statt in den Postausgang | Integration (DB, `fetch` gestubbt) |
 
 **Testinfrastruktur:** `tests/global-setup.ts` löscht `.test.db`, erzeugt das
