@@ -5,33 +5,13 @@ import Link from "next/link";
 import { useI18n, usePageMeta } from "@/lib/i18n/context";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
-import { Card } from "@/components/ui/Card";
-import {
-  ArrowRightIcon,
-  BriefcaseIcon,
-  CalendarIcon,
-  ChartIcon,
-  CheckIcon,
-  GridIcon,
-  SparkleIcon,
-  StoreIcon,
-  UsersIcon,
-} from "@/components/ui/icons";
+import { ArrowRightIcon, CheckIcon, SparkleIcon } from "@/components/ui/icons";
 import { Kicker, Section, SectionHeading } from "@/components/site/Section";
 import { Reveal } from "@/components/site/Reveal";
-import { PLANS, annualSaving } from "@/lib/membership/plans";
+import { PLANS } from "@/lib/membership/plans";
 import { formatMoney } from "@/lib/utils";
 
 type AreaKey = "network" | "opportunities" | "jobs" | "investments" | "marketplace" | "events";
-
-const areaIcons: Record<AreaKey, (props: { size?: number }) => React.ReactNode> = {
-  network: UsersIcon,
-  opportunities: BriefcaseIcon,
-  jobs: GridIcon,
-  investments: ChartIcon,
-  marketplace: StoreIcon,
-  events: CalendarIcon,
-};
 
 const areaImages: Record<AreaKey, string> = {
   network: "/images/network-people.jpg",
@@ -42,7 +22,6 @@ const areaImages: Record<AreaKey, string> = {
   events: "/images/events-experience.jpg",
 };
 
-/** Each card links to the public preview page that explains the area in depth. */
 const areaLinks: Record<AreaKey, string> = {
   network: "/network",
   opportunities: "/business-deals",
@@ -53,24 +32,22 @@ const areaLinks: Record<AreaKey, string> = {
 };
 
 /**
- * Public homepage (Sprint 3 information architecture, spec §28–§32).
- *
- * Reduced to the four questions a first-time visitor has: what is this, what
- * can I do, why is it interesting, how do I join. Every longer explanation
- * lives on the matching sub-page, not here.
- *
- * Design freeze respected: hero, imagery, typography, colour and card style
- * are unchanged – only the section order and the amount of copy changed.
+ * Public homepage – conversion-first flow, existing visual language.
+ * Static client render only; no request-time data.
  */
 export function HomeContent() {
-  const { t, locale, tf } = useI18n();
+  const { t, locale } = useI18n();
   usePageMeta(t.meta.title, t.meta.description);
 
-  const areaKeys: AreaKey[] = ["network", "opportunities", "jobs", "investments", "marketplace", "events"];
-  const saving = annualSaving();
+  const areaKeys: AreaKey[] = [
+    "network",
+    "opportunities",
+    "jobs",
+    "investments",
+    "marketplace",
+    "events",
+  ];
   const monthly = formatMoney(PLANS.monthly.priceCents, "EUR", locale);
-  const annual = formatMoney(PLANS.annual.priceCents, "EUR", locale);
-  const savingLabel = formatMoney(saving.cents, "EUR", locale);
 
   const areaContent: Record<AreaKey, { title: string; text: string }> = {
     network: { title: t.home2.enablesNetworkTitle, text: t.home2.enablesNetworkText },
@@ -84,9 +61,21 @@ export function HomeContent() {
     events: { title: t.home2.enablesEventsTitle, text: t.home2.enablesEventsText },
   };
 
+  const outcomes = [
+    { key: "build", title: t.home2.outcomeBuildTitle, text: t.home2.outcomeBuildText },
+    { key: "capital", title: t.home2.outcomeCapitalTitle, text: t.home2.outcomeCapitalText },
+    { key: "experience", title: t.home2.outcomeExperienceTitle, text: t.home2.outcomeExperienceText },
+  ];
+
+  const steps = [
+    { n: "01", title: t.home2.stepJoinTitle, text: t.home2.stepJoinText },
+    { n: "02", title: t.home2.stepDiscoverTitle, text: t.home2.stepDiscoverText },
+    { n: "03", title: t.home2.stepConnectTitle, text: t.home2.stepConnectText },
+    { n: "04", title: t.home2.stepBuildTitle, text: t.home2.stepBuildText },
+  ];
+
   return (
     <>
-      {/* ---------------------------------------------------------------- Hero */}
       <div className="relative isolate overflow-hidden border-b border-border/70">
         <Image
           src="/images/hero-home.jpg"
@@ -116,71 +105,44 @@ export function HomeContent() {
               {t.home2.heroLead}
             </p>
 
-            <div className="mt-9 flex flex-wrap gap-3">
-              <Button href="/register" size="lg">
+            <div className="mt-9 flex flex-wrap items-center gap-3">
+              <Button href="#outcomes" size="lg">
                 {t.home2.heroCtaPrimary}
                 <ArrowRightIcon size={18} />
               </Button>
               <Button
-                href="/network"
-                size="lg"
-                variant="secondary"
-                className="border-white/25 bg-white/10 text-paper-50 backdrop-blur-sm hover:border-white/40 hover:bg-white/15"
-              >
-                {t.home2.heroCtaSecondary}
-              </Button>
-              <Button
-                href="#how-it-works"
+                href="/register"
                 size="lg"
                 variant="ghost"
                 className="text-paper-50/80 hover:bg-white/10 hover:text-paper-50"
               >
-                {t.home2.heroCtaTertiary}
+                {t.home2.heroCtaSecondary}
               </Button>
             </div>
-
-            <p className="mt-6 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3.5 py-1.5 text-xs font-semibold text-paper-50/90 backdrop-blur-sm">
-              <CheckIcon size={14} />
-              {t.home2.heroTrialBadge}
-            </p>
           </div>
-
-          <ul className="mt-14 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-            {Object.values(t.home2.heroFacts).map((fact) => (
-              <li
-                key={fact}
-                className="rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-sm font-medium text-paper-50/90 backdrop-blur-sm"
-              >
-                {fact}
-              </li>
-            ))}
-          </ul>
-          <p className="mt-6 text-[11px] text-paper-50/50">{t.home2.heroNote}</p>
+          <p className="mt-10 text-[11px] text-paper-50/50">{t.home2.heroNote}</p>
         </div>
       </div>
 
-      {/* --------------------------------------------- What is INNER CIRCLE? */}
-      <Section bg="default" id="about">
-        <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
-          <Reveal>
-            <Kicker>{t.home2.aboutKicker}</Kicker>
-            <h2 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">{t.home2.aboutTitle}</h2>
-            <p className="mt-4 max-w-2xl text-base leading-7 text-foreground-muted">{t.home2.aboutLead}</p>
-          </Reveal>
-          <Reveal delay={80}>
-            <ul className="space-y-3">
-              {[t.home2.aboutPoint1, t.home2.aboutPoint2, t.home2.aboutPoint3].map((point) => (
-                <li key={point} className="flex gap-3 text-sm leading-6">
-                  <CheckIcon size={18} className="mt-0.5 shrink-0 text-forest-500" />
-                  <span>{point}</span>
-                </li>
-              ))}
-            </ul>
-          </Reveal>
+      <Section bg="default" id="outcomes">
+        <Reveal>
+          <Kicker>{t.home2.outcomeKicker}</Kicker>
+          <h2 className="mt-4 max-w-2xl text-3xl font-bold tracking-tight sm:text-5xl">
+            {t.home2.outcomeTitle}
+          </h2>
+        </Reveal>
+        <div className="mt-12 grid gap-10 lg:grid-cols-3">
+          {outcomes.map((item, index) => (
+            <Reveal key={item.key} delay={index * 70}>
+              <p className="text-xs font-bold uppercase tracking-[0.22em] text-electric-600 dark:text-electric-400">
+                {item.title}
+              </p>
+              <p className="mt-3 text-lg font-semibold tracking-tight sm:text-xl">{item.text}</p>
+            </Reveal>
+          ))}
         </div>
       </Section>
 
-      {/* -------------------------------------------------- The six areas */}
       <Section bg="surface" id="how-it-works">
         <Reveal>
           <SectionHeading
@@ -190,34 +152,42 @@ export function HomeContent() {
             lead={t.home2.enablesLead}
           />
         </Reveal>
-
-        <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-12 space-y-0">
           {areaKeys.map((key, index) => {
-            const Icon = areaIcons[key];
             const content = areaContent[key];
-
+            const reverse = index % 2 === 1;
             return (
-              <Reveal key={key} delay={index * 60}>
+              <Reveal key={key} delay={index * 40}>
                 <Link
                   href={areaLinks[key]}
-                  className="group flex h-full flex-col overflow-hidden rounded-3xl border border-border bg-surface transition-all duration-300 hover:-translate-y-1 hover:border-electric-500/40 hover:shadow-lift"
+                  className={`group grid items-center gap-6 border-t border-border py-8 sm:gap-10 sm:py-10 lg:grid-cols-12 ${
+                    reverse ? "" : ""
+                  }`}
                 >
-                  <span className="relative block h-40 w-full overflow-hidden bg-surface-muted">
+                  <span
+                    className={`relative block overflow-hidden rounded-2xl bg-surface-muted lg:col-span-5 ${
+                      reverse ? "lg:order-2" : ""
+                    }`}
+                  >
                     <Image
                       src={areaImages[key]}
                       alt=""
                       width={800}
                       height={500}
-                      sizes="(max-width: 640px) 100vw, 33vw"
-                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                      sizes="(max-width: 1024px) 100vw, 40vw"
+                      className="h-48 w-full object-cover transition-transform duration-500 group-hover:scale-[1.03] sm:h-56"
                     />
                   </span>
-                  <span className="flex flex-1 flex-col p-5">
-                    <span className="inline-flex w-fit rounded-xl bg-electric-500/10 p-2.5 text-electric-600 dark:text-electric-300">
-                      <Icon size={18} />
+                  <span className={`lg:col-span-7 ${reverse ? "lg:order-1" : ""}`}>
+                    <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-foreground-subtle">
+                      0{index + 1}
                     </span>
-                    <span className="mt-3.5 text-lg font-bold tracking-tight">{content.title}</span>
-                    <span className="mt-1.5 text-sm leading-6 text-foreground-muted">{content.text}</span>
+                    <span className="mt-2 block text-2xl font-bold tracking-tight sm:text-3xl">
+                      {content.title}
+                    </span>
+                    <span className="mt-3 block max-w-xl text-sm leading-7 text-foreground-muted sm:text-base">
+                      {content.text}
+                    </span>
                   </span>
                 </Link>
               </Reveal>
@@ -226,19 +196,113 @@ export function HomeContent() {
         </div>
       </Section>
 
-      {/* ------------------------- Compact teaser: what the network creates.
-          Replaces the former full-size statistics section ("Was durch das
-          Netzwerk entsteht") with a short statement and a single CTA to
-          /portfolio. Hero and six main areas stay untouched. */}
-      <Section bg="muted">
+      <Section bg="muted" id="audience">
         <Reveal>
-          <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
+          <p className="text-xs font-bold uppercase tracking-[0.22em] text-sand-600 dark:text-sand-400">
+            {t.home2.audienceKicker}
+          </p>
+          <h2 className="mt-4 text-3xl font-bold tracking-tight sm:text-5xl">{t.home2.audienceTitle}</h2>
+          <p className="mt-4 max-w-2xl text-base leading-7 text-foreground-muted">{t.home2.audienceLead}</p>
+          <ul className="mt-8 flex flex-wrap gap-2">
+            {t.home2.audienceRoles.map((role) => (
+              <li
+                key={role}
+                className="rounded-full border border-border bg-background px-4 py-2 text-sm font-medium"
+              >
+                {role}
+              </li>
+            ))}
+          </ul>
+        </Reveal>
+      </Section>
+
+      <Section bg="default" id="flow">
+        <Reveal>
+          <Kicker>{t.home2.flowKicker}</Kicker>
+          <h2 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">{t.home2.flowTitle}</h2>
+        </Reveal>
+        <ol className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+          {steps.map((step, index) => (
+            <Reveal key={step.n} delay={index * 50}>
+              <li>
+                <p className="text-sm font-bold tracking-[0.16em] text-electric-600 dark:text-electric-300">
+                  {step.n}
+                </p>
+                <h3 className="mt-3 text-xl font-bold tracking-tight">{step.title}</h3>
+                <p className="mt-2 text-sm leading-6 text-foreground-muted">{step.text}</p>
+              </li>
+            </Reveal>
+          ))}
+        </ol>
+      </Section>
+
+      <Section bg="surface" id="trust">
+        <Reveal>
+          <div className="max-w-3xl">
+            <Kicker>{t.home2.trustKicker}</Kicker>
+            <h2 className="mt-4 text-3xl font-bold tracking-tight sm:text-5xl">{t.home2.trustTitle}</h2>
+            <p className="mt-5 text-base leading-7 text-foreground-muted sm:text-lg">{t.home2.trustLead}</p>
+            <ul className="mt-8 space-y-3">
+              {[t.home2.trustPoint1, t.home2.trustPoint2, t.home2.trustPoint3].map((point) => (
+                <li key={point} className="flex gap-3 text-sm leading-6">
+                  <CheckIcon size={18} className="mt-0.5 shrink-0 text-forest-500" />
+                  <span>{point}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </Reveal>
+      </Section>
+
+      <Section bg="default" id="membership">
+        <div className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
+          <Reveal>
+            <Kicker>{t.home2.membershipKicker}</Kicker>
+            <h2 className="mt-4 text-3xl font-bold tracking-tight sm:text-5xl">
+              {t.home2.membershipTitle}
+            </h2>
+            <p className="mt-4 text-base leading-7 text-foreground-muted">{t.home2.membershipLead}</p>
+            <p className="mt-8 text-5xl font-bold tracking-tight">
+              {monthly}
+              <span className="ml-2 text-base font-medium text-foreground-muted">
+                {t.app.billing.perMonth}
+              </span>
+            </p>
+            <p className="mt-3 text-sm text-foreground-muted">{t.home2.membershipTrialLine}</p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Button href="/register" size="lg">
+                {t.home2.membershipCta}
+                <ArrowRightIcon size={16} />
+              </Button>
+              <Button href="/membership" size="lg" variant="secondary">
+                {t.nav.membership}
+              </Button>
+            </div>
+          </Reveal>
+          <Reveal delay={80}>
+            <ul className="space-y-3 border-l border-border pl-6">
+              {t.home2.membershipIncludedItems.map((item) => (
+                <li key={item} className="flex gap-2.5 text-sm leading-6">
+                  <CheckIcon size={16} className="mt-0.5 shrink-0 text-forest-500" />
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-6 text-xs leading-5 text-foreground-subtle">{t.home2.membershipNote}</p>
+          </Reveal>
+        </div>
+      </Section>
+
+      <Section bg="muted" id="portfolio">
+        <Reveal>
+          <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-2xl">
-              <Kicker tone="sand">{t.home2.teaserKicker}</Kicker>
+              <Kicker tone="sand">{t.home2.portfolioKicker}</Kicker>
               <h2 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">
-                {t.home2.teaserTitle}
+                {t.home2.portfolioTitle}
               </h2>
-              <p className="mt-4 text-base leading-7 text-foreground-muted">{t.home2.teaserLead}</p>
+              <p className="mt-4 text-base leading-7 text-foreground-muted">{t.home2.portfolioLead}</p>
+              <p className="mt-4 text-sm font-medium">{t.home2.portfolioSplit}</p>
             </div>
             <Button href="/portfolio" size="lg" className="shrink-0">
               {t.home2.teaserCta}
@@ -248,66 +312,47 @@ export function HomeContent() {
         </Reveal>
       </Section>
 
-      {/* -------------------------------------------------- Membership CTA */}
-      <Section bg="default">
+      <Section bg="default" id="events-feel">
         <Reveal>
-          <SectionHeading
-            kicker={t.home2.membershipKicker}
-            title={t.home2.membershipTitle}
-            lead={t.home2.membershipLead}
-          />
+          <div className="grid items-center gap-10 lg:grid-cols-2">
+            <div className="relative overflow-hidden rounded-2xl">
+              <Image
+                src="/images/events-experience.jpg"
+                alt=""
+                width={900}
+                height={700}
+                sizes="(max-width: 1024px) 100vw, 50vw"
+                className="h-72 w-full object-cover sm:h-96"
+              />
+            </div>
+            <div>
+              <Kicker>{t.home2.eventsKicker}</Kicker>
+              <h2 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">{t.home2.eventsTitle}</h2>
+              <p className="mt-4 text-base leading-7 text-foreground-muted">{t.home2.eventsLead}</p>
+              <Button href="/events" className="mt-8" variant="secondary">
+                {t.home2.eventsCta}
+              </Button>
+            </div>
+          </div>
         </Reveal>
+      </Section>
 
-        <div className="mt-10 grid gap-5 md:grid-cols-2 lg:mx-auto lg:max-w-3xl">
-          <Reveal>
-            <Card className="flex h-full flex-col p-6 sm:p-7">
-              <h3 className="text-lg font-bold tracking-tight">{t.home2.membershipMonthly}</h3>
-              <p className="mt-3 text-4xl font-bold tracking-tight">
-                {monthly}
-                <span className="ml-2 text-sm font-medium text-foreground-muted">{t.app.billing.perMonth}</span>
-              </p>
-              <p className="mt-3 text-sm text-foreground-muted">{t.home2.membershipLead}</p>
-              <Button href="/register" variant="secondary" className="mt-6">
-                {t.home2.membershipCta}
+      <Section bg="surface">
+        <Reveal>
+          <div className="max-w-2xl">
+            <h2 className="text-3xl font-bold tracking-tight sm:text-5xl">{t.home2.finalTitle}</h2>
+            <p className="mt-4 text-base leading-7 text-foreground-muted">{t.home2.finalLead}</p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Button href="/register" size="lg">
+                {t.home2.finalCtaPrimary}
+                <ArrowRightIcon size={18} />
               </Button>
-            </Card>
-          </Reveal>
-
-          <Reveal delay={80}>
-            <Card className="relative flex h-full flex-col border-electric-500/40 p-6 shadow-card sm:p-7">
-              <div className="flex items-center justify-between gap-3">
-                <h3 className="text-lg font-bold tracking-tight">{t.home2.membershipAnnual}</h3>
-                <Badge variant="forest">{t.home2.membershipAnnualBadge}</Badge>
-              </div>
-              <p className="mt-3 text-4xl font-bold tracking-tight">
-                {annual}
-                <span className="ml-2 text-sm font-medium text-foreground-muted">{t.app.billing.perYear}</span>
-              </p>
-              <p className="mt-3 text-sm text-forest-600 dark:text-forest-300">
-                {tf(t.app.billing.annualSaving, { amount: savingLabel, percent: saving.percent })}
-              </p>
-              <ul className="mt-5 space-y-2">
-                {t.home2.membershipIncludedItems.map((item) => (
-                  <li key={item} className="flex gap-2.5 text-sm leading-6">
-                    <CheckIcon size={16} className="mt-0.5 shrink-0 text-forest-500" />
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
-              <Button href="/register" className="mt-6">
-                {t.home2.membershipCta}
-                <ArrowRightIcon size={16} />
+              <Button href="/login" size="lg" variant="secondary">
+                {t.home2.finalCtaSecondary}
               </Button>
-            </Card>
-          </Reveal>
-        </div>
-
-        <p className="mx-auto mt-6 max-w-3xl text-center text-xs leading-5 text-foreground-subtle">
-          {t.home2.membershipNote}{" "}
-          <Link href="/membership" className="font-semibold text-electric-600 dark:text-electric-300">
-            {t.nav.membership}
-          </Link>
-        </p>
+            </div>
+          </div>
+        </Reveal>
       </Section>
     </>
   );

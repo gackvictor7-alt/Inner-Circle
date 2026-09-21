@@ -323,6 +323,11 @@ export const appCoreDe = {
     areaOpen: "Öffnen",
     lockedHint: "Mitgliedschaft erforderlich",
     trialHint: "Im Discovery-Trial verfügbar",
+    forYouTitle: "Für dich",
+    forYouDiscover: "Passende Connections in Discover",
+    forYouInbox: "Neue Nachrichten und Anfragen",
+    forYouEvents: "Diese Woche: Events",
+    forYouProfile: "Profil vervollständigen",
   },
   settings: {
     title: "Einstellungen",
@@ -795,6 +800,11 @@ export const appCoreEn: AppCoreDict = {
     areaOpen: "Open",
     lockedHint: "Membership required",
     trialHint: "Available in the discovery trial",
+    forYouTitle: "For you",
+    forYouDiscover: "Matching connections in Discover",
+    forYouInbox: "New messages and requests",
+    forYouEvents: "This week: events",
+    forYouProfile: "Complete your profile",
   },
   settings: {
     title: "Settings",

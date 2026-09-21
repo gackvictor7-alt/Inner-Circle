@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   applyDiscoverFilters,
+  explainMatchReasons,
   geocodeLocation,
   hasActiveFilters,
   haversineKm,
@@ -96,6 +97,27 @@ describe("discover relevance ranking (rule-based, no AI)", () => {
     expect(matchPercentFromScore(1)).toBe(4);
     expect(matchPercentFromScore(100)).toBe(99);
     expect(matchPercentFromScore(24)).toBeGreaterThan(matchPercentFromScore(8));
+  });
+
+  it("explains matches with rule-based reasons, not AI claims", () => {
+    const viewer = signals({
+      interestSlugs: ["real-estate"],
+      goalSlugs: ["find-partners"],
+      lookingFor: ["kapital"],
+      location: "Berlin",
+    });
+    const candidate = signals({
+      interestSlugs: ["real-estate"],
+      goalSlugs: ["find-partners"],
+      offering: ["kapital"],
+      location: "Berlin",
+    });
+    const { signals: matchSignals } = scoreMatch(viewer, candidate);
+    const reasons = explainMatchReasons(matchSignals, { location: "Berlin" });
+    expect(reasons.some((reason) => reason.kind === "goal")).toBe(true);
+    expect(reasons.some((reason) => reason.kind === "interest")).toBe(true);
+    expect(reasons.some((reason) => reason.kind === "supply")).toBe(true);
+    expect(reasons.some((reason) => reason.kind === "location" && reason.value === "Berlin")).toBe(true);
   });
 });
 

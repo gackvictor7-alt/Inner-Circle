@@ -538,15 +538,24 @@ export function DiscoverDeck({
                 <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-foreground-subtle">
                   {t.app.discover.matchWhy}
                 </p>
-                <ul className="mt-2.5 flex flex-wrap gap-1.5">
-                  {current.sharedInterests.length > 0 && (
-                    <MatchChip label={`${t.app.discover.sharedInterests}: ${current.sharedInterests.slice(0, 4).join(", ")}`} />
+                <ul className="mt-2.5 flex flex-col gap-1.5">
+                  {current.sharedGoals.slice(0, 2).map((goal) => (
+                    <MatchChip key={`g-${goal}`} label={tf(t.app.discover.reasonSharedGoal, { value: goal })} />
+                  ))}
+                  {current.sharedInterests.slice(0, 2).map((interest) => (
+                    <MatchChip
+                      key={`i-${interest}`}
+                      label={tf(t.app.discover.reasonSharedInterest, { value: interest })}
+                    />
+                  ))}
+                  {current.supplyDemand && <MatchChip label={t.app.discover.reasonSupply} />}
+                  {current.sameLocation && (
+                    <MatchChip
+                      label={tf(t.app.discover.reasonLocation, {
+                        value: current.location ? `: ${current.location}` : "",
+                      })}
+                    />
                   )}
-                  {current.sharedGoals.length > 0 && (
-                    <MatchChip label={`${t.app.discover.sharedGoals}: ${current.sharedGoals.slice(0, 3).join(", ")}`} />
-                  )}
-                  {current.supplyDemand && <MatchChip label={t.app.discover.supplyDemand} />}
-                  {current.sameLocation && <MatchChip label={t.app.discover.sameLocation} />}
                   {current.sharedConnectionCount > 0 && (
                     <MatchChip
                       label={tf(t.app.discover.sharedConnections, { count: current.sharedConnectionCount })}
