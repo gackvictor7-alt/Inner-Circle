@@ -3,7 +3,7 @@
 **Diese Datei ist der verbindliche Einstiegspunkt für jeden Menschen und jeden
 KI-Agenten, der an diesem Repository arbeitet.**
 
-- **Stand:** 2026-09-21 (Sprint 3 – Informationsarchitektur)
+- **Stand:** 2026-09-21 (Sprint 3 – Informationsarchitektur + UX-Follow-up Start/Discover/Profil)
 - **Technische Basis:** Branch `arena/01a0c434-inner-circle`, Basis `main` @
   `0babcb3`. Vorheriger dokumentierter Stand: `f22c19e` ("fix(auth): honest
   delivery states, protected dev outbox, working 48h trial start")
@@ -40,7 +40,7 @@ Details: [`01-product.md`](01-product.md)
 | Deployment | Build `npm run cf:build` · Deploy `npm run cf:release` · Production-Branch `main` |
 | Datenbank (Produktion) | D1 `inner-circle-db`, Binding `DB`, Migrationen in `drizzle/` |
 | i18n | Eigenes Wörterbuch `src/lib/i18n` (DE = Standard, EN vollständig) |
-| Tests | Vitest: **18 Dateien / 84 Tests grün** (`npm test`) |
+| Tests | Vitest: **18 Dateien / 92 Tests grün** (`npm test`) |
 | App-Navigation | **6 Primärbereiche**: Start · Discover · Erstellen · Inbox · Events · Profil |
 
 ## 3. Status-Legende (verbindlich)
@@ -211,9 +211,9 @@ existiert. Backend + Daten + Berechtigungen + Nachweis gehören dazu.
 | D1-Anbindung + Migrationen (50 Tabellen) | WORKING | `drizzle/0000_init.sql`, `cf:release` |
 | Laufzeit-Treiberwechsel D1 ↔ libSQL | WORKING | `src/db/client.ts` |
 | Deployment über Workers Builds (main → Produktion) | PARTIAL | dokumentierter Weg; letzter Merge nach `main` durch den Gründer zu prüfen (Dashboard) |
-| Automatisierte Tests | WORKING | **84 Tests grün (18 Testdateien)** |
+| Automatisierte Tests | WORKING | **92 Tests grün (18 Testdateien)** |
 | CI (GitHub Actions) | NOT IMPLEMENTED | keine Workflows im Repo |
-| Lint | PARTIAL | **14 bestehende Hinweise (4 Fehler, 10 Warnungen)** – verbessert von 21/7; keine neuen Befunde aus diesem Sprint |
+| Lint | PARTIAL | **15 bestehende Hinweise (5 Fehler, 10 Warnungen)** – Stand unverändert gegenüber dem Incident-Fix; keine neuen Befunde aus diesem Sprint |
 | Monitoring/Alerting | PREPARED | Observability im Worker aktiv, keine Alarme |
 
 ## 4b. Informationsarchitektur ab Sprint 3
@@ -236,12 +236,26 @@ Bereiche:**
 
 | # | Bereich | Route | Inhalt |
 | - | ------- | ----- | ------ |
-| 1 | **Start** | `/app` | kompakte Kopfzeile (`Hallo, <Name>` + Trial-Chip + Inbox-Shortcut) und die sechs Kernbereichs-Karten |
-| 2 | **Discover** | `/app/discover` | Business-Karten mit Pflicht-Connect-Nachricht, Relevanz-Ranking, Filter |
+| 1 | **Start** | `/app` | kompakte Kopfzeile (`Hallo, <Name>` + Trial-Chip + Inbox-Shortcut) und die sechs Kernbereichs-Karten als **2×3-Raster auf Desktop** (Tablet ebenfalls 2-spaltig, Mobile 1-spaltig) – größere, ruhigere Cards |
+| 2 | **Discover** | `/app/discover` | Business-Karten mit Pflicht-Connect-Nachricht, Relevanz-Ranking, **kompakte Filterleiste** (Standort, Umkreis, Rolle, Branche) + „Mehr Filter“ (Interesse, Typ, Ich suche, Ich biete, Investmentinteressen), aktive Filter als entfernbare Chips, „Filter zurücksetzen“, ehrliche Leerzustände – keine Fake-Personen |
 | 3 | **Erstellen** | Create-Sheet (Desktop-Button / Mobile `+`) | Business Deal · Job/Projekt · Investment · Marketplace-Angebot · Kurs · Beitrag |
 | 4 | **Inbox** | `/app/inbox` | Nachrichten · Anfragen · Benachrichtigungen (Segmented Control) |
 | 5 | **Events** | `/app/events` | kommende Events, Bewerbungen, eigene Teilnahme – kuratiert von INNER CIRCLE |
-| 6 | **Profil** | `/app/profile` | Business Identity: Übersicht · Aktivitäten · Performance · Angebote + Konto |
+| 6 | **Profil** | `/app/profile` | Business Identity: kompakten Header (Avatar, Name, Handle, Positionierung), Statistikzeile (Follower · Folgt · Business Connections · Trust Score), separate Action-Zeile (Profil bearbeiten · Profil teilen · Einstellungen), schmaler Profilfortschritt, Tabs Übersicht · Aktivitäten · Performance · Angebote zentriert; Interessen & Ziele und sekundäre Infos als Accordions (eingeklappt) |
+
+**UX-Follow-up (2026-09-21, ausdrücklicher Gründerauftrag):** Start zeigt die
+sechs Kernbereiche jetzt als **2×3-Raster** (Desktop/Tablet 2 Spalten, Mobile
+1 Spalte) mit größeren, ruhigeren Cards. Discover erhält eine kompakte
+Filterleiste mit aktiven Filter-Chips, „Mehr Filter“ und „Filter
+zurücksetzen“; neu sind Umkreis (ehrlich: nur für Städte der gebündelten
+Offline-Tabelle `CITY_COORDINATES`, sonst exakte Suche mit Hinweis), „Ich
+suche“, „Ich biete“ und Investmentinteressen (kuratierter Taxonomie-Subset
+`INVESTMENT_INTEREST_SLUGS`). Das Profil ist komprimiert: Identity-Header,
+Statistikzeile, Action-Zeile, schmaler Fortschritt, zentrierte Tabs,
+Interessen & Ziele sowie sekundäre Informationen als Accordions
+(native `<details>`, kein Client-JS). Der CPU-Incident-Fix (PR #10, statische
+öffentliche Seiten) wurde **nicht** angerissen; Auth, Resend, Trial,
+Membership und öffentliche Homepage sind unverändert.
 
 **Unter geordnet (nicht gelöscht):** Netzwerk, Chancen, Jobs & Projekte,
 Investments, Marketplace, Academy erscheinen als zweite Sidebar-Gruppe

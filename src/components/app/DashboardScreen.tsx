@@ -191,25 +191,27 @@ export function DashboardScreen({ data }: { data: DashboardData }) {
             <Link
               key={area.href}
               href={area.href}
-              className="ic-span-4 group flex flex-col rounded-2xl border border-border bg-surface p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-electric-500/40 hover:shadow-lift sm:p-6"
+              className="ic-span-6 group flex h-full flex-col rounded-2xl border border-border bg-surface p-6 transition-all duration-300 hover:-translate-y-0.5 hover:border-electric-500/40 hover:shadow-lift sm:p-8"
             >
               <span className="flex items-start justify-between gap-3">
-                <span className={`inline-flex rounded-xl p-2.5 ${accents[area.accent]}`}>
-                  <area.icon size={20} />
+                <span className={`inline-flex rounded-xl p-3 ${accents[area.accent]}`}>
+                  <area.icon size={24} />
                 </span>
                 {area.locked ? (
                   <Badge variant="outline">{t.app.dashboard.lockedHint}</Badge>
                 ) : (
                   <span
                     aria-hidden="true"
-                    className="text-sm font-semibold text-electric-600 opacity-0 transition-opacity group-hover:opacity-100 dark:text-electric-300"
+                    className="text-base font-semibold text-electric-600 opacity-0 transition-opacity group-hover:opacity-100 dark:text-electric-300"
                   >
                     →
                   </span>
                 )}
               </span>
-              <h3 className="mt-4 text-base font-bold tracking-tight sm:text-lg">{area.title}</h3>
-              <p className="mt-1.5 flex-1 text-sm leading-6 text-foreground-muted">{area.desc}</p>
+              <h3 className="mt-5 text-lg font-bold tracking-tight sm:text-xl">{area.title}</h3>
+              <p className="mt-2 flex-1 text-sm leading-7 text-foreground-muted sm:text-[15px]">
+                {area.desc}
+              </p>
             </Link>
           ))}
         </div>
