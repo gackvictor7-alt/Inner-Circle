@@ -1,8 +1,27 @@
-# Entscheidungen (ADR-Log)
+# 13 – Entscheidungen (ADR-Log)
 
-Format: **Kontext → Entscheidung → Konsequenz.**
+**Stand:** 2026-09-21 · Format: **Kontext → Entscheidung → Konsequenz.**
 Annahmen sind als solche markiert; geänderte Geschäftsregeln nur mit
 Gründer-Freigabe.
+
+**Wichtig:** Einige frühe ADRs beschreiben das ursprüngliche Zielbild und sind
+durch spätere Entscheidungen **überholt**. Überholte ADRs bleiben als Historie
+stehen, sind aber unten ausdrücklich als ersetzt markiert – der **Code** und
+[`00-SOURCE-OF-TRUTH.md`](00-SOURCE-OF-TRUTH.md) sind maßgeblich.
+
+| ADR | Thema | Status heute |
+| --- | ----- | ------------ |
+| ADR-001 | Next.js-Monolith | **gültig** |
+| ADR-002 | PostgreSQL + Prisma | **ersetzt durch ADR-008** (SQLite/D1 + Drizzle) |
+| ADR-003 | Auth.js / NextAuth | **ersetzt** (eigene Auth in `src/lib/auth`) – siehe ADR-006-Kontext und `04-auth-membership.md` |
+| ADR-004 | Stripe für Abos, Connect-Kandidat | **gültig** (noch nicht produktiv aktiv) |
+| ADR-005 | Eigenes i18n statt next-intl | **gültig** |
+| ADR-006 | Eigenes Theme-Modul | **gültig** |
+| ADR-007 | Vercel als Hosting | **ersetzt durch ADR-008** |
+| ADR-008 | Cloudflare Workers + D1 | **gültig** |
+| ADR-009 | Kein stiller Nachrichtenverlust / Dev-Postausgang | **gültig** |
+| ADR-010 | Design Freeze | **gültig** (neu, 2026-09-21) |
+| ADR-011 | Dokumentationsstruktur als Source of Truth | **gültig** (neu, 2026-09-21) |
 
 ## ADR-001: Next.js-Monolith statt Microservices (2026-09-20, Schritt 01)
 
@@ -13,7 +32,7 @@ Gründer-Freigabe.
 - **Konsequenz:** Minimale Betriebskomplexität, eine Codebasis, später
   horizontal skalierbar; kein verteilter System-Overhead.
 
-## ADR-002: PostgreSQL + Prisma ab Schritt 04 (2026-09-20, Schritt 01)
+## ADR-002: PostgreSQL + Prisma ab Schritt 04 (2026-09-20, Schritt 01) – ⚠️ ERSETZT durch ADR-008
 
 - **Kontext:** Komplexes relationales Modell (Mitglieder, Deals,
   Provisionen), Portabilität wichtig.
@@ -22,7 +41,7 @@ Gründer-Freigabe.
 - **Konsequenz:** Schritt 01–03 ohne DB lauffähig; Schema wächst
   phasengerecht (Plan in `02-architecture.md`).
 
-## ADR-003: Auth.js, keine eigene Krypto (2026-09-20, Schritt 01)
+## ADR-003: Auth.js, keine eigene Krypto (2026-09-20, Schritt 01) – ⚠️ ERSETZT (eigene Auth-Implementierung umgesetzt)
 
 - **Kontext:** Sichere Konten ohne eigenes Sicherheitsrisiko.
 - **Entscheidung:** Auth.js (E-Mail+Passwort zuerst, OAuth/2FA später).
@@ -54,7 +73,7 @@ Gründer-Freigabe.
   Fremdpaket.
 - **Konsequenz:** Volle Kontrolle, keine Abhängigkeit.
 
-## ADR-007: Vercel als Hosting-Ziel (2026-09-20, Schritt 01)
+## ADR-007: Vercel als Hosting-Ziel (2026-09-20, Schritt 01) – ⚠️ ERSETZT durch ADR-008
 
 - **Kontext:** Null DevOps, Preview-Deployments, Next.js-nativ.
 - **Entscheidung:** Vercel (Free-Tier → Pro bei Wachstum).
@@ -112,3 +131,42 @@ Gründer-Freigabe.
   Codes öffentlich werden. Sobald ein Provider konfiguriert ist, hat er
   Vorrang; der Postausgang ist vor dem Launch zu deaktivieren
   (`docs/09-deployment.md`).
+
+## ADR-010: Design Freeze – der freigegebene visuelle Stand wird eingefroren (2026-09-21)
+
+- **Kontext:** Das aktuelle Design (Startseite, Bildsprache, Farbwelt,
+  Typografie, Navigation, Mobile-Richtung, Mitgliederbereich) ist vom Gründer
+  freigegeben und gefällt ihm. In früheren Sessions wurden visuelle Elemente
+  mehrfach überarbeitet; ohne verbindliche Regel besteht das Risiko, dass
+  zukünftige Aufträge (Features, Bugfixes, „Aufräumen") den freigegebenen Stand
+  unbeabsichtigt verändern.
+- **Entscheidung:** Der visuelle Stand wird als **APPROVED / DO NOT REDESIGN
+  WITHOUT EXPLICIT FOUNDER REQUEST** festgeschrieben
+  ([`10-design-freeze.md`](10-design-freeze.md)). Geschützt sind Startseite,
+  Bilder, Farb-Tokens, Typografie (Inter), Navigation, Grundlayout,
+  Dark/Light-System, DE/EN sowie die visuelle Sprache des Mitgliederbereichs.
+  Erlaubt bleiben technische Responsive- und Barrierefreiheits-Fixes ohne
+  Änderung der Gestaltungsrichtung.
+- **Konsequenz:** Jede sichtbare Änderung braucht einen ausdrücklichen
+  Designauftrag und einen Eintrag in `10-design-freeze.md`. Feature-Arbeit
+  verwendet ausschließlich die bestehenden Bausteine
+  (`src/components/ui/*`, `src/components/site/*`).
+
+## ADR-011: Dokumentationsstruktur als Source of Truth (2026-09-21)
+
+- **Kontext:** Die Dokumentation war über zehn Dateien verteilt, beschrieb
+  teils überholte Zielbilder (Auth.js, Prisma/Postgres, Vercel) und war als
+  Einstieg für neue Agenten nicht eindeutig. Es gab Referenzen auf nicht
+  existierende Dateien.
+- **Entscheidung:** `docs/00-SOURCE-OF-TRUTH.md` wird der verbindliche
+  Einstieg mit Statusübersicht aller Produktbereiche
+  (WORKING/PARTIAL/PREPARED/BLOCKED/NOT IMPLEMENTED/DEPRECATED). Detaildokumente
+  `01`–`14` decken Produkt, Architektur, Routen, Auth/Membership, Datenbank,
+  Rechte, Integrationen, Tests, Deployment, Design Freeze, Known Issues,
+  Roadmap, ADRs und Umgebungsvariablen ab. Das historische Fortschrittsprotokoll
+  liegt als `docs/archive/04-progress-log.md` und ist **keine Statusquelle**
+  mehr. `AGENTS.md` im Wurzelverzeichnis verweist Agenten zuerst auf
+  `docs/00-SOURCE-OF-TRUTH.md`.
+- **Konsequenz:** Künftige Änderungen aktualisieren immer `00-SOURCE-OF-TRUTH.md`
+  und das betroffene Detaildokument. Widersprüchliche alte Dokumente wurden
+  gelöscht bzw. archiviert, nicht parallel weitergeführt.

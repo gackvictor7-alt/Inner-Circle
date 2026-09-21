@@ -1,0 +1,135 @@
+# 10 – DESIGN FREEZE
+
+## DESIGN STATUS: APPROVED / DO NOT REDESIGN WITHOUT EXPLICIT FOUNDER REQUEST
+
+**Stand:** 2026-09-21 · Der aktuelle visuelle Stand des Projekts ist vom
+Gründer freigegeben und **eingefroren**. Diese Datei schützt ihn.
+
+Ein KI-Agent, eine Entwicklerin oder ein Dienstleister darf die unten
+aufgeführten Bereiche **nur** verändern, wenn der Gründer **ausdrücklich eine
+Designänderung beauftragt**. „Sieht besser aus", „moderner", „aufgeräumter",
+„konsistenter" oder eine stillschweigende Anpassung im Rahmen eines
+Feature-Auftrags sind **keine** gültigen Gründe.
+
+---
+
+## 1. Geschützte Bereiche (Änderung nur auf ausdrücklichen Auftrag)
+
+### 1.1 Öffentliche Startseite
+
+- Reihenfolge und Aufbau der Sektionen: Hero → Säulen („Was dir ermöglicht
+  wird") → Trust & Reputation → Events & Community → Membership → FAQ → CTA.
+- Hero-Bildsprache, Headline-Größe, Abstände, CTA-Anordnung.
+- Kennzahlen-Sektion (`StatsSection`) inkl. Zähl-Animation und
+  `reduced-motion`-Verhalten.
+- Dateien: `src/app/(site)/page.tsx`, `src/app/(site)/HomeContent.tsx`,
+  `src/components/site/StatsSection.tsx`, `src/components/site/blocks.tsx`.
+
+### 1.2 Bildsprache
+
+- Bestehende Bilder in `public/images/` (16 Stück) und `public/images/avatars/`
+  dürfen **nicht ausgetauscht, ersetzt oder neu generiert** werden.
+- Bildausschnitte (`object-cover`, Seitenverhältnisse), Overlays und Captions
+  bleiben unverändert.
+
+### 1.3 Farbwelt
+
+- Tokens in `src/app/globals.css`: `midnight-*`, `paper-*`, `electric-*`,
+  `forest-*`, `sand-*`, `success/danger/warning`, semantische Tokens
+  (`--background`, `--foreground`, `--surface`, `--border`, `--ring`).
+- Midnight Navy `#10151E`, Electric Blue `#366CF5`, Forest Green `#12805C`,
+  Sand `#CBB694`, Off White `#F7F8FA` bleiben die Markenfarben.
+- Kein Rückbau auf metallisches Gold/Champagner (bewusst entfernt).
+
+### 1.4 Typografie
+
+- Inter (self-hosted, `src/app/fonts/InterVariable.woff2`, SIL OFL 1.1) als
+  einzige Schriftfamilie; keine Web-Font-CDNs.
+- Größen-/Gewichts-/Tracking-Stufen der Überschriften und Fließtexte bleiben.
+
+### 1.5 Navigation
+
+- Struktur des öffentlichen Headers: Logo → `network`, `business-deals`,
+  `investments`, `marketplace`, `events`, `membership` → Sprach-/Theme-Umschalter
+  → Login/Registrierung bzw. „Zur App".
+- Mobile Menü: Panel als Geschwister-Element des Headers (kein Zurückstellen in
+  den `backdrop-blur`-Teilbaum), Scroll-Lock, Escape, Fokus-Handling.
+- Footer-Struktur, Spalten und Rechtliches-Links.
+- Dateien: `src/components/site/SiteHeader.tsx`, `SiteFooter.tsx`, `Logo.tsx`.
+- Mitgliederbereich-Navigation (Sidebar, Bottom-Bar, „Erstellen"-Sheet) in
+  `src/components/app/AppShell.tsx`.
+
+### 1.6 Grundlayout
+
+- Shell-Klassen `.ic-shell`, `.ic-narrow`, `.ic-app-bottom-space`,
+  `.ic-scroll-row`, `.ic-reveal`, `.ic-swipe-card` und ihre Breakpoints.
+- Sektions-Rhythmus (Abstände), Kartenradien (`--radius-*`), Schatten
+  (`--shadow-card`, `--shadow-lift`, `--shadow-pop`), Animationsdauern und
+  Easing (`--ease-emphasized`).
+- Karten-/Panels-Stil der Bereiche Membership, Events, Opportunities,
+  Marketplace, Investments.
+
+### 1.7 Dark/Light-System
+
+- Beide Modi müssen erhalten bleiben; kein Modus darf entfallen.
+- Umschaltung und Persistenz (localStorage, FOUC-freies Init-Skript) bleiben.
+- Kontrastverhältnisse dürfen technisch korrigiert, aber nicht neu gestaltet
+  werden.
+
+### 1.8 DE/EN
+
+- Vollständige Zweisprachigkeit bleibt Pflicht; die Struktur der Wörterbücher
+  (DE = EN) ist geschützt.
+- Der Umschalter bleibt an der heutigen Stelle und in heutiger Form.
+
+### 1.9 Visuelle Ausrichtung
+
+- Junge Unternehmer, offen, modern, international, Premium durch Reduktion.
+- Keine Rückkehr zu Seriositäts-Klischees (Gold, Serifenschrift, dunkle
+  „Banken"-Optik), keine verspielte Consumer-Optik.
+
+### 1.10 Mitgliederbereich
+
+- Visuelle Sprache des Dashboards, der Karten, Tabellen, Filter-Chips,
+  Empty-States und Sperrhinweise (Locked-State-Karten) bleibt bestehen.
+- Dateien: `src/components/app/**`, `src/components/ui/**`.
+
+## 2. Ausdrücklich erlaubt (kein Designbruch)
+
+- Technische Responsive-Bugfixes (z. B. Überlauf, abgeschnittene Inhalte,
+  Touch-Ziele, Safe-Area) – solange die Gestaltungsrichtung unverändert bleibt.
+- Barrierefreiheits-Fixes (Fokus, Labels, `aria-*`, Kontrast bei nachgewiesenem
+  WCAG-Verstoß).
+- Fehlerbehebungen, die keinen sichtbaren Stil ändern (Logik, Daten, Routing).
+- Neue Seiten/Features, die den bestehenden Bausteinen aus
+  `src/components/ui/*` und `src/components/site/*` folgen (keine neuen
+  Designrichtungen).
+- Redaktionelle Korrekturen an Texten, wenn sie inhaltlich falsch sind
+  (z. B. Preisangaben) – mit Hinweis im PR.
+
+## 3. Nicht erlaubt ohne ausdrücklichen Auftrag
+
+- Redesign einzelner Sektionen, „Aufräumen" von Layouts, Umsortieren der
+  Startseite.
+- Austausch von Bildern, Icons, Illustrationen; neue Bildgenerierung.
+- Änderung von Farbtönen, Radien, Schatten, Schriftgrößen oder Abständen
+  „aus Konsistenzgründen".
+- Neue Navigationspunkte, Umbenennung von Navigationslabels, neue Menüarten.
+- Entfernen oder Umstellen von Sprach-/Theme-Umschaltern.
+- Umgestaltung des Mitgliederbereichs (Sidebar-Typ, Kartenstil, Tabellenstil).
+- Änderungen an `src/app/globals.css`-Tokens ohne Designauftrag.
+
+## 4. Wenn ein Designauftrag kommt
+
+1. Auftrag schriftlich festhalten (welche Bereiche, welches Ziel).
+2. Dieses Dokument **zuerst** aktualisieren (neuer Status/Abschnitt).
+3. Änderung auf den beauftragten Umfang begrenzen.
+4. Light/Dark, DE/EN, Mobil und Desktop prüfen.
+5. Screenshots/HTTP-Nachweise im PR dokumentieren.
+
+## 5. Kurzfassung für Agenten
+
+> Solange der Auftrag nicht ausdrücklich „Design ändern" lautet:
+> **nichts Sichtbares verändern.** Keine Bilder, keine Farben, keine
+> Typografie, kein Layout, keine Navigation, keine Mobile-Richtung, kein
+> Redesign des Mitgliederbereichs.

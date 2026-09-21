@@ -4,7 +4,7 @@ import { resolve } from "node:path";
 /**
  * Vitest configuration. Integration tests that touch the database must set
  * DATABASE_URL to a throwaway file (see tests/integration/README notes in
- * docs/11-testing.md) – the default points at the development database.
+ * docs/14-environment.md, section 2) – the default points at the development database.
  */
 export default defineConfig({
   test: {

@@ -1,7 +1,14 @@
 # Product domains
 
 One folder per product domain from the specification (Part 3, A–J).
-Domain-specific business logic lives here; shared UI primitives live in
+
+**Current state (2026-09-21):** these folders are reserved placeholders
+(only `.gitkeep` files). The implemented business logic today lives in
+`src/lib/**` (services and access rules), `src/app/actions/**` (server
+actions) and `src/app/**` (routes). Do **not** move working code in here
+without an explicit refactoring task – see `docs/00-SOURCE-OF-TRUTH.md`.
+
+The table below describes the original plan; shared UI primitives live in
 `src/components/ui`, shared infrastructure in `src/lib`.
 
 | Folder        | Domain (spec)              | First built in |

@@ -37,4 +37,4 @@ Browser behaviour (hamburger, theme switching, swipe gestures, responsive
 layout) is verified manually with the §67 checklist. Server actions that depend
 on a full Next.js request context (registration, login, connection requests,
 opportunity ownership) need a running server and are currently covered by the
-manual test procedure in `docs/08-testing-checklist.md`.
+manual test procedure and matrix in `../docs/08-testing.md`.

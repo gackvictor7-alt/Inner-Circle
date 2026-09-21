@@ -1,3 +1,21 @@
+> ## ⚠️ ARCHIV – DEPRECATED ALS STATUSQUELLE
+>
+> Diese Datei ist das **historische Fortschrittsprotokoll** der früheren
+> Entwicklungsphasen (Schritt 01, Schritt 02, Deployment, Sprint 2.0,
+> Verifizierungs-Hotfix). Sie bleibt als Nachweis erhalten, ist aber
+> **nicht mehr aktuell** und darf nicht als Statusquelle verwendet werden:
+>
+> - Die Schritt-Tabelle weiter unten führt Schritte als „⬜ geplant", die
+>   längst gebaut sind.
+> - Aktueller Status: [`../00-SOURCE-OF-TRUTH.md`](../00-SOURCE-OF-TRUTH.md).
+> - Aktuelle Roadmap: [`../12-roadmap.md`](../12-roadmap.md).
+>
+> Neue Fortschrittseinträge werden **nicht** mehr hier, sondern in
+> `docs/00-SOURCE-OF-TRUTH.md` (Status) und `docs/12-roadmap.md` (Planung)
+> gepflegt.
+
+---
+
 # Entwicklungsfortschritt
 
 ## Hotfix – Verifizierung ohne E-Mail-Provider / Dev-Postausgang 404 (✅ 2026-09-21)
