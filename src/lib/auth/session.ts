@@ -8,9 +8,16 @@ import { sessions, users } from "@/db/schema";
 import { idFor } from "@/db/ids";
 import { fingerprint, hashSessionToken, randomToken } from "./crypto";
 import { loadUserContext, type UserContext } from "@/db/queries";
+import { AUTH_PRESENCE_COOKIE, SESSION_COOKIE } from "./cookie-name";
 
-export const SESSION_COOKIE = "ic_session";
+export { SESSION_COOKIE };
 const SESSION_DAYS = 30;
+
+/**
+ * Max-Age shared by the session cookie and its non-httpOnly presence flag, so
+ * both always expire together (`destroySession` clears both immediately).
+ */
+const SESSION_MAX_AGE = SESSION_DAYS * 24 * 60 * 60;
 
 /** Creates a session and sets the session cookie (opaque token, stored hashed). */
 export async function createSession(userId: string): Promise<string> {
@@ -37,7 +44,17 @@ export async function createSession(userId: string): Promise<string> {
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
     path: "/",
-    maxAge: SESSION_DAYS * 24 * 60 * 60,
+    maxAge: SESSION_MAX_AGE,
+  });
+  // Non-httpOnly presence flag, always in lockstep with the session cookie.
+  // It carries no identity; the statically pre-rendered public pages only use
+  // it to show "Zur App" instead of "Login/Join" after hydration.
+  store.set(AUTH_PRESENCE_COOKIE, "1", {
+    httpOnly: false,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: SESSION_MAX_AGE,
   });
 
   await db.update(users).set({ lastLoginAt: now, updatedAt: now }).where(eq(users.id, userId));
@@ -79,6 +96,9 @@ export async function destroySession(): Promise<void> {
       .where(eq(sessions.tokenHash, hashSessionToken(token)));
   }
   store.delete(SESSION_COOKIE);
+  // The presence flag is always cleared together with the session cookie, so
+  // the public header never shows "Zur App" for a signed-out visitor.
+  store.delete(AUTH_PRESENCE_COOKIE);
 }
 
 /** Invalidates all other sessions (used after a password reset). */

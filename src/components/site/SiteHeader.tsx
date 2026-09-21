@@ -9,6 +9,7 @@ import { ThemeLanguageControls } from "./ThemeLanguageControls";
 import { Button } from "@/components/ui/Button";
 import { MenuIcon, XIcon } from "@/components/ui/icons";
 import type { AccessLevel } from "@/lib/access/levels";
+import { useSignedInPresence } from "@/lib/auth/presence";
 
 const navItems = [
   { href: "/network", key: "network" },
@@ -48,7 +49,11 @@ export function SiteHeader({ level = "visitor" as AccessLevel }: { level?: Acces
   const panelRef = useRef<HTMLDivElement>(null);
   const scrolled = useScrollShadow();
 
-  const signedIn = level !== "visitor";
+  // Static pages render "visitor" on the server; the presence flag flips the
+  // CTA to "Zur App" right after hydration (no identity, no authorization).
+  const presenceSignedIn = useSignedInPresence();
+
+  const signedIn = level !== "visitor" || presenceSignedIn;
 
   // Close the menu on navigation.
   useEffect(() => {

@@ -83,7 +83,8 @@ Inner-Circle/
 Browser
   │  (React Server Components + Server Actions, httpOnly-Cookie ic_session)
   ▼
-Next.js (App Router, alle App-Routen force-dynamic)
+Next.js (App Router, `force-dynamic` nur wo nötig – öffentliche
+  │        Marketing-Seiten sind statisch vorgeneriert)
   ├── Layouts/Guards          src/lib/access/server.ts  (requireUser/requireAccess/requireAdmin)
   ├── Server Actions          src/app/actions/*.ts      (validieren → autorisieren → schreiben)
   ├── API-Routen              src/app/api/*             (Logout, Checkout, Stripe-Webhook)
