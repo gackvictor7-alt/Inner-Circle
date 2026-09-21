@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { LocalizedEmptyState, LocalizedPageHeader, Tr } from "@/components/app/localized";
+import { JobsDemoSection } from "@/components/app/DemoSections";
 
 export const dynamic = "force-dynamic";
 
@@ -55,12 +56,15 @@ export default async function JobsPage() {
       />
 
       {rows.length === 0 ? (
-        <LocalizedEmptyState
-          icon="grid"
-          titleKey="app.jobs.empty"
-          textKey="app.jobs.emptyText"
-          action={{ labelKey: "app.opportunities.title", href: "/app/opportunities" }}
-        />
+        <>
+          <LocalizedEmptyState
+            icon="grid"
+            titleKey="app.jobs.empty"
+            textKey="app.jobs.emptyText"
+            action={{ labelKey: "app.opportunities.title", href: "/app/opportunities" }}
+          />
+          <JobsDemoSection />
+        </>
       ) : (
         <ul className="space-y-3">
           {rows.map((row) => (

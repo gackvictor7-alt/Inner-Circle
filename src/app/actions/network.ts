@@ -111,6 +111,17 @@ export async function sendConnectionRequestAction(
   if (await isBlocked(access.user.id, targetId)) return fail("forbidden");
   if (await isConnected(access.user.id, targetId)) return fail("alreadyExists");
 
+  // Demo profiles must never create a real connection (Sprint: demo data stays
+  // strictly separated). Connecting to a demo member is blocked server-side
+  // and surfaces an explicit hint instead of writing a real request.
+  const [target] = await db
+    .select({ isDemo: users.isDemo })
+    .from(users)
+    .where(eq(users.id, targetId))
+    .limit(1);
+  if (!target) return fail("notFound");
+  if (target.isDemo) return fail("demoConnectBlocked");
+
   const limit = await consumeRateLimit(`connect:${access.user.id}`, 30, 3600);
   if (!limit.allowed) return fail("rateLimited");
 

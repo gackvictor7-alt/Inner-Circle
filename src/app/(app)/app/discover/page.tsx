@@ -20,6 +20,7 @@ import {
   type ProfileSignals,
 } from "@/lib/discover/matching";
 import { DiscoverDeck, type DiscoverCardData } from "@/components/app/DiscoverDeck";
+import { DiscoverDemoSection } from "@/components/app/DemoSections";
 import { LocalizedEmptyState, LocalizedPageHeader } from "@/components/app/localized";
 
 export const dynamic = "force-dynamic";
@@ -168,12 +169,15 @@ export default async function DiscoverPage({
             action={{ labelKey: "app.discover.filtersClear", href: "/app/discover" }}
           />
         ) : (
-          <LocalizedEmptyState
-            icon="compass"
-            titleKey="app.discover.emptyTitle"
-            textKey="app.discover.emptyText"
-            action={{ labelKey: "app.network.title", href: "/app/network" }}
-          />
+          <>
+            <LocalizedEmptyState
+              icon="compass"
+              titleKey="app.discover.emptyTitle"
+              textKey="app.discover.emptyText"
+              action={{ labelKey: "app.network.title", href: "/app/network" }}
+            />
+            <DiscoverDemoSection />
+          </>
         )}
       </div>
     );

@@ -11,6 +11,7 @@ export function SiteFooter() {
     { href: "/network", label: t.nav.network },
     { href: "/business-deals", label: t.nav.businessDeals },
     { href: "/investments", label: t.nav.investments },
+    { href: "/portfolio", label: t.nav.portfolio },
     { href: "/marketplace", label: t.nav.marketplace },
     { href: "/events", label: t.nav.events },
     { href: "/membership", label: t.nav.membership },

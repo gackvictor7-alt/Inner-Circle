@@ -7,7 +7,8 @@ import { formatMoney } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { LocalizedEmptyState, LocalizedPageHeader, Tr } from "@/components/app/localized";
+import { LocalizedEmptyState, LocalizedPageHeader, LocalizedSectionHeading, Tr } from "@/components/app/localized";
+import { PortfolioSection } from "@/components/app/DemoSections";
 
 export const dynamic = "force-dynamic";
 
@@ -87,7 +88,11 @@ export default async function InvestmentsPage({
         </p>
       )}
 
-      <Card className="p-5">
+      {/* Unterstruktur (spec): Opportunities für Mitglieder – klar getrennt vom IC Portfolio. */}
+      <section aria-label="Investment Opportunities" className="space-y-6">
+        <LocalizedSectionHeading titleKey="app.investments.opportunitiesSectionTitle" />
+
+        <Card className="p-5">
         <h2 className="text-sm font-bold uppercase tracking-[0.18em] text-foreground-subtle">
           <Tr k="app.investments.regulatedTitle" />
         </h2>
@@ -154,6 +159,13 @@ export default async function InvestmentsPage({
           </ul>
         </section>
       )}
+      </section>
+
+      {/* INNER CIRCLE Portfolio – INNER CIRCLE's own investments, strictly
+          separated from the member opportunities above (spec §13/§14). */}
+      <section aria-label="INNER CIRCLE Portfolio">
+        <PortfolioSection />
+      </section>
     </div>
   );
 }

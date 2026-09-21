@@ -256,6 +256,9 @@ export const appSocialDe = {
       "Bewerbungen auf deine Geschäftschancen beantwortest du direkt in der jeweiligen Chance.",
     businessRequestsCta: "Chancen öffnen",
     redirectNote: "Nachrichten, Anfragen und Mitteilungen sind jetzt in der Inbox gebündelt.",
+    demoPreviewTitle: "So wird deine Inbox aussehen",
+    demoPreviewText:
+      "Sobald du dich mit echten Mitgliedern verbindest, erscheinen hier Nachrichten, Anfragen und Benachrichtigungen. Das ist eine Demo-Vorschau – sie erzeugt keine ungelesenen Nachrichten.",
   },
   connections: {
     title: "Kontakte",
@@ -708,6 +711,9 @@ export const appSocialEn: AppSocialDict = {
       "Applications to your business opportunities are answered directly inside the opportunity.",
     businessRequestsCta: "Open opportunities",
     redirectNote: "Messages, requests and notifications are now bundled in the inbox.",
+    demoPreviewTitle: "This is how your inbox will look",
+    demoPreviewText:
+      "As soon as you connect with real members, messages, requests and notifications appear here. This is a demo preview – it creates no unread messages.",
   },
   connections: {
     title: "Connections",

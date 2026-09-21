@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { EmptyState, PageHeader } from "@/components/app/ui";
+import { InboxDemoPreview } from "@/components/app/DemoSections";
 import { useI18n } from "@/lib/i18n/context";
 import {
   disconnectAction,
@@ -101,12 +102,15 @@ export function ConnectionsView({
             {t.app.connections.tabRequests}
           </h2>
           {received.length === 0 ? (
-            <EmptyState
-              icon={UserPlusIcon}
-              title={t.app.connections.noRequests}
-              text={t.app.connections.noRequestsCta}
-              action={<Button href="/app/network" size="sm" variant="secondary">{t.app.network.title}</Button>}
-            />
+            <>
+              <EmptyState
+                icon={UserPlusIcon}
+                title={t.app.connections.noRequests}
+                text={t.app.connections.noRequestsCta}
+                action={<Button href="/app/network" size="sm" variant="secondary">{t.app.network.title}</Button>}
+              />
+              <InboxDemoPreview />
+            </>
           ) : (
             <ul className="space-y-3">
               {received.map((request) => (

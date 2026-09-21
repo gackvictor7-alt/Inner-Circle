@@ -22,6 +22,7 @@ stehen, sind aber unten ausdrücklich als ersetzt markiert – der **Code** und
 | ADR-009 | Kein stiller Nachrichtenverlust / Dev-Postausgang | **gültig** |
 | ADR-010 | Design Freeze | **gültig** (neu, 2026-09-21) |
 | ADR-011 | Dokumentationsstruktur als Source of Truth | **gültig** (neu, 2026-09-21) |
+| ADR-012 | Öffentliche Bild-Assets nicht ungesehen ersetzen | **gültig** (neu, 2026-09-21) |
 
 ## ADR-001: Next.js-Monolith statt Microservices (2026-09-20, Schritt 01)
 
@@ -170,3 +171,24 @@ stehen, sind aber unten ausdrücklich als ersetzt markiert – der **Code** und
 - **Konsequenz:** Künftige Änderungen aktualisieren immer `00-SOURCE-OF-TRUTH.md`
   und das betroffene Detaildokument. Widersprüchliche alte Dokumente wurden
   gelöscht bzw. archiviert, nicht parallel weitergeführt.
+
+## ADR-012: Öffentliche Bild-Assets werden nicht ungesehen ersetzt (2026-09-21, Demo-Content Sprint)
+
+- **Kontext:** Der Sprint verlangt ein Audit der Bildsprache auf den
+  Public-Unterseiten (Network, Business Deals, Investments, Marketplace,
+  Events; Menschen 20–40, international, modern, keine Old-Money-/Holz-/
+  Gold-Optik, keine 50+, keine Fake-Handshakes). Der Design-Freeze
+  (`docs/10-design-freeze.md`) erlaubt `public/images/**`-Ersetzungen nur bei
+  ausdrücklichem Auftrag, und in der Ausführungsumgebung stand keine
+  Bild-Vision zur Sichtprüfung zur Verfügung.
+- **Entscheidung:** Bestehende Bilder werden in diesem Sprint **nicht**
+  getauscht, um einen guten Hero/Section-Look nicht zu verschlechtern.
+  Stattdessen wird die Bild-Text-Ausrichtung (Punkt 19) korrigiert –
+  Zweispalter nutzen `h-auto w-full` (Mobile: Bild über Text, keine
+  Crop-Probleme) statt der bisherigen `h-full`-Streckung – und die betroffenen
+  Assets werden konkret als „später zu ersetzen" dokumentiert:
+  `public/images/business.jpg`, `network.jpg`, `investments.jpg`,
+  `marketplace.jpg`, `events-networking.jpg`, `events-vision.jpg`.
+- **Konsequenz:** Keine neuen Bild-Assets, kein Risiko für Build-/CPU-Bilanz.
+  Die Ersetzung erfolgt als separater, ausdrücklich beauftragter Schritt mit
+  Sichtprüfung und geänderten `imageAlt`-Texten.
