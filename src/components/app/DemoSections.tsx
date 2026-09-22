@@ -464,9 +464,10 @@ export function DealsDemoSection() {
               <div className="flex flex-wrap items-center gap-2">
                 <Badge variant="sand">{t.app.demo.badge}</Badge>
                 <Badge variant="outline">{text(deal).category}</Badge>
+                <Badge variant="neutral">{text(deal).industry}</Badge>
               </div>
               <h3 className="mt-3 text-base font-bold tracking-tight">{text(deal).title}</h3>
-              <p className="mt-2 flex-1 text-sm leading-6 text-foreground-muted">{text(deal).description}</p>
+              <p className="mt-2 flex-1 text-sm leading-6 text-foreground-muted line-clamp-3">{text(deal).description}</p>
               <dl className="mt-4 grid gap-2 text-xs text-foreground-subtle">
                 <div className="flex justify-between gap-3 border-b border-border pb-2">
                   <dt>{t.app.common.location}</dt>
@@ -502,11 +503,28 @@ export function DealsDemoSection() {
         open={selected !== null}
         onClose={() => setSelected(null)}
         title={current?.title ?? ""}
-        badges={selected ? [t.app.demo.badge, current?.category ?? ""] : []}
+        badges={selected ? [t.app.demo.badge, current?.category ?? "", current?.industry ?? ""] : []}
       >
         {selected && current && (
           <>
-            <p className="text-sm leading-6 text-foreground-muted">{current.description}</p>
+            <div className="rounded-xl border border-sand-400/30 bg-sand-200/20 px-3 py-2 text-xs leading-5 text-foreground-muted">
+              {en ? "This is a sample deal – no real member, no contact possible. Real deals open a detail page with contact flow." : "Dies ist ein Beispiel-Deal – kein echtes Mitglied, kein Kontakt möglich. Echte Deals öffnen eine Detailseite mit Kontakt-Ablauf."}
+            </div>
+            <p className="mt-4 text-sm leading-6 text-foreground-muted">{current.description}</p>
+            <dl className="mt-5 grid gap-3 text-sm">
+              <div className="rounded-xl border border-border p-3">
+                <dt className="text-[11px] font-bold uppercase tracking-[0.14em] text-foreground-subtle">{en ? "Sought" : "Gesucht"}</dt>
+                <dd className="mt-1 font-medium">{current.sought}</dd>
+              </div>
+              <div className="rounded-xl border border-border p-3">
+                <dt className="text-[11px] font-bold uppercase tracking-[0.14em] text-foreground-subtle">{en ? "Offered" : "Angeboten"}</dt>
+                <dd className="mt-1 font-medium">{current.offered}</dd>
+              </div>
+              <div className="rounded-xl border border-border p-3">
+                <dt className="text-[11px] font-bold uppercase tracking-[0.14em] text-foreground-subtle">{en ? "Possible structure" : "Mögliche Deal-Struktur"}</dt>
+                <dd className="mt-1 font-medium">{current.structure}</dd>
+              </div>
+            </dl>
             <dl className="mt-4 grid gap-2 text-xs text-foreground-subtle">
               {[
                 { label: t.app.demo.dealsIndustryLabel, value: current.industry },
@@ -514,7 +532,8 @@ export function DealsDemoSection() {
                 { label: t.app.demo.dealsRoleLabel, value: current.seekingRole },
                 { label: t.app.demo.dealsSizeLabel, value: current.sizeLabel },
                 { label: t.app.demo.dealsStatusLabel, value: current.status },
-                { label: t.app.demo.dealsContactLabel, value: t.app.demo.dealsContactValue },
+                { label: t.app.demo.dealsContactLabel, value: current.contactName },
+                { label: en ? "Contact role" : "Rolle", value: current.contactRole },
               ].map((row) => (
                 <div key={row.label} className="flex justify-between gap-3 border-b border-border pb-2">
                   <dt>{row.label}</dt>
@@ -525,11 +544,15 @@ export function DealsDemoSection() {
             <p className="mt-4 text-xs font-bold uppercase tracking-[0.14em] text-foreground-subtle">
               {t.app.demo.dealsNextLabel}
             </p>
-            <p className="mt-1.5 text-sm leading-6 text-foreground-muted">{t.app.demo.dealsNextText}</p>
-            <div className="mt-4">
+            <p className="mt-1.5 text-sm leading-6 text-foreground-muted">{current.nextAction}</p>
+            <p className="mt-2 text-xs leading-5 text-foreground-subtle">{t.app.demo.dealsNextText}</p>
+            <div className="mt-4 flex flex-wrap gap-2">
               <Button size="sm" variant="secondary" href="/app/opportunities/new">
                 {t.app.create.opportunity}
                 <ArrowRightIcon size={14} />
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setSelected(null)}>
+                {t.app.common.close}
               </Button>
             </div>
           </>

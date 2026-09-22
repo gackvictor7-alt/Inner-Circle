@@ -373,6 +373,12 @@ export type DemoDeal = {
   seekingRole: string;
   status: string;
   industry: string;
+  sought: string; // Was wird gesucht
+  offered: string; // Was wird angeboten
+  structure: string; // mögliche Deal-Struktur
+  contactName: string;
+  contactRole: string;
+  nextAction: string;
   /** English variant of every free-text field (demo parity rule). */
   en: {
     title: string;
@@ -383,6 +389,12 @@ export type DemoDeal = {
     seekingRole: string;
     status: string;
     industry: string;
+    sought: string;
+    offered: string;
+    structure: string;
+    contactName: string;
+    contactRole: string;
+    nextAction: string;
   };
 };
 
@@ -392,22 +404,34 @@ export const DEMO_DEALS: DemoDeal[] = [
     title: "E-Commerce Brand sucht Growth-Partner",
     category: "Growth & Partnerschaft",
     description:
-      "Eine D2C-Marke für Supplements sucht einen Partner für bezahlte Akquisition und CRO – auf Umsatzbeteiligung.",
+      "Eine D2C-Marke für Supplements sucht einen Partner für bezahlte Akquisition und CRO – auf Umsatzbeteiligung. Das Team hat Produkt, Fulfillment und Bestandskunden, braucht aber einen Kanal-Partner für die nächste Wachstumsphase.",
     location: "DACH, remote",
     sizeLabel: "Beispielgröße: 6-stelliger Umsatz",
     seekingRole: "Growth-Partner",
     status: "Beispiel",
     industry: "E-Commerce / Supplements",
+    sought: "Performance-Marketing, CRO, Retention-Aufbau",
+    offered: "Produkt, Marke, Lager, 12k Bestandskunden",
+    structure: "Umsatzbeteiligung + monatliches Fixum, 12 Monate Laufzeit",
+    contactName: "Beispiel-Profil – kein echtes Mitglied",
+    contactRole: "Founder (fiktiv)",
+    nextAction: "Bei echten Deals: Profil prüfen, Interesse bekunden, Gespräch vereinbaren.",
     en: {
       title: "E-commerce brand seeks growth partner",
       category: "Growth & partnership",
       description:
-        "A D2C supplements brand is looking for a partner for paid acquisition and CRO – on revenue share.",
+        "A D2C supplements brand is looking for a partner for paid acquisition and CRO – on revenue share. The team has product, fulfillment and existing customers but needs a channel partner for the next growth phase.",
       location: "DACH, remote",
       sizeLabel: "Example size: six-figure revenue",
       seekingRole: "Growth partner",
       status: "Example",
       industry: "E-commerce / supplements",
+      sought: "Performance marketing, CRO, retention setup",
+      offered: "Product, brand, warehouse, 12k existing customers",
+      structure: "Revenue share + monthly retainer, 12-month term",
+      contactName: "Sample profile – not a real member",
+      contactRole: "Founder (fictional)",
+      nextAction: "With real deals: check profile, express interest, arrange a call.",
     },
   },
   {
@@ -415,22 +439,34 @@ export const DEMO_DEALS: DemoDeal[] = [
     title: "SaaS-Unternehmen sucht Vertriebspartner DACH",
     category: "Channel & Vertrieb",
     description:
-      "Ein B2B-SaaS mit 40 Bestandskunden sucht Agenturen mit Mittelstandszugang für den deutschen Markt.",
+      "Ein B2B-SaaS mit 40 Bestandskunden sucht Agenturen mit Mittelstandszugang für den deutschen Markt. Produkt ist etabliert, Vertrieb läuft über Founder, jetzt soll ein Partner-Kanal entstehen.",
     location: "Deutschland / DACH",
     sizeLabel: "Beispielgröße: Provision ca. 20–25 %",
     seekingRole: "Vertriebsagentur",
     status: "Beispiel",
     industry: "B2B-Software",
+    sought: "Agenturen mit Mittelstandszugang, Outbound-Erfahrung",
+    offered: "Einführung, Playbook, Co-Selling, Demo-Umgebung",
+    structure: "Reseller / Referral, 20-25% Lifetime-Provision Jahr 1",
+    contactName: "Beispiel-Profil – kein echtes Mitglied",
+    contactRole: "Head of Sales (fiktiv)",
+    nextAction: "Bei echten Deals: Case prüfen, Anfrage senden, Intro-Call.",
     en: {
       title: "SaaS company seeks sales partner DACH",
       category: "Channel & sales",
       description:
-        "A B2B SaaS with 40 existing customers is looking for agencies with mid-market access for the German market.",
+        "A B2B SaaS with 40 existing customers is looking for agencies with mid-market access for the German market. Product is established, sales is founder-led, now a partner channel is to be built.",
       location: "Germany / DACH",
       sizeLabel: "Example size: commission approx. 20–25%",
       seekingRole: "Sales agency",
       status: "Example",
       industry: "B2B software",
+      sought: "Agencies with mid-market access, outbound experience",
+      offered: "Onboarding, playbook, co-selling, demo environment",
+      structure: "Reseller / referral, 20-25% lifetime commission year 1",
+      contactName: "Sample profile – not a real member",
+      contactRole: "Head of Sales (fictional)",
+      nextAction: "With real deals: check case, send request, intro call.",
     },
   },
   {
@@ -438,22 +474,34 @@ export const DEMO_DEALS: DemoDeal[] = [
     title: "Immobilienprojekt sucht Joint-Venture-Partner",
     category: "Immobilien & JV",
     description:
-      "Wohnprojekt mit Baurecht sucht einen Kapital- und Entwicklungspartner für Finanzierung und Vertrieb.",
+      "Wohnprojekt mit Baurecht sucht einen Kapital- und Entwicklungspartner für Finanzierung und Vertrieb. Lage geprüft, Zahlen vorhanden, Bauantrag in Vorbereitung.",
     location: "Frankfurt am Main",
     sizeLabel: "Beispielgröße: 24 Wohneinheiten",
     seekingRole: "Kapitalpartner",
     status: "Beispiel",
     industry: "Immobilien",
+    sought: "Eigenkapital, Strukturierung, Vertrieb",
+    offered: "Grundstück mit Baurecht, Planung, lokales Netzwerk",
+    structure: "JV-Gesellschaft, 50/50, Exit über Abverkauf",
+    contactName: "Beispiel-Profil – kein echtes Mitglied",
+    contactRole: "Projektentwickler (fiktiv)",
+    nextAction: "Bei echten Deals: Unterlagen prüfen, NDA, Termin vor Ort.",
     en: {
       title: "Real-estate project seeks joint-venture partner",
       category: "Real estate & JV",
       description:
-        "A residential project with building permission seeks a capital and development partner for financing and sales.",
+        "A residential project with building permission seeks a capital and development partner for financing and sales. Location vetted, numbers available, building application in preparation.",
       location: "Frankfurt am Main",
       sizeLabel: "Example size: 24 residential units",
       seekingRole: "Capital partner",
       status: "Example",
       industry: "Real estate",
+      sought: "Equity, structuring, sales",
+      offered: "Land with building permission, planning, local network",
+      structure: "JV company, 50/50, exit via sell-out",
+      contactName: "Sample profile – not a real member",
+      contactRole: "Developer (fictional)",
+      nextAction: "With real deals: review docs, NDA, on-site meeting.",
     },
   },
   {
@@ -461,22 +509,34 @@ export const DEMO_DEALS: DemoDeal[] = [
     title: "Agentur sucht strategischen Käufer",
     category: "M&A / Nachfolge",
     description:
-      "Eine Digital-Agentur (18 Personen, profitabel) sucht einen strategischen Partner für die Nachfolge.",
+      "Eine Digital-Agentur (18 Personen, profitabel) sucht einen strategischen Partner für die Nachfolge. Kundenstamm stabil, Team bleibt, Inhaber zieht sich operativ zurück.",
     location: "Hamburg, Deutschland",
     sizeLabel: "Beispielgröße: 7-stelliger Umsatz",
     seekingRole: "Strategischer Käufer",
     status: "Beispiel",
     industry: "Digitalagentur",
+    sought: "Strategischen Käufer, Fortführung, Wachstum",
+    offered: "Bestandskunden, Team, Prozesse, 6 Jahre am Markt",
+    structure: "Share Deal, Earn-out, Übergang 12 Monate",
+    contactName: "Beispiel-Profil – kein echtes Mitglied",
+    contactRole: "Inhaber (fiktiv)",
+    nextAction: "Bei echten Deals: Teaser anfordern, Kennzahlen prüfen, Gespräch.",
     en: {
       title: "Agency seeks strategic buyer",
       category: "M&A / succession",
       description:
-        "A digital agency (18 people, profitable) is looking for a strategic partner for succession.",
+        "A digital agency (18 people, profitable) is looking for a strategic partner for succession. Stable customer base, team stays, owner steps back operationally.",
       location: "Hamburg, Germany",
       sizeLabel: "Example size: seven-figure revenue",
       seekingRole: "Strategic buyer",
       status: "Example",
       industry: "Digital agency",
+      sought: "Strategic buyer, continuation, growth",
+      offered: "Existing customers, team, processes, 6 years on market",
+      structure: "Share deal, earn-out, 12-month transition",
+      contactName: "Sample profile – not a real member",
+      contactRole: "Owner (fictional)",
+      nextAction: "With real deals: request teaser, check figures, talk.",
     },
   },
 ];

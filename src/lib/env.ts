@@ -7,6 +7,8 @@
  *     can show honest states ("setup required") instead of faking success.
  */
 
+import { PLANS } from "@/lib/membership/plans";
+
 function read(name: string): string | undefined {
   const value = process.env[name];
   return value && value.trim().length > 0 ? value.trim() : undefined;
@@ -164,9 +166,10 @@ export function canOpenDevOutbox(user: { role: string } | null | undefined): boo
   return flags.devOutboxEnabled && user?.role === "admin";
 }
 
+/** Single source of truth for pricing – re-exported from plans.ts (K-17 fixed Sprint 6). */
 export const membershipPricing = {
-  monthly: { cents: 2499, currency: "EUR", interval: "month" as const },
-  annual: { cents: 24990, currency: "EUR", interval: "year" as const },
+  monthly: { cents: PLANS.monthly.priceCents, currency: PLANS.monthly.currency, interval: PLANS.monthly.interval },
+  annual: { cents: PLANS.annual.priceCents, currency: PLANS.annual.currency, interval: PLANS.annual.interval },
 };
 
 export const trialConfig = {

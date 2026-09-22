@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useI18n } from "@/lib/i18n/context";
 import { Logo } from "./Logo";
-import { ThemeLanguageControls, localeFlags, localeShort } from "./ThemeLanguageControls";
+import { ThemeLanguageControls, localeFlags, localeLabels } from "./ThemeLanguageControls";
 import { Button } from "@/components/ui/Button";
 import { MenuIcon, XIcon } from "@/components/ui/icons";
 import type { AccessLevel } from "@/lib/access/levels";
@@ -230,18 +230,18 @@ export function SiteHeader({ level = "visitor" as AccessLevel }: { level?: Acces
                     type="button"
                     onClick={() => setLocale(option)}
                     aria-pressed={locale === option}
-                    className={`rounded-full px-3 py-1.5 text-xs font-semibold uppercase transition-colors ${
+                    className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
                       locale === option ? "bg-surface text-foreground shadow-card" : "text-foreground-muted"
                     }`}
                   >
                     <span className="flex items-center gap-1.5">
                       <span aria-hidden="true">{localeFlags[option]}</span>
-                      {localeShort[option]}
+                      {localeLabels[option]}
                     </span>
                   </button>
                 ))}
               </div>
-              <ThemeLanguageControls />
+              <ThemeLanguageControls compact />
             </div>
           </div>
         </div>

@@ -1,7 +1,7 @@
 # 03 – Route Map, Server Actions & API-Routen
 
-**Stand:** 2026-09-21 (Sprint 3) · Basis: Branch `arena/01a0c434-inner-circle`
-(Basis `main` @ `0babcb3`).
+**Stand:** 2026-09-22 (Sprint 6) · Basis: Branch `arena/01a0c9c0-inner-circle`
+(Basis `main` @ `a563999`).
 Quelle: `src/app/**` plus Build-Ausgabe von `npm run cf:build`
 (58 Einträge: 57 dynamische Routen + `/_not-found`).
 
@@ -9,6 +9,11 @@ Quelle: `src/app/**` plus Build-Ausgabe von `npm run cf:build`
 (Mitglied) · `admin` · `registered-unverified` (Konto ohne bestätigte
 E-Mail/Telefon).
 Details zur Rechteableitung: [`06-permissions.md`](06-permissions.md).
+
+**Sprint 6 – Route-Matrix:** siehe Abschnitt 8 unten – vollständige Matrix
+mit Route, Public/Auth, Zweck, echte Daten vs Demo, CTA, Status, Permission,
+offene Probleme. Keine Route wurde gelöscht; doppelte Routen dokumentiert,
+nur konsolidiert wenn Verhalten 100% erhalten bleibt.
 
 ---
 
@@ -139,3 +144,67 @@ Alle Actions liegen in `src/app/actions/` und sind `"use server"`.
 | `listing:<userId>` | 10 / Stunde | `actions/business.ts` |
 | `investment:<userId>` | 5 / Tag | `actions/business.ts` |
 | `event_apply:<userId>` | 20 / Stunde | `actions/business.ts` |
+
+## 8. Route-Matrix (Sprint 6 – verbindlich, kein Löschen)
+
+Für jede wichtige Route dokumentiert: Route, Public/Auth Required, Zweck, echte Daten oder Demo möglich, wichtigste CTA, aktueller Status, relevante Permission, offene Probleme.
+
+| Route | Public/Auth | Zweck | echte Daten / Demo | wichtigste CTA | Status | Permission | offene Probleme |
+|-------|-------------|-------|--------------------|----------------|--------|------------|-----------------|
+| `/` | Public | Startseite, Conversion, Hero mit Preisen, 3 Outcomes, 6 Kernbereiche, Membership, Events, CTA | echte Daten (PlatformMetric) + statisch, Demo-Badge nur für illustrative Inhalte | „INNER CIRCLE entdecken", „48h kostenlos" | WORKING (statisch) | visitor | Keine |
+| `/network` (public) | Public | Preview Netzwerk | statisch, kein DB, Demo-Bild | „Join Inner Circle" | WORKING (statisch) | visitor | Keine |
+| `/business-deals` | Public | Preview Business Deals | statisch, ComingSoon für Deal-Räume | „Chancen entdecken" | WORKING (statisch) | visitor | Keine |
+| `/investments` (public) | Public | Preview Investments | statisch, Hinweis Discovery keine Ausführung | „Investments erklären" | WORKING (statisch) | visitor | Keine |
+| `/marketplace` (public) | Public | Preview Marketplace & Academy | statisch | „Marketplace ansehen" | WORKING (statisch) | visitor | Keine |
+| `/events` (public) | Public | Preview Events | statisch, ehrlicher Leerzustand | „Events ansehen" | WORKING (statisch) | visitor | Keine |
+| `/membership` | Public | Preise, Leistungen, Trust, Rechtliches | statisch, Preise 24,99/249,90 konsistent | „Zugang starten" | WORKING (statisch) | visitor | Stripe nicht scharf (K-03 offen bleibt nur Stripe-Produkt) |
+| `/portfolio` | Public | IC Portfolio Zielmodell 20%→25%/75%=5%/15% | statisch, 100€ Beispiel, kein Fonds, keine Rendite | „Mitglied werden" | WORKING (statisch) | visitor | Keine |
+| `/member/[publicId]` | Public | Öffentliche Karten-Verifikation | echt (MembershipCard + User/Profile) | – | WORKING (force-dynamic) | visitor | Keine |
+| `/login` | Public | Anmeldung | echt | „Anmelden" | WORKING | visitor | – |
+| `/register` | Public | Registrierung E-Mail/Passwort | echt, Telefon-Umschalter NOT IMPLEMENTED | „Konto erstellen" | WORKING | visitor | K-05 Telefon-Registrierung |
+| `/verify` | Auth (registered-unverified) | Code-Eingabe, ehrlicher Zustellstatus | echt, mode provider/dev/none | „Code bestätigen", „Code erneut senden" / „Erneut versuchen" | WORKING (Sprint 6 gefixt: keine widersprüchlichen Meldungen) | registered-unverified | K-01 Spam-Ordner wegen resend.dev, Custom Domain pausiert |
+| `/forgot-password` | Public | Reset anfordern | echt (AuthToken) | „Link senden" | PARTIAL (Versand hängt an Provider) | visitor | K-01 |
+| `/reset-password` | Public (Token) | Neues Passwort setzen, Regeln sichtbar | echt | „Passwort setzen" | WORKING | token | Keine |
+| `/checkout/success` | Public | Rückleitung Stripe/Dev | echt (liest Membership) | – | WORKING | free+ | Erteilt nichts, nur DB/Webhook |
+| `/checkout/cancel` | Public | Abbruch Zahlung | keine DB | – | WORKING | visitor | Keine |
+| `/dev/outbox` | Auth admin + ENABLE_DEV_OUTBOX | Dev-Postausgang | echt (DevOutbox) | – | WORKING | admin + flag | Muss vor Launch entfernt werden |
+| `/onboarding/interests` | Auth free verifiziert | Interessen/Ziele + Trial-Start | echt (Profile, UserInterest, UserGoal, Trial) | „Discovery starten" | WORKING | free verifiziert | Keine |
+| `/app` | Auth free | Member Start, Für-dich, 6 Kernbereiche 2×3, Trial-Banner | echt (Connections, Posts, Opportunities, Events, Notifications) + Demo nur wenn leer | 6 Karten „Mehr erfahren" | WORKING | free | Keine, aber glaubwürdige Texte prüfen (Sprint 6) |
+| `/app/network` | Auth trial+ | Verzeichnis, Suche/Filter, Follow/Connect | echt, Demo nur wenn leer (humanisiert) | „Vernetzen", Follow | WORKING | trial+ (free locked) | K-06 Privacy teilweise |
+| `/app/discover` | Auth trial+ | Business-Karten, Ranking, Filter | echt, Demo nur wenn leer | „Connect" mit Pflichtnachricht | WORKING | trial+ entitlements.networkDiscover | Keine |
+| `/app/inbox` | Auth free (messaging member) | Nachrichten, Anfragen, Benachrichtigungen | echt, Demo-Preview optional | „Nachricht senden", „Annehmen/Ablehnen" | WORKING | free (messaging member) | Keine Fake-Unread |
+| `/app/connections` | Auth free | Anfragen eingehend/ausgehend, Verbindungen | echt | Annehmen/Ablehnen/Zurückziehen/Trennen | WORKING | free | Umleitung nach /app/inbox?tab=requests existiert |
+| `/app/messages` | Auth member | 1:1 Nachrichten | echt (nur verbundene) | Senden | WORKING | member messaging | Umleitung nach inbox |
+| `/app/notifications` | Auth free | Umleitung → inbox notifications | – | – | WORKING | free | Umleitung |
+| `/app/profile` | Auth free | Profil Hauptbereich, Header, Stats, Actions, Vollständigkeit, Tabs Beiträge/Übersicht/Performance/Angebote | echt + Demo-Beiträge unten (3-6 hochwertige, Demo-Badge) | „Profil bearbeiten", „Profil teilen", „Einstellungen" | WORKING | free | Avatar Upload NOT IMPLEMENTED |
+| `/app/profile/edit` | Auth free | Profil bearbeiten inkl. Interessen/Ziele | echt | „Speichern" | WORKING | free | Keine |
+| `/app/settings` | Auth free | Darstellung Hell/Dunkel/System, Sprache, Datenschutz, Kennzahlen-Sichtbarkeit, Benachrichtigungen, Blockierte, Löschantrag | echt | – | WORKING | free | – |
+| `/app/card` | Auth member | Mitgliedskarte + QR | echt | – | WORKING | member memberCard | Free/Trial locked |
+| `/app/billing` | Auth free | Mitgliedschaft, Planwahl, Abrechnung, Paywall | echt (Membership, Invoice) | „Mitglied werden", Checkout | WORKING | free | Stripe BLOCKED, Dev-Aktivierung nur lokal |
+| `/app/membership-application` | Auth member | Antrag Voll-Mitgliedschaft | echt | „Antrag stellen" | WORKING | member | – |
+| `/app/trust` | Auth trial+ | Trust & Performance Detail | echt, leer ohne Bewertungen | – | PARTIAL | trial+ | K-08 keine Erfassung |
+| `/app/opportunities` | Auth trial+ | Business-Chancen Liste Filter | echt + Demo wenn leer (Demo-Detail-Dialog funktional) | „Details", „Deal ansehen" → Detail oder Demo-Dialog | WORKING (Sprint 6: jeder CTA funktional) | trial+ opportunitiesBrowse | Keine |
+| `/app/opportunities/new` | Auth member | Chance anlegen | echt | „Veröffentlichen" | WORKING | member opportunitiesManage | – |
+| `/app/opportunities/[id]` | Auth trial+ view, member apply | Detail + Bewerbung, Owner Antworten | echt | „Bewerben", „Annehmen/Ablehnen" | WORKING | trial+ browse, member apply/manage | – |
+| `/app/jobs` | Auth trial+ | Jobs & Projekte gefiltert | echt + Demo wenn leer | „Bewerben" | WORKING | trial+ | – |
+| `/app/marketplace` | Auth free/trial/member | Listings Produkte Services Kurse | echt + Demo wenn leer | „Details" → Detail oder Demo-Dialog | WORKING (Sprint 6 CTA funktional) | free list, member sell | K-07a keine Bezahlung, K-07b Freigabe nicht erzwungen |
+| `/app/marketplace/new` | Auth member | Listing anlegen | echt | „Veröffentlichen" | WORKING | member marketplaceSell | K-07b |
+| `/app/marketplace/[id]` | Auth free/trial/member | Listing Detail | echt | „Kontakt", „Einschreiben" (ohne Zahlung) | WORKING | free/trial/member | K-07a |
+| `/app/learn` | Auth free/member | Academy Kursbibliothek | echt + Demo wenn leer | „Weiterlernen", „Preview" | WORKING | free preview, member full | – |
+| `/app/learn/[id]` | Auth free/member | Kursseite Module Lektionen Fortschritt | echt | „Lektion abschließen" | WORKING | free/member courseFullAccess | – |
+| `/app/investments` | Auth trial+ | Investment Chancen approved + IC Portfolio mit Allocation-Bar | echt + Portfolio Zielmodell 20%/25%/75% Visualisierung | „Details", „Interesse bekunden" | WORKING | trial+ investmentsBrowse | Keine erfundenen Renditen |
+| `/app/investments/submit` | Auth member | Chance einreichen | echt | „Einreichen" | WORKING | member investmentsSubmit | Ratelimit 5/Tag |
+| `/app/investments/[id]` | Auth trial+ | Detail + Absichtserklärung | echt | „Interesse ausdrücken" | WORKING | trial+ | Nicht freigegebene nur Einreicher/Admin |
+| `/app/events` | Auth free | Events Memberbereich mit Bildern | echt + Demo-Beispiel-Events (klar markiert) | „Event ansehen" → Detail | WORKING (Sprint 6: Bild, Titel, Badge, Stadt, Datum, Satz, CTA) | free eventsBrowse | Keine Erstellung durch Member (bewusst) |
+| `/app/events/[slug]` | Auth free | Event Detail + Bewerbung/Abbestätigung | echt | „Bewerben", „Abbestätigen" | WORKING | free eventsBrowse/Apply | Tickets/Check-in NOT IMPLEMENTED |
+| `/app/create/post` | Auth member | Beitrag erstellen | echt | „Veröffentlichen" | WORKING | member postCreate | – |
+| `/app/people/[handle]` | Auth trial+ | Profil eines Mitglieds | echt | „Vernetzen", „Follow" | WORKING | trial+ | Privacy K-06 teilweise |
+| `/admin` | Auth admin | Kennzahlen Übersicht | echt | – | WORKING | admin | – |
+| `/admin/users` | Auth admin | Nutzersuche Sperre Founding Member | echt | – | WORKING | admin | – |
+| `/admin/investments` | Auth admin | Investment Prüfung | echt | Freigabe/Ablehnung | WORKING | admin | – |
+| `/admin/applications` | Auth admin | Mitglieds-/Löschanträge | echt | – | WORKING | admin | – |
+| `/api/auth/logout` | Auth free+ | Session Widerruf | echt | – | WORKING | free+ | – |
+| `/api/billing/checkout` | Auth free+ | Checkout Stripe oder Dev | echt | – | BLOCKED Stripe / WORKING Dev | free+ | Ratelimit 10/10min |
+| `/api/webhooks/stripe` | Public signaturgeprüft | Membership Änderungen nur via Webhook | echt | – | BLOCKED (kein Secret) | public signiert | – |
+
+**Hinweis doppelte Routen:** `/app/messages`, `/app/connections`, `/app/notifications` leiten nach `/app/inbox?tab=…` um – Verhalten 100% erhalten, keine Löschung. `/app/opportunities` und `/app/jobs` teilen Datenmodell `BusinessOpportunity` (Filter `job`/`freelance`), aber unterschiedliche Zweck – dokumentiert, nicht konsolidiert.
