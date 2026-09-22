@@ -1,7 +1,7 @@
 # 03 – Route Map, Server Actions & API-Routen
 
-**Stand:** 2026-09-22 (Sprint 6) · Basis: Branch `arena/01a0c9c0-inner-circle`
-(Basis `main` @ `a563999`).
+**Stand:** 2026-09-22 (Sprint 8) · Basis: Branch `arena/01a0cad6-inner-circle`
+(Basis `main` @ `128295a`).
 Quelle: `src/app/**` plus Build-Ausgabe von `npm run cf:build`
 (58 Einträge: 57 dynamische Routen + `/_not-found`).
 
@@ -21,7 +21,7 @@ nur konsolidiert wenn Verhalten 100% erhalten bleibt.
 
 | URL | Zweck | Zugriff | Status | Daten | Berechtigungen / Hinweise |
 | --- | ----- | ------- | ------ | ----- | ------------------------- |
-| `/` | Startseite – **verkürzt**: Hero → Was ist INNER CIRCLE? → sechs Bereiche → Proof (Stats) → Membership-CTA | public | WORKING | liest `PlatformMetric` aus D1 (Fehler ⇒ Statistik-Sektion entfällt) | `force-dynamic`; Layout liest Access-Level für Header-CTA |
+| `/` | Startseite – **statisch prerendered, getrennte Informationsdichte (Sprint 8)**: Mobile (`<lg`) Hero (1 Satz + CTA + Trial-Zeile) → 3 Outcomes (1 Zeile) → 6 Bereiche als 2×3-Icon-Übersicht → Trust-3-Punkte → kompakte Membership → Footer; Desktop (`lg+`) unverändert (reiche Bild-Text-Sektionen) | public | WORKING | keine DB (statisch) | `○` im Build-Route-Manifest; keine Request-Time-Queries, kein `getAccessContext()` |
 | `/network` | Preview Netzwerk | public | WORKING | keine DB; Inhalte aus i18n | Konto-CTAs verlinken auf `/register`; nicht aktive Teile als „Demnächst verfügbar" |
 | `/business-deals` | Preview Business Deals | public | WORKING | keine DB | `ComingSoonPanel` für Deal-Räume |
 | `/investments` | Preview Investments | public | WORKING | keine DB | Hinweis „Discovery, keine Ausführung"; kein Rendite-Wording |
@@ -55,9 +55,9 @@ Alle Routen liegen unter dem App-Layout `src/app/(app)/app/layout.tsx`, das
 | --- | ----- | ------- | ------ | ----- | ------------------------- |
 | `/onboarding/interests` | Interessen/Ziele + Start des 48-h-Trials | **free** (verifiziert) | WORKING | `Profile` (onboardingCompletedAt), `UserInterest`, `UserGoal`, `Trial` | nur ohne abgeschlossenes Onboarding (`onboardingComplete` ⇒ `/app`); mind. 3 Interessen; Trial genau einmal |
 | `/app` | **Start** – kompakte Kopfzeile (`Hallo, <Name>`, Trial-Chip, Inbox-Shortcut) + sechs Kernbereichs-Karten | free | WORKING | `Connection`, `Follow`, `Post`, `BusinessOpportunity`, `TrustScoreSummary`, `PerformanceRecord`, `Conversation`, `Message`, `Notification`, `Event` | Trial-Banner + Countdown; Datenschutz-/Verifizierungshinweise |
-| `/app/network` | Mitgliederverzeichnis mit Suche/**Rolle**/**Standort**/Interessen (Sprint 7); echte Mitglieder zuerst, darunter die klar als DEMO-PROFIL markierten Beispielprofile, solange < 8 echte (gefilterte) Mitglieder existieren (§4a); Verbindungsstatus richtungsabhängig: gesendet → „Anfrage gesendet" + Zurückziehen, erhalten → Annehmen/Ablehnen | trial+ | WORKING (free sieht Locked-State) | liest `User`/`Profile`/`Follow`/`ConnectionRequest`, `Interest` + `src/lib/demo` (kein DB-Zugriff für Demo) | `listDirectoryMembers()` respektiert `discoverable`; Sichtbarkeit je Privacy teilweise (K-06) |
+| `/app/network` | Mitgliederverzeichnis mit Suche/**Rolle**/**Standort**/Interessen (Sprint 7) + **View-Segmente `?view=connections\|requests`** (Sprint 8: Alle / Verbindungen / Anfragen – Connections, offene Anfragen und andere Profile getrennt); echte Mitglieder zuerst, darunter die klar als DEMO-PROFIL markierten Beispielprofile, solange < 8 echte (gefilterte) Mitglieder existieren (§4a); Verbindungsstatus richtungsabhängig: gesendet → „Anfrage gesendet" + Zurückziehen, erhalten → Annehmen/Ablehnen | trial+ | WORKING (free sieht Locked-State) | liest `User`/`Profile`/`Follow`/`ConnectionRequest`, `Interest` + `src/lib/demo` (kein DB-Zugriff für Demo) | `listDirectoryMembers()` respektiert `discoverable`; Sichtbarkeit je Privacy teilweise (K-06); Views filtern die geladene Liste (keine extra Queries) |
 | `/app/discover` | **Discover** – Business-Karten, Relevanz-Ranking, Filter `?role=&location=&radius=&industry=&interest=&lookingFor=&offering=&invest=&kind=&more=` | trial+ | WORKING | `listDiscoverCandidates()` + `src/lib/discover/matching.ts` (Interessen, Ziele, Branche, Standort **inkl. Umkreis über gebündelte Städtetabelle**, Ich suche, Ich biete, Investmentinteressen) | ohne `entitlements.networkDiscover` ⇒ Redirect `/app/billing?paywall=trial`; Connect nur mit Pflichtnachricht |
-| `/app/inbox` | **Inbox** – `?tab=messages\|requests\|notifications`, Anfragen zusätzlich `?sub=requests\|sent\|connections` | free (Messaging nur member) | WORKING | `Conversation`, `Message`, `ConnectionRequest`, `Connection`, `Notification` | ersetzt `/app/messages`, `/app/connections`, `/app/notifications` (Umleitungen) |
+| `/app/inbox` | **Inbox** – `?tab=messages\|requests\|notifications`, Anfragen zusätzlich `?sub=requests\|sent\|connections`; `?to=<userId>` öffnet (oder legt per `ensureDirectConversation()` an) den 1:1-Chat; **Sprint 8: auf Mobile wie Messaging-App** (Header mit Person + zurück, Messages im Hauptscreen, Composer fixiert, Inbox-Chrome ausgeblendet) | free (Messaging nur member) | WORKING | `Conversation`, `Message`, `ConnectionRequest`, `Connection`, `Notification` | ersetzt `/app/messages`, `/app/connections`, `/app/notifications` (Umleitungen); Chat nur zwischen verbundenen Konten (serverseitig) |
 | `/app/connections` | Anfragen (eingehend/ausgehend), Verbindungen | free | WORKING | `ConnectionRequest`, `Connection` | Annehmen/Ablehnen/Zurückziehen/Trennen serverseitig geprüft |
 | `/app/messages` | 1:1-Nachrichten | member (Messaging-Entitlement) | WORKING | `Conversation`, `ConversationParticipant`, `Message` | nur mit bestätigter Verbindung; sonst Redirect auf Verbindungen; Trial sieht Hinweis statt Eingabe |
 | `/app/notifications` | **Umleitung** → `/app/inbox?tab=notifications` | free+ | WORKING | – | – |

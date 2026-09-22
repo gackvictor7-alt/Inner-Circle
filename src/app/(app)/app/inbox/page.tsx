@@ -42,14 +42,18 @@ export default async function InboxPage({
     { key: "notifications", href: "/app/inbox?tab=notifications", labelKey: "app.inbox.tabNotifications" },
   ];
 
+  // On mobile an open conversation is a full-screen chat (Sprint 8, TEIL P):
+  // the inbox header + tab control are hidden, only the desktop keeps them.
+  const chatOpen = tab === "messages" && Boolean(params.c);
+
   return (
     <div className="space-y-6">
-      <header className="flex flex-wrap items-end justify-between gap-3">
+      <header className={`${chatOpen ? "hidden lg:flex" : "flex"} flex-wrap items-end justify-between gap-3`}>
         <div>
           <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
             <Tr k="app.inbox.title" />
           </h1>
-          <p className="mt-1 max-w-2xl text-sm leading-6 text-foreground-muted">
+          <p className="mt-1 hidden max-w-2xl text-sm leading-6 text-foreground-muted sm:block">
             <Tr k="app.inbox.lead" />
           </p>
         </div>
@@ -58,7 +62,7 @@ export default async function InboxPage({
       {/* Segmented control – one destination, three views */}
       <nav
         aria-label="Inbox"
-        className="inline-flex flex-wrap gap-1 rounded-full border border-border bg-surface p-1"
+        className={`${chatOpen ? "hidden lg:inline-flex" : "inline-flex"} flex-wrap gap-1 rounded-full border border-border bg-surface p-1`}
       >
         {tabs.map((item) => (
           <Link
@@ -93,7 +97,7 @@ async function MessagesTab({
   access: Access;
   params: { c?: string; to?: string };
 }) {
-  const conversations = await listConversations(access.user.id);
+  let conversations = await listConversations(access.user.id);
 
   let openId = params.c ?? null;
   if (!openId && params.to) {
@@ -103,12 +107,15 @@ async function MessagesTab({
     if (existing) {
       openId = existing.id;
     } else {
-      const { startConversationAction } = await import("@/app/actions/messages");
-      const formData = new FormData();
-      formData.set("userId", partnerId);
-      const result = await startConversationAction({ status: "idle" }, formData);
-      if (result.redirectTo) redirect(result.redirectTo.replace("/app/messages", "/app/inbox?tab=messages"));
-      redirect("/app/inbox?tab=requests&sub=connections");
+      // A brand-new pair (connection just accepted) has no conversation yet.
+      // Use the plain query helper – a Server Action here would run
+      // revalidatePath during render and throw (Next.js constraint).
+      const { ensureDirectConversation } = await import("@/lib/platform/queries");
+      openId = await ensureDirectConversation(access.user.id, partnerId);
+      if (!openId) redirect("/app/inbox?tab=requests&sub=connections");
+      // The new conversation is not in the initial list – refresh it so the
+      // chat header can resolve the partner.
+      conversations = await listConversations(access.user.id);
     }
   }
 
@@ -177,6 +184,7 @@ async function RequestsTab({ access, sub }: { access: Access; sub?: string }) {
           handle: row.handle,
           avatarUrl: row.avatarUrl,
           headline: row.headline,
+          location: row.location,
           message: row.message,
           fromTrial: row.fromTrial,
           isDemo: row.isDemo,

@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { and, desc, eq, ne, sql } from "drizzle-orm";
+import { and, desc, eq, ne } from "drizzle-orm";
 import { db } from "@/db/client";
 import {
   conversationParticipants,
@@ -80,7 +80,11 @@ export async function sendMessageAction(_prev: ActionState, formData: FormData):
   return done({ messageCode: "sent" });
 }
 
-/** Opens (or creates) the direct conversation with a confirmed connection. */
+/**
+ * Opens (or creates) the direct conversation with a confirmed connection.
+ * Delegates to ensureDirectConversation (single source of truth for the
+ * conversation lookup/creation).
+ */
 export async function startConversationAction(
   _prev: ActionState,
   formData: FormData,
@@ -93,38 +97,12 @@ export async function startConversationAction(
   if (!targetId || targetId === access.user.id) return fail("selfAction");
   if (!(await isConnected(access.user.id, targetId))) return fail("notConnected");
 
-  const mine = db
-    .select({ conversationId: conversationParticipants.conversationId })
-    .from(conversationParticipants)
-    .where(eq(conversationParticipants.userId, access.user.id));
-  const theirs = db
-    .select({ conversationId: conversationParticipants.conversationId })
-    .from(conversationParticipants)
-    .where(eq(conversationParticipants.userId, targetId));
-
-  const [existing] = await db
-    .select({ conversationId: conversations.id })
-    .from(conversations)
-    .where(
-      and(
-        eq(conversations.kind, "direct"),
-        sql`${conversations.id} in (${mine})`,
-        sql`${conversations.id} in (${theirs})`,
-      ),
-    )
-    .limit(1);
-
-  if (existing) return done({ redirectTo: `/app/messages?c=${existing.conversationId}` });
-
-  const now = new Date();
-  const conversationId = idFor.conversation();
-  await db.insert(conversations).values({ id: conversationId, kind: "direct", createdAt: now, lastMessageAt: now });
-  await db.insert(conversationParticipants).values([
-    { id: idFor.participant(), conversationId, userId: access.user.id, lastReadAt: now, createdAt: now },
-    { id: idFor.participant(), conversationId, userId: targetId, lastReadAt: null, createdAt: now },
-  ]);
+  const { ensureDirectConversation } = await import("@/lib/platform/queries");
+  const conversationId = await ensureDirectConversation(access.user.id, targetId);
+  if (!conversationId) return fail("validation");
 
   revalidatePath("/app/messages");
+  revalidatePath("/app/inbox");
   return done({ redirectTo: `/app/messages?c=${conversationId}` });
 }
 

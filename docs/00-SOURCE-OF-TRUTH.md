@@ -3,16 +3,22 @@
 **Diese Datei ist der verbindliche Einstiegspunkt für jeden Menschen und jeden
 KI-Agenten, der an diesem Repository arbeitet.**
 
-- **Stand:** 2026-09-22 (Sprint 7 – Network real+Demo-Kombination,
-  Verbindungsstatus-Richtung (gesendet→Zurückziehen / erhalten→Annehmen+Ablehnen),
-  Netzwerk-Filter (Suche/Rolle/Standort/Interesse), Demo-Profilansicht `/app/people/demo/[key]`;
-  Sprint 6 – Struktur-Audit, Source-of-Truth-Härtung,
-  Auth/Login/Register/Verify-Fixes, Language-Switcher-Korrektur, Deals funktional,
-  Button-Audit, Events mit Bildern, Profile humanisiert, Demo-Beiträge,
-  Inbox-Empty-States, kleine Visualisierungen, AI-Look-Reduktion; Sprint 5 – Mobile-UX
-  der Startseite, Login-UX, Demo-Detail-Dialoge, Event-Bilder)
-- **Technische Basis:** Branch `arena/01a0c9c0-inner-circle`, Basis `main` @
-  `a563999`. Vorheriger dokumentierter Stand: `c211e20` (Sprint 5)
+- **Stand:** 2026-09-22 (Sprint 8 – Mobile Public Homepage radikal verkürzt,
+  Mobile Member App (Bottom Nav, Mobile-Chat, Mobile-Menü), Core Connection
+  Loop vollständig (Discover → Profil → Connect mit Pflichtnachricht → Anfrage
+  → Inbox → Annehmen/Ablehnen → Chat → Network), Start „Für dich“ mit echten
+  Einträgen, Network-Views (Alle/Verbindungen/Anfragen), listbasierte
+  Mobile-Karten für Deals/Jobs/Investments/Events; Sprint 7 – Network
+  real+Demo-Kombination, Verbindungsstatus-Richtung (gesendet→Zurückziehen /
+  erhalten→Annehmen+Ablehnen), Netzwerk-Filter (Suche/Rolle/Standort/Interesse),
+  Demo-Profilansicht `/app/people/demo/[key]`; Sprint 6 – Struktur-Audit,
+  Source-of-Truth-Härtung, Auth/Login/Register/Verify-Fixes,
+  Language-Switcher-Korrektur, Deals funktional, Button-Audit, Events mit
+  Bildern, Profile humanisiert, Demo-Beiträge, Inbox-Empty-States, kleine
+  Visualisierungen, AI-Look-Reduktion; Sprint 5 – Mobile-UX der Startseite,
+  Login-UX, Demo-Detail-Dialoge, Event-Bilder)
+- **Technische Basis:** Branch `arena/01a0cad6-inner-circle`, Basis `main` @
+  `128295a`. Vorheriger dokumentierter Stand: `8f57987` (Sprint 7)
 - **Sprint-6-Auftrag:** ausdrücklicher Gründerauftrag: bestehendes Projekt
   stabilisieren, strukturieren, funktional machen, humanisieren. Kein Rewrite.
   Keine funktionierende Logik löschen. Domain/Resend-Custom-Domain bewusst
@@ -54,7 +60,19 @@ Details: [`01-product.md`](01-product.md)
 
 #### Public Navigation (statisch, keine DB, kein getAccessContext)
 
-- `/` – Startseite: Hero (beide Preise 24,99€/249,90€) → 3 Outcomes kompakt → 6 Kernbereiche als klickbare Übersicht → Membership → Footer (KI-Hinweis im Footer). Desktop behält reiche Bild-Text-Sektionen (`hidden lg:block`).
+- `/` – Startseite, **getrennte Informationsdichte je Viewport (Sprint 8)**:
+  - **Mobile (`<lg`):** radikal verkürzt – Hero (Headline + EIN kurzer Satz +
+    CTA „INNER CIRCLE entdecken“ + kleine Zeile „48h Discovery starten“,
+    Facts-Liste ausgeblendet) → 3 Outcomes (je Titel + 1 kurze Zeile) →
+    6 Kernbereiche als kompakte **2×3-Übersicht** (Icon + Titel + 1 Nutzenzeile,
+    tappt auf die Unterseite, keine Bilder) → Trust als kompakte 3-Punkte-Zeile
+    (keine große Marketing-Section) → Membership kompakt (Titel + beide Preise
+    in einer Zeile + CTA „48h Discovery starten“) → Footer (2-Spalten-Links
+    unter `sm`). **Keine** Events-/Kapital-/Final-CTA-Sections auf Mobile.
+  - **Desktop (`lg+`):** unverändert – Hero (beide Preise) → 3 Outcomes (volle
+    Sätze) → 6 Kernbereiche als reiche Bild-Text-Reihen (`hidden lg:block`) →
+    Events → Kapital-Hinweis → Membership (2-Spalten) → Final-CTA.
+  - Statisches Prerendering bleibt erhalten: keine Request-Time-Datenbankzugriffe.
 - `/network`, `/business-deals`, `/investments`, `/marketplace`, `/events`, `/membership`, `/portfolio` – Preview-Seiten mit statischem Content, nicht aktive Funktionen als „Demnächst verfügbar".
 - `/login`, `/register`, `/verify`, `/forgot-password`, `/reset-password` – Auth.
 - `/member/[publicId]` – öffentliche Karten-Verifikation.
@@ -64,7 +82,23 @@ Details: [`01-product.md`](01-product.md)
 
 #### Member Navigation (6 Primärbereiche + 6 sekundäre Bereiche)
 
-**Primär (Sidebar + Bottom-Bar):**
+**Viewport-Trennung (Sprint 8):**
+
+- **Desktop (`xl+`):** Desktop-Sidebar (unverändert) mit Primär- +
+  Bereiche-Gruppe, Konto-Block und „Erstellen“-Button.
+- **Mobile (`<xl`):** die Desktop-Sidebar ist **aus der normalen Ansicht
+  entfernt** (nicht zusätzlich zur Bottom-Nav). Feste **Bottom Navigation**
+  mit Icons + kurzen Labels: `Start · Discover · + · Inbox · Profil` –
+  `+` öffnet das bestehende Erstellen-Sheet (kein neues Create-System).
+  Oben eine kompakte Top-Bar (IC-Logo, Trial-Countdown, Inbox-Icon, Avatar).
+  Der **Avatar öffnet das Konto-&-Bereiche-Menü** (Dialog), aus dem alle
+  sekundären Bereiche (inkl. Academy `/app/learn`) sowie Konto-Punkte
+  (Profil, Bearbeiten, Member Card, Mitgliedschaft, Trust, Einstellungen,
+  Sprache, Abmelden) erreichbar sind – **keine zweite dauerhafte Navigation**.
+  Weitere Bereiche sind zusätzlich über die Start-Karten und Unterseiten
+  erreichbar.
+
+**Primär (Desktop-Sidebar + Mobile Bottom-Nav):**
 
 | # | Label | Route | Inhalt |
 |---|-------|-------|--------|
@@ -148,6 +182,100 @@ Details: [`01-product.md`](01-product.md)
 - Rebranding kommt später, **nicht jetzt ändern**.
 - Logo, Farben (Midnight Navy #10151E, Electric Blue #366CF5, Forest Green #12805C, Sand #CBB694, Off White #F7F8FA), Typografie (Inter self-hosted) bleiben eingefroren (`10-design-freeze.md`).
 - Kein neues Logo, kein neuer Name in diesem Sprint.
+
+### 1i. Core Connection Loop (Sprint 8, vollständig funktionsfähig)
+
+Der zentrale Produkt-Loop ist Ende-zu-Ende implementiert und getestet:
+
+```
+Discover → Profil → Connect (Pflichtnachricht) → Anfrage → Inbox (Anfragen)
+→ Annehmen / Ablehnen → bei Annahme: Chat + Business Connection → Network
+```
+
+- **Discover** (`/app/discover`): regelbasiertes Matching auf echten
+  Profildaten (Interessen, Ziele, Branche, Ich suche/biete, Standort,
+  gemeinsame Kontakte) – **kein AI-Matching, keine „AI“-Bezeichnung**.
+  Match-Gründe werden als Chips gezeigt (z. B. „Ihr sucht beide: …“,
+  „Gemeinsames Interesse: …“, „Gleicher Standort: …“). Mobile: kompakte
+  Karte (Foto, Name, Rolle, Standort, 1–2 Tags, max. 2 Match-Gründe) +
+  Daumen-Actions (Überspringen / Profil ansehen / Connect, Connect
+  durchläuft beide Spalten).
+- **Profil** (`/app/people/[handle]`): Avatar, Name, Handle, Rolle,
+  Unternehmen, Standort, Bio, Interessen, Ich suche, Ich biete, Skills,
+  Trust Score, Business Connections (Stats), Beiträge. **Zustandsabhängige
+  Aktionen** (keine falschen Button-Zustände):
+  - nicht verbunden → `Connect`
+  - eigene Anfrage offen → `Anfrage gesendet` (deaktiviert) + `Zurückziehen`
+  - eingegangene Anfrage → `Annehmen` / `Ablehnen`
+  - verbunden → `Nachricht senden` (Messaging-Entitlement)
+  Die doppelte MemberCard am Seitenende (stale State) wurde entfernt.
+- **Connect** öffnet immer das `ConnectDialog` (Bottom Sheet/Dialog):
+  Pflichtfeld „Warum möchtest du dich verbinden?“, 10–600 Zeichen
+  (`CONNECTION_MESSAGE_MIN_LENGTH` / `CONNECTION_MESSAGE_MAX_LENGTH`),
+  Zähler + Fehleranzeige. Server lehnt kürzere Nachrichten ab
+  (`connectionMessageRequired`). Optionaler Prompt-Text, kein AI-Text.
+- **Connection-States** (`ConnectionRequest.status`, serverseitig):
+  `pending` → `accepted` | `declined` | `withdrawn`. Richtungsbewusst:
+  Sender sieht „Anfrage gesendet“ + Zurückziehen, Empfänger Annehmen/Ablehnen.
+- **Inbox → Anfragen** (`/app/inbox?tab=requests`, Sub-Tabs
+  `requests`/`sent`/`connections`): eingehende Anfrage zeigt Profilbild,
+  Name, Rolle, **Standort**, **persönliche Nachricht**, `Profil ansehen`,
+  `Annehmen`, `Ablehnen`. Solange nicht angenommen: **kein Chat**.
+- **Annehmen** (`respondConnectionRequestAction`, nur Empfänger):
+  Request → `accepted`, beide werden Business Connection (`Connection`-Zeile),
+  Chat wird freigeschaltet (für Konten mit Messaging-Entitlement),
+  Sender erhält Notification mit Deep Link
+  `/app/inbox?tab=requests&sub=connections`. **Kein automatisches Follow.**
+- **Ablehnen** (nur Empfänger): Request → `declined`, keine Connection,
+  kein Chat, keine Trust-Auswirkung, neutraler Hinweis an den Sender
+  (`/app/inbox?tab=requests&sub=sent`). Trial-Slot wird freigegeben.
+- **Zurückziehen** (nur Sender): Request → `withdrawn`, Trial-Slot frei.
+- **Chat** (`/app/inbox?tab=messages&c=<id>`): 1:1, nur verbundene Konten
+  (serverseitig `isConnected` + Participant-Check). Textnachrichten,
+  Timestamp, eigene/fremde Bubbles unterscheidbar, Verlauf, Empty State,
+  Send-Loading, Fehlerzustand, eigene Nachricht lösbar. **Noch keine**
+  Bilder/Dateien/Voice/Video/Reactions/Typing. Mobile wie Messaging-App:
+  Header mit Person + zurück zur Inbox, Messages im Hauptscreen,
+  Composer unten fixiert (1 Zeile), Inbox-Chrome ausgeblendet.
+  Neue Paare (ohne Konversation) werden per `ensureDirectConversation()`
+  angelegt (kein Server-Action-during-Render → kein 500 mehr).
+- **Network** (`/app/network`): View-Segmente **Alle / Verbindungen /
+  Anfragen** (`?view=connections|requests`) unterscheiden Business
+  Connections, offene Anfragen und andere Profile; Mitglieder mit
+  Verbindung tragen das `Verbunden`-Badge, Karten zeigen je Richtung die
+  passenden Actions. Demo-Profile erscheinen nur in „Alle“.
+- **Demo-Profile** (TEIL T): erzeugen **nie** echte Daten – kein
+  `ConnectionRequest`, keine Inbox-Einträge, kein Follow, kein Trust.
+  „Connect“ auf einem Demo-Profil öffnet `DemoConnectDialog`
+  („Dies ist ein Demo-Profil. Bei echten Mitgliedern kannst du hier eine
+  persönliche Connection-Anfrage senden.“). `sendConnectionRequestAction`
+  blockiert zusätzlich DB-Demo-User serverseitig (`demoConnectBlocked`).
+- **Trial-Limits** bleiben erhalten: max. 3 Kontaktanfragen
+  (`TRIAL_CONNECTION_LIMIT`, serverseitig), Freigabe bei Rückzug/Ablehnung.
+  Rate-Limit `connect:<userId>` 30/h, `message:<userId>` 60/10 min.
+- **Authorization** (serverseitig, `getAccessContext()`): nur eingeloggte
+  Nutzer senden Connect; nur Empfänger antwortet; nur Sender zieht zurück;
+  nur verbundene Nutzer chatten; fremde Chat-Verläufe nicht abrufbar
+  (Participant-Check in `conversationMessages()`); Demo-Profile triggern
+  keine echten Aktionen.
+- **Notifications** (bestehende Infrastruktur, `notify()`): neue
+  Connection-Anfrage, Connection angenommen, neue Chat-Nachricht.
+  Deep Links zeigen auf die Inbox-Sub-Views.
+- **Start „Für dich“** (`forYouItems()`): bis zu 5 **echte** Einträge in
+  Priorität: offene Anfrage → ungelesene Nachricht → passendes Mitglied
+  (gemeinsames Interesse, ohne offene Anfrage/Connection/Block) → neueste
+  Chance → nächstes bestätigtes Event → neueste freigegebene
+  Investment-Opportunity. Ohne echte Daten: ehrliche Navigations-Shortcuts.
+
+### 1j. Follow vs. Business Connection (verbindlich, dokumentiert)
+
+- **Follow** (`Follow`): einseitig, sofort, ohne Nachricht. Eigene
+  Sichtbarkeit (Feed), keine Rechte, kein Chat.
+- **Business Connection** (`Connection`): beidseitig, erst nach
+  angenommener Anfrage. Schaltet 1:1-Chat frei (mit Messaging-Entitlement)
+  und zählt als Kontakt (Stats, Network).
+- **Kein automatisches Follow bei Connection** und kein automatischer
+  Follow-Back – abgesichert durch `tests/integration/core-loop.test.ts`.
 
 ## 2. Technische Kurzfassung
 
@@ -254,7 +382,8 @@ existiert. Backend + Daten + Berechtigungen + Nachweis gehören dazu.
 | **Demo-Profilansicht (Sprint 7)** | WORKING | „Profil ansehen" auf Demo-Karten → `/app/people/demo/[key]`: vollständige, eindeutig als DEMO-PROFIL gekennzeichnete Ansicht ohne DB-Zugriff; Connect erklärt stattdessen: „Dies ist ein Demo-Profil. …" (`DemoConnectDialog`), es wird **keine** echte Anfrage erzeugt |
 | Follow | WORKING | `followAction` (bei Demo-Profile nicht angeboten – keine echten Follower) |
 | Connection Requests (senden/annehmen/ablehnen/zurückziehen) | WORKING | `network.ts`, `connection-request.test.ts`, `messaging-authorization.test.ts` |
-| **Verbindungsanfrage nur mit Pflichtnachricht** (min. 10 Zeichen) | WORKING | serverseitig in `sendConnectionRequestAction` (`CONNECTION_MESSAGE_MIN_LENGTH`), UI `ConnectDialog`, `connection-request.test.ts` |
+| **Core Connection Loop (Sprint 8)** | WORKING | Discover → Profil (zustandsabhängige Aktionen) → Connect mit Pflichtnachricht → Anfrage in Inbox → Annehmen/Ablehnen → Chat (nur Mitglieder) + Business Connection → Network (`Alle/Verbindungen/Anfragen`). Details §1i; `core-loop.test.ts` (accept/decline/withdraw, Notification-Deep-Links, kein implizites Follow), `connection-request.test.ts`, `messaging-authorization.test.ts` |
+| **Verbindungsanfrage nur mit Pflichtnachricht** (min. 10 Zeichen, max. 600) | WORKING | serverseitig in `sendConnectionRequestAction` (`CONNECTION_MESSAGE_MIN_LENGTH`/`CONNECTION_MESSAGE_MAX_LENGTH`), UI `ConnectDialog` (Zähler + Fehler), `connection-request.test.ts` |
 | **Discover** (Business-Karten, Relevanz-Ranking, Filter) | WORKING | `/app/discover`, `DiscoverDeck`, `src/lib/discover/matching.ts`, `discover-matching.test.ts`; Sprint 6 humanisiert, keine 3-Skills-Zwang |
 | Messaging (nur zwischen verbundenen Konten) | WORKING | `message-delivery`, `messaging-authorization` Tests |
 | Blockieren | WORKING | `Block`, `blockMemberAction` |
@@ -394,7 +523,7 @@ Bereiche:**
 
 | # | Bereich | Route | Inhalt |
 | - | ------- | ----- | ------ |
-| 1 | **Start** | `/app` | kompakte Kopfzeile (`Hallo, <Name>` + Trial-Chip + Inbox-Shortcut) und die sechs Kernbereichs-Karten als **2×3-Raster auf Desktop** (Tablet ebenfalls 2-spaltig, Mobile 1-spaltig) – größere, ruhigere Cards |
+| 1 | **Start** | `/app` | kompakte Kopfzeile (`Hallo, <Name>` + Trial-Chip + Inbox-Shortcut) und die sechs Kernbereichs-Karten als **2×3-Raster** (Desktop/Tablet große Cards, Mobile kompakte 2-spaltige Tiles mit 1 kurzer Zeile). **Sprint 8:** „Für dich“ zeigt bis zu 5 echte, aktuell relevante Einträge (`forYouItems()`, §1i) statt statischer Links; ohne Daten ehrliche Shortcuts |
 | 2 | **Discover** | `/app/discover` | Business-Karten mit Pflicht-Connect-Nachricht, Relevanz-Ranking, **kompakte Filterleiste** (Standort, Umkreis, Rolle, Branche) + „Mehr Filter“ (Interesse, Typ, Ich suche, Ich biete, Investmentinteressen), aktive Filter als entfernbare Chips, „Filter zurücksetzen“, ehrliche Leerzustände – echte Treffer haben Vorrang, Demonstration nur im Leerzustand (`DiscoverDemoSection`) |
 | 3 | **Erstellen** | Create-Sheet (Desktop-Button / Mobile `+`) | Business Deal · Job/Projekt · Investment · Marketplace-Angebot · Kurs · Beitrag |
 | 4 | **Inbox** | `/app/inbox` | Nachrichten · Anfragen · Benachrichtigungen (Segmented Control) |
@@ -506,11 +635,16 @@ lässt auf 2560 px symmetrische Ränder statt einer toten rechten Fläche.
 
 ## 8. Nächster empfohlener Schritt
 
-**Sprint 7 ist abgeschlossen** (Network real+Demo, Verbindungsstatus richtungsabhängig,
-Netzwerk-Filter, Demo-Profilansicht).
-Offene Gründer-Schritte / nächste Roadmap-Punkte:
+**Sprint 8 ist abgeschlossen** (Mobile Public Homepage radikal verkürzt,
+Mobile Member App (Bottom Nav / Mobile-Chat / Mobile-Menü), Core Connection
+Loop vollständig, Start „Für dich“ mit echten Einträgen, Network-Views,
+listbasierte Mobile-Karten). Offene Gründer-Schritte / nächste
+Roadmap-Punkte:
 1. **Eigene verifizierte E-Mail-Domain** für die Produktion (Resend-Domain
    anlegen, SPF/DKIM/DMARC im DNS konfigurieren, `EMAIL_FROM` auf die
    verifizierte Domain setzen). Details: [`07-integrations.md`](07-integrations.md)
    und [`12-roadmap.md`](12-roadmap.md) → Abschnitt NEXT.
-2. **Profilbild-Upload / Object Storage** in einem separaten Sprint anbinden.
+2. **Profilbild-Upload / Object Storage** in einem separaten Sprint anbinden
+   (R2/AVATARS/Datei-Upload war **nicht** Teil von Sprint 8).
+3. **Chat-Erweiterungen** (Bilder/Dateien/Voice/Reactions/Typing-Indicator)
+   – bewusst **nicht** in Sprint 8, Kern-Text-Chat zuerst stabil.

@@ -13,9 +13,11 @@ import {
   GridIcon,
   InboxIcon,
   StoreIcon,
+  UserPlusIcon,
   UsersIcon,
 } from "@/components/ui/icons";
 import { useI18n } from "@/lib/i18n/context";
+import type { ForYouItem } from "@/lib/platform/queries";
 
 export type DashboardData = {
   firstName: string;
@@ -25,6 +27,8 @@ export type DashboardData = {
   trialRequestLimit: number;
   unreadInbox: number;
   membershipDevelopment: boolean;
+  /** Real, currently relevant entries (Sprint 8, TEIL E) – may be empty. */
+  forYou: ForYouItem[];
 };
 
 /** Live countdown for the discovery trial (compact, header-only). */
@@ -67,6 +71,7 @@ export function DashboardScreen({ data }: { data: DashboardData }) {
       icon: UsersIcon,
       title: t.app.dashboard.areaNetworkTitle,
       desc: t.app.dashboard.areaNetworkDesc,
+      short: t.app.dashboard.areaNetworkShort,
       accent: "electric" as const,
       locked: !isTrial && !isMember,
     },
@@ -75,6 +80,7 @@ export function DashboardScreen({ data }: { data: DashboardData }) {
       icon: BriefcaseIcon,
       title: t.app.dashboard.areaDealsTitle,
       desc: t.app.dashboard.areaDealsDesc,
+      short: t.app.dashboard.areaDealsShort,
       accent: "forest" as const,
       locked: !isTrial && !isMember,
     },
@@ -83,6 +89,7 @@ export function DashboardScreen({ data }: { data: DashboardData }) {
       icon: GridIcon,
       title: t.app.dashboard.areaJobsTitle,
       desc: t.app.dashboard.areaJobsDesc,
+      short: t.app.dashboard.areaJobsShort,
       accent: "sand" as const,
       locked: !isTrial && !isMember,
     },
@@ -91,6 +98,7 @@ export function DashboardScreen({ data }: { data: DashboardData }) {
       icon: ChartIcon,
       title: t.app.dashboard.areaInvestmentsTitle,
       desc: t.app.dashboard.areaInvestmentsDesc,
+      short: t.app.dashboard.areaInvestmentsShort,
       accent: "navy" as const,
       locked: !isTrial && !isMember,
     },
@@ -99,6 +107,7 @@ export function DashboardScreen({ data }: { data: DashboardData }) {
       icon: StoreIcon,
       title: t.app.dashboard.areaMarketplaceTitle,
       desc: t.app.dashboard.areaMarketplaceDesc,
+      short: t.app.dashboard.areaMarketplaceShort,
       accent: "sand" as const,
       locked: false,
     },
@@ -107,6 +116,7 @@ export function DashboardScreen({ data }: { data: DashboardData }) {
       icon: CalendarIcon,
       title: t.app.dashboard.areaEventsTitle,
       desc: t.app.dashboard.areaEventsDesc,
+      short: t.app.dashboard.areaEventsShort,
       accent: "electric" as const,
       locked: false,
     },
@@ -167,34 +177,52 @@ export function DashboardScreen({ data }: { data: DashboardData }) {
         </div>
       </header>
 
-      {/* Compact “Für dich” – architecture for later personalisation, no extra queries. */}
+      {/* “Für dich” (Sprint 8, TEIL E): 3–5 real, currently relevant entries –
+          request, unread message, matching member, newest deal, event,
+          investment. When nothing exists yet, honest navigation shortcuts. */}
       <section aria-labelledby="for-you" className="rounded-2xl border border-border bg-surface px-4 py-4 sm:px-5">
-        <h2 id="for-you" className="text-sm font-bold tracking-tight">
-          {t.app.dashboard.forYouTitle}
-        </h2>
-        <ul className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-          <li>
-            <Link href="/app/discover" className="block rounded-xl px-3 py-2 text-sm hover:bg-surface-muted">
-              {t.app.dashboard.forYouDiscover}
-            </Link>
-          </li>
-          <li>
-            <Link href="/app/inbox" className="block rounded-xl px-3 py-2 text-sm hover:bg-surface-muted">
-              {t.app.dashboard.forYouInbox}
-              {data.unreadInbox > 0 ? ` · ${data.unreadInbox}` : ""}
-            </Link>
-          </li>
-          <li>
-            <Link href="/app/events" className="block rounded-xl px-3 py-2 text-sm hover:bg-surface-muted">
-              {t.app.dashboard.forYouEvents}
-            </Link>
-          </li>
-          <li>
-            <Link href="/app/profile/edit" className="block rounded-xl px-3 py-2 text-sm hover:bg-surface-muted">
-              {t.app.dashboard.forYouProfile}
-            </Link>
-          </li>
-        </ul>
+        <div className="flex items-baseline justify-between gap-3">
+          <h2 id="for-you" className="text-sm font-bold tracking-tight sm:text-base">
+            {t.app.dashboard.forYouTitle}
+          </h2>
+          {data.forYou.length === 0 && (
+            <p className="hidden text-xs text-foreground-subtle sm:block">{t.app.dashboard.forYouLead}</p>
+          )}
+        </div>
+        {data.forYou.length > 0 ? (
+          <ul className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {data.forYou.map((item) => (
+              <ForYouEntry key={`${item.kind}-${"name" in item ? item.name : item.title}`} item={item} />
+            ))}
+          </ul>
+        ) : (
+          <>
+            <p className="mt-2 text-sm leading-6 text-foreground-muted">{t.app.dashboard.forYouEmpty}</p>
+            <ul className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+              <li>
+                <Link href="/app/discover" className="block rounded-xl px-3 py-2 text-sm hover:bg-surface-muted">
+                  {t.app.dashboard.forYouDiscover}
+                </Link>
+              </li>
+              <li>
+                <Link href="/app/inbox" className="block rounded-xl px-3 py-2 text-sm hover:bg-surface-muted">
+                  {t.app.dashboard.forYouInbox}
+                  {data.unreadInbox > 0 ? ` · ${data.unreadInbox}` : ""}
+                </Link>
+              </li>
+              <li>
+                <Link href="/app/events" className="block rounded-xl px-3 py-2 text-sm hover:bg-surface-muted">
+                  {t.app.dashboard.forYouEvents}
+                </Link>
+              </li>
+              <li>
+                <Link href="/app/profile/edit" className="block rounded-xl px-3 py-2 text-sm hover:bg-surface-muted">
+                  {t.app.dashboard.forYouProfile}
+                </Link>
+              </li>
+            </ul>
+          </>
+        )}
       </section>
 
       {/* Free accounts: one honest line, not a wall of copy */}
@@ -216,36 +244,110 @@ export function DashboardScreen({ data }: { data: DashboardData }) {
           <p className="text-sm text-foreground-muted">{t.app.dashboard.areasLeadShort}</p>
         </div>
 
-        <div className="ic-grid">
+        {/* Mobile (Sprint 8, TEIL E): compact 2×3 tiles – icon, title, one
+            short line. Desktop keeps the larger 2×3 cards. */}
+        <div className="grid grid-cols-2 gap-2.5 sm:gap-4 lg:grid-cols-2">
           {areas.map((area) => (
             <Link
               key={area.href}
               href={area.href}
-              className="ic-span-6 group flex h-full flex-col rounded-2xl border border-border bg-surface p-6 transition-all duration-300 hover:-translate-y-0.5 hover:border-electric-500/40 hover:shadow-lift sm:p-8"
+              className="group flex h-full flex-col rounded-2xl border border-border bg-surface p-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-electric-500/40 hover:shadow-lift sm:p-8"
             >
               <span className="flex items-start justify-between gap-3">
-                <span className={`inline-flex rounded-xl p-3 ${accents[area.accent]}`}>
-                  <area.icon size={24} />
+                <span className={`inline-flex rounded-xl p-2 sm:p-3 ${accents[area.accent]}`}>
+                  <area.icon size={20} />
                 </span>
-                {area.locked ? (
-                  <Badge variant="outline">{t.app.dashboard.lockedHint}</Badge>
-                ) : (
-                  <span
-                    aria-hidden="true"
-                    className="text-base font-semibold text-electric-600 opacity-0 transition-opacity group-hover:opacity-100 dark:text-electric-300"
-                  >
-                    →
-                  </span>
+                {area.locked && (
+                  <Badge variant="outline">
+                    {t.app.dashboard.lockedHint}
+                  </Badge>
                 )}
               </span>
-              <h3 className="mt-5 text-lg font-bold tracking-tight sm:text-xl">{area.title}</h3>
-              <p className="mt-2 flex-1 text-sm leading-7 text-foreground-muted sm:text-[15px]">
-                {area.desc}
+              <h3 className="mt-3 text-[15px] font-bold tracking-tight sm:mt-5 sm:text-xl">{area.title}</h3>
+              <p className="mt-1 flex-1 text-[13px] leading-5 text-foreground-muted sm:mt-2 sm:text-[15px] sm:leading-7">
+                <span className="line-clamp-2 sm:hidden">{area.short}</span>
+                <span className="hidden sm:inline">{area.desc}</span>
               </p>
             </Link>
           ))}
         </div>
       </section>
     </div>
+  );
+}
+
+/** One “Für dich” entry – icon, one-line title, one-line reason (TEIL E). */
+function ForYouEntry({ item }: { item: ForYouItem }) {
+  const { t, tf } = useI18n();
+  const typeLabels = t.app.opportunities.type as Record<string, string>;
+
+  const icons = {
+    request: UserPlusIcon,
+    message: InboxIcon,
+    person: UsersIcon,
+    deal: BriefcaseIcon,
+    event: CalendarIcon,
+    investment: ChartIcon,
+  } as const;
+
+  let href = "";
+  let title = "";
+  let meta = "";
+  let Icon: (props: { size?: number; className?: string }) => React.ReactNode = BriefcaseIcon;
+  let hrefToProfile = false;
+
+  switch (item.kind) {
+    case "request":
+      href = item.href;
+      title = tf(t.app.dashboard.forYouRequestTitle, { name: item.name });
+      meta = t.app.dashboard.forYouRequestMeta;
+      Icon = icons.request;
+      break;
+    case "message":
+      href = item.href;
+      title = tf(t.app.dashboard.forYouMessageTitle, { name: item.name });
+      meta = t.app.dashboard.forYouMessageMeta;
+      Icon = icons.message;
+      break;
+    case "person":
+      href = `/app/people/${item.handle}`;
+      title = item.name;
+      meta = tf(t.app.dashboard.forYouPersonMeta, { value: item.sharedInterest });
+      Icon = icons.person;
+      hrefToProfile = true;
+      break;
+    case "deal":
+      href = item.href;
+      title = item.title;
+      meta = tf(t.app.dashboard.forYouDealMeta, { type: typeLabels[item.type] ?? item.type });
+      Icon = icons.deal;
+      break;
+    case "event":
+      href = item.href;
+      title = item.title;
+      meta = tf(t.app.dashboard.forYouEventMeta, { date: item.date });
+      Icon = icons.event;
+      break;
+    case "investment":
+      href = item.href;
+      title = item.title;
+      meta = t.app.dashboard.forYouInvestmentMeta;
+      Icon = icons.investment;
+      break;
+  }
+
+  return (
+    <li>
+      <Link href={href} className="flex items-center gap-3 rounded-xl border border-border bg-background px-3 py-2.5 transition-colors hover:border-electric-500/40">
+        <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-electric-500/10 text-electric-600 dark:text-electric-300">
+          <Icon size={17} />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-sm font-semibold leading-tight">{title}</span>
+          <span className="mt-0.5 block truncate text-xs text-foreground-muted">{meta}</span>
+        </span>
+        {hrefToProfile && <span aria-hidden="true" className="text-foreground-subtle">→</span>}
+      </Link>
+    </li>
   );
 }

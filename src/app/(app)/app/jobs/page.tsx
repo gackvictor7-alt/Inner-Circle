@@ -69,22 +69,26 @@ export default async function JobsPage() {
         <ul className="space-y-3">
           {rows.map((row) => (
             <li key={row.id}>
-              <Card className="flex flex-wrap items-start justify-between gap-4 p-5">
-                <div className="min-w-0">
+              {/* Mobile (Sprint 8, TEIL W): list-based row – title, type,
+                  location, one-line summary, CTA. */}
+              <Card className="flex flex-wrap items-start justify-between gap-3 p-4 sm:gap-4 sm:p-5">
+                <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant={row.type === "job" ? "electric" : "sand"}>{row.type}</Badge>
+                    <Badge variant={row.type === "job" ? "electric" : "sand"}>
+                      <Tr k={`app.opportunities.type.${row.type}` as "app.opportunities.type.job"} />
+                    </Badge>
                     {row.isDemo && <Badge variant="outline"><Tr k="app.common.demo" /></Badge>}
                   </div>
                   <Link href={`/app/opportunities/${row.id}`} className="mt-2 block text-base font-bold tracking-tight hover:underline">
                     {row.title}
                   </Link>
-                  <p className="mt-1 text-sm text-foreground-muted">{row.summary}</p>
+                  <p className="mt-1 line-clamp-2 text-sm text-foreground-muted">{row.summary}</p>
                   <p className="mt-2 text-xs text-foreground-subtle">
                     {row.ownerCompany ?? `${row.ownerFirstName} ${row.ownerLastName}`} ·{" "}
                     {[row.location, row.remote ? "Remote" : null].filter(Boolean).join(" · ")}
                   </p>
                 </div>
-                <Button href={`/app/opportunities/${row.id}#apply`} size="sm">
+                <Button href={`/app/opportunities/${row.id}#apply`} size="sm" className="w-full sm:w-auto">
                   <Tr k="app.opportunities.apply.cta" />
                 </Button>
               </Card>

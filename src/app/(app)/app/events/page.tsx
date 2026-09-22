@@ -95,7 +95,9 @@ export default async function EventsPage({
           action={{ labelKey: "app.nav.network", href: "/app/network" }}
         />
       ) : (
-        <ul className="grid gap-4 lg:grid-cols-2">
+        // Mobile (Sprint 8, TEIL X): image-led compact cards – image,
+        // title, place, date, CTA. No long description in the overview.
+        <ul className="grid gap-3 sm:gap-4 lg:grid-cols-2">
           {shown.map((event) => (
             <li key={event.id}>
               <Card className="flex h-full flex-col overflow-hidden">
@@ -109,7 +111,7 @@ export default async function EventsPage({
                     className="h-36 w-full object-cover sm:h-40"
                   />
                 ) : null}
-                <div className="flex flex-1 flex-col p-5">
+                <div className="flex flex-1 flex-col p-4 sm:p-5">
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant={stateVariant[event.state as keyof typeof stateVariant] ?? "outline"}>
                     <Tr k={`app.events.state.${event.state}`} />
@@ -117,17 +119,17 @@ export default async function EventsPage({
                   <Badge variant="outline">{event.category}</Badge>
                   {event.isDemo && <Badge variant="sand"><Tr k="app.common.demo" /></Badge>}
                 </div>
-                <Link href={`/app/events/${event.slug}`} className="mt-3 text-base font-bold tracking-tight hover:underline">
+                <Link href={`/app/events/${event.slug}`} className="mt-2.5 text-base font-bold tracking-tight hover:underline sm:mt-3">
                   {event.title}
                 </Link>
-                <p className="mt-2 flex-1 text-sm leading-6 text-foreground-muted">{event.summary}</p>
-                <p className="mt-3 text-xs text-foreground-subtle">
+                <p className="mt-2 hidden flex-1 text-sm leading-6 text-foreground-muted sm:block">{event.summary}</p>
+                <p className="mt-2 text-xs text-foreground-subtle sm:mt-3">
                   {event.startsAt?.toLocaleDateString("de-DE")} · {[event.location, event.city].filter(Boolean).join(", ")}
                   {event.capacity ? ` · max. ${event.capacity}` : ""}
                 </p>
-                <div className="mt-4">
+                <div className="mt-3 sm:mt-4">
                   <Button href={`/app/events/${event.slug}`} size="sm" variant="secondary">
-                    <Tr k="app.common.details" />
+                    <Tr k="app.events.viewEvent" />
                   </Button>
                 </div>
                 </div>

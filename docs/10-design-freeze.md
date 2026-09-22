@@ -177,6 +177,45 @@ Premium-Stil bleiben unverändert. Dieser Stand ist seinerseits eingefroren:
   Profil-Vollständigkeit (bestand bereits). Keine erfundenen Umsätze,
   Renditen oder Erfolgszahlen; keine neuen Dashboard-Sektionen.
 
+### 1.13 Sprint 8: Mobile Public Homepage · Mobile Member App · Core Loop (2026-09-22)
+
+**Ausdrücklicher Gründerauftrag** (produktiver Mobile-Sprint, kein Rewrite) –
+die folgenden Änderungen sind beauftragt, umgesetzt und jetzt ihrerseits
+eingefroren. Farbwelt, Typografie, Bildsprache (Desktop), Komponenten-Bausteine
+bleiben unverändert.
+
+- **Public Homepage mobil (`<lg`):** neue, radikal verkürzte
+  Informationsstruktur – Hero (Headline + 1 Satz + CTA „INNER CIRCLE
+  entdecken“ + kleine Zeile „48h Discovery starten“, Facts-Liste mobil
+  ausgeblendet), 3 Outcomes (Titel + 1 kurze Zeile), 6 Kernbereiche als
+  kompakte 2×3-Icon-Übersicht (keine Bilder), Trust als 3-Punkte-Zeile
+  (keine große Section), Membership kompakt (Titel + beide Preise + 1 CTA),
+  Footer mit 2-Spalten-Links unter `sm`. Events-/Kapital-/Final-CTA-Sections
+  bleiben **nur** Desktop (`hidden lg:block`, unverändert).
+- **Member Navigation mobil (`<xl`):** Desktop-Sidebar vollständig aus der
+  mobilen Ansicht entfernt; feste Bottom-Nav `Start · Discover · + · Inbox ·
+  Profil` (Icons + Labels, `+` = bestehendes Erstellen-Sheet); Avatar in der
+  Top-Bar öffnet das Konto-&-Bereiche-Menü (Dialog) mit allen sekundären
+  Bereichen (inkl. Academy) und Konto-Punkten. Keine zweite dauerhafte
+  Navigation. Desktop-Sidebar unverändert.
+- **Mobile-Chat:** 1:1-Chat auf Mobile wie Messaging-App (Header mit Person
+  + zurück zur Inbox, Messages im Hauptscreen, Composer unten fixiert,
+  1-Zeilen-Textarea); Desktop-2-Spalten-Layout unverändert.
+- **Mobile-Kompaktierung der Member-App:** Start-Kernbereiche als kompakte
+  2-spaltige Tiles (1 kurze Zeile) auf Mobile; Discover-Karte kompakt
+  (1–2 Tags, max. 2 Match-Gründe) + Daumen-Actions (2-spaltig, Connect
+  durchläuft die Zeile); MemberCard 2 Tags + full-width Action-Rows;
+  Deals/Jobs/Investments listbasiert (1-Zeilen-Summary, Typ-Badges
+  lokalisiert); Events image-led ohne Beschreibung in der Übersicht, CTA
+  „Event ansehen“; Seiten-Leads unter `sm` ausgeblendet (Titel zuerst).
+- **Start „Für dich“:** echte, relevante Einträge (Anfrage, ungelesene
+  Nachricht, passendes Mitglied, Chance, Event, Investment) statt statischer
+  Links; ohne Daten ehrliche Shortcuts.
+- **Network:** View-Segmente Alle / Verbindungen / Anfragen.
+
+**Nicht angefasst:** Auth, Resend, Trial, Membership, Stripe, Cloudflare-
+Logik, Public-Desktop-Layout, Farbtokens, Bildsprache, Branding/Name/Logo.
+
 ## 2. Ausdrücklich erlaubt (kein Designbruch)
 
 - Technische Responsive-Bugfixes (z. B. Überlauf, abgeschnittene Inhalte,
@@ -219,6 +258,11 @@ Alle Punkte sind Gründungsaufträge, nach `## 4` protokolliert und damit
    Startseiten-Kompaktierung, Hero-Kürzung, Sprachwahl mit Flagge + Name,
    KI-Hinweis im Footer, Auth-Formular-Härtung, Demo-Detail-Dialoge,
    Event-Bilder im Member-Bereich, kleine Visualisierungen).
+4. **Sprint 8 (Mobile Homepage · Mobile Member App · Core Loop):** alle
+   Änderungen sind in Abschnitt 1.13 einzeln dokumentiert und eingefroren
+   (radikal verkürzte Mobile-Homepage, Mobile Bottom-Nav + Konto-&-
+   Bereiche-Menü, Mobile-Chat, Mobile-Kompaktierung der Member-App,
+   „Für dich“ mit echten Einträgen, Network-Views).
 
 ## 4. Wenn ein Designauftrag kommt
 

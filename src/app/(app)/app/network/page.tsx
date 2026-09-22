@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requireUser } from "@/lib/access/server";
 import { listDirectoryMembers, listInterests } from "@/lib/platform/queries";
 import { MemberCard, type MemberCardData } from "@/components/app/MemberCard";
@@ -29,7 +30,7 @@ export const dynamic = "force-dynamic";
 export default async function NetworkPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; role?: string; interest?: string; location?: string }>;
+  searchParams: Promise<{ q?: string; role?: string; interest?: string; location?: string; view?: string }>;
 }) {
   const access = await requireUser("/app/network");
   const params = await searchParams;
@@ -39,10 +40,28 @@ export default async function NetworkPage({
   const isTrial = access.level === "trial";
   const limit = isTrial ? 12 : 60;
 
+  // View segments (Sprint 8, TEIL Q): the network distinguishes business
+  // connections, open requests and other profiles instead of one flat list.
+  const view: "all" | "connections" | "requests" =
+    params.view === "connections" || params.view === "requests" ? params.view : "all";
+
   const search = params.q?.trim() || undefined;
   const role = params.role?.trim() || undefined;
   const location = params.location?.trim() || undefined;
   const hasFilters = Boolean(search || role || location || params.interest);
+
+  function membersHref(extra: Record<string, string | null | undefined>) {
+    const query = new URLSearchParams();
+    if (search) query.set("q", search);
+    if (role) query.set("role", role);
+    if (location) query.set("location", location);
+    if (params.interest) query.set("interest", params.interest);
+    for (const [key, value] of Object.entries(extra)) {
+      if (value) query.set(key, value);
+    }
+    const qs = query.toString();
+    return qs ? `/app/network?${qs}` : "/app/network";
+  }
 
   const [members, interests] = await Promise.all([
     listDirectoryMembers({
@@ -66,6 +85,14 @@ export default async function NetworkPage({
         interests: selectedInterest ? [selectedInterest.labelDe, selectedInterest.labelEn] : undefined,
       })
     : [];
+
+  // Segment filter over the already-fetched list (no extra queries).
+  const filteredMembers =
+    view === "connections"
+      ? members.filter((member) => member.isConnected)
+      : view === "requests"
+        ? members.filter((member) => member.requestPending)
+        : members;
 
   const canFollow = access.entitlements.follow;
   const canConnect = access.entitlements.connect !== "no";
@@ -159,7 +186,7 @@ export default async function NetworkPage({
               <Tr k="app.common.filter" />
             </Button>
             {hasFilters && (
-              <Button href="/app/network" size="sm" variant="ghost">
+              <Button href={membersHref({})} size="sm" variant="ghost">
                 <Tr k="app.common.clearFilters" />
               </Button>
             )}
@@ -167,23 +194,55 @@ export default async function NetworkPage({
         </form>
       </Card>
 
-      {members.length + demoProfiles.length === 0 ? (
+      {/* View segments – connections, open requests, all profiles (TEIL Q) */}
+      <nav aria-label={dict.app.network.segmentLabel} className="flex flex-wrap gap-2">
+        {(
+          [
+            { key: "all", labelKey: "app.network.segmentAll" },
+            { key: "connections", labelKey: "app.network.segmentConnections" },
+            { key: "requests", labelKey: "app.network.segmentRequests" },
+          ] as const
+        ).map((segment) => (
+          <Link
+            key={segment.key}
+            href={membersHref({ view: segment.key === "all" ? null : segment.key })}
+            aria-current={view === segment.key ? "page" : undefined}
+            className={`rounded-full px-4 py-2 text-sm font-semibold ${
+              view === segment.key
+                ? "bg-electric-500 text-white"
+                : "border border-border bg-surface text-foreground-muted hover:text-foreground"
+            }`}
+          >
+            <Tr k={segment.labelKey} />
+          </Link>
+        ))}
+      </nav>
+
+      {view === "all" && members.length + demoProfiles.length === 0 ? (
         <LocalizedEmptyState
           icon="users"
           titleKey="app.network.noResults"
           textKey="app.network.noResultsCta"
           action={
             hasFilters
-              ? { labelKey: "app.common.clearFilters", href: "/app/network" }
+              ? { labelKey: "app.common.clearFilters", href: membersHref({}) }
               : { labelKey: "app.discover.title", href: "/app/discover" }
           }
+        />
+      ) : view !== "all" && filteredMembers.length === 0 ? (
+        <LocalizedEmptyState
+          icon="users"
+          titleKey={
+            view === "connections" ? "app.network.segmentConnectionsEmpty" : "app.network.segmentRequestsEmpty"
+          }
+          action={{ labelKey: "app.network.segmentAll", href: membersHref({ view: null }) }}
         />
       ) : (
         <>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm text-foreground-muted">
-              {members.length} <Tr k="app.common.results" />
-              {demoProfiles.length > 0 && (
+              {filteredMembers.length} <Tr k="app.common.results" />
+              {view === "all" && demoProfiles.length > 0 && (
                 <span className="text-foreground-subtle">
                   {" "}
                   {dict.app.network.demoSupplement.replace("{count}", String(demoProfiles.length))}
@@ -197,12 +256,13 @@ export default async function NetworkPage({
             )}
           </div>
           <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {members.map((member) => (
+            {filteredMembers.map((member) => (
               <li key={member.id}>
                 <MemberCard member={member} canFollow={canFollow} canConnect={canConnect} />
               </li>
             ))}
-            {demoProfiles.map((profile) => (
+            {view === "all" &&
+              demoProfiles.map((profile) => (
               <li key={profile.key}>
                 <MemberCard
                   member={demoCardData(profile, locale)}

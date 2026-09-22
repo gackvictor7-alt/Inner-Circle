@@ -390,6 +390,7 @@ export const appBusinessDe = {
       other: "Event",
     },
     state: { confirmed: "Bestätigt", concept: "Konzept", past: "Vergangen", demo: "Demo" },
+    viewEvent: "Event ansehen",
     detail: {
       withdraw: "Anmeldung zurückziehen",
       when: "Wann",
@@ -1168,6 +1169,7 @@ export const appBusinessEn: AppBusinessDict = {
       other: "Event",
     },
     state: { confirmed: "Confirmed", concept: "Concept", past: "Past", demo: "Demo" },
+    viewEvent: "View event",
     detail: {
       withdraw: "Withdraw application",
       when: "When",

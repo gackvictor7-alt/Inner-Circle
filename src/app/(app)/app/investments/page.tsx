@@ -107,20 +107,24 @@ export default async function InvestmentsPage({
           action={access.entitlements.investmentsSubmit ? { labelKey: "app.investments.submitTitle", href: "/app/investments/submit" } : undefined}
         />
       ) : (
-        <ul className="grid gap-4 lg:grid-cols-2">
+        // Mobile (Sprint 8, TEIL W): list-based cards – key numbers stay,
+        // the summary is one line until the detail page.
+        <ul className="grid gap-3 lg:grid-cols-2 lg:gap-4">
           {rows.map((row) => (
             <li key={row.id}>
-              <Card className="flex h-full flex-col p-5">
+              <Card className="flex h-full flex-col p-4 sm:p-5">
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant="electric">{row.sector}</Badge>
                   <Badge variant="outline">{row.stage}</Badge>
                   {row.isDemo && <Badge variant="sand"><Tr k="app.common.demo" /></Badge>}
                   {interestSet.has(row.id) && <Badge variant="forest"><Tr k="app.investments.detail.interestSent" /></Badge>}
                 </div>
-                <Link href={`/app/investments/${row.id}`} className="mt-3 text-base font-bold tracking-tight hover:underline">
+                <Link href={`/app/investments/${row.id}`} className="mt-2.5 text-base font-bold tracking-tight hover:underline sm:mt-3">
                   {row.publicName}
                 </Link>
-                <p className="mt-2 flex-1 text-sm leading-6 text-foreground-muted">{row.summary}</p>
+                <p className="mt-1.5 line-clamp-1 flex-1 text-sm leading-6 text-foreground-muted lg:line-clamp-none">
+                  {row.summary}
+                </p>
                 <dl className="mt-3 grid grid-cols-2 gap-2 text-xs text-foreground-subtle">
                   <div>
                     <dt><Tr k="app.investments.detail.target" /></dt>

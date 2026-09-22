@@ -147,19 +147,25 @@ export default async function OpportunitiesPage({
           <DealsDemoSection />
         </>
       ) : (
-        <ul className="grid gap-4 lg:grid-cols-2">
+        // Mobile (Sprint 8, TEIL W): list-based cards – type, title,
+        // location, one summary line and the CTAs; details after the click.
+        <ul className="grid gap-3 lg:grid-cols-2 lg:gap-4">
           {rows.map((row) => (
             <li key={row.id}>
-              <Card className="flex h-full flex-col p-5">
+              <Card className="flex h-full flex-col p-4 sm:p-5">
                 <div className="flex flex-wrap items-center gap-2">
-                  <Badge variant="electric">{row.type}</Badge>
+                  <Badge variant="electric">
+                    <Tr k={`app.opportunities.type.${row.type}` as "app.opportunities.type.co_founder"} />
+                  </Badge>
                   {row.isDemo && <Badge variant="outline"><Tr k="app.common.demo" /></Badge>}
                   {row.ownerId === access.user.id && <Badge variant="forest"><Tr k="app.common.you" /></Badge>}
                 </div>
-                <Link href={`/app/opportunities/${row.id}`} className="mt-3 text-lg font-bold tracking-tight hover:underline">
+                <Link href={`/app/opportunities/${row.id}`} className="mt-2.5 text-base font-bold tracking-tight hover:underline sm:mt-3 sm:text-lg">
                   {row.title}
                 </Link>
-                <p className="mt-2 flex-1 text-sm leading-6 text-foreground-muted">{row.summary}</p>
+                <p className="mt-1.5 line-clamp-1 flex-1 text-sm leading-6 text-foreground-muted lg:line-clamp-none">
+                  {row.summary}
+                </p>
                 <p className="mt-3 text-xs text-foreground-subtle">
                   {row.ownerFirstName} {row.ownerLastName} · {[row.location, row.remote ? "Remote" : null].filter(Boolean).join(" · ")}
                   {Number(row.applicationCount) > 0 ? ` · ${row.applicationCount} Bewerbungen` : ""}

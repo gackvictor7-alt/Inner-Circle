@@ -17,6 +17,12 @@ Ersetzt das frühere Zielbild in `06-access-roles.md`.
 **Grundregel:** Eine Rolle ist keine Berechtigung. Die einzige Ausnahme ist
 `User.role = "admin"`.
 
+**Follow vs. Business Connection (Sprint 8, dokumentiert):** Follow
+(`Follow`) ist einseitig und sofort, eine Business Connection (`Connection`)
+entsteht beidseitig erst nach **angenommener** Anfrage. Eine angenommene
+Connection erzeugt **kein automatisches Follow** (und kein Follow-Back) –
+die Konzepte sind getrennt (abgesichert durch `core-loop.test.ts`).
+
 ## 2. Zugangsstufen
 
 | Stufe | Code | Voraussetzung | Kernrechte |

@@ -24,6 +24,7 @@ type Person = {
   handle: string;
   avatarUrl: string | null;
   headline: string | null;
+  location?: string | null;
   isDemo?: boolean;
 };
 
@@ -118,7 +119,10 @@ export function ConnectionsView({
                   <Card className="p-5">
                     <div className="flex flex-wrap items-start justify-between gap-4">
                       <PersonLine person={request} />
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Button href={`/app/people/${request.handle}`} size="sm" variant="ghost">
+                          {t.app.common.viewProfile}
+                        </Button>
                         <form action={respond}>
                           <input type="hidden" name="requestId" value={request.requestId} />
                           <input type="hidden" name="decision" value="accept" />
@@ -240,6 +244,7 @@ function PersonLine({ person }: { person: Person }) {
         </Link>
         <p className="text-xs text-foreground-subtle">@{person.handle}</p>
         {person.headline && <p className="mt-1 line-clamp-2 text-sm text-foreground-muted">{person.headline}</p>}
+        {person.location && <p className="mt-0.5 text-xs text-foreground-subtle">{person.location}</p>}
         {person.isDemo && (
           <p className="mt-1 text-[11px] font-medium text-sand-700 dark:text-sand-300">{t.app.common.demo}</p>
         )}

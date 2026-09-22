@@ -2,8 +2,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/access/server";
 import { isBlocked, isConnected } from "@/db/queries";
-import { memberProfileByHandle, profileStats, trustProfile, userPosts } from "@/lib/platform/queries";
-import { MemberCard } from "@/components/app/MemberCard";
+import {
+  connectionRequestState,
+  interestLabelsFor,
+  memberProfileByHandle,
+  profileStats,
+  trustProfile,
+  userPosts,
+} from "@/lib/platform/queries";
 import { ProfileActions } from "@/components/app/ProfileActions";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
@@ -30,13 +36,18 @@ export default async function MemberProfilePage({ params }: { params: Promise<{ 
   if (!profile) notFound();
 
   const isSelf = profile.id === access.user.id;
-  const [stats, trust, posts, connected, blocked] = await Promise.all([
+  const [stats, trust, posts, connected, blocked, requestState, interestLabels] = await Promise.all([
     profileStats(profile.id),
     trustProfile(profile.id),
     userPosts(profile.id, 10),
     isConnected(access.user.id, profile.id),
     isBlocked(access.user.id, profile.id),
+    isSelf
+      ? { outgoingRequestId: null, incomingRequestId: null }
+      : connectionRequestState(access.user.id, profile.id),
+    interestLabelsFor(profile.id, access.user.locale === "en" ? "en" : "de"),
   ]);
+  const offering = parseList(profile.offeringJson);
 
   const limited = !access.entitlements.profileFull && !isSelf;
   const score = trust.summary?.score10 ? trust.summary.score10 / 10 : null;
@@ -63,6 +74,8 @@ export default async function MemberProfilePage({ params }: { params: Promise<{ 
               canFollow={access.entitlements.follow}
               canConnect={access.entitlements.connect !== "no" && !blocked}
               canMessage={access.entitlements.messaging}
+              outgoingRequestId={requestState.outgoingRequestId}
+              incomingRequestId={requestState.incomingRequestId}
             />
           )
         }
@@ -199,16 +212,50 @@ export default async function MemberProfilePage({ params }: { params: Promise<{ 
           const lookingFor = parseList(profile.lookingForJson);
           return (
             <Card className="p-5">
-              <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-foreground-subtle">
-                <Tr k="app.profile.roles" />
-              </h3>
-              <ul className="mt-3 flex flex-wrap gap-2">
-                {[...roles, ...skills].slice(0, 12).map((item) => (
-                  <li key={item}>
-                    <span className="rounded-full bg-surface-muted px-3 py-1 text-xs font-medium">{item}</span>
-                  </li>
-                ))}
-              </ul>
+              {roles.length > 0 && (
+                <>
+                  <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-foreground-subtle">
+                    <Tr k="app.profile.roles" />
+                  </h3>
+                  <ul className="mt-3 flex flex-wrap gap-2">
+                    {roles.map((item) => (
+                      <li key={item}>
+                        <span className="rounded-full bg-surface-muted px-3 py-1 text-xs font-medium">{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+              {skills.length > 0 && (
+                <>
+                  <h3 className="mt-5 text-sm font-bold uppercase tracking-[0.18em] text-foreground-subtle">
+                    <Tr k="app.profile.skills" />
+                  </h3>
+                  <ul className="mt-3 flex flex-wrap gap-2">
+                    {skills.map((item) => (
+                      <li key={item}>
+                        <span className="rounded-full bg-surface-muted px-3 py-1 text-xs font-medium">{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+              {interestLabels.length > 0 && (
+                <>
+                  <h3 className="mt-5 text-sm font-bold uppercase tracking-[0.18em] text-foreground-subtle">
+                    <Tr k="app.discover.interests" />
+                  </h3>
+                  <ul className="mt-3 flex flex-wrap gap-2">
+                    {interestLabels.map((item) => (
+                      <li key={item}>
+                        <span className="rounded-full bg-electric-500/10 px-3 py-1 text-xs font-medium text-electric-600 dark:text-electric-300">
+                          {item}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
               {lookingFor.length > 0 && (
                 <>
                   <h3 className="mt-5 text-sm font-bold uppercase tracking-[0.18em] text-foreground-subtle">
@@ -223,7 +270,23 @@ export default async function MemberProfilePage({ params }: { params: Promise<{ 
                   </ul>
                 </>
               )}
-              {profile.bio && <p className="mt-5 whitespace-pre-wrap text-sm leading-6 text-foreground-muted">{profile.bio}</p>}
+              {offering.length > 0 && (
+                <>
+                  <h3 className="mt-5 text-sm font-bold uppercase tracking-[0.18em] text-foreground-subtle">
+                    <Tr k="app.discover.offering" />
+                  </h3>
+                  <ul className="mt-3 flex flex-wrap gap-2">
+                    {offering.map((item) => (
+                      <li key={item}>
+                        <Badge variant="forest">{item}</Badge>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+              {profile.bio && (
+                <p className="mt-5 whitespace-pre-wrap text-sm leading-6 text-foreground-muted">{profile.bio}</p>
+              )}
             </Card>
           );
         })()}
@@ -246,28 +309,6 @@ export default async function MemberProfilePage({ params }: { params: Promise<{ 
           </ul>
         )}
       </section>
-
-      <MemberCard
-        member={{
-          id: profile.id,
-          firstName: profile.firstName,
-          lastName: profile.lastName,
-          handle: profile.handle,
-          headline: profile.headline,
-          location: profile.location,
-          company: profile.company,
-          avatarUrl: profile.avatarUrl,
-          isDemo: profile.isDemo,
-          foundingMember: profile.foundingMember,
-          interests: [],
-          isFollowing: false,
-          isConnected: connected,
-          requestPending: false,
-        }}
-        canFollow={access.entitlements.follow}
-        canConnect={access.entitlements.connect !== "no"}
-        compact
-      />
     </div>
   );
 }
