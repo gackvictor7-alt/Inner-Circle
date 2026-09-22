@@ -1,13 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { useI18n } from "@/lib/i18n/context";
 import { ConnectDialog } from "@/components/app/ConnectDialog";
-import { followAction } from "@/app/actions/network";
+import { DemoConnectDialog } from "@/components/app/DemoConnectDialog";
+import {
+  followAction,
+  respondConnectionRequestAction,
+  withdrawConnectionRequestAction,
+} from "@/app/actions/network";
 import { initialActionState } from "@/app/actions/state";
 import { AwardIcon, CheckIcon, UserPlusIcon } from "@/components/ui/icons";
 
@@ -25,7 +31,14 @@ export type MemberCardData = {
   interests: string[];
   isFollowing: boolean;
   isConnected: boolean;
+  /** A pending connection request between viewer and member (either direction). */
   requestPending: boolean;
+  /** Id of the pending request the VIEWER sent to this member (null if none). */
+  outgoingRequestId?: string | null;
+  /** Id of the pending request this member sent to the VIEWER (null if none). */
+  incomingRequestId?: string | null;
+  /** Set for demo profiles: no database rows, no follow, no real requests. */
+  demoKey?: string;
 };
 
 export function initials(first: string, last: string) {
@@ -36,6 +49,13 @@ export function initials(first: string, last: string) {
  * Directory/member card with real follow + connection actions. During the trial
  * the server enforces the connection-request limit; the UI reflects it after
  * the action returns.
+ *
+ * Request states are direction-aware (Sprint 7):
+ *   * sent     → "Anfrage gesendet" + "Zurückziehen"
+ *   * received → "Annehmen" / "Ablehnen"
+ *
+ * Demo profiles (demoKey) create nothing: no follow, no real connection
+ * request – "Connect" explains that instead.
  */
 export function MemberCard({
   member,
@@ -49,17 +69,49 @@ export function MemberCard({
   compact?: boolean;
 }) {
   const { t } = useI18n();
+  const router = useRouter();
   const [connectOpen, setConnectOpen] = useState(false);
+  const [demoConnectOpen, setDemoConnectOpen] = useState(false);
   const [requestSent, setRequestSent] = useState(false);
   const [followState, follow, followPending] = useActionState(followAction, initialActionState);
+  const [respondState, respond, respondPending] = useActionState(
+    respondConnectionRequestAction,
+    initialActionState,
+  );
+  const [withdrawState, withdraw, withdrawPending] = useActionState(
+    withdrawConnectionRequestAction,
+    initialActionState,
+  );
+
+  const isDemoCard = Boolean(member.demoKey);
+  const profileHref = member.demoKey
+    ? `/app/people/demo/${member.demoKey}`
+    : `/app/people/${member.handle}`;
 
   const following = followState.status === "success" ? !member.isFollowing : member.isFollowing;
-  const pending = requestSent || member.requestPending;
+  const sentPending = Boolean(member.outgoingRequestId) || requestSent;
+  const receivedPending = !isDemoCard && !sentPending && Boolean(member.incomingRequestId);
+
+  useEffect(() => {
+    if (respondState.status === "success" || withdrawState.status === "success") {
+      router.refresh();
+    }
+  }, [respondState.status, withdrawState.status, router]);
+
+  const actionError =
+    (followState.status === "error" ? followState.errorCode : null) ??
+    (respondState.status === "error" ? respondState.errorCode : null) ??
+    (withdrawState.status === "error" ? withdrawState.errorCode : null) ??
+    null;
+  const actionSuccess =
+    (respondState.status === "success" ? respondState.messageCode : null) ??
+    (withdrawState.status === "success" ? withdrawState.messageCode : null) ??
+    null;
 
   return (
     <Card className={`flex h-full flex-col ${compact ? "p-4" : "p-5"}`}>
       <div className="flex items-start gap-4">
-        <Link href={`/app/people/${member.handle}`} className="shrink-0">
+        <Link href={profileHref} className="shrink-0">
           {member.avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -78,9 +130,10 @@ export function MemberCard({
 
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <Link href={`/app/people/${member.handle}`} className="truncate font-bold tracking-tight hover:underline">
+            <Link href={profileHref} className="truncate font-bold tracking-tight hover:underline">
               {member.firstName} {member.lastName}
             </Link>
+            {isDemoCard && <Badge variant="sand">{t.app.demo.networkBadge}</Badge>}
             {member.foundingMember && (
               <Badge variant="sand">
                 <AwardIcon size={12} />
@@ -109,22 +162,52 @@ export function MemberCard({
         </ul>
       )}
 
-      {member.isDemo && (
+      {member.isDemo && !isDemoCard && (
         <p className="mt-3 rounded-lg bg-sand-200/40 px-2.5 py-1.5 text-[11px] font-medium text-sand-700 dark:bg-sand-400/10 dark:text-sand-200">
           {t.app.common.demo}
         </p>
       )}
 
       <div className="mt-4 flex flex-wrap gap-2">
-        {member.isConnected ? (
+        {isDemoCard ? (
+          <Button size="sm" onClick={() => setDemoConnectOpen(true)}>
+            <UserPlusIcon size={15} />
+            {t.app.network.connectCta}
+          </Button>
+        ) : member.isConnected ? (
           <Button href={`/app/inbox?tab=messages&to=${member.id}`} size="sm" variant="secondary">
             {t.app.messages.title}
           </Button>
-        ) : pending ? (
-          <Button size="sm" variant="ghost" disabled>
-            <CheckIcon size={15} />
-            {t.app.connections.sentToast}
-          </Button>
+        ) : receivedPending ? (
+          <>
+            <form action={respond}>
+              <input type="hidden" name="requestId" value={member.incomingRequestId ?? ""} />
+              <input type="hidden" name="decision" value="accept" />
+              <Button type="submit" size="sm" loading={respondPending}>
+                {t.app.common.accept}
+              </Button>
+            </form>
+            <form action={respond}>
+              <input type="hidden" name="requestId" value={member.incomingRequestId ?? ""} />
+              <input type="hidden" name="decision" value="decline" />
+              <Button type="submit" size="sm" variant="secondary" loading={respondPending}>
+                {t.app.common.decline}
+              </Button>
+            </form>
+          </>
+        ) : sentPending ? (
+          <>
+            <Button size="sm" variant="ghost" disabled>
+              <CheckIcon size={15} />
+              {t.app.profile.actions.pending}
+            </Button>
+            <form action={withdraw}>
+              <input type="hidden" name="requestId" value={member.outgoingRequestId ?? ""} />
+              <Button type="submit" size="sm" variant="secondary" loading={withdrawPending}>
+                {t.app.connections.withdraw}
+              </Button>
+            </form>
+          </>
         ) : canConnect ? (
           <Button size="sm" onClick={() => setConnectOpen(true)}>
             <UserPlusIcon size={15} />
@@ -136,38 +219,52 @@ export function MemberCard({
           </Button>
         )}
 
-        {canFollow && (
+        {canFollow && !isDemoCard && (
           <form action={follow}>
             <input type="hidden" name="userId" value={member.id} />
             <input type="hidden" name="handle" value={member.handle} />
             <Button type="submit" size="sm" variant={following ? "ghost" : "secondary"} loading={followPending}>
-              {following ? t.app.common.decline : t.app.network.followCta}
+              {following ? t.app.profile.actions.unfollow : t.app.network.followCta}
             </Button>
           </form>
         )}
 
-        <Button href={`/app/people/${member.handle}`} size="sm" variant="ghost">
+        <Button href={profileHref} size="sm" variant="ghost">
           {t.app.common.viewProfile}
         </Button>
       </div>
 
-      {followState.status === "error" && (
+      {actionError && (
         <p className="mt-2 text-xs text-danger-600 dark:text-danger-300">
-          {t.app.errors[(followState.errorCode ?? "generic") as keyof typeof t.app.errors] ??
-            t.app.errors.generic}
+          {t.app.errors[actionError as keyof typeof t.app.errors] ?? t.app.errors.generic}
         </p>
       )}
-      {followState.status === "success" && (
-        <p className="mt-2 text-xs text-forest-600 dark:text-forest-300">{t.app.network.followCta}</p>
+      {followState.status === "success" && !isDemoCard && (
+        <p className="mt-2 text-xs text-forest-600 dark:text-forest-300">
+          {following ? t.app.profile.actions.follow : t.app.profile.actions.unfollow}
+        </p>
+      )}
+      {actionSuccess && (actionSuccess === "accepted" || actionSuccess === "declined" || actionSuccess === "withdrawn") && (
+        <p className="mt-2 text-xs text-forest-600 dark:text-forest-300">
+          {actionSuccess === "accepted"
+            ? t.app.connections.acceptedToast
+            : actionSuccess === "declined"
+              ? t.app.connections.declinedToast
+              : t.app.connections.withdrawnToast}
+        </p>
       )}
 
-      {/* Every connection request goes through the mandatory-message dialog. */}
-      <ConnectDialog
-        open={connectOpen}
-        onClose={() => setConnectOpen(false)}
-        target={{ id: member.id, handle: member.handle, firstName: member.firstName }}
-        onSent={() => setRequestSent(true)}
-      />
+      {/* Every connection request goes through the mandatory-message dialog.
+          Demo profiles never do – the dialog explains why instead. */}
+      {!isDemoCard && (
+        <ConnectDialog
+          open={connectOpen}
+          onClose={() => setConnectOpen(false)}
+          target={{ id: member.id, handle: member.handle, firstName: member.firstName }}
+          onSent={() => setRequestSent(true)}
+        />
+      )}
+      {isDemoCard && <DemoConnectDialog open={demoConnectOpen} onClose={() => setDemoConnectOpen(false)} />}
     </Card>
   );
 }

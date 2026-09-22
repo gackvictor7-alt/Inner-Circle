@@ -1,10 +1,13 @@
 # 08 – Test- und Qualitätssicherung
 
-**Stand:** 2026-09-21 (Sprint 5 – Mobile UX, Login-UX, Public-Polish) · Lauf auf
-Branch `arena/01a0c5b7-inner-circle` (Basis `main` @ `c211e20`):
-`npm test` = **20 Dateien / 106 Tests grün**, `npx tsc --noEmit` grün,
-`npm run cf:build` grün, `npx wrangler deploy --dry-run` grün
-(9 228 kB / gzip 1 850 kB, Bindings `DB`/`ASSETS`/`NEXTJS_ENV`),
+**Stand:** 2026-09-22 (Sprint 7 – Network real+Demo, Verbindungsstatus,
+Netzwerk-Filter, Demo-Profilansicht) · Lauf auf
+Branch `arena/01a0c9d8-inner-circle` (Basis `main` @ `8f57987`):
+`npm test` = **22 Dateien / 123 Tests grün** (17 neu: `network-demo-supplement` 12,
+`network-directory` 5),
+`npx tsc --noEmit` grün, `npm run cf:build` grün, `npm run cf:dry-run` grün
+(Bindings `DB`/`ASSETS`/`NEXTJS_ENV`),
+`npm run test:keys` + `npm run i18n:audit` grün (DE/EN identisch),
 `npm run lint` = **13 bestehende Hinweise (5 Fehler, 8 Warnungen)** –
 vorbestehend, siehe K-15; **keine** neuen Befunde aus diesem Sprint.
 
@@ -59,6 +62,8 @@ vorbestehend, siehe K-15; **keine** neuen Befunde aus diesem Sprint.
 | `tests/integration/connection-request.test.ts` | **Sprint 3**: Anfrage **ohne** Nachricht wird abgelehnt (`connectionMessageRequired`), mit gültiger Nachricht wird `ConnectionRequest` + Benachrichtigung geschrieben, Trial-Limit wird verbraucht | Integration (DB) |
 | `tests/integration/profile-preferences.test.ts` | **Sprint 3**: „Ich biete" wird gespeichert, Kennzahlen-Sichtbarkeit je Metrik (ungültige Werte verworfen, Fallback `performanceVisibility`), Interessen/Ziele nach dem Onboarding änderbar | Integration (DB) |
 | `tests/integration/resend-provider.test.ts` | konfigurierter `RESEND_API_KEY` → Versand über die Resend-API (Endpoint, Auth-Header, Absender `EMAIL_FROM` bzw. `onboarding@resend.dev`), Code bleibt gültig, Ablehnung durch Resend → ehrliches `send_failed` + Entwertung, „Code erneut senden" geht an Resend statt in den Postausgang | Integration (DB, `fetch` gestubbt) |
+| `tests/unit/network-demo-supplement.test.ts` | **Sprint 7**: Mixing-Regeln des Netzwerks – leere echte Liste → komplette Demo-Sammlung (5–8), kleine Listen auf Ziel-Total 8 aufgestockt, Limit (Trial 12) respektiert, **ab 8 echten Mitgliedern automatisch Rückzug**; `filterDemoProfiles` (Suche Name/Firma/Positionierung DE+EN, Rolle DE+EN, Standort, Interesse DE- oder EN-Label, AND-Semantik); `demoProfileHandle` (Diakritik-Normierung) | Unit |
+| `tests/integration/network-directory.test.ts` | **Sprint 7**: `listDirectoryMembers` zeigt echte Mitglieder (nie sich selbst), **richtungsabhängige Anfrage-Zustände** (`outgoingRequestId` beim Sender, `incomingRequestId` beim Empfänger), Zurückziehen nur vom Sender (freit den Zustand), Ablehnen → keine Connection, Annehmen → Connection, Rolle-Filter via `jobTitle`/`rolesJson`, Standort-Filter | Integration (DB) |
 
 **Testinfrastruktur:** `tests/global-setup.ts` löscht `.test.db`, erzeugt das
 Schema per `drizzle-kit push`; `tests/setup.ts` setzt `AUTH_SECRET`, Test-DB,
@@ -96,6 +101,10 @@ Legende: **AUT** = automatisiert vorhanden · **MAN** = manuell verifiziert
 | Member | Dashboard lädt | MAN |
 | Member | Profil ansehen/bearbeiten | MAN (Action-Test nicht vorhanden) |
 | Member | Follow / Connect / Annehmen / Ablehnen / Zurückziehen | AUT (Autorisierung) + MAN |
+| Network (Sprint 7) | Echte Mitglieder zuerst, Demo-Ergänzung < 8 echt, Rückzug ≥ 8 echt, Trial-Cap 12 | AUT (`network-demo-supplement`) + MAN (HTTP-Check: 1 echt → 7 Karten, 8 echt → keine Demo) |
+| Network (Sprint 7) | Verbindungsstatus auf der Karte: gesendet → „Anfrage gesendet" + Zurückziehen, erhalten → Annehmen/Ablehnen | AUT (`network-directory`) + MAN |
+| Network (Sprint 7) | Filter Suche/Rolle/Standort/Interesse wirken auf echt + Demo | AUT (Demo-Filter) + MAN (HTTP-Check `?role=`/`?location=`) |
+| Network (Sprint 7) | „Profil ansehen" auf Demo-Karte → `/app/people/demo/[key]`, Connect erzeugt keine Anfrage (Demo-Meldung) | MAN (HTTP-Check: 200 + Badge + keine DB-Zeile) |
 | Member | Messaging nur mit Verbindung | AUT |
 | Member | Notifications lesen/als gelesen markieren | MAN |
 | Member | Mitgliedskarte + öffentliche Verifizierung | MAN |
