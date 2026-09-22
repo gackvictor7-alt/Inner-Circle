@@ -192,7 +192,8 @@ export function PageHeader({
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{title}</h1>
-          {lead && <p className="mt-2 max-w-2xl text-sm leading-6 text-foreground-muted">{lead}</p>}
+          {/* Mobile (Sprint 8, TEIL V): title first, lead from `sm` up. */}
+          {lead && <p className="mt-2 hidden max-w-2xl text-sm leading-6 text-foreground-muted sm:block">{lead}</p>}
         </div>
         {action}
       </div>
