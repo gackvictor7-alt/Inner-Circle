@@ -48,7 +48,12 @@ export type DirectoryMember = {
   interests: string[];
   isFollowing: boolean;
   isConnected: boolean;
+  /** A pending connection request between viewer and member (either direction). */
   requestPending: boolean;
+  /** Id of the pending request the VIEWER sent to this member (null if none). */
+  outgoingRequestId: string | null;
+  /** Id of the pending request this member sent to the VIEWER (null if none). */
+  incomingRequestId: string | null;
 };
 
 const memberColumns = {
@@ -75,6 +80,7 @@ export async function listDirectoryMembers(options: {
   search?: string;
   interestSlug?: string;
   location?: string;
+  role?: string;
 }): Promise<DirectoryMember[]> {
   const rows = await db
     .select(memberColumns)
@@ -96,6 +102,13 @@ export async function listDirectoryMembers(options: {
         options.location
           ? sql`lower(coalesce(${profiles.location}, '')) like ${`%${options.location.toLowerCase()}%`}`
           : undefined,
+        // Free-text role filter: job title plus the stored role list (JSON text).
+        options.role
+          ? or(
+              sql`lower(coalesce(${profiles.jobTitle}, '')) like ${`%${options.role.toLowerCase()}%`}`,
+              sql`lower(coalesce(${profiles.rolesJson}, '[]')) like ${`%${options.role.toLowerCase()}%`}`,
+            )
+          : undefined,
       ),
     )
     .orderBy(desc(users.lastLoginAt), desc(users.createdAt))
@@ -107,8 +120,14 @@ export async function listDirectoryMembers(options: {
     .where(eq(follows.followerId, options.viewerId));
   const following = new Set(viewerFollows.map((row) => row.followingId));
 
+  // Pending connection requests – direction matters for the card actions
+  // (sent: withdraw / received: accept + decline), so both ids are exposed.
   const pending = await db
-    .select({ fromUserId: connectionRequests.fromUserId, toUserId: connectionRequests.toUserId })
+    .select({
+      id: connectionRequests.id,
+      fromUserId: connectionRequests.fromUserId,
+      toUserId: connectionRequests.toUserId,
+    })
     .from(connectionRequests)
     .where(
       and(
@@ -117,6 +136,12 @@ export async function listDirectoryMembers(options: {
       ),
     );
   const pendingSet = new Set(pending.flatMap((row) => [row.fromUserId, row.toUserId]));
+  const outgoingRequestByTarget = new Map<string, string>();
+  const incomingRequestBySource = new Map<string, string>();
+  for (const row of pending) {
+    if (row.fromUserId === options.viewerId) outgoingRequestByTarget.set(row.toUserId, row.id);
+    if (row.toUserId === options.viewerId) incomingRequestBySource.set(row.fromUserId, row.id);
+  }
 
   const myConnections = await db
     .select({ userAId: connections.userAId, userBId: connections.userBId })
@@ -159,6 +184,8 @@ export async function listDirectoryMembers(options: {
     isFollowing: following.has(row.id),
     isConnected: connected.has(row.id),
     requestPending: pendingSet.has(row.id),
+    outgoingRequestId: outgoingRequestByTarget.get(row.id) ?? null,
+    incomingRequestId: incomingRequestBySource.get(row.id) ?? null,
   }));
 
   if (options.interestSlug) {

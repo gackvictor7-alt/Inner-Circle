@@ -55,7 +55,7 @@ Alle Routen liegen unter dem App-Layout `src/app/(app)/app/layout.tsx`, das
 | --- | ----- | ------- | ------ | ----- | ------------------------- |
 | `/onboarding/interests` | Interessen/Ziele + Start des 48-h-Trials | **free** (verifiziert) | WORKING | `Profile` (onboardingCompletedAt), `UserInterest`, `UserGoal`, `Trial` | nur ohne abgeschlossenes Onboarding (`onboardingComplete` ⇒ `/app`); mind. 3 Interessen; Trial genau einmal |
 | `/app` | **Start** – kompakte Kopfzeile (`Hallo, <Name>`, Trial-Chip, Inbox-Shortcut) + sechs Kernbereichs-Karten | free | WORKING | `Connection`, `Follow`, `Post`, `BusinessOpportunity`, `TrustScoreSummary`, `PerformanceRecord`, `Conversation`, `Message`, `Notification`, `Event` | Trial-Banner + Countdown; Datenschutz-/Verifizierungshinweise |
-| `/app/network` | Mitgliederverzeichnis, Suche/Filter, Follow/Connect; `NetworkDemoSection` (klar markierte Beispielprofile) nur, wenn die echte Liste leer ist | trial+ | WORKING (free sieht Locked-State) | liest `User`/`Profile`/`Follow`/`ConnectionRequest`, `Interest` | `listDirectoryMembers()` respektiert `discoverable`; Sichtbarkeit je Privacy teilweise (K-06) |
+| `/app/network` | Mitgliederverzeichnis mit Suche/**Rolle**/**Standort**/Interessen (Sprint 7); echte Mitglieder zuerst, darunter die klar als DEMO-PROFIL markierten Beispielprofile, solange < 8 echte (gefilterte) Mitglieder existieren (§4a); Verbindungsstatus richtungsabhängig: gesendet → „Anfrage gesendet" + Zurückziehen, erhalten → Annehmen/Ablehnen | trial+ | WORKING (free sieht Locked-State) | liest `User`/`Profile`/`Follow`/`ConnectionRequest`, `Interest` + `src/lib/demo` (kein DB-Zugriff für Demo) | `listDirectoryMembers()` respektiert `discoverable`; Sichtbarkeit je Privacy teilweise (K-06) |
 | `/app/discover` | **Discover** – Business-Karten, Relevanz-Ranking, Filter `?role=&location=&radius=&industry=&interest=&lookingFor=&offering=&invest=&kind=&more=` | trial+ | WORKING | `listDiscoverCandidates()` + `src/lib/discover/matching.ts` (Interessen, Ziele, Branche, Standort **inkl. Umkreis über gebündelte Städtetabelle**, Ich suche, Ich biete, Investmentinteressen) | ohne `entitlements.networkDiscover` ⇒ Redirect `/app/billing?paywall=trial`; Connect nur mit Pflichtnachricht |
 | `/app/inbox` | **Inbox** – `?tab=messages\|requests\|notifications`, Anfragen zusätzlich `?sub=requests\|sent\|connections` | free (Messaging nur member) | WORKING | `Conversation`, `Message`, `ConnectionRequest`, `Connection`, `Notification` | ersetzt `/app/messages`, `/app/connections`, `/app/notifications` (Umleitungen) |
 | `/app/connections` | Anfragen (eingehend/ausgehend), Verbindungen | free | WORKING | `ConnectionRequest`, `Connection` | Annehmen/Ablehnen/Zurückziehen/Trennen serverseitig geprüft |
@@ -84,6 +84,7 @@ Alle Routen liegen unter dem App-Layout `src/app/(app)/app/layout.tsx`, das
 | `/app/events/[slug]` | Event-Detail + Bewerbung/Abbestätigung | free | WORKING | `Event`, `EventApplication` | Bewerbung nur mit `eventsApply`; Plätze/Warteliste als Felder vorhanden |
 | `/app/create/post` | Beitrag erstellen (Activity Feed) | member | WORKING | schreibt `Post` | Ratelimit 20/h; Free/Trial sieht Sperrhinweis (`postCreate`) |
 | `/app/people/[handle]` | Profil eines Mitglieds | trial+ | WORKING | `Profile`, `User`, `Follow`, `Connection`, `Post`, `PerformanceRecord`, `TrustReview` | Trial sieht eingeschränkte Ansicht (`profileFull=false`); Blockierung wirkt |
+| `/app/people/demo/[key]` | **Vollständige Demo-Profilansicht (Sprint 7)** | trial+ | WORKING | **keine DB** – reines `DEMO_PROFILES`-Datum aus `src/lib/demo` | eindeutig als DEMO-PROFIL gekennzeichnet; Connect erklärt, dass keine echte Anfrage entsteht (`DemoConnectDialog`); bei unbekanntem Key/`DEMO_CONTENT_ENABLED=false` → 404 |
 
 ## 4. K – Administration
 
@@ -170,7 +171,7 @@ Für jede wichtige Route dokumentiert: Route, Public/Auth Required, Zweck, echte
 | `/dev/outbox` | Auth admin + ENABLE_DEV_OUTBOX | Dev-Postausgang | echt (DevOutbox) | – | WORKING | admin + flag | Muss vor Launch entfernt werden |
 | `/onboarding/interests` | Auth free verifiziert | Interessen/Ziele + Trial-Start | echt (Profile, UserInterest, UserGoal, Trial) | „Discovery starten" | WORKING | free verifiziert | Keine |
 | `/app` | Auth free | Member Start, Für-dich, 6 Kernbereiche 2×3, Trial-Banner | echt (Connections, Posts, Opportunities, Events, Notifications) + Demo nur wenn leer | 6 Karten „Mehr erfahren" | WORKING | free | Keine, aber glaubwürdige Texte prüfen (Sprint 6) |
-| `/app/network` | Auth trial+ | Verzeichnis, Suche/Filter, Follow/Connect | echt, Demo nur wenn leer (humanisiert) | „Vernetzen", Follow | WORKING | trial+ (free locked) | K-06 Privacy teilweise |
+| `/app/network` | Auth trial+ | Verzeichnis, Suche/Rolle/Standort/Interessen, Follow/Connect | echt zuerst + Demo-Ergänzung < 8 echt (DEMO-PROFIL-Badge, Sprint 7) | „Kontakt anfragen", Follow, „Zurückziehen"/„Annehmen"/„Ablehnen" je Anfragezustand | WORKING | trial+ (free locked) | K-06 Privacy teilweise; Demo erzeugt keine DB-Daten |
 | `/app/discover` | Auth trial+ | Business-Karten, Ranking, Filter | echt, Demo nur wenn leer | „Connect" mit Pflichtnachricht | WORKING | trial+ entitlements.networkDiscover | Keine |
 | `/app/inbox` | Auth free (messaging member) | Nachrichten, Anfragen, Benachrichtigungen | echt, Demo-Preview optional | „Nachricht senden", „Annehmen/Ablehnen" | WORKING | free (messaging member) | Keine Fake-Unread |
 | `/app/connections` | Auth free | Anfragen eingehend/ausgehend, Verbindungen | echt | Annehmen/Ablehnen/Zurückziehen/Trennen | WORKING | free | Umleitung nach /app/inbox?tab=requests existiert |
@@ -199,6 +200,7 @@ Für jede wichtige Route dokumentiert: Route, Public/Auth Required, Zweck, echte
 | `/app/events/[slug]` | Auth free | Event Detail + Bewerbung/Abbestätigung | echt | „Bewerben", „Abbestätigen" | WORKING | free eventsBrowse/Apply | Tickets/Check-in NOT IMPLEMENTED |
 | `/app/create/post` | Auth member | Beitrag erstellen | echt | „Veröffentlichen" | WORKING | member postCreate | – |
 | `/app/people/[handle]` | Auth trial+ | Profil eines Mitglieds | echt | „Vernetzen", „Follow" | WORKING | trial+ | Privacy K-06 teilweise |
+| `/app/people/demo/[key]` | Auth trial+ | Vollständige Demo-Profilansicht (Sprint 7) | **kein DB-Zugriff** (reines `DEMO_PROFILES`-Datum) | „Kontakt anfragen" (erklärt: keine echte Anfrage) | WORKING | trial+ | eindeutig DEMO-PROFIL; Connect erzeugt nichts |
 | `/admin` | Auth admin | Kennzahlen Übersicht | echt | – | WORKING | admin | – |
 | `/admin/users` | Auth admin | Nutzersuche Sperre Founding Member | echt | – | WORKING | admin | – |
 | `/admin/investments` | Auth admin | Investment Prüfung | echt | Freigabe/Ablehnung | WORKING | admin | – |

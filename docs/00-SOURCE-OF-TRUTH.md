@@ -3,7 +3,10 @@
 **Diese Datei ist der verbindliche Einstiegspunkt für jeden Menschen und jeden
 KI-Agenten, der an diesem Repository arbeitet.**
 
-- **Stand:** 2026-09-22 (Sprint 6 – Struktur-Audit, Source-of-Truth-Härtung,
+- **Stand:** 2026-09-22 (Sprint 7 – Network real+Demo-Kombination,
+  Verbindungsstatus-Richtung (gesendet→Zurückziehen / erhalten→Annehmen+Ablehnen),
+  Netzwerk-Filter (Suche/Rolle/Standort/Interesse), Demo-Profilansicht `/app/people/demo/[key]`;
+  Sprint 6 – Struktur-Audit, Source-of-Truth-Härtung,
   Auth/Login/Register/Verify-Fixes, Language-Switcher-Korrektur, Deals funktional,
   Button-Audit, Events mit Bildern, Profile humanisiert, Demo-Beiträge,
   Inbox-Empty-States, kleine Visualisierungen, AI-Look-Reduktion; Sprint 5 – Mobile-UX
@@ -94,7 +97,7 @@ Details: [`01-product.md`](01-product.md)
 ### 1d. Demo-Daten (verbindliche Regeln – Sprint 6 verschärft)
 
 - **Quelle:** zentral `src/lib/demo/index.ts` (`DEMO_CONTENT_ENABLED` als Notausschalter) + `src/components/app/DemoSections.tsx`.
-- **Gating:** echte Daten verdrängen Demo. `/app/network` zeigt Demo-Profile nur wenn echte Liste leer; `/app/profile` zeigt Demo-Beiträge UNTER echten Beiträgen.
+- **Gating (Sprint 7):** echte Daten verdrängen Demo. `/app/network` zeigt **echte Mitglieder zuerst** und ergänzt bei weniger als 8 echten (gefilterten) Mitgliedern mit den klar als `DEMO-PROFIL` markierten Beispielprofilen, bis 8 Karten sichtbar sind (Trial-Cap 12 bleibt erhalten). Ab 8 echten Mitgliedern treten Demo-Profile automatisch zurück. Dieselben Filter (Suche/Rolle/Standort/Interesse) gelten für beide. `/app/profile` zeigt Demo-Beiträge UNTER echten Beiträgen.
 - **Sichtbarkeit:** Badge „Demo"/„Beispiel"/„DEMO-PROFIL"/„Beispiel-Event", Hinweistext `app.demo.notice`, Demo-Posts „Demo · keine echten Reaktionen".
 - **Verboten (hart):**
   - keine echten Statistiken verändern
@@ -240,14 +243,16 @@ existiert. Backend + Daten + Berechtigungen + Nachweis gehören dazu.
 | Öffentliche Mitgliedskarte verifizieren | WORKING | `/member/[publicId]` |
 | Activity Feed (Posts) | WORKING | `Post`, `createPostAction`, Feed auf Dashboard; Sprint 6: 3-6 hochwertige Demo-Beiträge (Founder Update, neues Projekt, Suche Partner, Event-Erfahrung, neuer Service, Meilenstein) klar als Demo markiert, keine Metrik-Veränderung |
 | Profilsichtbarkeit / Datenschutz-Einstellungen | PARTIAL | Werte werden gespeichert (`PrivacySettings`), aber nicht überall in Queries erzwungen |
-| Avatar-/Cover-Upload | NOT IMPLEMENTED | nur URL-Feld; kein Storage-Anbieter (S3/R2) angebunden |
+| Avatar-/Cover-Upload | NOT IMPLEMENTED | nur URL-Feld; kein Storage-Anbieter (S3/R2) angebunden (Upload folgt in separatem Sprint) |
 
 ### E. Network
 
 | Funktion | Status | Nachweis |
 | -------- | ------ | -------- |
-| Member Discovery (Verzeichnis mit Suche/Filter) | WORKING | `/app/network`, `listDirectoryMembers()`; Sprint 6 humanisiert: 20-35, Mix Founder/Unternehmer/Investor/Creator/Consultant/Operator/Freelancer, uneven Bios/Skills, Städte variabel |
-| Follow | WORKING | `followAction` |
+| Member Discovery (Verzeichnis mit Suche/Filter) | WORKING | `/app/network`, `listDirectoryMembers()`; Sprint 6 humanisiert: 20-35, Mix Founder/Unternehmer/Investor/Creator/Consultant/Operator/Freelancer, uneven Bios/Skills, Städte variabel; **Sprint 7: Filterleiste Suche + Rolle + Standort + Interesse** (Rolle via `jobTitle`/`rolesJson`), Demo-Ergänzung laut §4a |
+| **Verbindungsstatus richtungsabhängig (Sprint 7)** | WORKING | eigene gesendete Anfrage → „Anfrage gesendet" + **Zurückziehen**; erhaltene Anfrage → **Annehmen / Ablehnen** direkt auf der Mitgliedskarte (`outgoingRequestId`/`incomingRequestId` aus `listDirectoryMembers()`); Follow-Button heißt „Nicht mehr folgen" (kein „Ablehnen" mehr, der nur für erhaltene Anfragen steht); `network-directory.test.ts` |
+| **Demo-Profilansicht (Sprint 7)** | WORKING | „Profil ansehen" auf Demo-Karten → `/app/people/demo/[key]`: vollständige, eindeutig als DEMO-PROFIL gekennzeichnete Ansicht ohne DB-Zugriff; Connect erklärt stattdessen: „Dies ist ein Demo-Profil. …" (`DemoConnectDialog`), es wird **keine** echte Anfrage erzeugt |
+| Follow | WORKING | `followAction` (bei Demo-Profile nicht angeboten – keine echten Follower) |
 | Connection Requests (senden/annehmen/ablehnen/zurückziehen) | WORKING | `network.ts`, `connection-request.test.ts`, `messaging-authorization.test.ts` |
 | **Verbindungsanfrage nur mit Pflichtnachricht** (min. 10 Zeichen) | WORKING | serverseitig in `sendConnectionRequestAction` (`CONNECTION_MESSAGE_MIN_LENGTH`), UI `ConnectDialog`, `connection-request.test.ts` |
 | **Discover** (Business-Karten, Relevanz-Ranking, Filter) | WORKING | `/app/discover`, `DiscoverDeck`, `src/lib/discover/matching.ts`, `discover-matching.test.ts`; Sprint 6 humanisiert, keine 3-Skills-Zwang |
@@ -343,9 +348,15 @@ existiert. Backend + Daten + Berechtigungen + Nachweis gehören dazu.
 - **Quelle:** alles Fiktive lebt zentral in `src/lib/demo/index.ts`
   (`DEMO_CONTENT_ENABLED` als Notausschalter) und wird über
   `src/components/app/DemoSections.tsx` gerendert.
-- **Gating:** echte Daten verdrängen Demo-Daten. `/app/network` zeigt die
-  Beispielprofile nur, wenn die echte Mitgliederliste leer ist; `/app/profile`
-  blendet die Beispielbeiträge **unter** den echten Beiträgen ein.
+- **Gating (Sprint 7):** echte Daten verdrängen Demo-Daten. `/app/network` zeigt
+  die echten Mitglieder **zuerst** und ergänzt die klar als `DEMO-PROFIL`
+  markierten Beispielprofile, solange die echte (gefilterte) Liste kleiner als 8
+  ist – bis 8 Karten insgesamt (Trial-Cap 12 bleibt bestehen); ab 8 echten
+  Mitgliedern treten die Demo-Profile automatisch zurück. Die Demo-Profile nutzen
+  dieselben Filter wie die echten (Suche, Rolle, Standort, Interesse) und werden
+  in der Zählzeile separat als „… Demo-Profile (Beispiele – keine echten
+  Mitglieder)" ausgewiesen. `/app/profile` blendet die Beispielbeiträge **unter**
+  den echten Beiträgen ein.
 - **Sichtbarkeit:** Badge „Demo\"/„Beispiel\"/„DEMO-PROFIL\", Hinweistext
   `app.demo.notice` bzw. `app.profile.activityLead`; Demo-Posts tragen
   „Demo · keine echten Reaktionen".
@@ -495,9 +506,11 @@ lässt auf 2560 px symmetrische Ränder statt einer toten rechten Fläche.
 
 ## 8. Nächster empfohlener Schritt
 
-**Stabilisierung → Struktur → Funktional → Humanisierung (Sprint 6).**
-Danach: eigene verifizierte E-Mail-Domain für die Produktion (Resend-Domain anlegen,
-SPF/DKIM/DMARC im DNS konfigurieren, `EMAIL_FROM` auf die verifizierte Domain
-setzen, um Spam-Filterung der Resend-Sandbox `resend.dev` vollständig zu
-beseitigen). Details: [`07-integrations.md`](07-integrations.md) und
-[`12-roadmap.md`](12-roadmap.md) → Abschnitt NEXT.
+**Sprint 7 ist abgeschlossen** (Network real+Demo, Verbindungsstatus richtungsabhängig,
+Netzwerk-Filter, Demo-Profilansicht).
+Offene Gründer-Schritte / nächste Roadmap-Punkte:
+1. **Eigene verifizierte E-Mail-Domain** für die Produktion (Resend-Domain
+   anlegen, SPF/DKIM/DMARC im DNS konfigurieren, `EMAIL_FROM` auf die
+   verifizierte Domain setzen). Details: [`07-integrations.md`](07-integrations.md)
+   und [`12-roadmap.md`](12-roadmap.md) → Abschnitt NEXT.
+2. **Profilbild-Upload / Object Storage** in einem separaten Sprint anbinden.

@@ -69,6 +69,93 @@ export type DemoProfile = {
   };
 };
 
+/* ------------------------------------------------------------------ *\n * NETWORK DEMO – mixing rules (Sprint 7).\n *\n * The member directory shows REAL members first and tops the list up with the\n * clearly labelled demo profiles while the community is still small, so a new\n * (trial) user immediately understands what the network will look like later.\n * As soon as enough real members exist, the demo profiles recede on their\n * own – no configuration, no extra table, no DB rows.\n * ------------------------------------------------------------------ */
+
+/** With at least this many real (filtered) members the demo profiles are hidden entirely. */
+export const NETWORK_DEMO_MIN_REAL = 8;
+
+/** While the real list is smaller, top it up with demo profiles to this total. */
+export const NETWORK_DEMO_TARGET = 8;
+
+/**
+ * Which demo profiles fill a directory list of `realCount` real members.
+ * Pure function – the same rules apply to trial (capped) and member views,
+ * because the caller passes the effective `limit` (trial 12, member 60).
+ */
+export function networkDemoSupplement(realCount: number, limit: number): DemoProfile[] {
+  if (!DEMO_CONTENT_ENABLED) return [];
+  if (realCount >= NETWORK_DEMO_MIN_REAL) return [];
+  const room = Math.min(NETWORK_DEMO_TARGET - realCount, limit - realCount);
+  if (room <= 0) return [];
+  return DEMO_PROFILES.slice(0, room);
+}
+
+export type DemoProfileFilters = {
+  /** Free-text search over name, company and positioning/bio. */
+  search?: string;
+  /** Role label (e.g. "Founder", "Investor") – matched against DE and EN role. */
+  role?: string;
+  /** Location label (e.g. "Stuttgart", "remote"). */
+  location?: string;
+  /** Interest label(s) of the selected taxonomy entry (DE and/or EN). */
+  interests?: string[];
+};
+
+/**
+ * Applies the *same* filter vocabulary as the directory to the demo profiles
+ * (pure in-memory filter – demo profiles have no database rows, so there is
+ * no second database filter engine).
+ */
+export function filterDemoProfiles(profiles: DemoProfile[], filters: DemoProfileFilters): DemoProfile[] {
+  const search = filters.search?.trim().toLowerCase();
+  const role = filters.role?.trim().toLowerCase();
+  const location = filters.location?.trim().toLowerCase();
+  const interests = (filters.interests ?? [])
+    .map((label) => label.trim().toLowerCase())
+    .filter(Boolean);
+
+  return profiles.filter((profile) => {
+    if (search) {
+      const haystack = [
+        profile.firstName,
+        profile.lastName,
+        profile.company,
+        profile.en.company ?? "",
+        profile.positioning,
+        profile.en.positioning,
+        profile.bio,
+        profile.en.bio,
+      ]
+        .join(" ")
+        .toLowerCase();
+      if (!haystack.includes(search)) return false;
+    }
+    if (role && !`${profile.role} ${profile.roleEn}`.toLowerCase().includes(role)) return false;
+    if (location && !profile.location.toLowerCase().includes(location)) return false;
+    if (interests.length > 0) {
+      const owned = [...profile.interests, ...profile.en.interests].map((value) => value.toLowerCase());
+      if (!interests.some((wanted) => owned.includes(wanted))) return false;
+    }
+    return true;
+  });
+}
+
+/**
+ * Display handle for a demo profile (directory cards show a handle like real
+ * members do). Derived from the name – demo profiles live outside the
+ * database and therefore own no unique handle there.
+ */
+export function demoProfileHandle(profile: DemoProfile): string {
+  const normalize = (value: string) =>
+    value
+      .normalize("NFD")
+      .replace(/\p{Diacritic}/gu, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "");
+  return `${normalize(profile.firstName)}-${normalize(profile.lastName)}`;
+}
+
 export const DEMO_PROFILES: DemoProfile[] = [
   {
     key: "demo-founder-julian",
