@@ -32,6 +32,7 @@ import {
   userInterests,
   users,
 } from "@/db/schema";
+import { idFor } from "@/db/ids";
 import { connectionPair } from "@/db/queries";
 
 export type DirectoryMember = {
@@ -450,6 +451,46 @@ export async function connectionsFor(userId: string) {
     ...partner,
     connectedSince: rows.find((row) => row.userAId === partner.id || row.userBId === partner.id)?.createdAt ?? null,
   }));
+}
+
+/**
+ * Finds or creates the 1:1 "direct" conversation between two users.
+ *
+ * Plain server function (no revalidatePath): safe to call during a
+ * force-dynamic render, where a Server Action would throw
+ * ("revalidatePath during render is unsupported"). The action variant
+ * (startConversationAction) wraps this for form-based flows.
+ */
+export async function ensureDirectConversation(userId: string, targetId: string): Promise<string | null> {
+  const myRows = await db
+    .select({ conversationId: conversationParticipants.conversationId })
+    .from(conversationParticipants)
+    .where(eq(conversationParticipants.userId, userId));
+  const theirRows = await db
+    .select({ conversationId: conversationParticipants.conversationId })
+    .from(conversationParticipants)
+    .where(eq(conversationParticipants.userId, targetId));
+  const myIds = new Set(myRows.map((row) => row.conversationId));
+  const theirIds = new Set(theirRows.map((row) => row.conversationId));
+
+  const shared = [...myIds].filter((id) => theirIds.has(id));
+  if (shared.length > 0) {
+    const [existing] = await db
+      .select({ id: conversations.id })
+      .from(conversations)
+      .where(and(eq(conversations.kind, "direct"), sql`${conversations.id} in (${sql.join(shared.map((id) => sql`${id}`), sql`, `)})`))
+      .limit(1);
+    if (existing) return existing.id;
+  }
+
+  const now = new Date();
+  const conversationId = idFor.conversation();
+  await db.insert(conversations).values({ id: conversationId, kind: "direct", createdAt: now, lastMessageAt: now });
+  await db.insert(conversationParticipants).values([
+    { id: idFor.participant(), conversationId, userId, lastReadAt: now, createdAt: now },
+    { id: idFor.participant(), conversationId, userId: targetId, lastReadAt: null, createdAt: now },
+  ]);
+  return conversationId;
 }
 
 /**
@@ -1022,7 +1063,6 @@ export async function forYouItems(userId: string, interestSlugs: string[], local
       .limit(8);
 
     if (candidates.length > 0) {
-      const ids = candidates.map((row) => row.id);
       const [myConnections, pendingPairs, blockedRows] = await Promise.all([
         db
           .select({ partnerId: sql`case when ${connections.userAId} = ${userId} then ${connections.userBId} else ${connections.userAId} end` })

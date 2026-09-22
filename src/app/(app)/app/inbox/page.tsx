@@ -97,7 +97,7 @@ async function MessagesTab({
   access: Access;
   params: { c?: string; to?: string };
 }) {
-  const conversations = await listConversations(access.user.id);
+  let conversations = await listConversations(access.user.id);
 
   let openId = params.c ?? null;
   if (!openId && params.to) {
@@ -107,12 +107,15 @@ async function MessagesTab({
     if (existing) {
       openId = existing.id;
     } else {
-      const { startConversationAction } = await import("@/app/actions/messages");
-      const formData = new FormData();
-      formData.set("userId", partnerId);
-      const result = await startConversationAction({ status: "idle" }, formData);
-      if (result.redirectTo) redirect(result.redirectTo.replace("/app/messages", "/app/inbox?tab=messages"));
-      redirect("/app/inbox?tab=requests&sub=connections");
+      // A brand-new pair (connection just accepted) has no conversation yet.
+      // Use the plain query helper – a Server Action here would run
+      // revalidatePath during render and throw (Next.js constraint).
+      const { ensureDirectConversation } = await import("@/lib/platform/queries");
+      openId = await ensureDirectConversation(access.user.id, partnerId);
+      if (!openId) redirect("/app/inbox?tab=requests&sub=connections");
+      // The new conversation is not in the initial list – refresh it so the
+      // chat header can resolve the partner.
+      conversations = await listConversations(access.user.id);
     }
   }
 

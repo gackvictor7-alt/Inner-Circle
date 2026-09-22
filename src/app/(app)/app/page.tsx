@@ -7,7 +7,7 @@ import {
   notifications,
 } from "@/db/schema";
 import { requireUser } from "@/lib/access/server";
-import { forYouItems, type ForYouItem } from "@/lib/platform/queries";
+import { forYouItems } from "@/lib/platform/queries";
 import { DashboardScreen, type DashboardData } from "@/components/app/DashboardScreen";
 
 export const dynamic = "force-dynamic";

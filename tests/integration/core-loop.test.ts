@@ -256,18 +256,12 @@ describe("For-You items (Sprint 8, TEIL E)", () => {
       updatedAt: new Date(),
     });
 
-    const items = await forYouItems(
-      viewer,
-      [
-        (await db
-          .select({ slug: interests.slug })
-          .from(userInterests)
-          .innerJoin(interests, eq(interests.id, userInterests.interestId))
-          .where(eq(userInterests.userId, viewer)))
-          .map((row) => row.slug),
-      ],
-      "de",
-    );
+    const viewerSlugs = await db
+      .select({ slug: interests.slug })
+      .from(userInterests)
+      .innerJoin(interests, eq(interests.id, userInterests.interestId))
+      .where(eq(userInterests.userId, viewer));
+    const items = await forYouItems(viewer, viewerSlugs.map((row) => row.slug), "de");
 
     const requestItem = items.find((item) => item.kind === "request");
     expect(requestItem).toBeTruthy();
