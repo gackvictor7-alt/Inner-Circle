@@ -38,6 +38,32 @@ P2 mittelfristig · P3 Aufräumen.
   Cloudflare Environment-Variable hinterlegen. Erst damit ist eine saubere
   Posteingangs-Zustellung ohne Spamfilter-Klassifizierung gewährleistet.
 
+### K-20 · Produktions-500 auf `/app`: rohe `Date`-Objekte als D1-Bind-Parameter — **BEHOBEN (2026-09-22)**
+
+- **Symptom (produktiv, nach PR #19):** `GET /app` → „This page couldn't load.
+  A server error occurred.", Worker-Stack `queryWithCache (worker.js:52730:21)`.
+- **Ursache (nachgewiesen):** `forYouItems()` (Sprint 8, „Für dich“ auf `/app`)
+  interpolierte rohe JavaScript-`Date`-Objekte in `sql`-Fragmente
+  (`coalesce(…, ${new Date(0)})` in der Ungelesene-Nachricht-Query und
+  `` `${events.startsAt} >= ${now}` `` in der Event-Query). Rohe `sql`-Werte
+  werden **unmapped** gebunden, erreichen `D1PreparedStatement.bind()` als
+  Objekte – D1 lehnt nicht-skalare Binds ab:
+  `D1_TYPE_ERROR: Type 'object' not supported for value …`. Der libSQL-Treiber
+  (lokale Node-Tests) akzeptiert `Date`-Binds stillschweigend, deshalb blieb
+  die Suite vor dem Merge grün. Reproduktion: identische 500-Kette in
+  `workerd` (lokale D1-Emulation) inkl. Error-Digest.
+- **Fix (`src/lib/platform/queries.ts`):** Epoche `0` als SQL-Literal in der
+  `coalesce`-Query; Spalten-bewusstes `gte(events.startsAt, now)` für die
+  Event-Query (drizzle mappt `Date` → Integer-ms). Keine Migration, keine
+  Datenänderung, kein Schema-Eingriff.
+- **Regressionstest:** `tests/integration/for-you-d1.test.ts` führt
+  `forYouItems()` gegen eine **echte D1** (workerd/Miniflare, provisioniert
+  mit den realen Migrationsdateien) aus und deckt den Ungelesen-/Event-Pfad
+  ab. Negativ-Nachweis: ohne den Fix schlagen 5 von 6 Tests mit genau
+  `D1_TYPE_ERROR` fehl.
+- **Leitplanke:** nie `Date`/Objekte direkt in `sql`` ``-Fragmente
+  interpolieren – immer Spalten-APIs (`gt`/`gte`/…) oder Millisekunden-Ints.
+
 ### K-02 · Keine SMS-Verifizierung (Twilio)
 
 - **Symptom:** Der Telefon-Kanal kann keinen Code zustellen.
