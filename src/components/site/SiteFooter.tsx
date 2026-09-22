@@ -31,9 +31,12 @@ export function SiteFooter() {
 
   return (
     <footer className="bg-midnight-900 text-paper-50">
-      <div className="ic-shell py-14 sm:py-16">
-        <div className="grid gap-10 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
-          <div className="flex flex-col items-start gap-4">
+      <div className="ic-shell py-10 sm:py-16">
+        {/* Mobile (Sprint 8): the four columns collapse into a 2-column
+            link grid to keep the homepage short; the md+ layout is the
+            unchanged four-column structure. */}
+        <div className="grid gap-x-6 gap-y-8 sm:grid-cols-2 sm:gap-10 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
+          <div className="flex flex-col items-start gap-4 sm:col-span-2 md:col-span-1">
             <div className="flex items-center gap-3">
               <span
                 aria-hidden="true"
@@ -93,7 +96,7 @@ export function SiteFooter() {
           </nav>
         </div>
 
-        <div className="mt-12 border-t border-white/10 pt-6">
+        <div className="mt-8 border-t border-white/10 pt-6 sm:mt-12">
           <p className="max-w-4xl text-xs leading-5 text-paper-50/45">{t.footer.disclaimer}</p>
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
             <p className="text-xs text-paper-50/55">

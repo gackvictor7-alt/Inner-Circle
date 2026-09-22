@@ -13,6 +13,8 @@ export const siteV2De = {
     heroCtaPrimary: "INNER CIRCLE entdecken",
     heroCtaSecondary: "48 Stunden kostenlos entdecken",
     heroMembershipHint: "24,99 € im Monat oder 249,90 € im Jahr · monatlich kündbar",
+    /** Mobile hero: the single small line under the primary CTA (Sprint 8). */
+    heroTrialCta: "48h Discovery starten",
     heroCtaTertiary: "Wie es funktioniert",
     heroTrialBadge: "48 Stunden Discovery inklusive",
     heroImageAlt:
@@ -32,6 +34,10 @@ export const siteV2De = {
     outcomeCapitalText: "Triff Investoren und entdecke geprüfte Investment Opportunities.",
     outcomeExperienceTitle: "Experience",
     outcomeExperienceText: "Triff relevante Menschen bei ausgewählten Events – nicht nur im Chat.",
+    /** One-line variants – mobile only, the desktop keeps the full sentences. */
+    outcomeBuildShort: "Kunden, Partner und Projekte, die zu dir passen.",
+    outcomeCapitalShort: "Investoren und geprüfte Investment Opportunities.",
+    outcomeExperienceShort: "Relevante Menschen bei ausgewählten Events.",
     audienceKicker: "Für wen",
     audienceTitle: "Built for people who build.",
     audienceLead: "Offen für alle, die etwas aufbauen. Status und Reputation entstehen durch echte Arbeit.",
@@ -148,6 +154,11 @@ export const siteV2De = {
     trustPoint2: "Selbst angegebene Zahlen sind klar gekennzeichnet.",
     trustPoint3: "Kein Standardwert ohne echte Bewertungen.",
     trustCta: "Trust-Modell ansehen",
+    /** Compact mobile trust strip (Sprint 8): three short points, no section. */
+    trustCompactTitle: "Vertrauen gehört zum System.",
+    trustCompact1: "Verifizierte Profile und echte Member Cards.",
+    trustCompact2: "Reputation entsteht durch echte Zusammenarbeit.",
+    trustCompact3: "Investment Opportunities werden vor der Freigabe geprüft.",
     eventsKicker: "Events & Experiences",
     eventsTitle: "Erlebnisse, die aus Kontakten Freundschaften machen.",
     eventsLead:
@@ -277,6 +288,8 @@ export const siteV2En: SiteV2Dict = {
     heroCtaPrimary: "Discover INNER CIRCLE",
     heroCtaSecondary: "Start 48 hours free",
     heroMembershipHint: "€24.99 a month or €249.90 a year · cancel monthly",
+    /** Mobile hero: the single small line under the primary CTA (Sprint 8). */
+    heroTrialCta: "Start 48h discovery",
     heroCtaTertiary: "How it works",
     heroTrialBadge: "Includes 48 hours of discovery",
     heroImageAlt:
@@ -296,6 +309,10 @@ export const siteV2En: SiteV2Dict = {
     outcomeCapitalText: "Meet investors and explore reviewed investment opportunities.",
     outcomeExperienceTitle: "Experience",
     outcomeExperienceText: "Meet relevant people at selected events – not only in chat.",
+    /** One-line variants – mobile only, the desktop keeps the full sentences. */
+    outcomeBuildShort: "Customers, partners and projects that fit you.",
+    outcomeCapitalShort: "Investors and reviewed investment opportunities.",
+    outcomeExperienceShort: "Relevant people at selected events.",
     audienceKicker: "Who it's for",
     audienceTitle: "Built for people who build.",
     audienceLead: "Open to anyone who builds. Status and reputation are earned through real work.",
@@ -412,6 +429,11 @@ export const siteV2En: SiteV2Dict = {
     trustPoint2: "Self-reported numbers are clearly labelled.",
     trustPoint3: "No default rating without real reviews.",
     trustCta: "See the trust model",
+    /** Compact mobile trust strip (Sprint 8): three short points, no section. */
+    trustCompactTitle: "Trust is part of the system.",
+    trustCompact1: "Verified profiles and real member cards.",
+    trustCompact2: "Reputation grows through real collaboration.",
+    trustCompact3: "Investment opportunities are reviewed before approval.",
     eventsKicker: "Events & Experiences",
     eventsTitle: "Experiences that turn contacts into relationships.",
     eventsLead:

@@ -5,7 +5,17 @@ import Link from "next/link";
 import { useI18n, usePageMeta } from "@/lib/i18n/context";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
-import { ArrowRightIcon, SparkleIcon } from "@/components/ui/icons";
+import {
+  ArrowRightIcon,
+  BriefcaseIcon,
+  CalendarIcon,
+  ChartIcon,
+  CheckIcon,
+  GridIcon,
+  SparkleIcon,
+  StoreIcon,
+  UsersIcon,
+} from "@/components/ui/icons";
 import { Kicker, Section } from "@/components/site/Section";
 import { Reveal } from "@/components/site/Reveal";
 import { MembershipBlock } from "@/components/site/MembershipBlock";
@@ -33,6 +43,19 @@ const areaLinks: Record<AreaKey, string> = {
   investments: "/investments",
   marketplace: "/marketplace",
   events: "/events",
+};
+
+/**
+ * Small icon per area – used by the compact 2×3 mobile overview (Sprint 8).
+ * The desktop image rows keep their existing visuals, unchanged.
+ */
+const areaIcons: Record<AreaKey, (props: { size?: number; className?: string }) => React.JSX.Element> = {
+  network: UsersIcon,
+  opportunities: BriefcaseIcon,
+  jobs: GridIcon,
+  investments: ChartIcon,
+  marketplace: StoreIcon,
+  events: CalendarIcon,
 };
 
 /**
@@ -90,9 +113,9 @@ export function HomeContent() {
   };
 
   const outcomes = [
-    { key: "build", title: t.home2.outcomeBuildTitle, text: t.home2.outcomeBuildText },
-    { key: "capital", title: t.home2.outcomeCapitalTitle, text: t.home2.outcomeCapitalText },
-    { key: "experience", title: t.home2.outcomeExperienceTitle, text: t.home2.outcomeExperienceText },
+    { key: "build", title: t.home2.outcomeBuildTitle, text: t.home2.outcomeBuildText, short: t.home2.outcomeBuildShort },
+    { key: "capital", title: t.home2.outcomeCapitalTitle, text: t.home2.outcomeCapitalText, short: t.home2.outcomeCapitalShort },
+    { key: "experience", title: t.home2.outcomeExperienceTitle, text: t.home2.outcomeExperienceText, short: t.home2.outcomeExperienceShort },
   ];
 
   return (
@@ -112,7 +135,7 @@ export function HomeContent() {
           aria-hidden="true"
           className="absolute inset-0 -z-10 bg-gradient-to-r from-midnight-950/92 via-midnight-950/70 to-midnight-950/25"
         />
-        <div className="ic-shell-wide py-12 sm:py-24 lg:py-32">
+        <div className="ic-shell-wide py-10 sm:py-24 lg:py-32">
           {/* Desktop: nudged toward the screen centre without being centred. */}
           <div className="max-w-3xl animate-fade-up lg:ml-[6%] xl:ml-[10%]">
             <Badge variant="electric" className="backdrop-blur-sm">
@@ -127,7 +150,22 @@ export function HomeContent() {
             <p className="mt-4 max-w-2xl text-[15px] leading-6 text-paper-50/85 sm:mt-6 sm:text-lg sm:leading-8">
               {t.home2.heroLead}
             </p>
-            <div className="mt-6 flex flex-wrap items-center gap-3 sm:mt-8">
+            {/* Mobile (Sprint 8): one primary CTA + one small trial line –
+                no second button, no facts list. */}
+            <div className="mt-6 flex flex-col items-start gap-2.5 sm:mt-8 lg:hidden">
+              <Button href="/register" size="lg" className="w-full sm:w-auto">
+                {t.home2.heroCtaPrimary}
+                <ArrowRightIcon size={18} />
+              </Button>
+              <Link
+                href="/register"
+                className="text-[13px] font-semibold text-paper-50/75 underline-offset-4 hover:text-paper-50 hover:underline"
+              >
+                {t.home2.heroTrialCta}
+              </Link>
+            </div>
+            {/* Tablet + desktop: the approved two-CTA row (unchanged). */}
+            <div className="mt-6 hidden flex-wrap items-center gap-3 sm:mt-8 lg:flex">
               <Button href="#outcomes" size="lg">
                 {t.home2.heroCtaPrimary}
                 <ArrowRightIcon size={18} />
@@ -142,7 +180,7 @@ export function HomeContent() {
               </Button>
             </div>
             <p className="mt-4 text-[13px] font-medium text-paper-50/70 sm:mt-5 sm:text-sm">{t.home2.heroMembershipHint}</p>
-            <ul className="mt-6 grid grid-cols-2 gap-x-5 gap-y-2 border-t border-white/15 pt-4 sm:mt-9 sm:gap-x-6 sm:pt-5 lg:grid-cols-5">
+            <ul className="mt-6 hidden grid-cols-2 gap-x-5 gap-y-2 border-t border-white/15 pt-4 sm:grid sm:mt-9 sm:gap-x-6 sm:pt-5 lg:grid-cols-5">
               {Object.entries(t.home2.heroFacts).map(([key, label]) => (
                 <li key={key} className="flex items-center gap-2 text-[12px] text-paper-50/70 sm:text-[13px]">
                   <span aria-hidden="true" className="h-1 w-1 shrink-0 rounded-full bg-electric-300" />
@@ -165,14 +203,17 @@ export function HomeContent() {
             {t.home2.outcomeTitle}
           </h2>
         </Reveal>
-        <div className="mt-5 grid gap-4 sm:mt-10 sm:gap-8 lg:mt-12 lg:grid-cols-3 lg:gap-12">
+        <div className="mt-5 grid gap-3.5 sm:mt-10 sm:gap-8 lg:mt-12 lg:grid-cols-3 lg:gap-12">
           {outcomes.map((item, index) => (
             <Reveal key={item.key} delay={index * 70}>
               <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-electric-600 dark:text-electric-400 sm:text-xs">
                 {item.title}
               </p>
+              {/* Mobile (Sprint 8): one short line per outcome – the full
+                  sentence stays on tablet/desktop. */}
               <p className="mt-1.5 max-w-md text-[15px] font-semibold leading-6 tracking-tight sm:mt-3 sm:text-xl sm:leading-7">
-                {item.text}
+                <span className="block text-sm font-medium leading-5 text-foreground-muted sm:hidden">{item.short}</span>
+                <span className="hidden sm:inline">{item.text}</span>
               </p>
             </Reveal>
           ))}
@@ -203,27 +244,26 @@ export function HomeContent() {
           </div>
         </Reveal>
 
-        {/* Mobile: compact tappable overview – six entries with title, one
-            benefit line and "Mehr erfahren". The rich image/text rows below
-            are desktop-only; full information stays on the area subpages. */}
-        <ul className="mt-6 divide-y divide-border border-y border-border lg:hidden">
+        {/* Mobile (Sprint 8): compact 2×3 overview – icon, title and one
+            benefit line per area. The whole tile is tappable; the detailed
+            images and copy stay on the area subpages (desktop rows below). */}
+        <ul className="mt-5 grid grid-cols-2 gap-2.5 sm:mt-6 sm:gap-3 lg:hidden">
           {areaKeys.map((key) => {
             const content = areaContent[key];
+            const Icon = areaIcons[key];
             return (
               <li key={key}>
                 <Link
                   href={areaLinks[key]}
-                  className="group flex items-start justify-between gap-4 py-4"
+                  className="flex h-full flex-col rounded-xl border border-border bg-background p-3 transition-colors hover:border-electric-500/40"
                 >
-                  <span className="min-w-0">
-                    <span className="block text-base font-bold tracking-tight">{content.title}</span>
-                    <span className="mt-1 block text-[13px] leading-5 text-foreground-muted">{content.short}</span>
-                    <span className="mt-1.5 inline-flex items-center gap-1 text-[13px] font-semibold text-electric-600 dark:text-electric-300">
-                      {t.home2.howItWorksLink}
-                      <ArrowRightIcon size={13} className="transition-transform duration-200 group-hover:translate-x-0.5" />
-                    </span>
+                  <Icon size={18} className="text-electric-600 dark:text-electric-300" />
+                  <span className="mt-2 block text-[13px] font-bold leading-tight tracking-tight">
+                    {content.title}
                   </span>
-                  <ArrowRightIcon size={16} className="mt-1 shrink-0 text-foreground-subtle" />
+                  <span className="mt-1 line-clamp-2 text-[11px] leading-4 text-foreground-muted">
+                    {content.short}
+                  </span>
                 </Link>
               </li>
             );
@@ -328,6 +368,27 @@ export function HomeContent() {
           </div>
         </Reveal>
       </Section>
+
+      {/* Trust – compact mobile strip (Sprint 8): three short points only.
+          No big marketing section; the full trust model stays on
+          /how-it-works and the area subpages. Desktop is unchanged. */}
+      <section
+        aria-label={t.home2.trustKicker}
+        className="border-b border-border/70 bg-surface-muted/60 py-8 dark:bg-surface-muted/30 lg:hidden"
+      >
+        <div className="ic-shell">
+          <Kicker>{t.home2.trustKicker}</Kicker>
+          <h2 className="mt-2 text-lg font-bold tracking-tight sm:text-xl">{t.home2.trustCompactTitle}</h2>
+          <ul className="mt-3 space-y-2">
+            {[t.home2.trustCompact1, t.home2.trustCompact2, t.home2.trustCompact3].map((point) => (
+              <li key={point} className="flex items-start gap-2.5 text-sm leading-6 text-foreground-muted">
+                <CheckIcon size={15} className="mt-1 shrink-0 text-forest-500" />
+                {point}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
 
       {/* ------------------------------------- membership (next step) + CTA */}
       <MembershipBlock />

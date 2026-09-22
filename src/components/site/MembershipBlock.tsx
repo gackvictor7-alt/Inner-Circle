@@ -1,11 +1,12 @@
 "use client";
 
+import Link from "next/link";
 import { useI18n } from "@/lib/i18n/context";
 import { PLANS } from "@/lib/membership/plans";
 import { formatMoney } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { CheckIcon } from "@/components/ui/icons";
+import { ArrowRightIcon, CheckIcon } from "@/components/ui/icons";
 import { Kicker } from "./Section";
 import { Reveal } from "./Reveal";
 
@@ -55,7 +56,35 @@ export function MembershipBlock({
   return (
     <section id={id} className="border-b border-border/70 bg-surface py-10 sm:py-20 lg:py-24">
       <div className="ic-shell-wide">
-        <div className="grid gap-12 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:items-start">
+        {/* Mobile (Sprint 8): one compact membership block – title, both
+            prices in one line, one CTA. The rich two-column layout below
+            stays on tablet/desktop, unchanged. */}
+        <div className="lg:hidden">
+          <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">{t.home2.membershipTitle}</h2>
+          <p className="mt-3 flex flex-wrap items-baseline gap-x-5 gap-y-1 text-base font-bold tracking-tight">
+            <span>
+              {monthly}
+              <span className="ml-1 text-xs font-medium text-foreground-muted">{t.home2.periodMonth}</span>
+            </span>
+            <span>
+              {annual}
+              <span className="ml-1 text-xs font-medium text-foreground-muted">{t.home2.periodYear}</span>
+            </span>
+          </p>
+          <div className="mt-5">
+            <Button href="/register" size="lg" fullWidth>
+              {t.home2.heroTrialCta}
+            </Button>
+          </div>
+          <Link
+            href="/membership"
+            className="mt-3 inline-flex items-center gap-1 text-[13px] font-semibold text-electric-600 dark:text-electric-300"
+          >
+            {t.nav.membership}
+            <ArrowRightIcon size={13} />
+          </Link>
+        </div>
+        <div className="hidden gap-12 lg:grid lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:items-start">
           <Reveal>
             <Kicker>{t.home2.membershipKicker}</Kicker>
             <h2 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
