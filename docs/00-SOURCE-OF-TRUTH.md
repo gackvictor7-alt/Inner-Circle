@@ -3,7 +3,10 @@
 **Diese Datei ist der verbindliche Einstiegspunkt für jeden Menschen und jeden
 KI-Agenten, der an diesem Repository arbeitet.**
 
-- **Stand:** 2026-09-22 (Sprint 8 – Mobile Public Homepage radikal verkürzt,
+- **Stand:** 2026-09-22 (Incident-Fix post-Sprint-8: Produktions-500 auf
+  `/app` durch rohe `Date`-Binds in `forYouItems()` unter D1 behoben +
+  D1-Regressionstest, Details K-20 in
+  [`11-known-issues.md`](11-known-issues.md); Sprint 8 – Mobile Public Homepage radikal verkürzt,
   Mobile Member App (Bottom Nav, Mobile-Chat, Mobile-Menü), Core Connection
   Loop vollständig (Discover → Profil → Connect mit Pflichtnachricht → Anfrage
   → Inbox → Annehmen/Ablehnen → Chat → Network), Start „Für dich“ mit echten
@@ -290,7 +293,7 @@ Discover → Profil → Connect (Pflichtnachricht) → Anfrage → Inbox (Anfrag
 | Deployment | Build `npm run cf:build` · Deploy `npm run cf:release` · Production-Branch `main` |
 | Datenbank (Produktion) | D1 `inner-circle-db`, Binding `DB`, Migrationen in `drizzle/` |
 | i18n | Eigenes Wörterbuch `src/lib/i18n` (DE = Standard, EN vollständig) |
-| Tests | Vitest: **20 Dateien / 106 Tests grün** (`npm test`) |
+| Tests | Vitest: **24 Dateien / 134 Tests grün** (`npm test`, inkl. D1-Regressionstest `for-you-d1.test.ts`) |
 | App-Navigation | **6 Primärbereiche**: Start · Discover · Erstellen · Inbox · Events · Profil |
 
 ## 3. Status-Legende (verbindlich)
@@ -467,7 +470,7 @@ existiert. Backend + Daten + Berechtigungen + Nachweis gehören dazu.
 | D1-Anbindung + Migrationen (50 Tabellen) | WORKING | `drizzle/0000_init.sql`, `cf:release` |
 | Laufzeit-Treiberwechsel D1 ↔ libSQL | WORKING | `src/db/client.ts` |
 | Deployment über Workers Builds (main → Produktion) | PARTIAL | dokumentierter Weg; letzter Merge nach `main` durch den Gründer zu prüfen (Dashboard) |
-| Automatisierte Tests | WORKING | **106 Tests grün (20 Testdateien)** |
+| Automatisierte Tests | WORKING | **134 Tests grün (24 Testdateien)**, inkl. echtem D1-Lauf (`tests/integration/for-you-d1.test.ts`, workerd/Miniflare) |
 | CI (GitHub Actions) | NOT IMPLEMENTED | keine Workflows im Repo |
 | Lint | PARTIAL | **13 bestehende Hinweise (5 Fehler, 8 Warnungen)** – vorbestehend, keine neuen Befunde |
 | Monitoring/Alerting | PREPARED | Observability im Worker aktiv, keine Alarme |

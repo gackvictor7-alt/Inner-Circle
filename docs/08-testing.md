@@ -1,8 +1,13 @@
 # 08 – Test- und Qualitätssicherung
 
-**Stand:** 2026-09-22 (Sprint 8 – Mobile Homepage, Mobile Member App,
-Core Connection Loop) · Lauf auf
-Branch `arena/01a0cad6-inner-circle` (Basis `main` @ `128295a`):
+**Stand:** 2026-09-22 (Incident-Fix D1-Date-Binds, K-20) · Lauf auf
+Branch `arena/01a0cb12-inner-circle` (Basis `main` nach PR #19):
+`npm test` = **24 Dateien / 134 Tests grün** (6 neu: `for-you-d1` –
+`forYouItems()` gegen echte D1 in `workerd`, Negativ-Nachweis mit
+`D1_TYPE_ERROR` ohne den Fix),
+`npx tsc --noEmit` grün, `npm run cf:build` grün, `npm run cf:dry-run` grün,
+`/app` + Member-/Public-Routen im `workerd`-Preview (lokale D1) verifiziert.
+Vorheriger Lauf (Sprint 8):
 `npm test` = **23 Dateien / 128 Tests grün** (5 neu: `core-loop`),
 `npx tsc --noEmit` grün, `npm run cf:build` grün, `npm run cf:dry-run` grün
 (Bindings `DB`/`ASSETS`/`NEXTJS_ENV`),

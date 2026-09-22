@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, desc, eq, gt, isNull, ne, or, sql, count } from "drizzle-orm";
+import { and, desc, eq, gt, gte, isNull, ne, or, sql, count } from "drizzle-orm";
 import { db } from "@/db/client";
 import {
   blocks,
@@ -1022,7 +1022,10 @@ export async function forYouItems(userId: string, interestSlugs: string[], local
       and(
         ne(messages.senderId, userId),
         isNull(messages.deletedAt),
-        gt(messages.createdAt, sql`coalesce(${conversationParticipants.lastReadAt}, ${new Date(0)})`),
+        // Never interpolate a JS Date here: raw `sql` values are bound
+        // unmapped, and D1 rejects non-scalar bind values (D1_TYPE_ERROR).
+        // Timestamps are integer milliseconds, so epoch 0 is a plain literal.
+        gt(messages.createdAt, sql`coalesce(${conversationParticipants.lastReadAt}, 0)`),
       ),
     )
     .orderBy(desc(messages.createdAt))
@@ -1121,7 +1124,9 @@ export async function forYouItems(userId: string, interestSlugs: string[], local
       startsAt: events.startsAt,
     })
     .from(events)
-    .where(and(eq(events.state, "confirmed"), sql`${events.startsAt} >= ${now}`))
+    // Column-aware comparison (`gte`) maps the Date to integer milliseconds;
+    // a raw `sql` interpolation would reach D1 as an object and throw.
+    .where(and(eq(events.state, "confirmed"), gte(events.startsAt, now)))
     .orderBy(sql`${events.startsAt} asc`)
     .limit(1);
   if (event && event.startsAt) {
