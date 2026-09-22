@@ -55,20 +55,10 @@ function AuthCard({
 
 function FormError({ state }: { state: AuthState }) {
   const { t, tf } = useI18n();
-  const firstFieldError = state.fieldErrors ? Object.values(state.fieldErrors)[0] : undefined;
-  // "validation" carries per-field messages: show the first one prominently
-  // (the fields themselves repeat it inline).
+  // Sprint 6: For validation errors, do NOT show a generic banner – field errors are shown inline.
+  // This keeps correct inputs preserved and gives precise feedback per field.
   if (state.status === "error" && (!state.errorCode || state.errorCode === "validation")) {
-    if (!firstFieldError) return null;
-    return (
-      <div
-        role="alert"
-        className="flex items-start gap-2.5 rounded-xl border border-danger-500/30 bg-danger-500/5 px-3.5 py-3 text-sm text-danger-600 dark:text-danger-500"
-      >
-        <AlertIcon size={16} className="mt-0.5 shrink-0" />
-        <span>{(t.app.auth.errors as Record<string, string>)[firstFieldError] ?? t.app.errors.validation}</span>
-      </div>
-    );
+    return null;
   }
   if (state.status !== "error" || !state.errorCode) return null;
 
@@ -114,10 +104,6 @@ function fieldMessage(
 const noopSubscribe = () => () => {};
 
 function useMountedGate(): boolean {
-  // React's recommended hydration-safe "mounted" check via
-  // useSyncExternalStore: the server snapshot is false, the client snapshot is
-  // true. No effect, no setState – nothing that can cascade renders or break
-  // the very first paint.
   return useSyncExternalStore(noopSubscribe, () => true, () => false);
 }
 
@@ -128,7 +114,6 @@ function guardAction(action: GuardedAction): GuardedAction {
     try {
       return await action(previous, formData);
     } catch {
-      // Network hiccup, worker restart, deployment in flight – say so.
       return { status: "error", errorCode: "serverError" };
     }
   };
@@ -146,14 +131,13 @@ function JsRequiredNote() {
 }
 
 /**
- * Truthful delivery status for verification codes.
+ * Truthful delivery status for verification codes – Sprint 6 fixed to be exclusive.
  *
  *  * `dev`  – the code was only recorded in the protected development outbox.
- *             The link to it appears solely when the current account can open
- *             it (administrators); the code itself is shown inline only in
- *             local development builds.
- *  * `none` – nothing was sent or recorded (no provider, outbox disabled).
- *  * `provider` – nothing to add; the footer already says it was sent.
+ *  * `none` – nothing was sent or recorded (no provider, outbox disabled) → failure.
+ *  * `provider` – real delivery.
+ *
+ * No simultaneous success + failure messages.
  */
 function DeliveryNotice({
   mode,
@@ -167,11 +151,12 @@ function DeliveryNotice({
   const { t } = useI18n();
   if (mode === "none") {
     return (
-      <div className="flex items-start gap-2.5 rounded-xl border border-warning-500/30 bg-warning-500/10 px-3.5 py-3 text-xs leading-5 text-warning-500">
+      <div className="flex items-start gap-2.5 rounded-xl border border-danger-500/30 bg-danger-500/5 px-3.5 py-3 text-xs leading-5 text-danger-600 dark:text-danger-500">
         <AlertIcon size={16} className="mt-0.5 shrink-0" />
         <div>
-          <p className="font-semibold">{t.app.auth.verify.unavailableTitle}</p>
-          <p className="mt-1">{t.app.auth.verify.unavailableText}</p>
+          <p className="font-semibold">{t.app.auth.verify.failedTitle}</p>
+          <p className="mt-1">{t.app.auth.verify.failedText}</p>
+          <p className="mt-1 opacity-80">{t.app.auth.verify.unavailableText}</p>
         </div>
       </div>
     );
@@ -204,8 +189,6 @@ export function LoginForm({ next }: { next?: string }) {
   const router = useRouter();
   const mounted = useMountedGate();
   const [state, action, pending] = useActionState(guardAction(loginAction), initialAuthState);
-  // Controlled inputs: e-mail AND password survive every failed attempt –
-  // the user only corrects what was wrong (no wiped form, no page reload).
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
 
@@ -259,8 +242,6 @@ export function LoginForm({ next }: { next?: string }) {
             {t.app.auth.forgotLink}
           </Link>
         </div>
-        {/* Gated until hydration (native POST would lose all inputs) and
-            disabled while pending – visible loading state, no double submit. */}
         <Button type="submit" size="lg" fullWidth disabled={!mounted || pending} loading={pending}>
           {pending ? t.app.auth.loggingIn : t.app.auth.submitLogin}
         </Button>
@@ -281,10 +262,6 @@ export function LoginForm({ next }: { next?: string }) {
   );
 }
 
-/**
- * Sign-in methods without backend (K-04): rendered as genuinely disabled
- * buttons – same look, but no dead navigation target and no 404.
- */
 function ProviderButton({ provider }: { provider: "phone" | "google" | "apple" }) {
   const { t } = useI18n();
   const labels = {
@@ -315,8 +292,6 @@ export function RegisterForm() {
   const mounted = useMountedGate();
   const [state, action, pending] = useActionState(guardAction(registerAction), initialAuthState);
   const [method, setMethod] = useState<"email" | "phone">("email");
-  // Every field is controlled so a validation error never discards correct
-  // inputs – the user fixes exactly the field that failed.
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -495,7 +470,7 @@ function Checkbox({
   );
 }
 
-/* ------------------------------------------------------------- verification */
+/* ------------------------------------------------------------- verification – Sprint 6 exclusive states */
 
 export function VerifyForm({
   channel,
@@ -507,12 +482,10 @@ export function VerifyForm({
   channel: "email" | "phone";
   userId?: string;
   maskedTarget: string | null;
-  /** Server-resolved delivery status for this environment/recipient. */
   delivery: DeliveryMode;
-  /** True only when the signed-in account may open /dev/outbox. */
   devOutboxAccessible?: boolean;
 }) {
-  const { t, tf, locale } = useI18n();
+  const { t, tf } = useI18n();
   const router = useRouter();
   const mounted = useMountedGate();
   const [state, action, pending] = useActionState(guardAction(verifyCodeAction), initialAuthState);
@@ -548,58 +521,66 @@ export function VerifyForm({
   };
   const errorKey = state.errorCode ?? (resendState.status === "error" ? resendState.errorCode : undefined);
   const errorText = errorKey ? (errorMessages[errorKey] ?? t.app.errors.generic) : undefined;
-
   const attemptsLeft = state.errorParams?.count;
 
-  // The latest server answer wins: a resend result is authoritative for the
-  // current code; before that the page-level delivery status applies.
   const lastAction = resendState.status !== "idle" ? resendState : state;
   const effectiveMode: DeliveryMode = lastAction.messageMode ?? delivery;
   const outboxAccessible = lastAction.devOutboxAccessible ?? devOutboxAccessible;
-  const lead =
-    effectiveMode === "none"
-      ? t.app.auth.verify.leadUnavailable
-      : effectiveMode === "dev"
-        ? t.app.auth.verify.leadDev
-        : channel === "phone"
-          ? t.app.auth.verify.leadPhone
-          : t.app.auth.verify.leadEmail;
-  const footer =
-    effectiveMode === "provider"
-      ? t.app.auth.verify.sentProvider
-      : effectiveMode === "dev"
-        ? t.app.auth.verify.sentDev
-        : t.app.auth.verify.unavailableTitle;
+
+  const isFailed = effectiveMode === "none";
+  const isProvider = effectiveMode === "provider";
+  const isDev = effectiveMode === "dev";
+
+  // Exclusive lead – never claim success when failed.
+  let lead: string;
+  if (isFailed) {
+    lead = t.app.auth.verify.failedTitle;
+  } else if (isDev) {
+    lead = tf(t.app.auth.verify.leadDev, { target: maskedTarget ?? "…" });
+  } else if (channel === "phone") {
+    lead = tf(t.app.auth.verify.leadPhone, { target: maskedTarget ?? "…" });
+  } else {
+    lead = tf(t.app.auth.verify.leadEmail, { target: maskedTarget ?? "…" });
+  }
 
   return (
-    <AuthCard title={t.app.auth.verify.title} lead={tf(lead, { target: maskedTarget ?? "…" })}>
+    <AuthCard title={t.app.auth.verify.title} lead={lead}>
+      {/* Status – exclusive */}
+      {isFailed ? (
+        <div className="mb-5">
+          <DeliveryNotice mode={effectiveMode} devCode={lastAction.devCode} devOutboxAccessible={outboxAccessible} />
+        </div>
+      ) : (
+        <>
+          {resendState.status === "success" && (
+            <div className="mb-5 flex items-start gap-2.5 rounded-xl border border-forest-500/30 bg-forest-500/5 px-3.5 py-3 text-sm text-forest-700 dark:text-forest-400">
+              <CheckCircleIcon size={16} className="mt-0.5 shrink-0" />
+              <span>{tf(t.app.auth.verify.successText, { target: maskedTarget ?? "…" })}</span>
+            </div>
+          )}
+          {isDev && (
+            <div className="mb-5">
+              <DeliveryNotice mode={effectiveMode} devCode={lastAction.devCode} devOutboxAccessible={outboxAccessible} />
+            </div>
+          )}
+        </>
+      )}
+
+      {errorText && (
+        <div className="mb-5 flex items-start gap-2.5 rounded-xl border border-danger-500/30 bg-danger-500/5 px-3.5 py-3 text-sm text-danger-600 dark:text-danger-500">
+          <AlertIcon size={16} className="mt-0.5 shrink-0" />
+          <span>
+            {errorText}
+            {attemptsLeft !== undefined && (
+              <span className="mt-1 block">{tf(t.app.auth.verify.errors.attemptsLeft, { count: attemptsLeft })}</span>
+            )}
+          </span>
+        </div>
+      )}
+
       <form action={action} className="flex flex-col gap-5" noValidate>
         <input type="hidden" name="channel" value={channel} />
         {userId && <input type="hidden" name="userId" value={userId} />}
-        {resendState.status === "success" && (
-          <div className="flex items-start gap-2.5 rounded-xl border border-forest-500/30 bg-forest-500/5 px-3.5 py-3 text-sm text-forest-700 dark:text-forest-400">
-            <CheckCircleIcon size={16} className="mt-0.5 shrink-0" />
-            <span>
-              {effectiveMode === "provider"
-                ? (locale === "de" ? "Wir haben dir einen sechsstelligen Code gesendet." : "We have sent a six-digit code to your email.")
-                : t.app.auth.verify.sentDev}
-            </span>
-          </div>
-        )}
-        {errorText && (
-          <div className="flex items-start gap-2.5 rounded-xl border border-danger-500/30 bg-danger-500/5 px-3.5 py-3 text-sm text-danger-600 dark:text-danger-500">
-            <AlertIcon size={16} className="mt-0.5 shrink-0" />
-            <span>
-              {errorText}
-              {attemptsLeft !== undefined && (
-                <span className="mt-1 block">
-                  {tf(t.app.auth.verify.errors.attemptsLeft, { count: attemptsLeft })}
-                </span>
-              )}
-            </span>
-          </div>
-        )}
-        <DeliveryNotice mode={effectiveMode} devCode={lastAction.devCode} devOutboxAccessible={outboxAccessible} />
         <Input
           label={t.app.auth.verify.codeLabel}
           name="code"
@@ -620,18 +601,20 @@ export function VerifyForm({
         <input type="hidden" name="channel" value={channel} />
         {userId && <input type="hidden" name="userId" value={userId} />}
         <Button type="submit" variant="secondary" fullWidth disabled={!mounted || resendPending || cooldown > 0} loading={resendPending}>
-          {cooldown > 0 ? tf(t.app.auth.verify.resendIn, { seconds: cooldown }) : t.app.auth.verify.resend}
+          {cooldown > 0
+            ? tf(t.app.auth.verify.resendIn, { seconds: cooldown })
+            : isFailed
+              ? t.app.auth.verify.retry
+              : t.app.auth.verify.resend}
         </Button>
       </form>
 
-      <p className="mt-5 flex items-start gap-2 text-xs leading-5 text-foreground-subtle">
-        {effectiveMode === "none" ? (
-          <AlertIcon size={14} className="mt-0.5 shrink-0" />
-        ) : (
+      {isProvider && (
+        <p className="mt-5 flex items-start gap-2 text-xs leading-5 text-foreground-subtle">
           <MailIcon size={14} className="mt-0.5 shrink-0" />
-        )}
-        {footer}
-      </p>
+          {t.app.auth.verify.sentProvider}
+        </p>
+      )}
     </AuthCard>
   );
 }
@@ -642,7 +625,6 @@ export function ForgotPasswordForm({
   delivery = "provider",
   devOutboxAccessible = false,
 }: {
-  /** Configuration-level e-mail delivery status (never account-specific). */
   delivery?: DeliveryMode;
   devOutboxAccessible?: boolean;
 }) {
@@ -841,9 +823,7 @@ export function InterestOnboardingForm({
                 isReady ? "bg-forest-500" : "bg-warning-500"
               }`}
             />
-            <span>
-              {tf(t.app.onboarding.interestsSelected, { count })}
-            </span>
+            <span>{tf(t.app.onboarding.interestsSelected, { count })}</span>
             <span className="text-foreground-subtle">·</span>
             <span className={isReady ? "text-forest-600 dark:text-forest-400 font-semibold" : "text-foreground-subtle"}>
               {isReady ? t.app.onboarding.readyBadge : t.app.onboarding.minNotice}
@@ -857,9 +837,7 @@ export function InterestOnboardingForm({
           <div className="space-y-8">
             {sortedGroupEntries.map(([group, items]) => (
               <section key={group} className="rounded-2xl border border-border/80 bg-surface/50 p-5 sm:p-6 backdrop-blur-xs">
-                <h2 className="text-xs font-bold uppercase tracking-wider text-foreground-subtle mb-4">
-                  {group}
-                </h2>
+                <h2 className="text-xs font-bold uppercase tracking-wider text-foreground-subtle mb-4">{group}</h2>
                 <div className="flex flex-wrap gap-2.5">
                   {items.map((interest) => {
                     const active = selectedInterests.includes(interest.id);
@@ -877,9 +855,7 @@ export function InterestOnboardingForm({
                       >
                         <span
                           className={`inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full transition-colors ${
-                            active
-                              ? "bg-electric-500 text-white"
-                              : "border border-border-strong text-transparent"
+                            active ? "bg-electric-500 text-white" : "border border-border-strong text-transparent"
                           }`}
                         >
                           <CheckIcon size={11} className={active ? "opacity-100" : "opacity-0"} />
@@ -915,9 +891,7 @@ export function InterestOnboardingForm({
                   >
                     <span
                       className={`inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors ${
-                        active
-                          ? "border-electric-500 bg-electric-500 text-white"
-                          : "border-border-strong bg-surface"
+                        active ? "border-electric-500 bg-electric-500 text-white" : "border-border-strong bg-surface"
                       }`}
                     >
                       {active ? <CheckIcon size={13} /> : null}
@@ -929,9 +903,6 @@ export function InterestOnboardingForm({
             </div>
           </section>
 
-          {/* Hidden inputs carry the selection to the server action. `startTrial`
-              asks the server to begin the 48-hour discovery period – the server
-              still decides (verified account, no active membership, once only). */}
           <input type="hidden" name="startTrial" value="1" />
           {selectedInterests.map((id) => (
             <input key={id} type="hidden" name="interests" value={id} />
@@ -940,7 +911,6 @@ export function InterestOnboardingForm({
             <input key={id} type="hidden" name="goals" value={id} />
           ))}
 
-          {/* High-end sticky CTA container */}
           <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border/80 bg-surface/90 backdrop-blur-xl px-4 py-4 sm:py-5 shadow-lift ic-safe-bottom">
             <div className="mx-auto max-w-2xl">
               <div className="flex items-center justify-between text-xs text-foreground-muted px-1">
@@ -949,9 +919,7 @@ export function InterestOnboardingForm({
                     {tf(t.app.onboarding.interestsSelected, { count: selectedInterests.length })}
                   </span>
                   {!isReady && (
-                    <span className="text-warning-600 dark:text-warning-500 font-medium">
-                      ({t.app.onboarding.minNotice})
-                    </span>
+                    <span className="text-warning-600 dark:text-warning-500 font-medium">({t.app.onboarding.minNotice})</span>
                   )}
                   {isReady && (
                     <span className="text-forest-600 dark:text-forest-400 font-semibold inline-flex items-center gap-1">
@@ -959,26 +927,14 @@ export function InterestOnboardingForm({
                     </span>
                   )}
                 </div>
-                {selectedGoals.length > 0 && (
-                  <span>
-                    {tf(t.app.onboarding.goalsSelected, { count: selectedGoals.length })}
-                  </span>
-                )}
+                {selectedGoals.length > 0 && <span>{tf(t.app.onboarding.goalsSelected, { count: selectedGoals.length })}</span>}
               </div>
 
-              <Button
-                type="submit"
-                size="lg"
-                fullWidth
-                className="mt-3 font-semibold shadow-sm"
-                disabled={!mounted || pending || !isReady}
-              >
+              <Button type="submit" size="lg" fullWidth className="mt-3 font-semibold shadow-sm" disabled={!mounted || pending || !isReady}>
                 {pending ? t.app.onboarding.startingTrial : t.app.onboarding.submit}
               </Button>
 
-              <p className="mt-2 text-center text-xs text-foreground-subtle tracking-normal">
-                {t.app.onboarding.trialReady}
-              </p>
+              <p className="mt-2 text-center text-xs text-foreground-subtle tracking-normal">{t.app.onboarding.trialReady}</p>
             </div>
           </div>
         </form>
