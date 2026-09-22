@@ -3,6 +3,7 @@ import "server-only";
 import { and, desc, eq, gt, isNull, ne, or, sql, count } from "drizzle-orm";
 import { db } from "@/db/client";
 import {
+  blocks,
   businessOpportunities,
   connectionRequests,
   connections,
@@ -387,6 +388,7 @@ export async function pendingRequestsFor(userId: string) {
       handle: users.handle,
       avatarUrl: profiles.avatarUrl,
       headline: profiles.headline,
+      location: profiles.location,
       isDemo: users.isDemo,
     })
     .from(connectionRequests)
@@ -450,6 +452,48 @@ export async function connectionsFor(userId: string) {
   }));
 }
 
+/**
+ * Pending connection request between two users, direction-aware.
+ * Powers the state-dependent action row on a member profile:
+ * outgoing → "Anfrage gesendet" + withdraw, incoming → accept/decline.
+ */
+export async function connectionRequestState(viewerId: string, targetId: string) {
+  const [row] = await db
+    .select({
+      id: connectionRequests.id,
+      fromUserId: connectionRequests.fromUserId,
+    })
+    .from(connectionRequests)
+    .where(
+      and(
+        eq(connectionRequests.status, "pending"),
+        or(
+          and(eq(connectionRequests.fromUserId, viewerId), eq(connectionRequests.toUserId, targetId)),
+          and(eq(connectionRequests.fromUserId, targetId), eq(connectionRequests.toUserId, viewerId)),
+        ),
+      ),
+    )
+    .limit(1);
+  if (!row) return { outgoingRequestId: null, incomingRequestId: null };
+  return row.fromUserId === viewerId
+    ? { outgoingRequestId: row.id, incomingRequestId: null }
+    : { outgoingRequestId: null, incomingRequestId: row.id };
+}
+
+/**
+ * Interest labels for one member (locale-aware). Used by the public member
+ * profile to show "Interessen" next to skills / looking-for / offering.
+ */
+export async function interestLabelsFor(userId: string, locale: "de" | "en") {
+  const rows = await db
+    .select({ labelDe: interests.labelDe, labelEn: interests.labelEn, position: interests.position })
+    .from(userInterests)
+    .innerJoin(interests, eq(interests.id, userInterests.interestId))
+    .where(eq(userInterests.userId, userId))
+    .orderBy(interests.position);
+  return rows.map((row) => (locale === "en" ? row.labelEn : row.labelDe));
+}
+
 export async function memberProfileByHandle(handle: string) {
   const [row] = await db
     .select({
@@ -474,6 +518,7 @@ export async function memberProfileByHandle(handle: string) {
       rolesJson: profiles.rolesJson,
       skillsJson: profiles.skillsJson,
       lookingForJson: profiles.lookingForJson,
+      offeringJson: profiles.offeringJson,
       profileVisibility: profiles.profileVisibility,
       privacyVisibility: privacySettings.profileVisibility,
       privacyPerformance: privacySettings.performanceVisibility,
@@ -873,6 +918,196 @@ export async function listDiscoverCandidates(options: {
       requestPending: pendingSet.has(row.id),
     };
   });
+}
+
+/**
+ * "Für dich" (Start screen, Sprint 8): a small, honest list of real,
+ * currently relevant items – at most five, nothing invented.
+ *
+ * Priority: incoming request → unread message → matching member → newest
+ * public opportunity → next confirmed event → newest approved investment.
+ * Everything is real platform data; if nothing exists, the list is shorter
+ * (or empty) and the UI falls back to simple navigation shortcuts.
+ */
+export type ForYouItem =
+  | { kind: "request"; name: string; href: string }
+  | { kind: "message"; name: string; href: string }
+  | { kind: "person"; name: string; handle: string; sharedInterestSlug: string; sharedInterest: string }
+  | { kind: "deal"; title: string; type: string; href: string }
+  | { kind: "event"; title: string; date: string; href: string }
+  | { kind: "investment"; title: string; href: string };
+
+export async function forYouItems(userId: string, interestSlugs: string[], locale: "de" | "en" = "de"): Promise<ForYouItem[]> {
+  const items: ForYouItem[] = [];
+  const now = new Date();
+
+  // 1) Newest incoming connection request (actionable, personal).
+  const [request] = await db
+    .select({
+      fromFirstName: users.firstName,
+      fromLastName: users.lastName,
+    })
+    .from(connectionRequests)
+    .innerJoin(users, eq(users.id, connectionRequests.fromUserId))
+    .where(and(eq(connectionRequests.toUserId, userId), eq(connectionRequests.status, "pending")))
+    .orderBy(desc(connectionRequests.createdAt))
+    .limit(1);
+  if (request) {
+    items.push({
+      kind: "request",
+      name: `${request.fromFirstName} ${request.fromLastName}`.trim(),
+      href: "/app/inbox?tab=requests",
+    });
+  }
+
+  // 2) Conversation with the newest unread message.
+  const [unreadConversation] = await db
+    .select({
+      conversationId: conversations.id,
+      partnerFirstName: users.firstName,
+      partnerLastName: users.lastName,
+    })
+    .from(messages)
+    .innerJoin(conversations, eq(conversations.id, messages.conversationId))
+    .innerJoin(
+      conversationParticipants,
+      and(
+        eq(conversationParticipants.conversationId, messages.conversationId),
+        eq(conversationParticipants.userId, userId),
+      ),
+    )
+    .innerJoin(users, eq(users.id, messages.senderId))
+    .where(
+      and(
+        ne(messages.senderId, userId),
+        isNull(messages.deletedAt),
+        gt(messages.createdAt, sql`coalesce(${conversationParticipants.lastReadAt}, ${new Date(0)})`),
+      ),
+    )
+    .orderBy(desc(messages.createdAt))
+    .limit(1);
+  if (unreadConversation) {
+    items.push({
+      kind: "message",
+      name: `${unreadConversation.partnerFirstName} ${unreadConversation.partnerLastName}`.trim(),
+      href: `/app/inbox?tab=messages&c=${unreadConversation.conversationId}`,
+    });
+  }
+
+  // 3) A member who shares at least one of the viewer's interests – not
+  // connected, no open request, not blocked. (Rule-based, like Discover.)
+  if (interestSlugs.length > 0) {
+    const candidates = await db
+      .select({
+        id: users.id,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        handle: users.handle,
+        sharedSlug: interests.slug,
+        sharedLabelDe: interests.labelDe,
+        sharedLabelEn: interests.labelEn,
+      })
+      .from(userInterests)
+      .innerJoin(interests, eq(interests.id, userInterests.interestId))
+      .innerJoin(users, eq(users.id, userInterests.userId))
+      .where(
+        and(
+          sql`${interests.slug} in (${sql.join(interestSlugs.map((slug) => sql`${slug}`), sql`, `)})`,
+          ne(users.id, userId),
+          eq(users.status, "active"),
+          eq(users.isDemo, false),
+        ),
+      )
+      .orderBy(desc(users.lastLoginAt))
+      .limit(8);
+
+    if (candidates.length > 0) {
+      const ids = candidates.map((row) => row.id);
+      const [myConnections, pendingPairs, blockedRows] = await Promise.all([
+        db
+          .select({ partnerId: sql`case when ${connections.userAId} = ${userId} then ${connections.userBId} else ${connections.userAId} end` })
+          .from(connections)
+          .where(and(isNull(connections.endedAt), or(eq(connections.userAId, userId), eq(connections.userBId, userId)))),
+        db
+          .select({ otherId: sql`case when ${connectionRequests.fromUserId} = ${userId} then ${connectionRequests.toUserId} else ${connectionRequests.fromUserId} end` })
+          .from(connectionRequests)
+          .where(and(eq(connectionRequests.status, "pending"), or(eq(connectionRequests.fromUserId, userId), eq(connectionRequests.toUserId, userId)))),
+        db.select({ blockedId: blocks.blockedId }).from(blocks).where(eq(blocks.blockerId, userId)),
+      ]);
+      const excluded = new Set([
+        ...myConnections.map((row) => row.partnerId),
+        ...pendingPairs.map((row) => row.otherId),
+        ...blockedRows.map((row) => row.blockedId),
+      ]);
+      const candidate = candidates.find((row) => !excluded.has(row.id));
+      if (candidate) {
+        items.push({
+          kind: "person",
+          name: `${candidate.firstName} ${candidate.lastName}`.trim(),
+          handle: candidate.handle,
+          sharedInterestSlug: candidate.sharedSlug,
+          sharedInterest: locale === "en" ? candidate.sharedLabelEn : candidate.sharedLabelDe,
+        });
+      }
+    }
+  }
+
+  // 4) Newest public opportunity (not the viewer's own).
+  const [deal] = await db
+    .select({
+      id: businessOpportunities.id,
+      title: businessOpportunities.title,
+      type: businessOpportunities.type,
+    })
+    .from(businessOpportunities)
+    .where(
+      and(
+        isNull(businessOpportunities.deletedAt),
+        eq(businessOpportunities.status, "published"),
+        ne(businessOpportunities.ownerId, userId),
+      ),
+    )
+    .orderBy(desc(businessOpportunities.createdAt))
+    .limit(1);
+  if (deal) {
+    items.push({ kind: "deal", title: deal.title, type: deal.type, href: `/app/opportunities/${deal.id}` });
+  }
+
+  // 5) Next confirmed event.
+  const [event] = await db
+    .select({
+      slug: events.slug,
+      title: events.title,
+      startsAt: events.startsAt,
+    })
+    .from(events)
+    .where(and(eq(events.state, "confirmed"), sql`${events.startsAt} >= ${now}`))
+    .orderBy(sql`${events.startsAt} asc`)
+    .limit(1);
+  if (event && event.startsAt) {
+    items.push({
+      kind: "event",
+      title: event.title,
+      date: event.startsAt.toLocaleDateString(locale === "en" ? "en-GB" : "de-DE"),
+      href: `/app/events/${event.slug}`,
+    });
+  }
+
+  // 6) Newest approved investment opportunity.
+  const [investment] = await db
+    .select({
+      id: investmentOpportunities.id,
+      title: investmentOpportunities.publicName,
+    })
+    .from(investmentOpportunities)
+    .where(eq(investmentOpportunities.status, "approved"))
+    .orderBy(desc(investmentOpportunities.createdAt))
+    .limit(1);
+  if (investment) {
+    items.push({ kind: "investment", title: investment.title, href: `/app/investments/${investment.id}` });
+  }
+
+  return items.slice(0, 5);
 }
 
 /** Taxonomy group name → stable slug used for the industry filter. */

@@ -151,15 +151,28 @@ export function MemberCard({
       </div>
 
       {member.interests.length > 0 && (
-        <ul className="mt-3 flex flex-wrap gap-1.5">
-          {member.interests.slice(0, 4).map((interest) => (
-            <li key={interest}>
-              <span className="rounded-full bg-surface-muted px-2.5 py-1 text-[11px] font-medium text-foreground-muted">
-                {interest}
-              </span>
-            </li>
-          ))}
-        </ul>
+        // Mobile (Sprint 8, TEIL U): 2 tags only – the full list lives in
+        // the profile view.
+        <>
+          <ul className="mt-3 flex flex-wrap gap-1.5 lg:hidden">
+            {member.interests.slice(0, 2).map((interest) => (
+              <li key={interest}>
+                <span className="rounded-full bg-surface-muted px-2.5 py-1 text-[11px] font-medium text-foreground-muted">
+                  {interest}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <ul className="mt-3 hidden flex-wrap gap-1.5 lg:flex">
+            {member.interests.slice(0, 4).map((interest) => (
+              <li key={interest}>
+                <span className="rounded-full bg-surface-muted px-2.5 py-1 text-[11px] font-medium text-foreground-muted">
+                  {interest}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </>
       )}
 
       {member.isDemo && !isDemoCard && (
@@ -168,68 +181,81 @@ export function MemberCard({
         </p>
       )}
 
-      <div className="mt-4 flex flex-wrap gap-2">
+      {/* Mobile (Sprint 8, TEIL U): full-width, thumb-reachable action rows;
+          desktop keeps the compact wrapped row. */}
+      <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
         {isDemoCard ? (
-          <Button size="sm" onClick={() => setDemoConnectOpen(true)}>
+          <Button size="sm" onClick={() => setDemoConnectOpen(true)} className="w-full sm:w-auto">
             <UserPlusIcon size={15} />
             {t.app.network.connectCta}
           </Button>
         ) : member.isConnected ? (
-          <Button href={`/app/inbox?tab=messages&to=${member.id}`} size="sm" variant="secondary">
+          <Button
+            href={`/app/inbox?tab=messages&to=${member.id}`}
+            size="sm"
+            variant="secondary"
+            className="w-full sm:w-auto"
+          >
             {t.app.messages.title}
           </Button>
         ) : receivedPending ? (
           <>
-            <form action={respond}>
+            <form action={respond} className="w-full sm:w-auto">
               <input type="hidden" name="requestId" value={member.incomingRequestId ?? ""} />
               <input type="hidden" name="decision" value="accept" />
-              <Button type="submit" size="sm" loading={respondPending}>
+              <Button type="submit" size="sm" loading={respondPending} className="w-full">
                 {t.app.common.accept}
               </Button>
             </form>
-            <form action={respond}>
+            <form action={respond} className="w-full sm:w-auto">
               <input type="hidden" name="requestId" value={member.incomingRequestId ?? ""} />
               <input type="hidden" name="decision" value="decline" />
-              <Button type="submit" size="sm" variant="secondary" loading={respondPending}>
+              <Button type="submit" size="sm" variant="secondary" loading={respondPending} className="w-full">
                 {t.app.common.decline}
               </Button>
             </form>
           </>
         ) : sentPending ? (
           <>
-            <Button size="sm" variant="ghost" disabled>
+            <Button size="sm" variant="ghost" disabled className="w-full sm:w-auto">
               <CheckIcon size={15} />
               {t.app.profile.actions.pending}
             </Button>
-            <form action={withdraw}>
+            <form action={withdraw} className="w-full sm:w-auto">
               <input type="hidden" name="requestId" value={member.outgoingRequestId ?? ""} />
-              <Button type="submit" size="sm" variant="secondary" loading={withdrawPending}>
+              <Button type="submit" size="sm" variant="secondary" loading={withdrawPending} className="w-full">
                 {t.app.connections.withdraw}
               </Button>
             </form>
           </>
         ) : canConnect ? (
-          <Button size="sm" onClick={() => setConnectOpen(true)}>
+          <Button size="sm" onClick={() => setConnectOpen(true)} className="w-full sm:w-auto">
             <UserPlusIcon size={15} />
             {t.app.network.connectCta}
           </Button>
         ) : (
-          <Button size="sm" variant="ghost" disabled>
+          <Button size="sm" variant="ghost" disabled className="w-full sm:w-auto">
             {t.app.access.memberOnly}
           </Button>
         )}
 
         {canFollow && !isDemoCard && (
-          <form action={follow}>
+          <form action={follow} className="w-full sm:w-auto">
             <input type="hidden" name="userId" value={member.id} />
             <input type="hidden" name="handle" value={member.handle} />
-            <Button type="submit" size="sm" variant={following ? "ghost" : "secondary"} loading={followPending}>
+            <Button
+              type="submit"
+              size="sm"
+              variant={following ? "ghost" : "secondary"}
+              loading={followPending}
+              className="w-full"
+            >
               {following ? t.app.profile.actions.unfollow : t.app.network.followCta}
             </Button>
           </form>
         )}
 
-        <Button href={profileHref} size="sm" variant="ghost">
+        <Button href={profileHref} size="sm" variant="ghost" className="w-full sm:w-auto">
           {t.app.common.viewProfile}
         </Button>
       </div>

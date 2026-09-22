@@ -242,7 +242,8 @@ export async function respondConnectionRequestAction(
     type: accepted ? "connection_accepted" : "system",
     titleKey: accepted ? "app.notifications.types.connection_accepted" : "app.notifications.types.system",
     params: { name: `${access.user.firstName} ${access.user.lastName}`.trim() },
-    url: accepted ? "/app/inbox?tab=connections" : "/app/inbox?tab=sent",
+    // Inbox deep links: tab + sub (the sub-tab for connections / sent).
+    url: accepted ? "/app/inbox?tab=requests&sub=connections" : "/app/inbox?tab=requests&sub=sent",
     entityType: "connection_request",
     entityId: requestId,
     dedupeKey: `connection_response:${requestId}`,

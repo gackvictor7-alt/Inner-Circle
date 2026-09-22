@@ -527,58 +527,91 @@ export function DiscoverDeck({
               </div>
             </div>
 
-            {/* right: business identity */}
-            <div className="ic-span-12 mt-6 space-y-5 lg:col-span-7 lg:mt-0 lg:pl-6">
+            {/* right: business identity
+                Mobile (Sprint 8, TEIL U): compact card – 1–2 tags + at most
+                two match reasons. Bio, metrics, trust and full tag lists stay
+                on desktop; everything is available in the profile view. */}
+            <div className="ic-span-12 mt-4 space-y-4 lg:col-span-7 lg:mt-0 lg:space-y-5 lg:pl-6">
               {current.bio && (
-                <p className="ic-measure text-sm leading-6 text-foreground-muted">{current.bio}</p>
+                <p className="ic-measure hidden text-sm leading-6 text-foreground-muted lg:block">{current.bio}</p>
               )}
 
-              {/* Why this match */}
-              <div className="rounded-2xl border border-border bg-surface-muted/50 p-4">
-                <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-foreground-subtle">
-                  {t.app.discover.matchWhy}
-                </p>
-                <ul className="mt-2.5 flex flex-col gap-1.5">
-                  {current.sharedGoals.slice(0, 2).map((goal) => (
-                    <MatchChip key={`g-${goal}`} label={tf(t.app.discover.reasonSharedGoal, { value: goal })} />
-                  ))}
-                  {current.sharedInterests.slice(0, 2).map((interest) => (
+              {(() => {
+                const reasons: React.ReactNode[] = [];
+                for (const goal of current.sharedGoals.slice(0, 2)) {
+                  reasons.push(
+                    <MatchChip key={`g-${goal}`} label={tf(t.app.discover.reasonSharedGoal, { value: goal })} />,
+                  );
+                }
+                for (const interest of current.sharedInterests.slice(0, 2)) {
+                  reasons.push(
                     <MatchChip
                       key={`i-${interest}`}
                       label={tf(t.app.discover.reasonSharedInterest, { value: interest })}
-                    />
-                  ))}
-                  {current.supplyDemand && <MatchChip label={t.app.discover.reasonSupply} />}
-                  {current.sameLocation && (
+                    />,
+                  );
+                }
+                if (current.supplyDemand) reasons.push(<MatchChip key="supply" label={t.app.discover.reasonSupply} />);
+                if (current.sameLocation) {
+                  reasons.push(
                     <MatchChip
+                      key="location"
                       label={tf(t.app.discover.reasonLocation, {
                         value: current.location ? `: ${current.location}` : "",
                       })}
-                    />
-                  )}
-                  {current.sharedConnectionCount > 0 && (
+                    />,
+                  );
+                }
+                if (current.sharedConnectionCount > 0) {
+                  reasons.push(
                     <MatchChip
+                      key="connections"
                       label={tf(t.app.discover.sharedConnections, { count: current.sharedConnectionCount })}
-                    />
-                  )}
-                  {current.sharedInterests.length === 0 &&
-                    current.sharedGoals.length === 0 &&
-                    !current.supplyDemand &&
-                    !current.sameLocation &&
-                    current.sharedConnectionCount === 0 && (
-                      <MatchChip label={t.app.discover.noShared} muted />
-                    )}
-                </ul>
-              </div>
+                    />,
+                  );
+                }
+                if (reasons.length === 0) {
+                  reasons.push(<MatchChip key="none" label={t.app.discover.noShared} muted />);
+                }
+                return (
+                  <div className="rounded-2xl border border-border bg-surface-muted/50 p-4">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-foreground-subtle">
+                      {t.app.discover.matchWhy}
+                    </p>
+                    <ul className="mt-2.5 flex flex-col gap-1.5 lg:hidden">{reasons.slice(0, 2)}</ul>
+                    <ul className="mt-2.5 hidden flex-col gap-1.5 lg:flex">{reasons}</ul>
+                  </div>
+                );
+              })()}
 
-              <div className="ic-grid gap-3">
+              {(() => {
+                // 1–2 relevant tags on the card: shared interests first,
+                // otherwise the profile's main interests.
+                const tags = (
+                  current.sharedInterests.length > 0 ? current.sharedInterests : current.interests
+                ).slice(0, 2);
+                if (tags.length === 0) return null;
+                return (
+                  <ul className="flex flex-wrap gap-1.5 lg:hidden">
+                    {tags.map((item) => (
+                      <li key={item}>
+                        <span className="inline-flex rounded-full bg-surface-muted px-2.5 py-1 text-xs font-medium text-foreground-muted">
+                          {item}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                );
+              })()}
+
+              <div className="ic-grid hidden gap-3 lg:grid">
                 <MetricTile label={t.app.discover.metricConnections} value={current.metrics.connections} />
                 <MetricTile label={t.app.discover.metricOpportunities} value={current.metrics.opportunities} />
                 <MetricTile label={t.app.discover.metricListings} value={current.metrics.listings} />
                 <MetricTile label={t.app.discover.metricVerified} value={current.metrics.verifiedRecords} />
               </div>
 
-              <div>
+              <div className="hidden lg:block">
                 <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-foreground-subtle">
                   {t.app.discover.trust}
                 </p>
@@ -592,51 +625,101 @@ export function DiscoverDeck({
                 )}
               </div>
 
-              <TagList label={t.app.discover.roles} items={current.roles} />
-              <TagList label={t.app.discover.interests} items={current.interests} limit={8} />
-              <TagList label={t.app.discover.lookingFor} items={current.lookingFor} tone="electric" />
-              <TagList label={t.app.discover.offering} items={current.offering} tone="forest" />
-              <TagList label={t.app.discover.skills} items={current.skills} limit={8} />
+              <div className="hidden lg:block">
+                <TagList label={t.app.discover.roles} items={current.roles} />
+                <TagList label={t.app.discover.interests} items={current.interests} limit={8} />
+                <TagList label={t.app.discover.lookingFor} items={current.lookingFor} tone="electric" />
+                <TagList label={t.app.discover.offering} items={current.offering} tone="forest" />
+                <TagList label={t.app.discover.skills} items={current.skills} limit={8} />
+              </div>
             </div>
           </div>
 
-          {/* --------------------------------------------------------- actions */}
-          <div className="flex flex-wrap items-center gap-2 border-t border-border bg-surface-muted/40 p-4 sm:p-5">
-            <Button variant="secondary" onClick={skip} aria-label={t.app.discover.actionSkip}>
-              <XIcon size={16} />
-              {t.app.discover.actionSkip}
-            </Button>
-            <Button variant="ghost" href={`/app/people/${current.handle}`}>
-              <GlobeIcon size={16} />
-              {t.app.discover.actionView}
-            </Button>
-            {canFollow && !current.isFollowing && (
-              <form action={follow}>
-                <input type="hidden" name="userId" value={current.id} />
-                <input type="hidden" name="handle" value={current.handle} />
-                <Button type="submit" variant="secondary" loading={followPending}>
-                  <HeartIcon size={16} />
-                  {t.app.discover.actionFollow}
+          {/* --------------------------------------------------------- actions
+              Mobile (Sprint 8, TEIL H): two large, thumb-reachable buttons
+              per row; the primary action spans both columns. Desktop keeps
+              the existing flex row. */}
+          <div className="border-t border-border bg-surface-muted/40 p-3 sm:p-5">
+            <div className="grid grid-cols-2 gap-2 lg:hidden">
+              <Button variant="secondary" onClick={skip} aria-label={t.app.discover.actionSkip} className="w-full">
+                <XIcon size={16} />
+                {t.app.discover.actionSkip}
+              </Button>
+              <Button variant="secondary" href={`/app/people/${current.handle}`} className="w-full">
+                <GlobeIcon size={16} />
+                {t.app.discover.actionView}
+              </Button>
+              {canFollow && !current.isFollowing && (
+                <form action={follow} className="col-span-2">
+                  <input type="hidden" name="userId" value={current.id} />
+                  <input type="hidden" name="handle" value={current.handle} />
+                  <Button type="submit" variant="ghost" loading={followPending} className="w-full">
+                    <HeartIcon size={16} />
+                    {t.app.discover.actionFollow}
+                  </Button>
+                </form>
+              )}
+              {canConnect && !current.isConnected && !current.requestPending && (
+                <Button className="col-span-2 w-full" size="lg" onClick={() => setConnectTarget(current)}>
+                  <UserPlusIcon size={18} />
+                  {t.app.discover.actionConnect}
                 </Button>
-              </form>
-            )}
-            {canConnect && !current.isConnected && !current.requestPending && (
-              <Button className="ml-auto" onClick={() => setConnectTarget(current)}>
-                <UserPlusIcon size={16} />
-                {t.app.discover.actionConnect}
+              )}
+              {current.requestPending && (
+                <span className="col-span-2 inline-flex items-center justify-center gap-1.5 rounded-full border border-border bg-surface px-4 py-3 text-sm font-semibold text-electric-600 dark:text-electric-300">
+                  <CheckIcon size={15} />
+                  {t.app.profile.actions.pending}
+                </span>
+              )}
+              {current.isConnected && (
+                <Button
+                  className="col-span-2 w-full"
+                  size="lg"
+                  variant="secondary"
+                  href={`/app/inbox?tab=messages&to=${current.id}`}
+                >
+                  {t.app.profile.actions.message}
+                </Button>
+              )}
+            </div>
+
+            <div className="hidden flex-wrap items-center gap-2 lg:flex">
+              <Button variant="secondary" onClick={skip} aria-label={t.app.discover.actionSkip}>
+                <XIcon size={16} />
+                {t.app.discover.actionSkip}
               </Button>
-            )}
-            {current.requestPending && (
-              <span className="ml-auto inline-flex items-center gap-1.5 text-sm font-semibold text-electric-600 dark:text-electric-300">
-                <CheckIcon size={15} />
-                {t.app.profile.actions.pending}
-              </span>
-            )}
-            {current.isConnected && (
-              <Button className="ml-auto" href={`/app/inbox?tab=messages&to=${current.id}`} variant="secondary">
-                {t.app.profile.actions.message}
+              <Button variant="ghost" href={`/app/people/${current.handle}`}>
+                <GlobeIcon size={16} />
+                {t.app.discover.actionView}
               </Button>
-            )}
+              {canFollow && !current.isFollowing && (
+                <form action={follow}>
+                  <input type="hidden" name="userId" value={current.id} />
+                  <input type="hidden" name="handle" value={current.handle} />
+                  <Button type="submit" variant="secondary" loading={followPending}>
+                    <HeartIcon size={16} />
+                    {t.app.discover.actionFollow}
+                  </Button>
+                </form>
+              )}
+              {canConnect && !current.isConnected && !current.requestPending && (
+                <Button className="ml-auto" onClick={() => setConnectTarget(current)}>
+                  <UserPlusIcon size={16} />
+                  {t.app.discover.actionConnect}
+                </Button>
+              )}
+              {current.requestPending && (
+                <span className="ml-auto inline-flex items-center gap-1.5 text-sm font-semibold text-electric-600 dark:text-electric-300">
+                  <CheckIcon size={15} />
+                  {t.app.profile.actions.pending}
+                </span>
+              )}
+              {current.isConnected && (
+                <Button className="ml-auto" href={`/app/inbox?tab=messages&to=${current.id}`} variant="secondary">
+                  {t.app.profile.actions.message}
+                </Button>
+              )}
+            </div>
           </div>
         </article>
       )}

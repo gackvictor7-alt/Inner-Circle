@@ -7,6 +7,7 @@ import {
   notifications,
 } from "@/db/schema";
 import { requireUser } from "@/lib/access/server";
+import { forYouItems, type ForYouItem } from "@/lib/platform/queries";
 import { DashboardScreen, type DashboardData } from "@/components/app/DashboardScreen";
 
 export const dynamic = "force-dynamic";
@@ -60,6 +61,14 @@ export default async function AppDashboardPage() {
     unreadMessages += value;
   }
 
+  // "Für dich" (Sprint 8, TEIL E): a few real, currently relevant entries –
+  // request, unread message, matching member, newest deal, event, investment.
+  const forYou = await forYouItems(
+    user.id,
+    user.interests.map((interest) => interest.slug),
+    user.locale === "en" ? "en" : "de",
+  );
+
   const data: DashboardData = {
     firstName: user.firstName,
     level: access.level,
@@ -68,6 +77,7 @@ export default async function AppDashboardPage() {
     trialRequestLimit: access.trial?.connectionRequestLimit ?? 0,
     unreadInbox: unreadNotifications + pendingRequests + unreadMessages,
     membershipDevelopment: access.membership?.isDevelopment ?? false,
+    forYou,
   };
 
   return <DashboardScreen data={data} />;

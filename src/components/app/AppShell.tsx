@@ -225,9 +225,17 @@ export function AppShell({
               <InboxIcon size={17} />
               {inboxBadge > 0 && <BadgeDot count={inboxBadge} />}
             </Link>
-            <Link href="/app/profile" aria-label={t.app.nav.profile}>
+            {/* Mobile (Sprint 8, TEIL D): the avatar opens the account +
+                areas menu – the desktop sidebar stays out of the mobile
+                view and is not duplicated as a second navigation. */}
+            <button
+              type="button"
+              onClick={() => setAccountOpen(true)}
+              aria-label={t.app.nav.accountLabel}
+              className="inline-flex items-center gap-1 rounded-full"
+            >
               <Avatar user={user} size={32} />
-            </Link>
+            </button>
           </div>
         </div>
       </header>
@@ -478,6 +486,29 @@ export function AppShell({
             </li>
           )}
         </ul>
+
+        {/* Mobile (Sprint 8, TEIL D): the secondary areas live here instead
+            of a second persistent navigation. On desktop they remain in the
+            sidebar (this menu is an additional, optional entry point). */}
+        <div className="mt-5">
+          <p className="mb-2 text-xs font-bold uppercase tracking-[0.14em] text-foreground-subtle">
+            {t.app.nav.areasLabel}
+          </p>
+          <ul className="space-y-1">
+            {areas.map((entry) => (
+              <li key={entry.href}>
+                <Link
+                  href={entry.href}
+                  onClick={() => setAccountOpen(false)}
+                  className="flex items-center gap-3 rounded-xl px-3.5 py-2 text-sm font-medium transition-colors hover:bg-surface-muted"
+                >
+                  <entry.icon size={16} className="text-foreground-subtle" />
+                  {t.app.nav[entry.key] as string}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
         <div className="mt-5">
           <p className="mb-2 text-xs font-bold uppercase tracking-[0.14em] text-foreground-subtle">
             {t.app.settings.languageTitle}
