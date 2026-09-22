@@ -1,6 +1,11 @@
 # 11 – Known Issues
 
-**Stand:** 2026-09-21 · Basis: `main` @ `f22c19e`.
+**Stand:** 2026-09-22 · Basis: Branch `arena/01a0cad6-inner-circle`
+(Basis `main` @ `128295a`, Sprint 8). Hinweis: Sprint 8 hat einen
+Render-500-Fehler im neuen-Paar-Chat behoben (`?to=` ohne bestehende
+Konversation rief eine Server Action während des Renders auf –
+`revalidatePath during render is unsupported`); `ensureDirectConversation()`
+ersetzt diesen Pfad, `core-loop.test.ts` + HTTP-Verifikation decken ihn ab.
 Diese Liste enthält **nur aktuell gültige** Probleme. Bereits behobene Punkte
 (Dev-Postausgang 404, stiller Nachrichtenverlust, Trial-Start im Onboarding,
 `"use server"`-Export, Dashboard-Variablen) sind im

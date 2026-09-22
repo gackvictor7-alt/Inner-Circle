@@ -1,10 +1,9 @@
 # 08 – Test- und Qualitätssicherung
 
-**Stand:** 2026-09-22 (Sprint 7 – Network real+Demo, Verbindungsstatus,
-Netzwerk-Filter, Demo-Profilansicht) · Lauf auf
-Branch `arena/01a0c9d8-inner-circle` (Basis `main` @ `8f57987`):
-`npm test` = **22 Dateien / 123 Tests grün** (17 neu: `network-demo-supplement` 12,
-`network-directory` 5),
+**Stand:** 2026-09-22 (Sprint 8 – Mobile Homepage, Mobile Member App,
+Core Connection Loop) · Lauf auf
+Branch `arena/01a0cad6-inner-circle` (Basis `main` @ `128295a`):
+`npm test` = **23 Dateien / 128 Tests grün** (5 neu: `core-loop`),
 `npx tsc --noEmit` grün, `npm run cf:build` grün, `npm run cf:dry-run` grün
 (Bindings `DB`/`ASSETS`/`NEXTJS_ENV`),
 `npm run test:keys` + `npm run i18n:audit` grün (DE/EN identisch),
@@ -64,6 +63,7 @@ vorbestehend, siehe K-15; **keine** neuen Befunde aus diesem Sprint.
 | `tests/integration/resend-provider.test.ts` | konfigurierter `RESEND_API_KEY` → Versand über die Resend-API (Endpoint, Auth-Header, Absender `EMAIL_FROM` bzw. `onboarding@resend.dev`), Code bleibt gültig, Ablehnung durch Resend → ehrliches `send_failed` + Entwertung, „Code erneut senden" geht an Resend statt in den Postausgang | Integration (DB, `fetch` gestubbt) |
 | `tests/unit/network-demo-supplement.test.ts` | **Sprint 7**: Mixing-Regeln des Netzwerks – leere echte Liste → komplette Demo-Sammlung (5–8), kleine Listen auf Ziel-Total 8 aufgestockt, Limit (Trial 12) respektiert, **ab 8 echten Mitgliedern automatisch Rückzug**; `filterDemoProfiles` (Suche Name/Firma/Positionierung DE+EN, Rolle DE+EN, Standort, Interesse DE- oder EN-Label, AND-Semantik); `demoProfileHandle` (Diakritik-Normierung) | Unit |
 | `tests/integration/network-directory.test.ts` | **Sprint 7**: `listDirectoryMembers` zeigt echte Mitglieder (nie sich selbst), **richtungsabhängige Anfrage-Zustände** (`outgoingRequestId` beim Sender, `incomingRequestId` beim Empfänger), Zurückziehen nur vom Sender (freit den Zustand), Ablehnen → keine Connection, Annehmen → Connection, Rolle-Filter via `jobTitle`/`rolesJson`, Standort-Filter | Integration (DB) |
+| `tests/integration/core-loop.test.ts` | **Sprint 8**: vollständiger Core Loop – Annehmen → Connection + Notification-Deep-Link `/app/inbox?tab=requests&sub=connections` + **kein implizites Follow**; Ablehnen → keine Connection/Follow + neutraler Hinweis + Trial-Slot frei; Zurückziehen nur vom Sender + Trial-Slot frei; `connectionRequestState()` richtungsabhängig; `forYouItems()` zeigt nur echte Daten (Anfrage, passendes Mitglied ohne offene Anfrage, neueste Chance), max. 5 Einträge; `interestLabelsFor()` je Locale | Integration (DB) |
 
 **Testinfrastruktur:** `tests/global-setup.ts` löscht `.test.db`, erzeugt das
 Schema per `drizzle-kit push`; `tests/setup.ts` setzt `AUTH_SECRET`, Test-DB,
