@@ -31,13 +31,9 @@ export type MemberCardData = {
   interests: string[];
   isFollowing: boolean;
   isConnected: boolean;
-  /** A pending connection request between viewer and member (either direction). */
   requestPending: boolean;
-  /** Id of the pending request the VIEWER sent to this member (null if none). */
   outgoingRequestId?: string | null;
-  /** Id of the pending request this member sent to the VIEWER (null if none). */
   incomingRequestId?: string | null;
-  /** Set for demo profiles: no database rows, no follow, no real requests. */
   demoKey?: string;
 };
 
@@ -45,18 +41,6 @@ export function initials(first: string, last: string) {
   return `${first.charAt(0)}${last.charAt(0)}`.toUpperCase();
 }
 
-/**
- * Directory/member card with real follow + connection actions. During the trial
- * the server enforces the connection-request limit; the UI reflects it after
- * the action returns.
- *
- * Request states are direction-aware (Sprint 7):
- *   * sent     → "Anfrage gesendet" + "Zurückziehen"
- *   * received → "Annehmen" / "Ablehnen"
- *
- * Demo profiles (demoKey) create nothing: no follow, no real connection
- * request – "Connect" explains that instead.
- */
 export function MemberCard({
   member,
   canFollow,
@@ -109,19 +93,19 @@ export function MemberCard({
     null;
 
   return (
-    <Card className={`flex h-full flex-col ${compact ? "p-4" : "p-5"}`}>
+    <Card className={`flex h-full flex-col transition-all hover:shadow-card-hover ${compact ? "p-4" : "p-5"}`}>
       <div className="flex items-start gap-4">
-        <Link href={profileHref} className="shrink-0">
+        <Link href={profileHref} className="shrink-0 group">
           {member.avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={member.avatarUrl}
               alt=""
-              className={`${compact ? "h-12 w-12" : "h-14 w-14"} rounded-full object-cover`}
+              className={`${compact ? "h-12 w-12" : "h-14 w-14"} rounded-full object-cover ring-2 ring-border group-hover:ring-navy-900/20 transition-all`}
             />
           ) : (
             <span
-              className={`inline-flex ${compact ? "h-12 w-12 text-sm" : "h-14 w-14 text-base"} items-center justify-center rounded-full bg-gradient-to-br from-electric-500 to-electric-700 font-bold text-white`}
+              className={`inline-flex ${compact ? "h-12 w-12 text-sm" : "h-14 w-14 text-base"} items-center justify-center rounded-full bg-navy-900 font-bold text-paper-50 ring-2 ring-border group-hover:ring-navy-900/20 transition-all`}
             >
               {initials(member.firstName, member.lastName)}
             </span>
@@ -129,35 +113,33 @@ export function MemberCard({
         </Link>
 
         <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <Link href={profileHref} className="truncate font-bold tracking-tight hover:underline">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <Link href={profileHref} className="truncate text-[14px] font-bold tracking-[-0.01em] hover:underline">
               {member.firstName} {member.lastName}
             </Link>
-            {isDemoCard && <Badge variant="sand">{t.app.demo.networkBadge}</Badge>}
+            {isDemoCard && <Badge variant="paper">{t.app.demo.networkBadge}</Badge>}
             {member.foundingMember && (
-              <Badge variant="sand">
-                <AwardIcon size={12} />
+              <Badge variant="paper">
+                <AwardIcon size={11} />
                 {t.app.card.founding}
               </Badge>
             )}
-            {member.isConnected && <Badge variant="forest">{t.app.connections.tabConnections}</Badge>}
+            {member.isConnected && <Badge variant="sage">{t.app.connections.tabConnections}</Badge>}
           </div>
-          <p className="mt-0.5 truncate text-xs text-foreground-subtle">@{member.handle}</p>
-          {member.headline && <p className="mt-1.5 text-sm leading-6 text-foreground-muted">{member.headline}</p>}
-          <p className="mt-1 text-xs text-foreground-subtle">
+          <p className="mt-0.5 truncate text-[11px] text-foreground-subtle">@{member.handle}</p>
+          {member.headline && <p className="mt-1.5 text-[13px] leading-5 text-foreground-muted line-clamp-2">{member.headline}</p>}
+          <p className="mt-1 text-[11px] text-foreground-subtle">
             {[member.company, member.location].filter(Boolean).join(" · ")}
           </p>
         </div>
       </div>
 
       {member.interests.length > 0 && (
-        // Mobile (Sprint 8, TEIL U): 2 tags only – the full list lives in
-        // the profile view.
         <>
           <ul className="mt-3 flex flex-wrap gap-1.5 lg:hidden">
             {member.interests.slice(0, 2).map((interest) => (
               <li key={interest}>
-                <span className="rounded-full bg-surface-muted px-2.5 py-1 text-[11px] font-medium text-foreground-muted">
+                <span className="rounded-full bg-paper-100 px-2.5 py-1 text-[11px] font-medium text-foreground-muted border border-paper-200">
                   {interest}
                 </span>
               </li>
@@ -166,7 +148,7 @@ export function MemberCard({
           <ul className="mt-3 hidden flex-wrap gap-1.5 lg:flex">
             {member.interests.slice(0, 4).map((interest) => (
               <li key={interest}>
-                <span className="rounded-full bg-surface-muted px-2.5 py-1 text-[11px] font-medium text-foreground-muted">
+                <span className="rounded-full bg-paper-100 px-2.5 py-1 text-[11px] font-medium text-foreground-muted border border-paper-200">
                   {interest}
                 </span>
               </li>
@@ -176,17 +158,15 @@ export function MemberCard({
       )}
 
       {member.isDemo && !isDemoCard && (
-        <p className="mt-3 rounded-lg bg-sand-200/40 px-2.5 py-1.5 text-[11px] font-medium text-sand-700 dark:bg-sand-400/10 dark:text-sand-200">
+        <p className="mt-3 rounded-full bg-paper-100 px-3 py-1 text-[11px] font-medium text-foreground-muted border border-paper-200 w-fit">
           {t.app.common.demo}
         </p>
       )}
 
-      {/* Mobile (Sprint 8, TEIL U): full-width, thumb-reachable action rows;
-          desktop keeps the compact wrapped row. */}
       <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
         {isDemoCard ? (
-          <Button size="sm" onClick={() => setDemoConnectOpen(true)} className="w-full sm:w-auto">
-            <UserPlusIcon size={15} />
+          <Button size="sm" onClick={() => setDemoConnectOpen(true)} className="w-full rounded-full sm:w-auto">
+            <UserPlusIcon size={14} />
             {t.app.network.connectCta}
           </Button>
         ) : member.isConnected ? (
@@ -194,7 +174,7 @@ export function MemberCard({
             href={`/app/inbox?tab=messages&to=${member.id}`}
             size="sm"
             variant="secondary"
-            className="w-full sm:w-auto"
+            className="w-full rounded-full sm:w-auto"
           >
             {t.app.messages.title}
           </Button>
@@ -203,38 +183,38 @@ export function MemberCard({
             <form action={respond} className="w-full sm:w-auto">
               <input type="hidden" name="requestId" value={member.incomingRequestId ?? ""} />
               <input type="hidden" name="decision" value="accept" />
-              <Button type="submit" size="sm" loading={respondPending} className="w-full">
+              <Button type="submit" size="sm" loading={respondPending} className="w-full rounded-full">
                 {t.app.common.accept}
               </Button>
             </form>
             <form action={respond} className="w-full sm:w-auto">
               <input type="hidden" name="requestId" value={member.incomingRequestId ?? ""} />
               <input type="hidden" name="decision" value="decline" />
-              <Button type="submit" size="sm" variant="secondary" loading={respondPending} className="w-full">
+              <Button type="submit" size="sm" variant="secondary" loading={respondPending} className="w-full rounded-full">
                 {t.app.common.decline}
               </Button>
             </form>
           </>
         ) : sentPending ? (
           <>
-            <Button size="sm" variant="ghost" disabled className="w-full sm:w-auto">
-              <CheckIcon size={15} />
+            <Button size="sm" variant="ghost" disabled className="w-full rounded-full sm:w-auto">
+              <CheckIcon size={14} />
               {t.app.profile.actions.pending}
             </Button>
             <form action={withdraw} className="w-full sm:w-auto">
               <input type="hidden" name="requestId" value={member.outgoingRequestId ?? ""} />
-              <Button type="submit" size="sm" variant="secondary" loading={withdrawPending} className="w-full">
+              <Button type="submit" size="sm" variant="secondary" loading={withdrawPending} className="w-full rounded-full">
                 {t.app.connections.withdraw}
               </Button>
             </form>
           </>
         ) : canConnect ? (
-          <Button size="sm" onClick={() => setConnectOpen(true)} className="w-full sm:w-auto">
-            <UserPlusIcon size={15} />
+          <Button size="sm" onClick={() => setConnectOpen(true)} className="w-full rounded-full sm:w-auto">
+            <UserPlusIcon size={14} />
             {t.app.network.connectCta}
           </Button>
         ) : (
-          <Button size="sm" variant="ghost" disabled className="w-full sm:w-auto">
+          <Button size="sm" variant="ghost" disabled className="w-full rounded-full sm:w-auto">
             {t.app.access.memberOnly}
           </Button>
         )}
@@ -248,30 +228,30 @@ export function MemberCard({
               size="sm"
               variant={following ? "ghost" : "secondary"}
               loading={followPending}
-              className="w-full"
+              className="w-full rounded-full"
             >
               {following ? t.app.profile.actions.unfollow : t.app.network.followCta}
             </Button>
           </form>
         )}
 
-        <Button href={profileHref} size="sm" variant="ghost" className="w-full sm:w-auto">
+        <Button href={profileHref} size="sm" variant="ghost" className="w-full rounded-full sm:w-auto">
           {t.app.common.viewProfile}
         </Button>
       </div>
 
       {actionError && (
-        <p className="mt-2 text-xs text-danger-600 dark:text-danger-300">
+        <p className="mt-2 text-[11px] text-[#7a3a3a]">
           {t.app.errors[actionError as keyof typeof t.app.errors] ?? t.app.errors.generic}
         </p>
       )}
       {followState.status === "success" && !isDemoCard && (
-        <p className="mt-2 text-xs text-forest-600 dark:text-forest-300">
+        <p className="mt-2 text-[11px] text-sage-700">
           {following ? t.app.profile.actions.follow : t.app.profile.actions.unfollow}
         </p>
       )}
       {actionSuccess && (actionSuccess === "accepted" || actionSuccess === "declined" || actionSuccess === "withdrawn") && (
-        <p className="mt-2 text-xs text-forest-600 dark:text-forest-300">
+        <p className="mt-2 text-[11px] text-sage-700">
           {actionSuccess === "accepted"
             ? t.app.connections.acceptedToast
             : actionSuccess === "declined"
@@ -280,8 +260,6 @@ export function MemberCard({
         </p>
       )}
 
-      {/* Every connection request goes through the mandatory-message dialog.
-          Demo profiles never do – the dialog explains why instead. */}
       {!isDemoCard && (
         <ConnectDialog
           open={connectOpen}

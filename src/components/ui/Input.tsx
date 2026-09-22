@@ -32,25 +32,25 @@ function FieldShell({
 
   return (
     <div className="flex w-full flex-col gap-1.5">
-      <label htmlFor={htmlFor} className="text-sm font-semibold text-foreground">
+      <label htmlFor={htmlFor} className="text-[12px] font-semibold tracking-[-0.01em] text-foreground">
         {label}
         {requiredMark && (
-          <span aria-hidden="true" className="ml-1 text-danger-500">
+          <span aria-hidden="true" className="ml-1 text-[#7a3a3a]">
             *
           </span>
         )}
       </label>
       {children(describedBy)}
       {error ? (
-        <p id={errorId} role="alert" className="text-xs font-medium text-danger-600 dark:text-danger-500">
+        <p id={errorId} role="alert" className="text-[11px] font-medium text-[#7a3a3a]">
           {error}
         </p>
       ) : success ? (
-        <p id={successId} className="text-xs font-medium text-success-600 dark:text-success-500">
+        <p id={successId} className="text-[11px] font-medium text-sage-700">
           {success}
         </p>
       ) : hint ? (
-        <p id={hintId} className="text-xs text-foreground-subtle">
+        <p id={hintId} className="text-[11px] text-foreground-subtle">
           {hint}
         </p>
       ) : null}
@@ -59,14 +59,14 @@ function FieldShell({
 }
 
 const inputBase =
-  "h-11 w-full rounded-xl border bg-background px-4 text-sm text-foreground placeholder:text-foreground-subtle transition-colors duration-150 focus:outline-none focus:ring-4";
+  "h-11 w-full rounded-xl border bg-background px-4 text-[13px] text-foreground placeholder:text-foreground-subtle transition-all duration-150 focus:outline-none focus:ring-4";
 
 const inputState = (error?: boolean, success?: boolean) =>
   error
-    ? "border-danger-500/60 focus:border-danger-500 focus:ring-danger-500/15"
+    ? "border-[#7a3a3a]/50 focus:border-[#7a3a3a] focus:ring-[#7a3a3a]/10"
     : success
-      ? "border-success-500/60 focus:border-success-500 focus:ring-success-500/15"
-      : "border-border focus:border-electric-500 focus:ring-electric-500/15";
+      ? "border-sage-600/50 focus:border-sage-600 focus:ring-sage-600/10"
+      : "border-border focus:border-navy-900 focus:ring-navy-900/10";
 
 export function Input({
   label,

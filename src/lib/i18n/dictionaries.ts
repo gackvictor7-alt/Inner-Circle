@@ -32,13 +32,17 @@ export const defaultLocale: Locale = "de";
 
 const siteDe = {
   meta: {
-    title: "INNER CIRCLE – Netzwerk, Chancen und Wissen für Unternehmer, Investoren & Creator",
+    title: "VENTURE & PARTNERS – Entrepreneurship · Network · Investments | INNER CIRCLE",
     description:
-      "INNER CIRCLE verbindet ambitionierte Menschen, Unternehmer, Investoren und Creator – für echte Geschäftskontakte, Chancen, Wissen, Kapitalzugang und besondere Erlebnisse.",
+      "VENTURE & PARTNERS baut das Netzwerk für Unternehmer, Investoren und Creator – INNER CIRCLE ist die exklusive Plattform für echte Geschäftskontakte, Chancen, Kapital und Wachstum.",
   },
   brand: {
-    name: "INNER CIRCLE",
-    tagline: "Netzwerk für Unternehmer, Investoren & Creator",
+    name: "VENTURE & PARTNERS",
+    tagline: "Entrepreneurship · Network · Investments",
+    platformName: "INNER CIRCLE",
+    platformFull: "INNER CIRCLE by VENTURE & PARTNERS",
+    events: "V&P Events",
+    portfolio: "V&P Portfolio",
   },
   nav: {
     home: "Start",
@@ -586,15 +590,15 @@ const siteDe = {
   },
   footer: {
     tagline:
-      "Die exklusive Business-Community für Unternehmer, Investoren und Creator. Kontakte knüpfen, Chancen entdecken, Wissen erwerben, Events erleben.",
+      "VENTURE & PARTNERS baut das Netzwerk für Unternehmer, Investoren und Creator. INNER CIRCLE ist die exklusive Plattform – für echte Kontakte, Kapital, Chancen und Wachstum.",
     platformTitle: "Plattform",
-    companyTitle: "Projekt",
+    companyTitle: "V&P Areas",
     legalTitle: "Rechtliches",
     contact: "Kontakt",
-    contactNote: "(Platzhalter bis zum Launch)",
-    copyright: "INNER CIRCLE – im Aufbau. Alle Rechte vorbehalten.",
+    contactNote: "hello@venture-partners.com",
+    copyright: "VENTURE & PARTNERS · INNER CIRCLE – im Aufbau. Alle Rechte vorbehalten.",
     disclaimer:
-      "Entwicklungsvorschau: Diese Website befindet sich im Aufbau. Noch nicht implementierte Funktionen sind als „Demnächst verfügbar“ gekennzeichnet. Ein Teil der Marketingbilder sind illustrative, teilweise KI-generierte Visualisierungen – sie zeigen keine echten Mitglieder, Events, Geschäftsabschlüsse oder Erfolge. Demo-Profile, Demo-Events und Beispielinhalte in der Plattform sind dort, wo Verwechslungsgefahr besteht, eindeutig als „Demo“ bzw. „Beispiel“ markiert. Keine Anlageberatung, keine Erfolgsversprechen. Preise können sich vor dem Launch ändern.",
+      "VENTURE & PARTNERS – INNER CIRCLE Plattform im Aufbau. Einige Bereiche wie V&P Events und V&P Portfolio werden schrittweise freigeschaltet. Marketingbilder sind illustrative Platzhalter. Demo-Inhalte sind als „Demo“ gekennzeichnet. Keine Anlageberatung, keine Erfolgsversprechen. Preise können sich vor dem Launch ändern.",
     imprint: "Impressum",
     privacy: "Datenschutz",
     terms: "AGB",
@@ -728,13 +732,17 @@ export type SiteDictionary = typeof siteDe;
 
 const siteEnRaw: SiteDictionary = {
   meta: {
-    title: "INNER CIRCLE – Find the people and chances that move your business forward",
+    title: "VENTURE & PARTNERS – Entrepreneurship · Network · Investments | INNER CIRCLE",
     description:
-      "A business platform for ambitious people: customers, partners, capital, investments, knowledge and events. One access, €24.99 a month.",
+      "VENTURE & PARTNERS builds the network for founders, investors and creators – INNER CIRCLE is the exclusive platform for real connections, capital, opportunities and growth.",
   },
   brand: {
-    name: "INNER CIRCLE",
-    tagline: "Network for founders, investors & creators",
+    name: "VENTURE & PARTNERS",
+    tagline: "Entrepreneurship · Network · Investments",
+    platformName: "INNER CIRCLE",
+    platformFull: "INNER CIRCLE by VENTURE & PARTNERS",
+    events: "V&P Events",
+    portfolio: "V&P Portfolio",
   },
   nav: {
     home: "Home",
@@ -1280,15 +1288,15 @@ const siteEnRaw: SiteDictionary = {
   },
   footer: {
     tagline:
-      "The exclusive business community for founders, investors and creators. Build contacts, discover opportunities, gain knowledge, experience events.",
+      "VENTURE & PARTNERS builds the network for founders, investors and creators. INNER CIRCLE is the exclusive platform – for real connections, capital, opportunities and growth.",
     platformTitle: "Platform",
-    companyTitle: "Project",
+    companyTitle: "V&P Areas",
     legalTitle: "Legal",
     contact: "Contact",
-    contactNote: "(placeholder until launch)",
-    copyright: "INNER CIRCLE – in the making. All rights reserved.",
+    contactNote: "hello@venture-partners.com",
+    copyright: "VENTURE & PARTNERS · INNER CIRCLE – in the making. All rights reserved.",
     disclaimer:
-      "Development preview: this website is under construction. Features that are not implemented yet are marked as “Coming soon”. Some marketing images are illustrative, partly AI-generated visualisations – they do not show real members, events, business transactions or achievements. Demo profiles, demo events and sample content inside the platform are clearly labelled “Demo” or “Example” wherever confusion is possible. No investment advice, no promises of success. Prices may change before launch.",
+      "VENTURE & PARTNERS – INNER CIRCLE platform in development. Areas like V&P Events and V&P Portfolio roll out progressively. Marketing visuals are illustrative placeholders. Demo content is marked as “Demo”. No investment advice, no success promises. Prices may change before launch.",
     imprint: "Imprint",
     privacy: "Privacy",
     terms: "Terms",

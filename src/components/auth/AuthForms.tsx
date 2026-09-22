@@ -39,12 +39,12 @@ function AuthCard({
     <div className="relative px-4 py-12 sm:py-16">
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(48rem_24rem_at_70%_-10%,rgb(54_108_245/0.08),transparent)]"
+        className="pointer-events-none absolute inset-0"
       />
-      <div className="relative ic-narrow">
-        <Card className="p-6 shadow-card sm:p-8">
-          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{title}</h1>
-          <p className="mt-2 text-sm leading-6 text-foreground-muted">{lead}</p>
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0"><div className="absolute inset-0 bg-gradient-to-br from-paper-50 via-paper-50 to-sage-50/30" /><div className="absolute -right-[10%] -top-[10%] h-[50%] w-[40%] rounded-full bg-gradient-to-br from-slate-200/40 to-sage-100/30 blur-[60px]" /></div><div className="relative ic-narrow"><div className="mb-6 flex items-center justify-center gap-2"><span className="flex h-8 w-8 items-center justify-center rounded-[9px] bg-navy-900 text-[11px] font-bold text-paper-50">V&P</span><span className="text-[11px] font-bold tracking-[0.12em] text-foreground-subtle">VENTURE & PARTNERS · INNER CIRCLE</span></div>
+        <Card className="p-6 shadow-card sm:p-8 rounded-[24px]">
+          <h1 className="text-[1.6rem] font-bold tracking-[-0.02em] leading-tight sm:text-[1.8rem]">{title}</h1>
+          <p className="mt-2 text-[13px] leading-6 text-foreground-muted">{lead}</p>
           <div className="mt-7">{children}</div>
         </Card>
         {footer && <div className="mt-5 text-center text-sm text-foreground-muted">{footer}</div>}
@@ -203,7 +203,7 @@ export function LoginForm({ next }: { next?: string }) {
       footer={
         <>
           {t.app.auth.noAccount}{" "}
-          <Link href="/register" className="font-semibold text-electric-600 dark:text-electric-300">
+          <Link href="/register" className="font-semibold text-navy-900">
             {t.app.auth.toRegister}
           </Link>
         </>
@@ -237,7 +237,7 @@ export function LoginForm({ next }: { next?: string }) {
         <div className="flex justify-end">
           <Link
             href="/forgot-password"
-            className="text-sm font-semibold text-electric-600 dark:text-electric-300"
+            className="text-sm font-semibold text-navy-900"
           >
             {t.app.auth.forgotLink}
           </Link>
@@ -309,7 +309,7 @@ export function RegisterForm() {
   return (
     <div className="ic-shell grid items-start gap-10 py-12 sm:py-16 lg:grid-cols-[1fr_1.1fr]">
       <div className="flex flex-col items-start gap-4 lg:sticky lg:top-24">
-        <span className="inline-flex rounded-full bg-electric-500/10 p-3 text-electric-600 dark:text-electric-300">
+        <span className="inline-flex rounded-full bg-electric-500/10 p-3 text-navy-900">
           <SparkleIcon size={22} />
         </span>
         <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">{t.app.auth.registerTitle}</h1>
@@ -317,14 +317,14 @@ export function RegisterForm() {
         <ul className="mt-2 space-y-2 text-sm text-foreground-muted">
           {[t.home2.heroTrialBadge, t.app.access.trialRestricted, t.home2.membershipNote].map((item) => (
             <li key={item} className="flex gap-2.5">
-              <CheckCircleIcon size={17} className="mt-0.5 shrink-0 text-forest-500" />
+              <CheckCircleIcon size={17} className="mt-0.5 shrink-0 text-sage-600" />
               <span>{item}</span>
             </li>
           ))}
         </ul>
       </div>
 
-      <Card className="p-6 shadow-card sm:p-8">
+      <Card className="p-6 shadow-card sm:p-8 rounded-[24px]">
         <div className="mb-6 flex gap-2 rounded-xl bg-surface-muted p-1">
           {(["email", "phone"] as const).map((option) => (
             <button
@@ -426,7 +426,7 @@ export function RegisterForm() {
 
           <p className="text-center text-sm text-foreground-muted">
             {t.app.auth.alreadyAccount}{" "}
-            <Link href="/login" className="font-semibold text-electric-600 dark:text-electric-300">
+            <Link href="/login" className="font-semibold text-navy-900">
               {t.app.auth.toLogin}
             </Link>
           </p>
@@ -461,7 +461,7 @@ function Checkbox({
           checked={checked}
           required={required}
           onChange={(event) => onChange(event.target.checked)}
-          className="mt-0.5 h-4 w-4 rounded border-border-strong text-electric-500 focus:ring-electric-500/30"
+          className="mt-0.5 h-4 w-4 rounded border-border-strong text-navy-900 focus:ring-electric-500/30"
         />
         <span className="leading-5">{label}</span>
       </label>
@@ -638,7 +638,7 @@ export function ForgotPasswordForm({
         title={t.app.auth.forgot.sentTitle}
         lead={t.app.auth.forgot.sentText}
         footer={
-          <Link href="/login" className="font-semibold text-electric-600 dark:text-electric-300">
+          <Link href="/login" className="font-semibold text-navy-900">
             {t.app.auth.forgot.backToLogin}
           </Link>
         }
@@ -706,7 +706,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
         title={t.app.auth.forgot.invalidToken}
         lead={t.app.auth.forgot.lead}
         footer={
-          <Link href="/forgot-password" className="font-semibold text-electric-600 dark:text-electric-300">
+          <Link href="/forgot-password" className="font-semibold text-navy-900">
             {t.app.auth.forgot.title}
           </Link>
         }
@@ -806,7 +806,7 @@ export function InterestOnboardingForm({
     <div className="ic-shell py-8 sm:py-12">
       <div className="mx-auto max-w-3xl">
         <header className="text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-electric-500/20 bg-electric-500/5 px-3 py-1 text-xs font-semibold text-electric-600 dark:text-electric-300">
+          <div className="inline-flex items-center gap-2 rounded-full border border-navy-900/15 bg-navy-900/5 px-3 py-1 text-xs font-semibold text-navy-900">
             <SparkleIcon size={13} />
             <span>{t.app.onboarding.stepLabel}</span>
           </div>
@@ -849,13 +849,13 @@ export function InterestOnboardingForm({
                         onClick={() => toggle(selectedInterests, setSelectedInterests, interest.id)}
                         className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-all ${
                           active
-                            ? "border border-electric-500 bg-electric-500/10 text-electric-600 dark:text-electric-300 ring-1 ring-electric-500/30 shadow-xs"
+                            ? "border border-navy-900 bg-navy-900/10 text-navy-900 ring-1 ring-electric-500/30 shadow-xs"
                             : "border border-border bg-surface text-foreground hover:border-electric-500/40 hover:bg-surface-muted"
                         }`}
                       >
                         <span
                           className={`inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full transition-colors ${
-                            active ? "bg-electric-500 text-white" : "border border-border-strong text-transparent"
+                            active ? "bg-navy-900 text-paper-50" : "border border-border-strong text-transparent"
                           }`}
                         >
                           <CheckIcon size={11} className={active ? "opacity-100" : "opacity-0"} />
@@ -885,13 +885,13 @@ export function InterestOnboardingForm({
                     onClick={() => toggle(selectedGoals, setSelectedGoals, goal.id)}
                     className={`flex items-center gap-3 rounded-xl border p-3.5 text-left text-sm font-medium transition-all ${
                       active
-                        ? "border-electric-500 bg-electric-500/10 text-foreground ring-1 ring-electric-500/25 shadow-xs"
+                        ? "border-navy-900 bg-navy-900/10 text-foreground ring-1 ring-electric-500/25 shadow-xs"
                         : "border-border bg-surface text-foreground-muted hover:border-electric-500/40 hover:text-foreground"
                     }`}
                   >
                     <span
                       className={`inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors ${
-                        active ? "border-electric-500 bg-electric-500 text-white" : "border-border-strong bg-surface"
+                        active ? "border-electric-500 bg-navy-900 text-paper-50" : "border-border-strong bg-surface"
                       }`}
                     >
                       {active ? <CheckIcon size={13} /> : null}

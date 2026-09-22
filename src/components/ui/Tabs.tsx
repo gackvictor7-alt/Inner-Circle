@@ -4,11 +4,6 @@ import { useId, useRef } from "react";
 
 export type TabItem = { id: string; label: string };
 
-/**
- * Accessible tab bar (ArrowLeft/Right navigation, roving tabindex).
- * Panels are rendered by the consumer with `role="tabpanel"` and matching
- * `aria-labelledby` (`tab-${id}`) so any layout can be used per panel.
- */
 export function Tabs({
   items,
   active,
@@ -18,7 +13,6 @@ export function Tabs({
   items: TabItem[];
   active: string;
   onChange: (id: string) => void;
-  /** Accessible label for the tablist. */
   label: string;
 }) {
   const baseId = useId();
@@ -44,7 +38,7 @@ export function Tabs({
       role="tablist"
       aria-label={label}
       onKeyDown={onKeyDown}
-      className="inline-flex max-w-full flex-wrap items-center gap-1 rounded-full border border-border bg-surface-muted p-1.5"
+      className="inline-flex max-w-full flex-wrap items-center gap-1 rounded-full border border-border bg-surface p-1 shadow-card"
     >
       {items.map((item) => {
         const selected = item.id === active;
@@ -58,9 +52,9 @@ export function Tabs({
             aria-controls={`panel-${item.id}`}
             tabIndex={selected ? 0 : -1}
             onClick={() => onChange(item.id)}
-            className={`rounded-full px-5 py-2 text-sm font-semibold transition-all duration-200 ${
+            className={`rounded-full px-5 py-2 text-[13px] font-semibold tracking-[-0.01em] transition-all duration-200 ${
               selected
-                ? "bg-surface text-foreground shadow-card"
+                ? "bg-navy-900 text-paper-50 shadow-card"
                 : "text-foreground-muted hover:text-foreground"
             }`}
           >

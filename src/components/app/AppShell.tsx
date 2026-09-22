@@ -7,6 +7,7 @@ import { useI18n } from "@/lib/i18n/context";
 import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
 import { LocaleSwitch } from "@/components/app/LocaleSwitch";
+import { Logo } from "@/components/site/Logo";
 import {
   BriefcaseIcon,
   CalendarIcon,
@@ -94,11 +95,9 @@ function useCountdown(ms: number | null) {
 }
 
 /**
- * Member platform shell (Sprint 3 information architecture).
- *
- * Six primary destinations only – Start, Discover, Create, Inbox, Events,
- * Profile. Everything else is grouped underneath those areas instead of being
- * a top-level entry; no feature was removed, only re-grouped (spec §1, §22).
+ * VENTURE & PARTNERS – Platform Shell 3.0
+ * Executive premium platform look – dark navy sidebar, off-white content
+ * Same brand world as public site, but concentrated, functional.
  */
 export function AppShell({
   user,
@@ -117,7 +116,6 @@ export function AppShell({
 
   const inboxBadge = counts.messages + counts.notifications + counts.requests;
 
-  // ---- the six primary areas -------------------------------------------
   const primary: NavItem[] = [
     { href: "/app", key: "appHome", icon: HouseIcon },
     { href: "/app/discover", key: "discover", icon: CompassIcon },
@@ -126,7 +124,6 @@ export function AppShell({
     { href: "/app/profile", key: "profile", icon: UsersIcon },
   ];
 
-  // ---- secondary areas, reachable from Start and here -------------------
   const areas: NavItem[] = [
     { href: "/app/network", key: "network", icon: UsersIcon },
     { href: "/app/opportunities", key: "opportunities", icon: BriefcaseIcon },
@@ -141,7 +138,6 @@ export function AppShell({
   const isActive = (href: string) =>
     href === "/app" ? pathname === "/app" : pathname === href || pathname.startsWith(`${href}/`);
 
-  /** Legacy deep links keep working – they render inside the inbox now. */
   const isLegacyInbox =
     pathname.startsWith("/app/messages") ||
     pathname.startsWith("/app/connections") ||
@@ -186,7 +182,6 @@ export function AppShell({
     },
   ];
 
-  // Events are curated by INNER CIRCLE – members never create them (spec §14).
   const eventsNote = {
     title: t.app.create.eventLockedTitle,
     desc: t.app.create.eventLockedDesc,
@@ -201,33 +196,33 @@ export function AppShell({
   ];
 
   return (
-    <div className="min-h-svh bg-background">
-      {/* Mobile top bar */}
-      <header className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur-xl xl:hidden">
-        <div className="flex h-14 items-center justify-between gap-2 px-3 sm:px-4">
-          <Link href="/app" className="flex items-center gap-2 shrink-0">
-            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-electric-500 text-[11px] font-bold text-white">
-              IC
+    <div className="min-h-svh bg-paper-50 dark:bg-navy-950">
+      {/* Mobile top bar – premium */}
+      <header className="sticky top-0 z-40 border-b border-border bg-paper-50/90 backdrop-blur-xl xl:hidden">
+        <div className="flex h-14 items-center justify-between gap-2 px-4">
+          <Link href="/app" className="flex items-center gap-2.5 shrink-0">
+            <span className="flex h-8 w-8 items-center justify-center rounded-[9px] bg-navy-900 text-[11px] font-bold text-paper-50">
+              V&P
             </span>
-            <span className="text-sm font-bold tracking-[0.12em]">INNER CIRCLE</span>
+            <span className="flex flex-col leading-none">
+              <span className="text-[12px] font-bold tracking-[0.12em] text-foreground">INNER CIRCLE</span>
+              <span className="text-[8px] font-medium tracking-[0.12em] text-foreground-subtle">by VENTURE & PARTNERS</span>
+            </span>
           </Link>
-          <div className="flex items-center gap-1.5 shrink-0">
+          <div className="flex items-center gap-2 shrink-0">
             {countdown && (
-              <span className="rounded-full bg-electric-500/10 px-2 py-0.5 text-[10px] sm:text-[11px] font-semibold text-electric-600 dark:text-electric-300">
+              <span className="rounded-full bg-navy-900 px-2.5 py-1 text-[10px] font-semibold tracking-[0.04em] text-paper-50">
                 {countdown}
               </span>
             )}
             <Link
               href="/app/inbox"
               aria-label={t.app.nav.inbox}
-              className="relative inline-flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full border border-border text-foreground-muted"
+              className="relative inline-flex h-9 w-9 items-center justify-center rounded-full border border-border bg-surface text-foreground-muted"
             >
               <InboxIcon size={17} />
               {inboxBadge > 0 && <BadgeDot count={inboxBadge} />}
             </Link>
-            {/* Mobile (Sprint 8, TEIL D): the avatar opens the account +
-                areas menu – the desktop sidebar stays out of the mobile
-                view and is not duplicated as a second navigation. */}
             <button
               type="button"
               onClick={() => setAccountOpen(true)}
@@ -240,110 +235,120 @@ export function AppShell({
         </div>
       </header>
 
-      {/* Main app layout: sidebar + flexible app area */}
       <div className="flex w-full min-h-svh">
-        {/* Desktop sidebar – six primary areas only */}
-        <aside className="sticky top-0 hidden h-svh w-64 shrink-0 flex-col border-r border-border bg-surface px-4 py-5 xl:flex">
-          <Link href="/app" className="flex items-center gap-2.5 px-2">
-            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-electric-500 text-xs font-bold text-white">
-              IC
-            </span>
-            <span className="text-sm font-bold tracking-[0.12em]">INNER CIRCLE</span>
-          </Link>
+        {/* Desktop sidebar – dark premium executive */}
+        <aside className="sticky top-0 hidden h-svh w-[272px] shrink-0 flex-col bg-navy-950 px-4 py-5 xl:flex">
+          {/* Subtle texture */}
+          <div aria-hidden="true" className="pointer-events-none absolute inset-0 opacity-[0.03]" style={{ backgroundImage: `radial-gradient(1px 1px at 20% 30%, white, transparent)` }} />
+          <div className="pointer-events-none absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-white/10 to-transparent" />
 
-          <nav aria-label={t.app.nav.sidebarLabel} className="mt-5 flex-1 overflow-y-auto no-scrollbar">
-            <ul className="space-y-0.5">
-              {primary.slice(0, 2).map((item) => (
-                <NavLink key={item.href} item={item} label={label(item)} active={isActive(item.href)} />
-              ))}
-              <li>
-                <button
-                  type="button"
-                  onClick={() => setCreateOpen(true)}
-                  className="flex w-full items-center gap-3 rounded-xl bg-electric-500 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-electric-600"
-                >
-                  <PlusIcon size={18} />
-                  <span className="flex-1 text-left">{t.app.nav.create}</span>
-                </button>
-              </li>
-              {primary.slice(2).map((item) => (
-                <NavLink
-                  key={item.href}
-                  item={item}
-                  label={label(item)}
-                  active={item.key === "inbox" ? isActive(item.href) || isLegacyInbox : isActive(item.href)}
-                />
-              ))}
-            </ul>
-
-            <p className="mt-6 px-3 text-[10px] font-bold uppercase tracking-[0.14em] text-foreground-subtle">
-              {t.app.nav.areasLabel}
-            </p>
-            <ul className="mt-1.5 space-y-0.5">
-              {areas.map((item) => (
-                <NavLink key={item.href} item={item} label={label(item)} active={isActive(item.href)} dense />
-              ))}
-            </ul>
-
-            {user.isAdmin && (
-              <ul className="mt-4 space-y-0.5 border-t border-border pt-4">
-                <NavLink
-                  item={{ href: "/admin", key: "admin", icon: LockIcon }}
-                  label={t.app.nav.admin}
-                  active={isActive("/admin")}
-                  dense
-                />
-              </ul>
-            )}
-          </nav>
-
-          {/* Compact trial status – no large container (spec §33) */}
-          {countdown && (
-            <div className="mt-4 flex items-center justify-between gap-2 rounded-lg border border-electric-500/25 bg-electric-500/5 px-2.5 py-1.5">
-              <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-electric-600 dark:text-electric-300">
-                <span className="h-1.5 w-1.5 rounded-full bg-electric-500 animate-pulse" />
-                {t.app.access.levelTrial}
+          <div className="relative flex flex-col h-full">
+            <Link href="/app" className="flex items-center gap-3 px-2 py-1">
+              <span className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-paper-50 text-[12px] font-bold tracking-[-0.02em] text-navy-900">
+                V&P
               </span>
-              <span className="font-mono text-[11px] font-semibold text-foreground">{countdown}</span>
-            </div>
-          )}
-
-          <div className="mt-3 border-t border-border pt-3">
-            <button
-              type="button"
-              onClick={() => setAccountOpen(true)}
-              className="flex w-full items-center gap-2.5 rounded-xl px-2 py-2 text-left transition-colors hover:bg-surface-muted"
-            >
-              <Avatar user={user} size={32} />
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-semibold">
-                  {user.firstName} {user.lastName}
-                </span>
-                <span className="block truncate text-xs text-foreground-subtle">@{user.handle}</span>
+              <span className="flex flex-col leading-none">
+                <span className="text-[13px] font-bold tracking-[0.12em] text-paper-50">INNER CIRCLE</span>
+                <span className="mt-0.5 text-[9px] font-medium tracking-[0.14em] text-paper-50/50">by VENTURE & PARTNERS</span>
               </span>
-              <SettingsIcon size={16} className="shrink-0 text-foreground-subtle" />
-            </button>
-            <Link
-              href="/"
-              className="mt-0.5 flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm text-foreground-muted transition-colors hover:bg-surface-muted"
-            >
-              {t.app.nav.toWebsite}
             </Link>
+
+            <nav aria-label={t.app.nav.sidebarLabel} className="mt-7 flex-1 overflow-y-auto no-scrollbar">
+              <ul className="space-y-1">
+                {primary.slice(0, 2).map((item) => (
+                  <NavLink key={item.href} item={item} label={label(item)} active={isActive(item.href)} dark />
+                ))}
+                <li className="py-1">
+                  <button
+                    type="button"
+                    onClick={() => setCreateOpen(true)}
+                    className="flex w-full items-center gap-3 rounded-xl bg-paper-50 px-3.5 py-2.5 text-[13px] font-semibold tracking-[-0.01em] text-navy-900 transition-all hover:bg-white"
+                  >
+                    <PlusIcon size={16} />
+                    <span className="flex-1 text-left">{t.app.nav.create}</span>
+                  </button>
+                </li>
+                {primary.slice(2).map((item) => (
+                  <NavLink
+                    key={item.href}
+                    item={item}
+                    label={label(item)}
+                    active={item.key === "inbox" ? isActive(item.href) || isLegacyInbox : isActive(item.href)}
+                    dark
+                  />
+                ))}
+              </ul>
+
+              <div className="mt-8">
+                <p className="px-3 text-[10px] font-bold uppercase tracking-[0.16em] text-paper-50/35">
+                  {t.app.nav.areasLabel}
+                </p>
+                <ul className="mt-3 space-y-0.5">
+                  {areas.map((item) => (
+                    <NavLink key={item.href} item={item} label={label(item)} active={isActive(item.href)} dense dark />
+                  ))}
+                </ul>
+              </div>
+
+              {user.isAdmin && (
+                <ul className="mt-6 space-y-0.5 border-t border-white/10 pt-4">
+                  <NavLink
+                    item={{ href: "/admin", key: "admin", icon: LockIcon }}
+                    label={t.app.nav.admin}
+                    active={isActive("/admin")}
+                    dense
+                    dark
+                  />
+                </ul>
+              )}
+            </nav>
+
+            {countdown && (
+              <div className="relative mt-4 flex items-center justify-between gap-2 rounded-xl border border-white/10 bg-white/[0.06] px-3 py-2.5">
+                <span className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-paper-50/70">
+                  <span className="h-1.5 w-1.5 rounded-full bg-sage-400 animate-pulse" />
+                  {t.app.access.levelTrial}
+                </span>
+                <span className="font-mono text-[11px] font-semibold text-paper-50">{countdown}</span>
+              </div>
+            )}
+
+            <div className="relative mt-3 border-t border-white/10 pt-4">
+              <button
+                type="button"
+                onClick={() => setAccountOpen(true)}
+                className="flex w-full items-center gap-2.5 rounded-xl px-2 py-2.5 text-left transition-colors hover:bg-white/[0.06]"
+              >
+                <Avatar user={user} size={32} />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[13px] font-semibold tracking-[-0.01em] text-paper-50">
+                    {user.firstName} {user.lastName}
+                  </span>
+                  <span className="block truncate text-[11px] text-paper-50/50">@{user.handle}</span>
+                </span>
+                <SettingsIcon size={14} className="shrink-0 text-paper-50/40" />
+              </button>
+              <Link
+                href="/"
+                className="mt-1 flex items-center gap-2.5 rounded-xl px-3 py-2 text-[12px] font-medium text-paper-50/50 transition-colors hover:bg-white/[0.06] hover:text-paper-50/80"
+              >
+                <span className="text-[11px]">←</span> {t.app.nav.toWebsite}
+              </Link>
+            </div>
           </div>
         </aside>
 
-        {/* App area – responsive, uses the full remaining width (spec §25) */}
-        <div className="min-w-0 flex-1 flex flex-col">
+        <div className="min-w-0 flex-1 flex flex-col bg-paper-50 dark:bg-navy-950">
           <main className="ic-app-main ic-app-bottom-space">{children}</main>
         </div>
       </div>
 
-      {/* Mobile bottom navigation: Start · Discover · + · Inbox · Profil */}
+      {/* Mobile bottom navigation – premium */}
       <nav
         aria-label={t.app.nav.bottomLabel}
-        className="ic-safe-bottom fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 backdrop-blur-xl xl:hidden"
+        className="ic-safe-bottom fixed inset-x-0 bottom-0 z-40 border-t border-border bg-paper-50/95 backdrop-blur-xl xl:hidden"
       >
-        <ul className="mx-auto flex max-w-md items-stretch justify-between px-1 sm:px-2 py-1.5">
+        <ul className="mx-auto flex max-w-md items-stretch justify-between px-1 py-1.5">
           {bottomItems.map((entry, index) => {
             if (entry === "create") {
               return (
@@ -351,9 +356,9 @@ export function AppShell({
                   <button
                     type="button"
                     onClick={() => setCreateOpen(true)}
-                    className="flex w-full flex-col items-center gap-1 rounded-xl py-1 text-electric-600 dark:text-electric-300"
+                    className="flex w-full flex-col items-center gap-1 rounded-xl py-1 text-navy-900"
                   >
-                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-electric-500 text-white shadow-[0_8px_20px_-8px_rgb(54_108_245/0.8)]">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-navy-900 text-paper-50 shadow-[0_8px_20px_-8px_rgb(17_31_61/0.6)]">
                       <PlusIcon size={18} />
                     </span>
                     <span className="block max-w-full truncate text-[10px] font-medium leading-tight">
@@ -371,8 +376,8 @@ export function AppShell({
                 <Link
                   href={item.href}
                   aria-current={active ? "page" : undefined}
-                  className={`flex w-full flex-col items-center gap-1 rounded-xl py-1 ${
-                    active ? "text-electric-600 dark:text-electric-300" : "text-foreground-muted"
+                  className={`flex w-full flex-col items-center gap-1 rounded-xl py-1 transition-colors ${
+                    active ? "text-navy-900" : "text-foreground-muted"
                   }`}
                 >
                   <span className="relative">
@@ -389,7 +394,6 @@ export function AppShell({
         </ul>
       </nav>
 
-      {/* Create sheet – member create types only, never events (spec §13/§14) */}
       <Dialog
         open={createOpen}
         onClose={() => setCreateOpen(false)}
@@ -397,33 +401,33 @@ export function AppShell({
         description={t.app.create.sheetLead}
         closeLabel={t.app.common.close}
       >
-        <ul className="space-y-2">
+        <ul className="space-y-2.5">
           {createOptions.map((option) => (
             <li key={option.href}>
               {option.enabled ? (
                 <Link
                   href={option.href}
                   onClick={() => setCreateOpen(false)}
-                  className="flex items-start gap-3 rounded-xl border border-border p-3.5 transition-colors hover:border-electric-500/40 hover:bg-surface-muted"
+                  className="flex items-start gap-3 rounded-[16px] border border-border bg-surface p-4 transition-all hover:border-navy-900/20 hover:shadow-card"
                 >
-                  <span className="mt-0.5 inline-flex rounded-lg bg-electric-500/10 p-2 text-electric-600 dark:text-electric-300">
-                    <SparkleIcon size={16} />
+                  <span className="mt-0.5 inline-flex rounded-full bg-navy-900 p-2 text-paper-50">
+                    <SparkleIcon size={14} />
                   </span>
                   <span>
-                    <span className="block text-sm font-semibold">{option.title}</span>
-                    <span className="mt-0.5 block text-xs leading-5 text-foreground-muted">{option.desc}</span>
+                    <span className="block text-[13px] font-semibold tracking-[-0.01em]">{option.title}</span>
+                    <span className="mt-1 block text-[12px] leading-5 text-foreground-muted">{option.desc}</span>
                   </span>
                 </Link>
               ) : (
-                <div className="flex items-start gap-3 rounded-xl border border-dashed border-border p-3.5 opacity-70">
-                  <span className="mt-0.5 inline-flex rounded-lg bg-surface-muted p-2 text-foreground-subtle">
-                    <LockIcon size={16} />
+                <div className="flex items-start gap-3 rounded-[16px] border border-dashed border-border p-4 opacity-60">
+                  <span className="mt-0.5 inline-flex rounded-full bg-surface-muted p-2 text-foreground-subtle">
+                    <LockIcon size={14} />
                   </span>
                   <span>
-                    <span className="block text-sm font-semibold">
+                    <span className="block text-[13px] font-semibold">
                       {option.title} · {t.app.create.locked}
                     </span>
-                    <span className="mt-0.5 block text-xs leading-5 text-foreground-muted">
+                    <span className="mt-1 block text-[12px] leading-5 text-foreground-muted">
                       {t.app.create.lockedDesc}
                     </span>
                   </span>
@@ -432,20 +436,19 @@ export function AppShell({
             </li>
           ))}
           <li>
-            <div className="flex items-start gap-3 rounded-xl border border-border/70 bg-surface-muted/40 p-3.5">
-              <span className="mt-0.5 inline-flex rounded-lg bg-sand-400/20 p-2 text-sand-600 dark:text-sand-300">
-                <CalendarIcon size={16} />
+            <div className="flex items-start gap-3 rounded-[16px] border border-border/60 bg-paper-50 p-4">
+              <span className="mt-0.5 inline-flex rounded-full bg-sage-100 p-2 text-sage-600">
+                <CalendarIcon size={14} />
               </span>
               <span>
-                <span className="block text-sm font-semibold">{eventsNote.title}</span>
-                <span className="mt-0.5 block text-xs leading-5 text-foreground-muted">{eventsNote.desc}</span>
+                <span className="block text-[13px] font-semibold tracking-[-0.01em]">{eventsNote.title}</span>
+                <span className="mt-1 block text-[12px] leading-5 text-foreground-muted">{eventsNote.desc}</span>
               </span>
             </div>
           </li>
         </ul>
       </Dialog>
 
-      {/* Account sheet: profile, member card, membership, settings, sign out */}
       <Dialog
         open={accountOpen}
         onClose={() => setAccountOpen(false)}
@@ -466,7 +469,7 @@ export function AppShell({
               <Link
                 href={entry.href}
                 onClick={() => setAccountOpen(false)}
-                className="flex items-center gap-3 rounded-xl border border-border px-3.5 py-2.5 text-sm font-medium transition-colors hover:border-electric-500/40 hover:bg-surface-muted"
+                className="flex items-center gap-3 rounded-xl border border-border px-4 py-3 text-[13px] font-medium transition-colors hover:border-navy-900/20 hover:bg-surface-muted"
               >
                 <entry.icon size={16} />
                 {entry.label}
@@ -478,7 +481,7 @@ export function AppShell({
               <Link
                 href="/admin"
                 onClick={() => setAccountOpen(false)}
-                className="flex items-center gap-3 rounded-xl border border-border px-3.5 py-2.5 text-sm font-medium transition-colors hover:bg-surface-muted"
+                className="flex items-center gap-3 rounded-xl border border-border px-4 py-3 text-[13px] font-medium transition-colors hover:bg-surface-muted"
               >
                 <LockIcon size={16} />
                 {t.app.nav.admin}
@@ -487,11 +490,8 @@ export function AppShell({
           )}
         </ul>
 
-        {/* Mobile (Sprint 8, TEIL D): the secondary areas live here instead
-            of a second persistent navigation. On desktop they remain in the
-            sidebar (this menu is an additional, optional entry point). */}
-        <div className="mt-5">
-          <p className="mb-2 text-xs font-bold uppercase tracking-[0.14em] text-foreground-subtle">
+        <div className="mt-6">
+          <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.14em] text-foreground-subtle">
             {t.app.nav.areasLabel}
           </p>
           <ul className="space-y-1">
@@ -500,7 +500,7 @@ export function AppShell({
                 <Link
                   href={entry.href}
                   onClick={() => setAccountOpen(false)}
-                  className="flex items-center gap-3 rounded-xl px-3.5 py-2 text-sm font-medium transition-colors hover:bg-surface-muted"
+                  className="flex items-center gap-3 rounded-xl px-4 py-2.5 text-[13px] font-medium transition-colors hover:bg-surface-muted"
                 >
                   <entry.icon size={16} className="text-foreground-subtle" />
                   {t.app.nav[entry.key] as string}
@@ -509,14 +509,14 @@ export function AppShell({
             ))}
           </ul>
         </div>
-        <div className="mt-5">
-          <p className="mb-2 text-xs font-bold uppercase tracking-[0.14em] text-foreground-subtle">
+        <div className="mt-6">
+          <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.14em] text-foreground-subtle">
             {t.app.settings.languageTitle}
           </p>
           <LocaleSwitch />
         </div>
-        <form action="/api/auth/logout" method="post" className="mt-4">
-          <Button type="submit" variant="secondary" fullWidth>
+        <form action="/api/auth/logout" method="post" className="mt-5">
+          <Button type="submit" variant="secondary" fullWidth className="rounded-full">
             {t.app.nav.signOut}
           </Button>
         </form>
@@ -530,29 +530,57 @@ function NavLink({
   label,
   active,
   dense = false,
+  dark = false,
 }: {
   item: NavItem;
   label: string;
   active: boolean;
   dense?: boolean;
+  dark?: boolean;
 }) {
+  if (dark) {
+    return (
+      <li>
+        <Link
+          href={item.href}
+          aria-current={active ? "page" : undefined}
+          className={`flex items-center gap-3 rounded-xl px-3 text-[13px] font-medium tracking-[-0.01em] transition-all ${
+            dense ? "py-2" : "py-2.5"
+          } ${
+            active
+              ? "bg-white text-navy-900 shadow-card"
+              : "text-paper-50/60 hover:bg-white/[0.08] hover:text-paper-50"
+          }`}
+        >
+          <item.icon size={dense ? 16 : 18} />
+          <span className="flex-1">{label}</span>
+          {item.badge ? (
+            <span className="rounded-full bg-paper-50 px-1.5 py-0.5 text-[10px] font-bold text-navy-900">
+              {item.badge > 9 ? "9+" : item.badge}
+            </span>
+          ) : null}
+        </Link>
+      </li>
+    );
+  }
+
   return (
     <li>
       <Link
         href={item.href}
         aria-current={active ? "page" : undefined}
-        className={`flex items-center gap-3 rounded-xl px-3 text-sm font-medium transition-colors ${
-          dense ? "py-1.5" : "py-2"
+        className={`flex items-center gap-3 rounded-xl px-3 text-[13px] font-medium transition-colors ${
+          dense ? "py-2" : "py-2.5"
         } ${
           active
-            ? "bg-electric-500/10 text-electric-600 dark:text-electric-300"
+            ? "bg-navy-900 text-paper-50"
             : "text-foreground-muted hover:bg-surface-muted hover:text-foreground"
         }`}
       >
         <item.icon size={dense ? 16 : 18} />
         <span className="flex-1">{label}</span>
         {item.badge ? (
-          <span className="rounded-full bg-electric-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
+          <span className="rounded-full bg-navy-900 px-1.5 py-0.5 text-[10px] font-bold text-paper-50">
             {item.badge > 9 ? "9+" : item.badge}
           </span>
         ) : null}
@@ -563,7 +591,7 @@ function NavLink({
 
 function BadgeDot({ count }: { count: number }) {
   return (
-    <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-electric-500 px-1 text-[10px] font-bold text-white">
+    <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-navy-900 px-1 text-[10px] font-bold text-paper-50">
       {count > 9 ? "9+" : count}
     </span>
   );
@@ -586,7 +614,7 @@ export function Avatar({
         width={size}
         height={size}
         style={{ width: size, height: size }}
-        className="shrink-0 rounded-full object-cover"
+        className="shrink-0 rounded-full object-cover ring-2 ring-white/10"
       />
     );
   }
@@ -594,7 +622,7 @@ export function Avatar({
     <span
       aria-hidden="true"
       style={{ width: size, height: size, fontSize: Math.round(size * 0.36) }}
-      className="inline-flex shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-electric-500 to-electric-700 font-bold text-white"
+      className="inline-flex shrink-0 items-center justify-center rounded-full bg-navy-800 font-bold text-paper-50 ring-2 ring-white/10"
     >
       {initials}
     </span>

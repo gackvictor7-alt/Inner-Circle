@@ -57,12 +57,6 @@ function parseVisibility(json: string | null | undefined): Record<string, string
   }
 }
 
-/**
- * Own profile – the business identity of a member (Sprint 3, spec §16–§21).
- *
- * Header + four tabs. Trust & Performance lives here (no longer a primary
- * navigation entry), together with member card, membership and settings.
- */
 export default async function OwnProfilePage({
   searchParams,
 }: {
@@ -91,8 +85,6 @@ export default async function OwnProfilePage({
   const score = trust.summary?.score10 ? trust.summary.score10 / 10 : null;
   const roles = parseList(profile?.rolesJson);
   const skills = parseList(profile?.skillsJson);
-  // Older profiles (and the dev seed) store goal slugs in the free-text lists –
-  // map them back to the taxonomy label so nothing unreadable is displayed.
   const goalLabelBySlug = new Map(
     user.goals.map((goal) => [goal.slug, user.locale === "en" ? goal.labelEn : goal.labelDe]),
   );
@@ -128,125 +120,132 @@ export default async function OwnProfilePage({
   ];
 
   return (
-    <div className="space-y-6">
-      {/* --------------------------------------- compact identity header */}
-      <Card className="p-5 sm:p-6">
-        <div className="flex min-w-0 items-center gap-4">
-          <Avatar
-            user={{
-              firstName: user.firstName,
-              lastName: user.lastName,
-              avatarUrl: profile?.avatarUrl ?? null,
-            }}
-            size={64}
-          />
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-xl font-bold tracking-tight sm:text-2xl">
-                {user.firstName} {user.lastName}
-              </h1>
-              {user.foundingMember && (
-                <Badge variant="sand">
-                  <Tr k="app.card.founding" />
-                </Badge>
-              )}
-              {user.role === "admin" && (
-                <Badge variant="electric">
-                  <Tr k="app.access.levelAdmin" />
-                </Badge>
-              )}
-              {user.isDemo && (
-                <Badge variant="outline">
-                  <Tr k="app.common.demo" />
-                </Badge>
-              )}
-            </div>
-            <p className="text-sm text-foreground-subtle">@{user.handle}</p>
-            {profile?.headline && (
-              <p className="mt-1 truncate text-sm font-medium">{profile.headline}</p>
-            )}
-            <p className="mt-0.5 truncate text-sm text-foreground-subtle">
-              {[profile?.jobTitle, profile?.company, profile?.location].filter(Boolean).join(" · ")}
-            </p>
-          </div>
-        </div>
-
-        {/* compact statistics row */}
-        <dl className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1.5 border-t border-border pt-3">
-          <StatInline labelKey="app.profile.metricFollowers" value={stats.followers} />
-          <StatDot />
-          <StatInline labelKey="app.profile.statsFollowing" value={stats.following} />
-          <StatDot />
-          <StatInline labelKey="app.profile.metricConnections" value={stats.connections} />
-          <StatDot />
-          <div className="inline-flex items-baseline gap-1.5 px-1">
-            <dt className="text-xs text-foreground-muted">
-              <Tr k="app.trust.scoreTitle" />
-            </dt>
-            <dd className="text-sm font-bold">
-              {score === null ? (
-                <span className="font-semibold text-foreground-muted">
-                  <Tr k="app.trust.noRatingsShort" />
+    <div className="space-y-5">
+      {/* Premium identity header */}
+      <Card className="relative overflow-hidden p-0">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-border-strong/30 to-transparent" />
+        <div className="p-5 sm:p-7">
+          <div className="flex min-w-0 items-start gap-5">
+            {/* Avatar – now clickable, premium ring */}
+            <Link href="/app/profile/edit" className="group relative shrink-0">
+              <div className="relative">
+                <Avatar
+                  user={{
+                    firstName: user.firstName,
+                    lastName: user.lastName,
+                    avatarUrl: profile?.avatarUrl ?? null,
+                  }}
+                  size={72}
+                />
+                <span className="absolute inset-0 rounded-full ring-2 ring-navy-900/10 group-hover:ring-navy-900/20 transition-all" />
+                <span className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-navy-900 text-[10px] text-paper-50 shadow-card opacity-0 group-hover:opacity-100 transition-opacity">
+                  ✎
                 </span>
-              ) : (
-                <span className="inline-flex items-center gap-1.5">
-                  {score.toFixed(1)}
-                  <RatingStars value={score} size={12} />
-                </span>
+              </div>
+            </Link>
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="text-[1.5rem] font-bold tracking-[-0.02em] leading-tight sm:text-[1.7rem]">
+                  {user.firstName} {user.lastName}
+                </h1>
+                {user.foundingMember && (
+                  <Badge variant="paper">
+                    <Tr k="app.card.founding" />
+                  </Badge>
+                )}
+                {user.role === "admin" && (
+                  <Badge variant="navy">
+                    <Tr k="app.access.levelAdmin" />
+                  </Badge>
+                )}
+                {user.isDemo && (
+                  <Badge variant="outline">
+                    <Tr k="app.common.demo" />
+                  </Badge>
+                )}
+              </div>
+              <p className="mt-0.5 text-[13px] text-foreground-subtle">@{user.handle}</p>
+              {profile?.headline && (
+                <p className="mt-2 text-[14px] font-medium tracking-[-0.01em] leading-snug">{profile.headline}</p>
               )}
-            </dd>
-          </div>
-        </dl>
+              <p className="mt-1 text-[13px] text-foreground-muted">
+                {[profile?.jobTitle, profile?.company, profile?.location].filter(Boolean).join(" · ")}
+              </p>
 
-        {/* separate small action row */}
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <Button href="/app/profile/edit" size="sm">
-            <SparkleIcon size={15} />
-            <Tr k="app.profile.editTitle" />
-          </Button>
-          <ShareProfileButton path={`/app/people/${user.handle}`} />
-          <Button href="/app/settings" size="sm" variant="ghost">
-            <SettingsIcon size={15} />
-            <Tr k="app.settings.title" />
-          </Button>
-        </div>
-
-        {/* deliberately small progress line */}
-        {profilePercent < 100 && (
-          <div className="mt-4">
-            <div
-              role="progressbar"
-              aria-valuenow={profilePercent}
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-label={dict.app.profile.profileCompletion.replace("{percent}", String(profilePercent))}
-              className="flex items-center justify-between gap-3 text-[11px] font-medium text-foreground-muted"
-            >
-              <span>
-                {dict.app.profile.profileCompletion.replace("{percent}", String(profilePercent))}
-              </span>
-              <span className="font-semibold text-foreground">{profilePercent} %</span>
+              {/* Stats row – premium inline */}
+              <dl className="mt-4 flex flex-wrap items-center gap-x-1 gap-y-1 rounded-full border border-border bg-paper-50 px-3 py-1.5 w-fit">
+                <StatInline labelKey="app.profile.metricFollowers" value={stats.followers} />
+                <StatDot />
+                <StatInline labelKey="app.profile.statsFollowing" value={stats.following} />
+                <StatDot />
+                <StatInline labelKey="app.profile.metricConnections" value={stats.connections} />
+                <StatDot />
+                <div className="inline-flex items-baseline gap-1.5 px-1">
+                  <dt className="text-[11px] font-medium text-foreground-muted">
+                    <Tr k="app.trust.scoreTitle" />
+                  </dt>
+                  <dd className="text-[12px] font-bold">
+                    {score === null ? (
+                      <span className="font-semibold text-foreground-muted">
+                        <Tr k="app.trust.noRatingsShort" />
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1">
+                        {score.toFixed(1)}
+                        <RatingStars value={score} size={11} />
+                      </span>
+                    )}
+                  </dd>
+                </div>
+              </dl>
             </div>
-            <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-surface-muted">
+          </div>
+
+          <div className="mt-5 flex flex-wrap items-center gap-2">
+            <Button href="/app/profile/edit" size="sm" className="rounded-full">
+              <SparkleIcon size={14} />
+              <Tr k="app.profile.editTitle" />
+            </Button>
+            <ShareProfileButton path={`/app/people/${user.handle}`} />
+            <Button href="/app/settings" size="sm" variant="secondary" className="rounded-full">
+              <SettingsIcon size={14} />
+              <Tr k="app.settings.title" />
+            </Button>
+          </div>
+
+          {profilePercent < 100 && (
+            <div className="mt-5 rounded-xl bg-paper-50 p-3">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-electric-500 to-electric-400"
-                style={{ width: `${profilePercent}%` }}
-              />
+                role="progressbar"
+                aria-valuenow={profilePercent}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-label={dict.app.profile.profileCompletion.replace("{percent}", String(profilePercent))}
+                className="flex items-center justify-between gap-3 text-[11px] font-medium text-foreground-muted"
+              >
+                <span>{dict.app.profile.profileCompletion.replace("{percent}", String(profilePercent))}</span>
+                <span className="font-semibold text-foreground">{profilePercent} %</span>
+              </div>
+              <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-border">
+                <div
+                  className="h-full rounded-full bg-navy-900 transition-all"
+                  style={{ width: `${profilePercent}%` }}
+                />
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </Card>
 
-      {/* ------------------------- tabs as central horizontal navigation */}
       <nav aria-label="Profil" className="flex justify-center">
-        <div className="inline-flex flex-wrap justify-center gap-1 rounded-full border border-border bg-surface p-1">
+        <div className="inline-flex flex-wrap justify-center gap-1 rounded-full border border-border bg-surface p-1 shadow-card">
           {tabs.map((item) => (
             <Link
               key={item.key}
               href={item.href}
               aria-current={tab === item.key ? "page" : undefined}
-              className={`rounded-full px-4 py-1.5 text-sm font-semibold transition-colors ${
-                tab === item.key ? "bg-electric-500 text-white" : "text-foreground-muted hover:text-foreground"
+              className={`rounded-full px-4 py-2 text-[13px] font-semibold tracking-[-0.01em] transition-all ${
+                tab === item.key ? "bg-navy-900 text-paper-50 shadow-card" : "text-foreground-muted hover:text-foreground"
               }`}
             >
               <Tr k={item.labelKey} />
@@ -258,22 +257,21 @@ export default async function OwnProfilePage({
       {tab === "overview" && (
         <div className="mx-auto w-full max-w-3xl space-y-3">
           {profile?.bio && (
-            <Card className="p-5">
-              <p className="ic-measure whitespace-pre-wrap text-sm leading-6 text-foreground-muted">
+            <Card className="p-5 sm:p-6">
+              <p className="ic-measure whitespace-pre-wrap text-[14px] leading-7 text-foreground-muted">
                 {profile.bio}
               </p>
             </Card>
           )}
 
-          {/* secondary information as accordions, collapsed by default */}
           <AccordionSection titleKey="app.profile.interestsSection">
             <TagBlock labelKey="app.discover.interests" items={interestLabels} />
             <TagBlock labelKey="app.profile.goalsTitle" items={goalLabels} />
           </AccordionSection>
 
           <AccordionSection titleKey="app.profile.seekingOffering">
-            <TagBlock labelKey="app.profile.lookingFor" items={lookingFor} tone="electric" />
-            <TagBlock labelKey="app.profile.offering" items={offering} tone="forest" />
+            <TagBlock labelKey="app.profile.lookingFor" items={lookingFor} tone="navy" />
+            <TagBlock labelKey="app.profile.offering" items={offering} tone="sage" />
           </AccordionSection>
 
           <AccordionSection titleKey="app.profile.rolesSkills">
@@ -328,28 +326,28 @@ export default async function OwnProfilePage({
         <section className="space-y-5">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
-              <h2 className="text-lg font-bold tracking-tight">
+              <h2 className="text-[1.25rem] font-bold tracking-[-0.02em]">
                 <Tr k="app.profile.tabsPosts" />
               </h2>
-              <p className="mt-1 max-w-2xl text-sm leading-6 text-foreground-muted">
+              <p className="mt-1 max-w-2xl text-[13px] leading-6 text-foreground-muted">
                 <Tr k="app.profile.activityLead" />
               </p>
             </div>
-            <Button href="/app/create/post" size="sm" variant="secondary">
+            <Button href="/app/create/post" size="sm" variant="secondary" className="rounded-full">
               <Tr k="app.posts.createTitle" />
             </Button>
           </div>
 
           {posts.length === 0 ? (
-            <p className="rounded-2xl border border-border bg-surface px-5 py-4 text-sm leading-6 text-foreground-muted">
+            <p className="rounded-[16px] border border-border bg-surface px-5 py-4 text-[13px] leading-6 text-foreground-muted">
               <Tr k="app.profile.activityEmptyText" />
             </p>
           ) : (
-            <ul className="divide-y divide-border rounded-2xl border border-border bg-surface">
+            <ul className="divide-y divide-border rounded-[16px] border border-border bg-surface">
               {posts.map((post) => (
                 <li key={post.id} className="px-5 py-4">
-                  <p className="whitespace-pre-wrap text-[15px] leading-7">{post.body}</p>
-                  <p className="mt-2 text-xs text-foreground-subtle">
+                  <p className="whitespace-pre-wrap text-[14px] leading-7">{post.body}</p>
+                  <p className="mt-2 text-[11px] text-foreground-subtle">
                     {post.createdAt.toLocaleDateString(locale, { day: "2-digit", month: "short", year: "numeric" })}
                   </p>
                 </li>
@@ -362,12 +360,12 @@ export default async function OwnProfilePage({
       )}
 
       {tab === "performance" && (
-        <div className="space-y-6">
+        <div className="space-y-5">
           <div>
-            <h2 className="text-lg font-bold tracking-tight">
+            <h2 className="text-[1.25rem] font-bold tracking-[-0.02em]">
               <Tr k="app.profile.performanceTitle" />
             </h2>
-            <p className="mt-1 max-w-2xl text-sm leading-6 text-foreground-muted">
+            <p className="mt-1 max-w-2xl text-[13px] leading-6 text-foreground-muted">
               <Tr k="app.profile.performanceLead" />
             </p>
           </div>
@@ -375,15 +373,15 @@ export default async function OwnProfilePage({
           <div className="ic-grid">
             <div className="ic-span-6 lg:col-span-3">
               <Card className="p-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-foreground-subtle">
+                <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-foreground-subtle">
                   <Tr k="app.trust.scoreTitle" />
                 </p>
                 {score === null ? (
-                  <p className="mt-1.5 text-sm text-foreground-muted">
+                  <p className="mt-2 text-[13px] text-foreground-muted">
                     <Tr k="app.profile.performanceTrustEmpty" />
                   </p>
                 ) : (
-                  <p className="mt-1.5 flex items-center gap-2 text-2xl font-bold tracking-tight">
+                  <p className="mt-2 flex items-center gap-2 text-[1.5rem] font-bold tracking-[-0.02em]">
                     {score.toFixed(1)}
                     <RatingStars value={score} size={14} />
                   </p>
@@ -426,11 +424,11 @@ export default async function OwnProfilePage({
           </div>
 
           <Card className="p-5">
-            <h3 className="text-sm font-bold tracking-tight">
+            <h3 className="text-[13px] font-bold tracking-[-0.01em]">
               <Tr k="app.profile.performanceReviews" />
             </h3>
             {trust.reviews.length === 0 ? (
-              <p className="mt-2 text-sm text-foreground-muted">
+              <p className="mt-2 text-[13px] text-foreground-muted">
                 <Tr k="app.profile.performanceNoReviews" />
               </p>
             ) : (
@@ -439,17 +437,17 @@ export default async function OwnProfilePage({
                   <li key={review.id} className="rounded-xl border border-border p-3.5">
                     <div className="flex items-center gap-2">
                       <RatingStars value={review.rating10 / 10} size={13} />
-                      <span className="text-xs text-foreground-subtle">
+                      <span className="text-[12px] text-foreground-subtle">
                         {review.authorFirstName} {review.authorLastName}
                       </span>
                       {review.verifiedContext && (
-                        <Badge variant="forest">
+                        <Badge variant="sage">
                           <Tr k="app.common.verified" />
                         </Badge>
                       )}
                     </div>
                     {review.comment && (
-                      <p className="mt-2 text-sm leading-6 text-foreground-muted">{review.comment}</p>
+                      <p className="mt-2 text-[13px] leading-6 text-foreground-muted">{review.comment}</p>
                     )}
                   </li>
                 ))}
@@ -458,19 +456,19 @@ export default async function OwnProfilePage({
           </Card>
 
           <Card className="p-5">
-            <h3 className="text-sm font-bold tracking-tight">
+            <h3 className="text-[13px] font-bold tracking-[-0.01em]">
               <Tr k="app.profile.performanceRecords" />
             </h3>
             {trust.performance.length === 0 ? (
-              <p className="mt-2 text-sm text-foreground-muted">
+              <p className="mt-2 text-[13px] text-foreground-muted">
                 <Tr k="app.profile.performanceEmpty" />
               </p>
             ) : (
               <ul className="mt-3 divide-y divide-border">
                 {trust.performance.map((record) => (
                   <li key={record.id} className="flex items-center justify-between gap-3 py-2.5">
-                    <span className="text-sm">{user.locale === "en" ? record.labelEn ?? record.label : record.labelDe ?? record.label}</span>
-                    <Badge variant={record.verification === "verified" ? "forest" : "outline"}>
+                    <span className="text-[13px]">{user.locale === "en" ? record.labelEn ?? record.label : record.labelDe ?? record.label}</span>
+                    <Badge variant={record.verification === "verified" ? "sage" : "outline"}>
                       <Tr k={record.verification === "verified" ? "app.common.verified" : "app.common.selfReported"} />
                     </Badge>
                   </li>
@@ -480,27 +478,27 @@ export default async function OwnProfilePage({
           </Card>
 
           <Card className="p-5">
-            <h3 className="text-sm font-bold tracking-tight">
+            <h3 className="text-[13px] font-bold tracking-[-0.01em]">
               <Tr k="app.profile.performanceBadges" />
             </h3>
             {trust.badges.length === 0 ? (
-              <p className="mt-2 text-sm text-foreground-muted">
+              <p className="mt-2 text-[13px] text-foreground-muted">
                 <Tr k="app.profile.performanceNoBadges" />
               </p>
             ) : (
               <ul className="mt-3 flex flex-wrap gap-2">
                 {trust.badges.map((badge) => (
                   <li key={badge.id}>
-                    <Badge variant="sand">{user.locale === "en" ? badge.titleEn : badge.titleDe}</Badge>
+                    <Badge variant="paper">{user.locale === "en" ? badge.titleEn : badge.titleDe}</Badge>
                   </li>
                 ))}
               </ul>
             )}
           </Card>
 
-          <p className="text-xs text-foreground-subtle">
+          <p className="text-[11px] text-foreground-subtle">
             <Tr k="app.settings.metricsLead" />{" "}
-            <Link href="/app/settings" className="font-semibold text-electric-600 dark:text-electric-300">
+            <Link href="/app/settings" className="font-semibold text-navy-900">
               <Tr k="app.settings.title" />
             </Link>
           </p>
@@ -508,12 +506,12 @@ export default async function OwnProfilePage({
       )}
 
       {tab === "offers" && (
-        <div className="space-y-6">
+        <div className="space-y-5">
           <div>
-            <h2 className="text-lg font-bold tracking-tight">
+            <h2 className="text-[1.25rem] font-bold tracking-[-0.02em]">
               <Tr k="app.profile.offersTitle" />
             </h2>
-            <p className="mt-1 max-w-2xl text-sm leading-6 text-foreground-muted">
+            <p className="mt-1 max-w-2xl text-[13px] leading-6 text-foreground-muted">
               <Tr k="app.profile.offersLead" />
             </p>
           </div>
@@ -587,7 +585,7 @@ function ExternalLink({ href, icon, label }: { href: string; icon: React.ReactNo
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-2.5 py-1 text-xs text-foreground-muted transition-colors hover:text-foreground"
+      className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1.5 text-[12px] text-foreground-muted transition-colors hover:text-foreground hover:border-border-strong"
     >
       {icon}
       <span>{label}</span>
@@ -595,36 +593,26 @@ function ExternalLink({ href, icon, label }: { href: string; icon: React.ReactNo
   );
 }
 
-/** One compact inline statistic for the header row. */
 function StatInline({ labelKey, value }: { labelKey: string; value: number }) {
   return (
-    <div className="inline-flex items-baseline gap-1.5 px-1">
-      <dt className="text-xs text-foreground-muted">
+    <div className="inline-flex items-baseline gap-1 px-1">
+      <dt className="text-[11px] font-medium text-foreground-muted">
         <Tr k={labelKey} />
       </dt>
-      <dd className="text-sm font-bold">{value}</dd>
+      <dd className="text-[12px] font-bold">{value}</dd>
     </div>
   );
 }
 
 function StatDot() {
-  return (
-    <span aria-hidden="true" className="text-foreground-subtle">
-      ·
-    </span>
-  );
+  return <span aria-hidden="true" className="text-foreground-subtle text-[10px]">·</span>;
 }
 
-/**
- * Collapsible section for secondary profile information – native
- * `<details>`/`<summary>` so it works without client-side JavaScript and
- * stays inside the server component.
- */
 function AccordionSection({ titleKey, children }: { titleKey: string; children: React.ReactNode }) {
   return (
-    <details className="group rounded-2xl border border-border bg-surface">
-      <summary className="flex cursor-pointer select-none items-center justify-between gap-3 rounded-2xl px-5 py-3.5 [&::-webkit-details-marker]:hidden">
-        <span className="text-sm font-bold tracking-tight">
+    <details className="group rounded-[16px] border border-border bg-surface">
+      <summary className="flex cursor-pointer select-none items-center justify-between gap-3 rounded-[16px] px-5 py-3.5 [&::-webkit-details-marker]:hidden">
+        <span className="text-[13px] font-bold tracking-[-0.01em]">
           <Tr k={titleKey} />
         </span>
         <ChevronDownIcon
@@ -640,10 +628,10 @@ function AccordionSection({ titleKey, children }: { titleKey: string; children: 
 function MetricCell({ labelKey, value }: { labelKey: string; value: number }) {
   return (
     <Card className="h-full p-4">
-      <p className="text-xs font-semibold uppercase tracking-wide text-foreground-subtle">
+      <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-foreground-subtle">
         <Tr k={labelKey} />
       </p>
-      <p className="mt-1.5 text-2xl font-bold tracking-tight">{value}</p>
+      <p className="mt-2 text-[1.5rem] font-bold tracking-[-0.02em]">{value}</p>
     </Card>
   );
 }
@@ -655,23 +643,23 @@ function TagBlock({
 }: {
   labelKey: string;
   items: string[];
-  tone?: "neutral" | "electric" | "forest";
+  tone?: "neutral" | "navy" | "sage";
 }) {
   if (items.length === 0) return null;
   const tones = {
-    neutral: "bg-surface-muted text-foreground",
-    electric: "bg-electric-500/10 text-electric-600 dark:text-electric-300",
-    forest: "bg-forest-500/10 text-forest-600 dark:text-forest-300",
+    neutral: "bg-surface-muted text-foreground border border-border",
+    navy: "bg-navy-900 text-paper-50",
+    sage: "bg-sage-100 text-sage-700 border border-sage-200",
   } as const;
   return (
     <div>
-      <h3 className="text-xs font-bold uppercase tracking-[0.16em] text-foreground-subtle">
+      <h3 className="text-[11px] font-bold uppercase tracking-[0.14em] text-foreground-subtle">
         <Tr k={labelKey} />
       </h3>
       <ul className="mt-2.5 flex flex-wrap gap-2">
         {items.map((item) => (
           <li key={item}>
-            <span className={`rounded-full px-3 py-1 text-xs font-medium ${tones[tone]}`}>{item}</span>
+            <span className={`rounded-full px-3 py-1 text-[12px] font-medium ${tones[tone]}`}>{item}</span>
           </li>
         ))}
       </ul>
@@ -692,7 +680,7 @@ function AccountLink({
     <li>
       <Link
         href={href}
-        className="flex items-center gap-2.5 rounded-lg px-2 py-2 text-sm font-medium text-foreground-muted transition-colors hover:bg-surface-muted hover:text-foreground"
+        className="flex items-center gap-2.5 rounded-xl px-2 py-2.5 text-[13px] font-medium text-foreground-muted transition-colors hover:bg-surface-muted hover:text-foreground"
       >
         {icon}
         <Tr k={labelKey} />
@@ -714,17 +702,17 @@ function OfferList({
 }) {
   return (
     <Card className={`h-full p-5 ${className}`}>
-      <h3 className="flex items-center gap-2 text-sm font-bold tracking-tight">
+      <h3 className="flex items-center gap-2 text-[13px] font-bold tracking-[-0.01em]">
         {icon}
         <Tr k={titleKey} />
       </h3>
       <ul className="mt-3 divide-y divide-border">
         {items.map((item) => (
           <li key={item.id} className="py-2.5">
-            <Link href={item.href} className="text-sm font-medium hover:underline">
+            <Link href={item.href} className="text-[13px] font-medium hover:underline">
               {item.title}
             </Link>
-            <p className="mt-0.5 text-xs text-foreground-subtle">{item.meta}</p>
+            <p className="mt-0.5 text-[11px] text-foreground-subtle">{item.meta}</p>
           </li>
         ))}
       </ul>

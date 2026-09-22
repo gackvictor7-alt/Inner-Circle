@@ -5,11 +5,6 @@ import { createPortal } from "react-dom";
 import type { ReactNode } from "react";
 import { XIcon } from "./icons";
 
-/**
- * Accessible modal dialog: portal render, focus trap, Escape/backdrop close,
- * body scroll lock, focus restore. Used across the platform (member area
- * confirmations, short forms, previews).
- */
 export function Dialog({
   open,
   onClose,
@@ -25,7 +20,6 @@ export function Dialog({
   description?: string;
   children?: ReactNode;
   footer?: ReactNode;
-  /** Accessible name for the X button (i18n supplied by the caller). */
   closeLabel?: string;
 }) {
   const panelRef = useRef<HTMLDivElement>(null);
@@ -34,11 +28,8 @@ export function Dialog({
   useEffect(() => {
     if (!open) return;
     previouslyFocused.current = document.activeElement as HTMLElement | null;
-
     const { overflow } = document.body.style;
     document.body.style.overflow = "hidden";
-
-    // Move focus into the dialog.
     const panel = panelRef.current;
     panel?.focus();
 
@@ -78,7 +69,7 @@ export function Dialog({
   return createPortal(
     <div className="fixed inset-0 z-[100] flex items-end justify-center p-4 sm:items-center">
       <div
-        className="absolute inset-0 animate-fade-in bg-midnight-950/60 backdrop-blur-sm"
+        className="absolute inset-0 animate-fade-in bg-navy-950/50 backdrop-blur-sm"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -89,8 +80,9 @@ export function Dialog({
         aria-labelledby="ic-dialog-title"
         aria-describedby={description ? "ic-dialog-desc" : undefined}
         tabIndex={-1}
-        className="relative w-full max-w-lg animate-scale-in rounded-2xl border border-border bg-surface p-6 shadow-pop outline-none sm:p-8"
+        className="relative w-full max-w-lg animate-scale-in rounded-[24px] border border-border bg-surface p-6 shadow-pop outline-none sm:p-7"
       >
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-border-strong/40 to-transparent" />
         <button
           type="button"
           onClick={onClose}
@@ -99,15 +91,15 @@ export function Dialog({
         >
           <XIcon size={18} />
         </button>
-        <h2 id="ic-dialog-title" className="pr-8 text-lg font-bold tracking-tight">
+        <h2 id="ic-dialog-title" className="pr-8 text-[1.1rem] font-bold tracking-[-0.02em]">
           {title}
         </h2>
         {description && (
-          <p id="ic-dialog-desc" className="mt-2 text-sm leading-6 text-foreground-muted">
+          <p id="ic-dialog-desc" className="mt-2 text-[13px] leading-6 text-foreground-muted">
             {description}
           </p>
         )}
-        {children && <div className="mt-4">{children}</div>}
+        {children && <div className="mt-5">{children}</div>}
         {footer && <div className="mt-6 flex flex-wrap justify-end gap-3">{footer}</div>}
       </div>
     </div>,

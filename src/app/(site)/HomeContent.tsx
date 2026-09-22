@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useI18n, usePageMeta } from "@/lib/i18n/context";
 import { Button } from "@/components/ui/Button";
@@ -10,9 +9,7 @@ import {
   BriefcaseIcon,
   CalendarIcon,
   ChartIcon,
-  CheckIcon,
   GridIcon,
-  SparkleIcon,
   StoreIcon,
   UsersIcon,
 } from "@/components/ui/icons";
@@ -21,20 +18,6 @@ import { Reveal } from "@/components/site/Reveal";
 import { MembershipBlock } from "@/components/site/MembershipBlock";
 
 type AreaKey = "network" | "opportunities" | "jobs" | "investments" | "marketplace" | "events";
-
-/**
- * Homepage image set. These six visuals define the public image language
- * (bright, young, real working situations) – subpages reference the same
- * files instead of inventing a second, darker visual world.
- */
-const areaImages: Record<AreaKey, { src: string; alt: string }> = {
-  network: { src: "/images/network.jpg", alt: "Zwei junge Business-Personen schauen gemeinsam auf ein Tablet in einem hellen Büro" },
-  opportunities: { src: "/images/business.jpg", alt: "Zwei junge Projektentwickler besprechen Baupläne auf einer modernen Baustelle" },
-  jobs: { src: "/images/community-meetup.jpg", alt: "Community-Abend in einem modernen Raum" },
-  investments: { src: "/images/investments-modern.jpg", alt: "Team bespricht Kennzahlen an einem Screen" },
-  marketplace: { src: "/images/marketplace-learn.jpg", alt: "Creatorin zeichnet ein Video in ihrem Studio auf" },
-  events: { src: "/images/events-experience.jpg", alt: "Networking-Abend auf einer Dachterrasse" },
-};
 
 const areaLinks: Record<AreaKey, string> = {
   network: "/network",
@@ -45,10 +28,6 @@ const areaLinks: Record<AreaKey, string> = {
   events: "/events",
 };
 
-/**
- * Small icon per area – used by the compact 2×3 mobile overview (Sprint 8).
- * The desktop image rows keep their existing visuals, unchanged.
- */
 const areaIcons: Record<AreaKey, (props: { size?: number; className?: string }) => React.JSX.Element> = {
   network: UsersIcon,
   opportunities: BriefcaseIcon,
@@ -59,20 +38,18 @@ const areaIcons: Record<AreaKey, (props: { size?: number; className?: string }) 
 };
 
 /**
- * Public homepage – compressed conversion flow (compression + width sprint):
+ * VENTURE & PARTNERS – Homepage 3.0
  *
- *   Hero → drei Ergebnisse → sechs Kernbereiche → Events → Membership → CTA
+ * Premium editorial, off-white dominant, calm, international, business-first.
+ * Mobile: drastically shorter – no scroll fatigue.
  *
- * MOBILE (founder request 2026-09-21): a genuinely shorter page, not just
- * tighter spacing – compact hero, compressed outcomes, the six core areas as
- * a compact tappable list, membership with price + CTA, footer. The detailed
- * image/text rows, the events band, the capital note and the closing CTA are
- * desktop-only; everything they explain stays reachable via the area links,
- * the header navigation and the footer.
- *
- * Everything explanatory that used to follow Events (For who, So funktioniert
- * es, Trust, Portfolio-Teaser) now lives on /how-it-works. Static prerender
- * only: no request-time data, no access context.
+ * Structure:
+ *   Hero (light, editorial, Berge/Weite abstract) →
+ *   3 Principles (People/Ideas/Capital) →
+ *   6 Areas (compact mobile list, editorial desktop) →
+ *   V&P Portfolio teaser →
+ *   Membership →
+ *   Final CTA (desktop only)
  */
 export function HomeContent() {
   const { t } = useI18n();
@@ -87,167 +64,251 @@ export function HomeContent() {
     "events",
   ];
 
-  const areaContent: Record<AreaKey, { title: string; text: string; short: string }> = {
+  const areaContent: Record<AreaKey, { title: string; text: string; short: string; label: string }> = {
     network: {
-      title: t.home2.enablesNetworkTitle,
-      text: t.home2.enablesNetworkText,
-      short: t.home2.enablesNetworkShort,
+      title: "Network",
+      text: "Kuratiertes Netzwerk aus Unternehmern, Investoren, Operatoren. Relevante Köpfe, nicht laute Listen.",
+      short: "Kuratierte Köpfe für deinen nächsten Schritt.",
+      label: "People",
     },
     opportunities: {
-      title: t.home2.enablesOpportunitiesTitle,
-      text: t.home2.enablesOpportunitiesText,
-      short: t.home2.enablesOpportunitiesShort,
+      title: "Opportunities",
+      text: "Konkrete Chancen: Co-Founder, Kunden, Mandate, Partnerschaften. Klar beschrieben, gezielt bewerbbar.",
+      short: "Konkrete Chancen, klar beschrieben.",
+      label: "Ideas",
     },
-    jobs: { title: t.home2.enablesJobsTitle, text: t.home2.enablesJobsText, short: t.home2.enablesJobsShort },
+    jobs: {
+      title: "Jobs & Projekte",
+      text: "Vertrieb, Co-Founder, Mandat, Team – Menschen für das, was als nächstes zählt.",
+      short: "Menschen für Projekte und Teams.",
+      label: "Build",
+    },
     investments: {
-      title: t.home2.enablesInvestmentsTitle,
-      text: t.home2.enablesInvestmentsText,
-      short: t.home2.enablesInvestmentsShort,
+      title: "V&P Portfolio",
+      text: "Geprüfte Investment Opportunities aus Netzwerk und V&P Portfolio – transparent, ohne Versprechen.",
+      short: "Geprüfte Opportunities, klarer Prozess.",
+      label: "Capital",
     },
     marketplace: {
-      title: t.home2.enablesMarketplaceTitle,
-      text: t.home2.enablesMarketplaceText,
-      short: t.home2.enablesMarketplaceShort,
+      title: "Marketplace",
+      text: "Academy, Services, Wissen – von Mitgliedern für Mitglieder. Qualität vor Quantität.",
+      short: "Wissen teilen, Services buchen.",
+      label: "Knowledge",
     },
-    events: { title: t.home2.enablesEventsTitle, text: t.home2.enablesEventsText, short: t.home2.enablesEventsShort },
+    events: {
+      title: "V&P Events",
+      text: "Business Dinner, Networking, Experiences – kuratiert, persönlich, hochwertig. Konzept vs. bestätigt klar getrennt.",
+      short: "Begegnungen, die Zusammenarbeit werden.",
+      label: "Experience",
+    },
   };
 
-  const outcomes = [
-    { key: "build", title: t.home2.outcomeBuildTitle, text: t.home2.outcomeBuildText, short: t.home2.outcomeBuildShort },
-    { key: "capital", title: t.home2.outcomeCapitalTitle, text: t.home2.outcomeCapitalText, short: t.home2.outcomeCapitalShort },
-    { key: "experience", title: t.home2.outcomeExperienceTitle, text: t.home2.outcomeExperienceText, short: t.home2.outcomeExperienceShort },
+  const principles = [
+    {
+      kicker: "People",
+      title: "Die richtigen Menschen.",
+      text: "Unternehmer, Investoren, Creator, Operator – kuratiert. Keine Follower-Zahlen, echte Zusammenarbeit.",
+    },
+    {
+      kicker: "Capital",
+      title: "Kapital trifft Idee.",
+      text: "Geprüfte Opportunities aus V&P Portfolio. Transparent, diskret, ohne Renditeversprechen.",
+    },
+    {
+      kicker: "Progress",
+      title: "Aus Kontakt wird Impact.",
+      text: "V&P Events, Deals, Projekte – dort, wo aus Gesprächen Zusammenarbeit wird.",
+    },
   ];
 
   return (
     <>
-      {/* ------------------------------------------------------------ hero */}
-      <div className="relative isolate overflow-hidden border-b border-border/70">
-        <Image
-          src="/images/hero-home.jpg"
-          alt={t.home2.heroImageAlt}
-          priority
-          width={1600}
-          height={1000}
-          sizes="100vw"
-          className="absolute inset-0 -z-10 h-full w-full object-cover"
-        />
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 -z-10 bg-gradient-to-r from-midnight-950/92 via-midnight-950/70 to-midnight-950/25"
-        />
-        <div className="ic-shell-wide py-10 sm:py-24 lg:py-32">
-          {/* Desktop: nudged toward the screen centre without being centred. */}
-          <div className="max-w-3xl animate-fade-up lg:ml-[6%] xl:ml-[10%]">
-            <Badge variant="electric" className="backdrop-blur-sm">
-              <SparkleIcon size={14} />
-              {t.home2.heroKicker}
-            </Badge>
-            <h1 className="mt-4 text-[1.85rem] font-bold leading-[1.12] tracking-tight text-paper-50 sm:mt-6 sm:text-6xl sm:leading-[1.05] lg:text-7xl">
-              {t.home2.heroTitleA}
-              <br />
-              <span className="text-electric-300">{t.home2.heroTitleB}</span>
-            </h1>
-            <p className="mt-4 max-w-2xl text-[15px] leading-6 text-paper-50/85 sm:mt-6 sm:text-lg sm:leading-8">
-              {t.home2.heroLead}
-            </p>
-            {/* Mobile (Sprint 8): one primary CTA + one small trial line –
-                no second button, no facts list. */}
-            <div className="mt-6 flex flex-col items-start gap-2.5 sm:mt-8 lg:hidden">
-              <Button href="/register" size="lg" className="w-full sm:w-auto">
-                {t.home2.heroCtaPrimary}
-                <ArrowRightIcon size={18} />
-              </Button>
-              <Link
-                href="/register"
-                className="text-[13px] font-semibold text-paper-50/75 underline-offset-4 hover:text-paper-50 hover:underline"
-              >
-                {t.home2.heroTrialCta}
-              </Link>
+      {/* ── HERO – Editorial, Off-White, Berge/Weite Abstract ── */}
+      <div className="relative isolate overflow-hidden border-b border-border/60 bg-paper-50">
+        {/* Abstract mountain / horizon / clarity – no stock photo, pure editorial gradient */}
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+          <div className="absolute inset-0 bg-gradient-to-b from-paper-50 via-paper-50 to-paper-100" />
+          {/* Horizon layers */}
+          <div className="absolute inset-x-0 top-[18%] h-[1px] bg-gradient-to-r from-transparent via-navy-900/10 to-transparent" />
+          <div className="absolute inset-x-0 top-[32%] h-[1px] bg-gradient-to-r from-transparent via-navy-900/[0.06] to-transparent" />
+          {/* Soft mountain shapes via blurred gradients */}
+          <div className="absolute -right-[15%] top-[-10%] h-[70%] w-[55%] rounded-full bg-gradient-to-br from-slate-200/50 via-slate-100/30 to-sage-100/40 blur-[60px]" />
+          <div className="absolute -left-[10%] bottom-[-20%] h-[60%] w-[45%] rounded-full bg-gradient-to-tr from-navy-900/[0.04] to-slate-200/40 blur-[70px]" />
+          <div className="absolute left-[30%] top-[10%] h-[40%] w-[30%] rounded-full bg-gradient-to-br from-sage-100/50 to-paper-200/60 blur-[50px]" />
+          {/* Subtle grid – editorial */}
+          <div className="absolute inset-0 opacity-[0.015]" style={{ backgroundImage: `linear-gradient(#111F3D 1px, transparent 1px), linear-gradient(90deg, #111F3D 1px, transparent 1px)`, backgroundSize: `72px 72px` }} />
+        </div>
+
+        <div className="ic-shell-wide relative">
+          <div className="grid gap-10 py-10 sm:py-16 lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:gap-16 lg:py-24">
+            {/* Left: Copy */}
+            <div className="animate-fade-up">
+              <div className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1.5 shadow-card">
+                <span className="h-1.5 w-1.5 rounded-full bg-sage-600 animate-pulse" />
+                <span className="text-[11px] font-semibold tracking-[0.12em] text-foreground-muted">
+                  {t.home2.heroKicker}
+                </span>
+              </div>
+
+              <h1 className="mt-6 text-balance text-[2.1rem] font-bold leading-[0.95] tracking-[-0.04em] sm:mt-8 sm:text-[2.8rem] lg:text-[3.8rem]">
+                <span className="block text-foreground">{t.home2.heroTitleA}</span>
+                <span className="block text-foreground-muted/90">{t.home2.heroTitleB}</span>
+              </h1>
+
+              <p className="mt-5 max-w-[36rem] text-pretty text-[15px] leading-7 text-foreground-muted sm:mt-6 sm:text-[17px] sm:leading-8">
+                {t.home2.heroLead}
+              </p>
+
+              {/* Desktop CTAs */}
+              <div className="mt-8 hidden flex-wrap items-center gap-3 lg:flex">
+                <Button href="/register" size="lg" className="rounded-full px-8">
+                  {t.home2.heroCtaPrimary}
+                  <ArrowRightIcon size={16} />
+                </Button>
+                <Button href="/how-it-works" size="lg" variant="secondary" className="rounded-full">
+                  {t.home2.heroCtaSecondary}
+                </Button>
+              </div>
+
+              {/* Mobile: single primary CTA */}
+              <div className="mt-6 flex flex-col items-start gap-3 lg:hidden">
+                <Button href="/register" size="lg" className="w-full rounded-full sm:w-auto">
+                  {t.home2.heroCtaPrimary}
+                  <ArrowRightIcon size={16} />
+                </Button>
+                <p className="text-[12px] font-medium tracking-[0.02em] text-foreground-subtle">
+                  {t.home2.heroMembershipHint}
+                </p>
+              </div>
+
+              <p className="mt-6 hidden text-[13px] font-medium text-foreground-subtle lg:block">
+                {t.home2.heroMembershipHint}
+              </p>
+
+              {/* Trust strip – compact */}
+              <div className="mt-10 hidden border-t border-border/60 pt-6 lg:block">
+                <div className="flex flex-wrap gap-x-6 gap-y-2">
+                  {Object.values(t.home2.heroFacts).map((fact) => (
+                    <span key={fact} className="inline-flex items-center gap-2 text-[12px] font-medium text-foreground-subtle">
+                      <span className="h-px w-3 bg-border-strong" />
+                      {fact}
+                    </span>
+                  ))}
+                </div>
+              </div>
             </div>
-            {/* Tablet + desktop: the approved two-CTA row (unchanged). */}
-            <div className="mt-6 hidden flex-wrap items-center gap-3 sm:mt-8 lg:flex">
-              <Button href="#outcomes" size="lg">
-                {t.home2.heroCtaPrimary}
-                <ArrowRightIcon size={18} />
-              </Button>
-              <Button
-                href="/register"
-                size="lg"
-                variant="ghost"
-                className="text-paper-50/80 hover:bg-white/10 hover:text-paper-50"
-              >
-                {t.home2.heroCtaSecondary}
-              </Button>
+
+            {/* Right: Editorial Visual – Mountain / Plant / Clarity */}
+            <div className="relative hidden lg:block">
+              <div className="relative mx-auto max-w-[520px]">
+                {/* Main card – premium */}
+                <div className="relative overflow-hidden rounded-[28px] border border-border bg-surface shadow-lift">
+                  <div className="aspect-[4/3] relative bg-gradient-to-br from-paper-50 to-sage-50">
+                    {/* Abstract landscape */}
+                    <div className="absolute inset-0">
+                      <div className="absolute inset-x-0 bottom-0 h-[45%] bg-gradient-to-t from-sage-200/40 to-transparent" />
+                      <div className="absolute left-[15%] bottom-[28%] h-[28%] w-[35%] rounded-t-full bg-gradient-to-t from-navy-900/8 to-navy-900/[0.02] blur-[0.5px]" />
+                      <div className="absolute left-[42%] bottom-[32%] h-[38%] w-[28%] rounded-t-full bg-gradient-to-t from-navy-800/10 to-transparent" />
+                      <div className="absolute right-[18%] bottom-[30%] h-[22%] w-[22%] rounded-t-full bg-gradient-to-t from-sage-600/15 to-transparent" />
+                      {/* Plant accent */}
+                      <div className="absolute right-[12%] bottom-[12%]">
+                        <div className="h-16 w-px bg-gradient-to-t from-sage-600/30 to-transparent" />
+                        <div className="absolute -left-3 bottom-8 h-6 w-6 rounded-full bg-sage-200/60 blur-[0.5px]" />
+                        <div className="absolute -right-2 bottom-10 h-4 w-8 rounded-full bg-sage-300/40 blur-[1px]" />
+                      </div>
+                    </div>
+                    {/* Horizon line */}
+                    <div className="absolute inset-x-[12%] top-[46%] h-px bg-gradient-to-r from-transparent via-navy-900/10 to-transparent" />
+                  </div>
+
+                  {/* Content overlay */}
+                  <div className="border-t border-border bg-surface p-5">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-foreground-subtle">
+                          INNER CIRCLE
+                        </p>
+                        <p className="mt-1 text-[13px] font-semibold tracking-[-0.01em] text-foreground">
+                          People · Ideas · Capital · Impact
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1.5 rounded-full bg-sage-50 px-2.5 py-1">
+                        <span className="h-1.5 w-1.5 rounded-full bg-sage-600" />
+                        <span className="text-[10px] font-semibold tracking-[0.06em] text-sage-700">LIVE</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Floating badges – premium details */}
+                <div className="absolute -left-6 top-8 rounded-full border border-border bg-surface px-4 py-2 shadow-card">
+                  <span className="text-[11px] font-semibold tracking-[0.02em] text-foreground">V&P Events</span>
+                </div>
+                <div className="absolute -right-4 bottom-16 rounded-full border border-border bg-navy-900 px-4 py-2 shadow-card">
+                  <span className="text-[11px] font-semibold tracking-[0.02em] text-paper-50">V&P Portfolio</span>
+                </div>
+              </div>
             </div>
-            <p className="mt-4 text-[13px] font-medium text-paper-50/70 sm:mt-5 sm:text-sm">{t.home2.heroMembershipHint}</p>
-            <ul className="mt-6 hidden grid-cols-2 gap-x-5 gap-y-2 border-t border-white/15 pt-4 sm:grid sm:mt-9 sm:gap-x-6 sm:pt-5 lg:grid-cols-5">
-              {Object.entries(t.home2.heroFacts).map(([key, label]) => (
-                <li key={key} className="flex items-center gap-2 text-[12px] text-paper-50/70 sm:text-[13px]">
-                  <span aria-hidden="true" className="h-1 w-1 shrink-0 rounded-full bg-electric-300" />
-                  {label}
-                </li>
-              ))}
-            </ul>
           </div>
-          {/* The former technical AI-image notice lived here; it moved to the
-              footer (image information) so the first impression stays clean
-              while staying honest (founder request 2026-09-21). */}
         </div>
       </div>
 
-      {/* ------------------------------------------------ drei Ergebnisse */}
-      <Section bg="default" id="outcomes" tight>
+      {/* ── 3 PRINCIPLES – Mobile compact, Desktop editorial ── */}
+      <Section bg="default" tight>
         <Reveal>
-          <Kicker>{t.home2.outcomeKicker}</Kicker>
-          <h2 className="mt-3 max-w-2xl text-[1.6rem] font-bold tracking-tight sm:mt-4 sm:text-4xl lg:text-5xl">
+          <div className="flex items-center gap-3">
+            <span className="h-px w-8 bg-navy-900/20" />
+            <Kicker tone="navy">{t.home2.outcomeKicker}</Kicker>
+          </div>
+          <h2 className="mt-4 max-w-3xl text-[1.75rem] font-bold leading-[0.95] tracking-[-0.03em] sm:text-[2.5rem] lg:text-[3rem]">
             {t.home2.outcomeTitle}
           </h2>
         </Reveal>
-        <div className="mt-5 grid gap-3.5 sm:mt-10 sm:gap-8 lg:mt-12 lg:grid-cols-3 lg:gap-12">
-          {outcomes.map((item, index) => (
-            <Reveal key={item.key} delay={index * 70}>
-              <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-electric-600 dark:text-electric-400 sm:text-xs">
-                {item.title}
-              </p>
-              {/* Mobile (Sprint 8): one short line per outcome – the full
-                  sentence stays on tablet/desktop. */}
-              <p className="mt-1.5 max-w-md text-[15px] font-semibold leading-6 tracking-tight sm:mt-3 sm:text-xl sm:leading-7">
-                <span className="block text-sm font-medium leading-5 text-foreground-muted sm:hidden">{item.short}</span>
-                <span className="hidden sm:inline">{item.text}</span>
-              </p>
+
+        <div className="mt-8 grid gap-6 sm:mt-10 sm:gap-8 lg:mt-12 lg:grid-cols-3 lg:gap-12">
+          {principles.map((item, index) => (
+            <Reveal key={item.kicker} delay={index * 60}>
+              <div className="group relative rounded-[20px] border border-border/60 bg-surface p-6 transition-all hover:border-border-strong hover:shadow-card sm:p-7">
+                <div className="flex items-center gap-3">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-navy-900 text-[11px] font-bold text-paper-50">
+                    0{index + 1}
+                  </span>
+                  <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-navy-900/60">
+                    {item.kicker}
+                  </span>
+                </div>
+                <h3 className="mt-4 text-[18px] font-bold tracking-[-0.02em] leading-tight sm:text-[20px]">
+                  {item.title}
+                </h3>
+                <p className="mt-2 text-[14px] leading-6 text-foreground-muted">{item.text}</p>
+              </div>
             </Reveal>
           ))}
         </div>
       </Section>
 
-      {/* ------------------------------------------- sechs Kernbereiche */}
-      <Section bg="surface" id="areas" width="wide" tight>
+      {/* ── 6 AREAS – Compact Mobile, Editorial Desktop ── */}
+      <Section bg="surface" width="wide" tight>
         <Reveal>
-          <div className="flex flex-wrap items-end justify-between gap-4 sm:gap-6">
-            <div className="max-w-2xl">
-              <Kicker>{t.home2.enablesKicker}</Kicker>
-              <h2 className="mt-3 text-[1.6rem] font-bold tracking-tight sm:mt-4 sm:text-4xl lg:text-5xl">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <Kicker tone="navy">{t.home2.enablesKicker}</Kicker>
+              <h2 className="mt-3 text-[1.6rem] font-bold tracking-[-0.03em] sm:text-[2.2rem] lg:text-[2.5rem]">
                 {t.home2.enablesTitle}
               </h2>
-              <p className="mt-4 hidden text-base leading-7 text-foreground-muted lg:block">{t.home2.enablesLead}</p>
             </div>
             <Link
               href="/how-it-works"
-              className="group inline-flex items-center gap-1.5 text-sm font-semibold text-electric-600 transition-colors hover:text-electric-700 dark:text-electric-300"
+              className="group hidden items-center gap-1.5 text-[13px] font-semibold text-navy-900 transition-colors hover:text-navy-700 lg:inline-flex"
             >
               {t.home2.howItWorksLink}
-              <ArrowRightIcon
-                size={15}
-                className="transition-transform duration-200 group-hover:translate-x-0.5"
-              />
+              <ArrowRightIcon size={14} className="transition-transform group-hover:translate-x-0.5" />
             </Link>
           </div>
         </Reveal>
 
-        {/* Mobile (Sprint 8): compact 2×3 overview – icon, title and one
-            benefit line per area. The whole tile is tappable; the detailed
-            images and copy stay on the area subpages (desktop rows below). */}
-        <ul className="mt-5 grid grid-cols-2 gap-2.5 sm:mt-6 sm:gap-3 lg:hidden">
+        {/* Mobile: 2×3 compact – drastically shorter */}
+        <ul className="mt-6 grid grid-cols-2 gap-2.5 sm:gap-3 lg:hidden">
           {areaKeys.map((key) => {
             const content = areaContent[key];
             const Icon = areaIcons[key];
@@ -255,10 +316,17 @@ export function HomeContent() {
               <li key={key}>
                 <Link
                   href={areaLinks[key]}
-                  className="flex h-full flex-col rounded-xl border border-border bg-background p-3 transition-colors hover:border-electric-500/40"
+                  className="flex h-full flex-col rounded-[16px] border border-border bg-background p-3.5 transition-all hover:border-navy-900/20 hover:shadow-card"
                 >
-                  <Icon size={18} className="text-electric-600 dark:text-electric-300" />
-                  <span className="mt-2 block text-[13px] font-bold leading-tight tracking-tight">
+                  <div className="flex items-center justify-between">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-paper-100">
+                      <Icon size={14} className="text-navy-900" />
+                    </span>
+                    <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-foreground-subtle">
+                      {content.label}
+                    </span>
+                  </div>
+                  <span className="mt-3 block text-[13px] font-bold leading-tight tracking-[-0.01em]">
                     {content.title}
                   </span>
                   <span className="mt-1 line-clamp-2 text-[11px] leading-4 text-foreground-muted">
@@ -270,119 +338,83 @@ export function HomeContent() {
           })}
         </ul>
 
-        {/* Desktop: the approved image/text rows (unchanged). */}
-        <div className="mt-10 hidden lg:mt-12 lg:block">
-          {areaKeys.map((key, index) => {
-            const content = areaContent[key];
-            const image = areaImages[key];
-            const reverse = index % 2 === 1;
-            return (
-              <Reveal key={key} delay={index * 40}>
-                <Link
-                  href={areaLinks[key]}
-                  className="group grid items-center gap-6 border-t border-border py-7 sm:gap-10 sm:py-9 lg:grid-cols-12 lg:gap-14"
-                >
-                  <span
-                    className={`relative block overflow-hidden rounded-2xl bg-surface-muted lg:col-span-6 ${
-                      reverse ? "lg:order-2" : ""
-                    }`}
+        {/* Desktop: editorial rows – calm, premium */}
+        <div className="mt-10 hidden lg:block">
+          <div className="grid gap-px rounded-[24px] border border-border bg-border p-px">
+            {areaKeys.map((key, index) => {
+              const content = areaContent[key];
+              const Icon = areaIcons[key];
+              return (
+                <Reveal key={key} delay={index * 30}>
+                  <Link
+                    href={areaLinks[key]}
+                    className="group flex items-center gap-6 bg-surface px-8 py-6 transition-colors hover:bg-paper-50 first:rounded-t-[23px] last:rounded-b-[23px]"
                   >
-                    <Image
-                      src={image.src}
-                      alt=""
-                      width={900}
-                      height={560}
-                      sizes="(max-width: 1024px) 100vw, 46vw"
-                      className="h-44 w-full object-cover transition-transform duration-500 group-hover:scale-[1.03] sm:h-56 lg:h-64 xl:h-72"
-                    />
-                  </span>
-                  <span className={`lg:col-span-6 ${reverse ? "lg:order-1" : ""}`}>
-                    <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-foreground-subtle">
-                      0{index + 1}
+                    <span className="flex h-10 w-10 items-center justify-center rounded-full bg-paper-100 transition-colors group-hover:bg-navy-900 group-hover:text-paper-50">
+                      <Icon size={16} />
                     </span>
-                    <span className="mt-2 block text-2xl font-bold tracking-tight sm:text-3xl">
-                      {content.title}
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-baseline gap-3">
+                        <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-foreground-subtle">
+                          {content.label}
+                        </span>
+                        <span className="text-[18px] font-bold tracking-[-0.02em]">{content.title}</span>
+                      </span>
+                      <span className="mt-1 block max-w-2xl text-[13px] leading-6 text-foreground-muted">
+                        {content.text}
+                      </span>
                     </span>
-                    <span className="mt-3 block max-w-xl text-sm leading-7 text-foreground-muted sm:text-base">
-                      {content.text}
-                    </span>
-                    <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-electric-600 dark:text-electric-300">
-                      {t.common.discover}
-                      <ArrowRightIcon size={14} />
-                    </span>
-                  </span>
-                </Link>
-              </Reveal>
-            );
-          })}
+                    <ArrowRightIcon size={16} className="shrink-0 text-foreground-subtle transition-all group-hover:translate-x-1 group-hover:text-foreground" />
+                  </Link>
+                </Reveal>
+              );
+            })}
+          </div>
         </div>
       </Section>
 
-      {/* --------------------------------------------------------- events */}
-      <Section bg="muted" id="events-feel" width="wide" tight className="hidden lg:block">
+      {/* ── V&P PORTFOLIO TEASER – Editorial, Premium ── */}
+      <Section bg="default" width="wide" tight className="hidden lg:block !py-10">
         <Reveal>
-          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:gap-14">
-            <div className="relative overflow-hidden rounded-2xl">
-              <Image
-                src="/images/events-experience.jpg"
-                alt={areaImages.events.alt}
-                width={1200}
-                height={760}
-                sizes="(max-width: 1024px) 100vw, 55vw"
-                className="h-56 w-full object-cover sm:h-72 lg:h-[26rem]"
-              />
-            </div>
-            <div className="max-w-xl">
-              <Kicker tone="sand">{t.home2.eventsKicker}</Kicker>
-              <h2 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">{t.home2.eventsTitle}</h2>
-              <p className="mt-4 text-base leading-7 text-foreground-muted">{t.home2.eventsLead}</p>
-              <Button href="/events" className="mt-7" variant="secondary">
-                {t.home2.eventsCta}
-                <ArrowRightIcon size={15} />
-              </Button>
-            </div>
-          </div>
-        </Reveal>
-      </Section>
-
-      {/* Compact capital note – the platform model in one line, details on /portfolio */}
-      <Section bg="default" width="wide" tight className="hidden lg:block !py-8 sm:!py-10">
-        <Reveal>
-          <div className="flex flex-wrap items-center justify-between gap-x-10 gap-y-4">
-            <div className="flex min-w-0 flex-wrap items-baseline gap-x-4 gap-y-1">
-              <p className="shrink-0 text-[11px] font-bold uppercase tracking-[0.2em] text-sand-600 dark:text-sand-400">
-                {t.home2.capitalKicker}
-              </p>
-              <p className="max-w-3xl text-sm leading-6 text-foreground-muted">{t.home2.capitalLine}</p>
+          <div className="flex items-center justify-between gap-8 rounded-[20px] border border-border bg-surface px-8 py-6 shadow-card">
+            <div className="flex items-center gap-6">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-navy-900">
+                <span className="text-[11px] font-bold text-paper-50">V&P</span>
+              </div>
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-foreground-subtle">
+                  {t.home2.capitalKicker}
+                </p>
+                <p className="mt-1 max-w-2xl text-[13px] leading-6 text-foreground-muted">
+                  {t.home2.capitalLine}
+                </p>
+              </div>
             </div>
             <Link
               href="/portfolio"
-              className="group inline-flex shrink-0 items-center gap-1.5 text-sm font-semibold text-electric-600 transition-colors hover:text-electric-700 dark:text-electric-300"
+              className="group inline-flex shrink-0 items-center gap-2 rounded-full border border-border bg-surface px-5 py-2.5 text-[13px] font-semibold text-foreground transition-all hover:border-navy-900 hover:bg-navy-900 hover:text-paper-50"
             >
               {t.home2.capitalCta}
-              <ArrowRightIcon
-                size={15}
-                className="transition-transform duration-200 group-hover:translate-x-0.5"
-              />
+              <ArrowRightIcon size={14} className="transition-transform group-hover:translate-x-0.5" />
             </Link>
           </div>
         </Reveal>
       </Section>
 
-      {/* Trust – compact mobile strip (Sprint 8): three short points only.
-          No big marketing section; the full trust model stays on
-          /how-it-works and the area subpages. Desktop is unchanged. */}
-      <section
-        aria-label={t.home2.trustKicker}
-        className="border-b border-border/70 bg-surface-muted/60 py-8 dark:bg-surface-muted/30 lg:hidden"
-      >
+      {/* Mobile trust – ultra compact */}
+      <section className="border-b border-border/60 bg-paper-50 py-6 lg:hidden">
         <div className="ic-shell">
-          <Kicker>{t.home2.trustKicker}</Kicker>
-          <h2 className="mt-2 text-lg font-bold tracking-tight sm:text-xl">{t.home2.trustCompactTitle}</h2>
-          <ul className="mt-3 space-y-2">
+          <div className="flex items-center gap-2">
+            <span className="h-px w-6 bg-navy-900/20" />
+            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-foreground-subtle">
+              {t.home2.trustKicker}
+            </p>
+          </div>
+          <h2 className="mt-2 text-[16px] font-bold tracking-[-0.02em]">{t.home2.trustCompactTitle}</h2>
+          <ul className="mt-3 grid gap-2">
             {[t.home2.trustCompact1, t.home2.trustCompact2, t.home2.trustCompact3].map((point) => (
-              <li key={point} className="flex items-start gap-2.5 text-sm leading-6 text-foreground-muted">
-                <CheckIcon size={15} className="mt-1 shrink-0 text-forest-500" />
+              <li key={point} className="flex items-center gap-2 text-[12px] leading-5 text-foreground-muted">
+                <span className="h-1 w-1 rounded-full bg-sage-600" />
                 {point}
               </li>
             ))}
@@ -390,22 +422,23 @@ export function HomeContent() {
         </div>
       </section>
 
-      {/* ------------------------------------- membership (next step) + CTA */}
       <MembershipBlock />
 
-      <Section bg="default" tight className="hidden lg:block !py-14">
+      <Section bg="default" tight className="hidden lg:block !py-12">
         <Reveal>
-          <div className="flex flex-col items-start justify-between gap-6 lg:flex-row lg:items-center">
-            <div className="max-w-2xl">
-              <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">{t.home2.finalTitle}</h2>
-              <p className="mt-3 text-sm leading-7 text-foreground-muted sm:text-base">{t.home2.finalLead}</p>
+          <div className="flex items-center justify-between gap-8">
+            <div className="max-w-xl">
+              <h2 className="text-[1.75rem] font-bold tracking-[-0.03em] leading-[1.05] sm:text-[2rem]">
+                {t.home2.finalTitle}
+              </h2>
+              <p className="mt-3 text-[14px] leading-6 text-foreground-muted">{t.home2.finalLead}</p>
             </div>
-            <div className="flex flex-wrap gap-3">
-              <Button href="/register" size="lg">
+            <div className="flex gap-3">
+              <Button href="/register" size="lg" className="rounded-full">
                 {t.home2.finalCtaPrimary}
-                <ArrowRightIcon size={18} />
+                <ArrowRightIcon size={16} />
               </Button>
-              <Button href="/login" size="lg" variant="secondary">
+              <Button href="/login" size="lg" variant="secondary" className="rounded-full">
                 {t.home2.finalCtaSecondary}
               </Button>
             </div>

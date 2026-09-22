@@ -8,18 +8,23 @@ export type BadgeVariant =
   | "warning"
   | "success"
   | "danger"
-  | "outline";
+  | "outline"
+  | "navy"
+  | "sage"
+  | "paper";
 
 const variants: Record<BadgeVariant, string> = {
   neutral: "bg-surface-muted text-foreground-muted border border-transparent",
-  electric: "bg-electric-500/10 text-electric-600 dark:text-electric-300 border border-electric-500/20",
-  forest: "bg-forest-500/10 text-forest-600 dark:text-forest-300 border border-forest-500/20",
-  sand: "bg-sand-400/15 text-sand-600 dark:text-sand-300 border border-sand-400/35",
-  warning:
-    "bg-warning-500/10 text-warning-500 border border-warning-500/25",
-  success: "bg-success-500/10 text-success-600 dark:text-success-500 border border-success-500/20",
-  danger: "bg-danger-500/10 text-danger-600 dark:text-danger-500 border border-danger-500/25",
-  outline: "border border-border-strong text-foreground-muted",
+  electric: "bg-navy-900 text-paper-50 border border-navy-900 dark:bg-paper-50 dark:text-navy-900",
+  forest: "bg-sage-600 text-white border border-sage-600/20",
+  sand: "bg-paper-200 text-ink-700 border border-paper-300",
+  warning: "bg-[#8a6a3a]/10 text-[#8a6a3a] border border-[#8a6a3a]/20",
+  success: "bg-sage-600/10 text-sage-700 dark:text-sage-300 border border-sage-600/20",
+  danger: "bg-[#7a3a3a]/10 text-[#7a3a3a] border border-[#7a3a3a]/20",
+  outline: "border border-border-strong text-foreground-muted bg-transparent",
+  navy: "bg-navy-900 text-paper-50 border border-navy-900",
+  sage: "bg-sage-100 text-sage-700 border border-sage-200",
+  paper: "bg-paper-50 text-ink-700 border border-paper-300",
 };
 
 export function Badge({
@@ -33,7 +38,7 @@ export function Badge({
 }) {
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold tracking-wide ${variants[variant]} ${className}`}
+      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold tracking-[0.04em] ${variants[variant]} ${className}`}
     >
       {children}
     </span>

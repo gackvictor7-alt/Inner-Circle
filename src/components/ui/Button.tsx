@@ -1,28 +1,30 @@
 import Link from "next/link";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 
-export type ButtonVariant = "primary" | "secondary" | "ghost" | "dark" | "success" | "danger";
+export type ButtonVariant = "primary" | "secondary" | "ghost" | "dark" | "success" | "danger" | "premium";
 export type ButtonSize = "sm" | "md" | "lg";
 
 const base =
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-semibold transition-all duration-200 select-none disabled:opacity-45 disabled:pointer-events-none active:scale-[0.98]";
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-semibold tracking-[-0.01em] transition-all duration-200 select-none disabled:opacity-45 disabled:pointer-events-none active:scale-[0.98]";
 
 const variants: Record<ButtonVariant, string> = {
   primary:
-    "bg-electric-500 text-white shadow-[0_8px_24px_-10px_rgb(54_108_245/0.6)] hover:bg-electric-600 hover:shadow-[0_12px_32px_-10px_rgb(54_108_245/0.7)]",
+    "bg-navy-900 text-paper-50 shadow-[0_4px_16px_-8px_rgb(17_31_61/0.5)] hover:bg-navy-800 hover:shadow-[0_8px_24px_-10px_rgb(17_31_61/0.55)] dark:bg-paper-50 dark:text-navy-900 dark:hover:bg-white",
   secondary:
-    "border border-border-strong bg-surface text-foreground hover:border-foreground/30 hover:bg-surface-muted",
+    "border border-border bg-surface text-foreground hover:border-border-strong hover:bg-surface-muted",
   ghost: "text-foreground-muted hover:text-foreground hover:bg-surface-muted",
-  dark: "bg-midnight-900 text-paper-50 hover:bg-midnight-800 dark:bg-paper-50 dark:text-midnight-900 dark:hover:bg-white",
+  dark: "bg-navy-950 text-paper-50 hover:bg-navy-900 dark:bg-paper-50 dark:text-navy-900 dark:hover:bg-white",
   success:
-    "bg-forest-500 text-white shadow-[0_8px_24px_-12px_rgb(18_128_92/0.6)] hover:bg-forest-600",
-  danger: "bg-danger-600 text-white hover:bg-danger-500",
+    "bg-sage-600 text-white shadow-[0_4px_16px_-8px_rgb(45_74_62/0.5)] hover:bg-sage-700",
+  danger: "bg-[#7a3a3a] text-white hover:bg-[#9a4a4a]",
+  premium:
+    "bg-navy-900 text-paper-50 border border-navy-700/50 shadow-[0_8px_24px_-12px_rgb(17_31_61/0.6)] hover:bg-navy-800 hover:border-navy-600",
 };
 
 const sizes: Record<ButtonSize, string> = {
-  sm: "h-9 px-4 text-sm",
-  md: "h-11 px-6 text-sm",
-  lg: "h-12 px-7 text-base",
+  sm: "h-9 px-5 text-[13px]",
+  md: "h-11 px-6 text-[13.5px]",
+  lg: "h-12 px-7 text-[14px]",
 };
 
 export type ButtonProps = {
@@ -31,12 +33,10 @@ export type ButtonProps = {
   fullWidth?: boolean;
   href?: string;
   className?: string;
-  /** Shows a spinner and disables the button while true. */
   loading?: boolean;
   children: ReactNode;
 } & Omit<ButtonHTMLAttributes<HTMLButtonElement>, "className">;
 
-/** Renders a next/link when `href` is given, otherwise a real <button>. */
 export function Button({
   variant = "primary",
   size = "md",

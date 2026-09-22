@@ -27,11 +27,9 @@ export type DashboardData = {
   trialRequestLimit: number;
   unreadInbox: number;
   membershipDevelopment: boolean;
-  /** Real, currently relevant entries (Sprint 8, TEIL E) – may be empty. */
   forYou: ForYouItem[];
 };
 
-/** Live countdown for the discovery trial (compact, header-only). */
 function useCountdown(ms: number | null) {
   const [remaining, setRemaining] = useState(ms);
   const [prev, setPrev] = useState(ms);
@@ -52,13 +50,6 @@ function useCountdown(ms: number | null) {
   return `${h}h ${String(m).padStart(2, "0")}m`;
 }
 
-/**
- * Start screen (Sprint 3, spec §2/§3).
- *
- * Deliberately minimal: one compact header line, then the six core areas.
- * Profile progress lives in Profile, requests/messages/notifications in Inbox,
- * Trust & Performance in Profile → Performance.
- */
 export function DashboardScreen({ data }: { data: DashboardData }) {
   const { t, tf } = useI18n();
   const countdown = useCountdown(data.trialMsRemaining);
@@ -72,7 +63,7 @@ export function DashboardScreen({ data }: { data: DashboardData }) {
       title: t.app.dashboard.areaNetworkTitle,
       desc: t.app.dashboard.areaNetworkDesc,
       short: t.app.dashboard.areaNetworkShort,
-      accent: "electric" as const,
+      accent: "navy" as const,
       locked: !isTrial && !isMember,
     },
     {
@@ -81,7 +72,7 @@ export function DashboardScreen({ data }: { data: DashboardData }) {
       title: t.app.dashboard.areaDealsTitle,
       desc: t.app.dashboard.areaDealsDesc,
       short: t.app.dashboard.areaDealsShort,
-      accent: "forest" as const,
+      accent: "sage" as const,
       locked: !isTrial && !isMember,
     },
     {
@@ -90,7 +81,7 @@ export function DashboardScreen({ data }: { data: DashboardData }) {
       title: t.app.dashboard.areaJobsTitle,
       desc: t.app.dashboard.areaJobsDesc,
       short: t.app.dashboard.areaJobsShort,
-      accent: "sand" as const,
+      accent: "paper" as const,
       locked: !isTrial && !isMember,
     },
     {
@@ -108,7 +99,7 @@ export function DashboardScreen({ data }: { data: DashboardData }) {
       title: t.app.dashboard.areaMarketplaceTitle,
       desc: t.app.dashboard.areaMarketplaceDesc,
       short: t.app.dashboard.areaMarketplaceShort,
-      accent: "sand" as const,
+      accent: "paper" as const,
       locked: false,
     },
     {
@@ -117,76 +108,63 @@ export function DashboardScreen({ data }: { data: DashboardData }) {
       title: t.app.dashboard.areaEventsTitle,
       desc: t.app.dashboard.areaEventsDesc,
       short: t.app.dashboard.areaEventsShort,
-      accent: "electric" as const,
+      accent: "sage" as const,
       locked: false,
     },
   ];
 
   const accents = {
-    electric: "bg-electric-500/10 text-electric-600 dark:text-electric-300",
-    forest: "bg-forest-500/10 text-forest-600 dark:text-forest-300",
-    sand: "bg-sand-400/20 text-sand-600 dark:text-sand-300",
-    navy: "bg-midnight-900/5 text-foreground dark:bg-white/10",
+    navy: "bg-navy-900 text-paper-50",
+    sage: "bg-sage-100 text-sage-700 border border-sage-200",
+    paper: "bg-paper-100 text-ink-700 border border-paper-200",
   } as const;
 
   return (
-    <div className="space-y-8">
-      {/* ------------------------------------------------- compact header */}
+    <div className="space-y-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
-          <h1 className="truncate text-xl font-bold tracking-tight sm:text-2xl">
+          <h1 className="truncate text-[1.5rem] font-bold tracking-[-0.02em] sm:text-[1.75rem]">
             {tf(t.app.dashboard.greetingName, { name: data.firstName })}
           </h1>
-          <Badge variant={isMember ? "forest" : isTrial ? "electric" : "neutral"}>
+          <Badge variant={isMember ? "sage" : isTrial ? "navy" : "neutral"}>
             {isMember ? t.app.access.levelMember : isTrial ? t.app.access.levelTrial : t.app.access.levelFree}
           </Badge>
-          {data.membershipDevelopment && <Badge variant="warning">{t.app.billing.devBadge}</Badge>}
+          {data.membershipDevelopment && <Badge variant="outline">{t.app.billing.devBadge}</Badge>}
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
           {isTrial && countdown && (
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-electric-500/25 bg-electric-500/5 px-2.5 py-1 text-xs font-semibold text-electric-600 dark:text-electric-300">
-              <span className="h-1.5 w-1.5 rounded-full bg-electric-500 animate-pulse" />
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-navy-900 px-3 py-1 text-[11px] font-semibold tracking-[0.02em] text-paper-50">
+              <span className="h-1.5 w-1.5 rounded-full bg-sage-400 animate-pulse" />
               {tf(t.app.dashboard.trialCompact, { time: countdown })}
             </span>
           )}
-          {isTrial && (
-            <span className="text-xs text-foreground-subtle">
-              {tf(t.app.dashboard.trialFeature1, {
-                limit: data.trialRequestLimit,
-                used: data.trialRequestsUsed,
-              })}
-            </span>
-          )}
-          <Button href="/app/inbox" size="sm" variant="secondary">
-            <InboxIcon size={16} />
+          <Button href="/app/inbox" size="sm" variant="secondary" className="rounded-full">
+            <InboxIcon size={15} />
             {t.app.nav.inbox}
             {data.unreadInbox > 0 && (
-              <span className="ml-0.5 rounded-full bg-electric-500 px-1.5 text-[10px] font-bold text-white">
+              <span className="ml-0.5 rounded-full bg-navy-900 px-1.5 text-[10px] font-bold text-paper-50">
                 {data.unreadInbox > 9 ? "9+" : data.unreadInbox}
               </span>
             )}
           </Button>
-          <Button href="/app/notifications" size="sm" variant="ghost" aria-label={t.app.nav.notifications}>
+          <Button href="/app/notifications" size="sm" variant="ghost" aria-label={t.app.nav.notifications} className="rounded-full">
             <BellIcon size={16} />
           </Button>
-          <Button href="/app/discover" size="sm">
-            <CompassIcon size={16} />
+          <Button href="/app/discover" size="sm" className="rounded-full">
+            <CompassIcon size={15} />
             {t.app.nav.discover}
           </Button>
         </div>
       </header>
 
-      {/* “Für dich” (Sprint 8, TEIL E): 3–5 real, currently relevant entries –
-          request, unread message, matching member, newest deal, event,
-          investment. When nothing exists yet, honest navigation shortcuts. */}
-      <section aria-labelledby="for-you" className="rounded-2xl border border-border bg-surface px-4 py-4 sm:px-5">
+      <section aria-labelledby="for-you" className="rounded-[20px] border border-border bg-surface px-4 py-4 shadow-card sm:px-5">
         <div className="flex items-baseline justify-between gap-3">
-          <h2 id="for-you" className="text-sm font-bold tracking-tight sm:text-base">
+          <h2 id="for-you" className="text-[14px] font-bold tracking-[-0.01em] sm:text-[15px]">
             {t.app.dashboard.forYouTitle}
           </h2>
           {data.forYou.length === 0 && (
-            <p className="hidden text-xs text-foreground-subtle sm:block">{t.app.dashboard.forYouLead}</p>
+            <p className="hidden text-[12px] text-foreground-subtle sm:block">{t.app.dashboard.forYouLead}</p>
           )}
         </div>
         {data.forYou.length > 0 ? (
@@ -197,26 +175,26 @@ export function DashboardScreen({ data }: { data: DashboardData }) {
           </ul>
         ) : (
           <>
-            <p className="mt-2 text-sm leading-6 text-foreground-muted">{t.app.dashboard.forYouEmpty}</p>
+            <p className="mt-2 text-[13px] leading-6 text-foreground-muted">{t.app.dashboard.forYouEmpty}</p>
             <ul className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
               <li>
-                <Link href="/app/discover" className="block rounded-xl px-3 py-2 text-sm hover:bg-surface-muted">
+                <Link href="/app/discover" className="block rounded-xl px-3 py-2 text-[13px] hover:bg-surface-muted">
                   {t.app.dashboard.forYouDiscover}
                 </Link>
               </li>
               <li>
-                <Link href="/app/inbox" className="block rounded-xl px-3 py-2 text-sm hover:bg-surface-muted">
+                <Link href="/app/inbox" className="block rounded-xl px-3 py-2 text-[13px] hover:bg-surface-muted">
                   {t.app.dashboard.forYouInbox}
                   {data.unreadInbox > 0 ? ` · ${data.unreadInbox}` : ""}
                 </Link>
               </li>
               <li>
-                <Link href="/app/events" className="block rounded-xl px-3 py-2 text-sm hover:bg-surface-muted">
+                <Link href="/app/events" className="block rounded-xl px-3 py-2 text-[13px] hover:bg-surface-muted">
                   {t.app.dashboard.forYouEvents}
                 </Link>
               </li>
               <li>
-                <Link href="/app/profile/edit" className="block rounded-xl px-3 py-2 text-sm hover:bg-surface-muted">
+                <Link href="/app/profile/edit" className="block rounded-xl px-3 py-2 text-[13px] hover:bg-surface-muted">
                   {t.app.dashboard.forYouProfile}
                 </Link>
               </li>
@@ -225,46 +203,42 @@ export function DashboardScreen({ data }: { data: DashboardData }) {
         )}
       </section>
 
-      {/* Free accounts: one honest line, not a wall of copy */}
       {data.level === "free" && (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-sand-400/40 bg-sand-200/30 px-4 py-3 text-sm dark:bg-sand-400/5">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-[16px] border border-border bg-paper-50 px-4 py-3 text-[13px] shadow-card">
           <p className="max-w-2xl text-foreground-muted">{t.app.dashboard.trialEndedText}</p>
-          <Button href="/app/billing" size="sm">
+          <Button href="/app/billing" size="sm" className="rounded-full">
             {t.app.billing.paywallTitle}
           </Button>
         </div>
       )}
 
-      {/* ------------------------------------------------ six core areas */}
       <section aria-labelledby="core-areas">
         <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
-          <h2 id="core-areas" className="text-lg font-bold tracking-tight sm:text-xl">
+          <h2 id="core-areas" className="text-[1.2rem] font-bold tracking-[-0.02em] sm:text-[1.35rem]">
             {t.app.dashboard.areasTitle}
           </h2>
-          <p className="text-sm text-foreground-muted">{t.app.dashboard.areasLeadShort}</p>
+          <p className="text-[12px] text-foreground-muted">{t.app.dashboard.areasLeadShort}</p>
         </div>
 
-        {/* Mobile (Sprint 8, TEIL E): compact 2×3 tiles – icon, title, one
-            short line. Desktop keeps the larger 2×3 cards. */}
-        <div className="grid grid-cols-2 gap-2.5 sm:gap-4 lg:grid-cols-2">
+        <div className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-3">
           {areas.map((area) => (
             <Link
               key={area.href}
               href={area.href}
-              className="group flex h-full flex-col rounded-2xl border border-border bg-surface p-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-electric-500/40 hover:shadow-lift sm:p-8"
+              className="group flex h-full flex-col rounded-[20px] border border-border bg-surface p-4 shadow-card transition-all duration-300 hover:-translate-y-0.5 hover:shadow-card-hover sm:p-5"
             >
               <span className="flex items-start justify-between gap-3">
-                <span className={`inline-flex rounded-xl p-2 sm:p-3 ${accents[area.accent]}`}>
-                  <area.icon size={20} />
+                <span className={`inline-flex rounded-full p-2.5 ${accents[area.accent]}`}>
+                  <area.icon size={18} />
                 </span>
                 {area.locked && (
-                  <Badge variant="outline">
+                  <Badge variant="outline" className="text-[10px]">
                     {t.app.dashboard.lockedHint}
                   </Badge>
                 )}
               </span>
-              <h3 className="mt-3 text-[15px] font-bold tracking-tight sm:mt-5 sm:text-xl">{area.title}</h3>
-              <p className="mt-1 flex-1 text-[13px] leading-5 text-foreground-muted sm:mt-2 sm:text-[15px] sm:leading-7">
+              <h3 className="mt-4 text-[14px] font-bold tracking-[-0.01em] sm:text-[15px]">{area.title}</h3>
+              <p className="mt-1 flex-1 text-[12px] leading-5 text-foreground-muted sm:text-[13px] sm:leading-6">
                 <span className="line-clamp-2 sm:hidden">{area.short}</span>
                 <span className="hidden sm:inline">{area.desc}</span>
               </p>
@@ -276,7 +250,6 @@ export function DashboardScreen({ data }: { data: DashboardData }) {
   );
 }
 
-/** One “Für dich” entry – icon, one-line title, one-line reason (TEIL E). */
 function ForYouEntry({ item }: { item: ForYouItem }) {
   const { t, tf } = useI18n();
   const typeLabels = t.app.opportunities.type as Record<string, string>;
@@ -294,7 +267,6 @@ function ForYouEntry({ item }: { item: ForYouItem }) {
   let title = "";
   let meta = "";
   let Icon: (props: { size?: number; className?: string }) => React.ReactNode = BriefcaseIcon;
-  let hrefToProfile = false;
 
   switch (item.kind) {
     case "request":
@@ -314,7 +286,6 @@ function ForYouEntry({ item }: { item: ForYouItem }) {
       title = item.name;
       meta = tf(t.app.dashboard.forYouPersonMeta, { value: item.sharedInterest });
       Icon = icons.person;
-      hrefToProfile = true;
       break;
     case "deal":
       href = item.href;
@@ -338,15 +309,14 @@ function ForYouEntry({ item }: { item: ForYouItem }) {
 
   return (
     <li>
-      <Link href={href} className="flex items-center gap-3 rounded-xl border border-border bg-background px-3 py-2.5 transition-colors hover:border-electric-500/40">
-        <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-electric-500/10 text-electric-600 dark:text-electric-300">
-          <Icon size={17} />
+      <Link href={href} className="flex items-center gap-3 rounded-xl border border-border bg-paper-50 px-3 py-2.5 transition-all hover:border-navy-900/20 hover:shadow-card">
+        <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-navy-900 text-paper-50">
+          <Icon size={15} />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-sm font-semibold leading-tight">{title}</span>
-          <span className="mt-0.5 block truncate text-xs text-foreground-muted">{meta}</span>
+          <span className="block truncate text-[13px] font-semibold leading-tight tracking-[-0.01em]">{title}</span>
+          <span className="mt-0.5 block truncate text-[11px] text-foreground-muted">{meta}</span>
         </span>
-        {hrefToProfile && <span aria-hidden="true" className="text-foreground-subtle">→</span>}
       </Link>
     </li>
   );

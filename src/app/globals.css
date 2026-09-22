@@ -1,21 +1,27 @@
 @import "tailwindcss";
 
 /*
- * INNER CIRCLE – Design tokens (Design System 2.0)
+ * VENTURE & PARTNERS — INNER CIRCLE
+ * Design System 3.0 – Premium Rebrand
  *
- * Direction: open, modern, international, premium through reduction.
- * Removed: metallic gold / champagne as a brand colour.
+ * Brand Architecture:
+ *   VENTURE & PARTNERS = Hauptmarke / Corporate
+ *   INNER CIRCLE by VENTURE & PARTNERS = Plattform / Community
+ *   V&P Events = Eventbereich
+ *   V&P Portfolio = Investments
  *
- * Palette
- *   Off White      #F7F8FA  – light background
- *   Pure White     #FFFFFF  – surfaces in light mode
- *   Midnight Navy  #10151E  – text in light mode, surfaces in dark mode
- *   Electric Blue  #366CF5  – primary accent (CTAs, links, active states)
- *   Forest Green   #12805C  – secondary accent (verified, positive, trust)
- *   Sand           #CBB694  – warm neutral for editorial / experience sections
+ * Design Direction: clean, editorial, premium, minimal, elegant
+ *   – Berge / Weite / Horizonte / ruhige Natur
+ *   – Pflanzen / organische grüne Elemente
+ *   – klare Luft / Klarheit / Perspektive
+ *   – moderne Business-Ästhetik, keine billige Startup-Optik
  *
- * Semantic tokens switch between light and dark via CSS variables; brand
- * scales stay static. Every component must work in light, dark and system.
+ * Farbwelt (aus Referenzbildern abgeleitet):
+ *   Deep Navy #0F1F3D = Vertrauen, Stabilität (Primary)
+ *   Muted Slate Blue #5C7E9E = Klarheit, Fortschritt
+ *   Elegant Sage #2D4A3E = Wachstum, Opportunity
+ *   Charcoal #171D27 = Balance, Ernsthaftigkeit
+ *   Off-White #FAF9F6 = Raum, Premium, Ruhe
  */
 
 @custom-variant dark (&:where(.dark, .dark *));
@@ -36,146 +42,168 @@
 }
 
 @theme {
-  /* Brand foundation */
-  --color-midnight-950: #0a0e15;
-  --color-midnight-900: #10151e;
-  --color-midnight-800: #1a212d;
-  --color-midnight-700: #262f3e;
+  /* ── VENTURE & PARTNERS – New Foundation ── */
+  /* Deep Navy Scale – Primary Corporate */
+  --color-navy-950: #0a1222;
+  --color-navy-900: #111f3d;
+  --color-navy-800: #1a2e55;
+  --color-navy-700: #2a4067;
+  --color-navy-600: #3c567f;
+  --color-navy-500: #4f6d96;
 
-  --color-paper-50: #f7f8fa;
-  --color-paper-100: #eff1f5;
-  --color-paper-200: #e3e7ed;
+  /* Muted Slate Blue – Clarity / Secondary */
+  --color-slate-100: #e8eef4;
+  --color-slate-200: #cbd9e6;
+  --color-slate-300: #a3bfd6;
+  --color-slate-400: #7a9bb8;
+  --color-slate-500: #5c7e9e;
+  --color-slate-600: #45647f;
 
-  --color-electric-100: #e2eafd;
-  --color-electric-200: #c8d8fb;
-  --color-electric-300: #93b0fa;
-  --color-electric-400: #6b94f8;
-  --color-electric-500: #366cf5;
-  --color-electric-600: #2a56d6;
-  --color-electric-700: #2143ab;
+  /* Elegant Sage / Deep Green – Growth */
+  --color-sage-50: #f2f6f3;
+  --color-sage-100: #eaf1eb;
+  --color-sage-200: #d6e2d8;
+  --color-sage-300: #a3bfaa;
+  --color-sage-400: #6a9a85;
+  --color-sage-500: #4a7a65;
+  --color-sage-600: #2d4a3e;
+  --color-sage-700: #1e3329;
+  --color-sage-800: #15261e;
 
-  /* Secondary accent – modern dark green (verified, positive, trust) */
-  --color-forest-100: #e3f4ec;
-  --color-forest-200: #c4e8da;
-  --color-forest-300: #7fd1b0;
-  --color-forest-400: #35a97d;
-  --color-forest-500: #12805c;
-  --color-forest-600: #0c6549;
-  --color-forest-700: #084b36;
+  /* Paper / Off-White – Premium Space */
+  --color-paper-50: #faf9f6;
+  --color-paper-100: #f5f3ef;
+  --color-paper-200: #efece6;
+  --color-paper-300: #e8e4de;
+  --color-paper-400: #c9c5be;
 
-  /* Warm neutral – used sparingly for editorial / experience sections */
-  --color-sand-100: #f8f4ee;
-  --color-sand-200: #efe7da;
-  --color-sand-300: #e1d4bf;
-  --color-sand-400: #cbb694;
-  --color-sand-500: #a98e65;
-  --color-sand-600: #7e6844;
+  /* Ink / Charcoal – Text & Balance */
+  --color-ink-950: #0f141c;
+  --color-ink-900: #171d27;
+  --color-ink-800: #2d333f;
+  --color-ink-700: #3f4756;
+  --color-ink-500: #5a6272;
+  --color-ink-300: #9aa1b0;
 
-  --color-success-500: #10b981;
-  --color-success-600: #059669;
-  --color-danger-500: #ef4444;
-  --color-danger-600: #dc2626;
-  --color-warning-500: #d97706;
+  /* ── Legacy Token Mapping (backward compat) ── */
+  --color-midnight-950: var(--color-navy-950);
+  --color-midnight-900: var(--color-navy-900);
+  --color-midnight-800: var(--color-navy-800);
+  --color-midnight-700: var(--color-navy-700);
 
-  /* Radii – modern, slightly rounded */
+  --color-paper-50-legacy: var(--color-paper-50);
+
+  /* Electric now maps to refined navy primary – not bright blue */
+  --color-electric-100: #e6ebf2;
+  --color-electric-200: #c2d0e2;
+  --color-electric-300: #8aa3c1;
+  --color-electric-400: #5c7e9e;
+  --color-electric-500: #111f3d;
+  --color-electric-600: #0a1222;
+  --color-electric-700: #070d1a;
+
+  /* Forest maps to sage */
+  --color-forest-100: var(--color-sage-100);
+  --color-forest-200: var(--color-sage-200);
+  --color-forest-300: var(--color-sage-300);
+  --color-forest-400: var(--color-sage-400);
+  --color-forest-500: var(--color-sage-600);
+  --color-forest-600: var(--color-sage-700);
+  --color-forest-700: var(--color-sage-800);
+
+  /* Sand maps to warm paper neutrals */
+  --color-sand-100: var(--color-paper-50);
+  --color-sand-200: var(--color-paper-100);
+  --color-sand-300: var(--color-paper-300);
+  --color-sand-400: var(--color-paper-400);
+  --color-sand-500: #a8a29a;
+  --color-sand-600: #7a7671;
+
+  --color-success-500: #2d4a3e;
+  --color-success-600: #1e3329;
+  --color-danger-500: #9a4a4a;
+  --color-danger-600: #7a3a3a;
+  --color-warning-500: #8a6a3a;
+
+  /* Radii – more premium, softer */
   --radius-xl: 0.875rem;
   --radius-2xl: 1.25rem;
-  --radius-3xl: 1.75rem;
-  --radius-4xl: 2.25rem;
+  --radius-3xl: 1.5rem;
+  --radius-4xl: 2rem;
 
-  /* Elevation – soft, Apple-like depth (never heavy shadows) */
-  --shadow-card: 0 1px 2px rgb(16 21 30 / 0.04), 0 12px 28px -18px rgb(16 21 30 / 0.16);
-  --shadow-lift: 0 2px 4px rgb(16 21 30 / 0.05), 0 24px 48px -22px rgb(16 21 30 / 0.26);
-  --shadow-pop: 0 24px 64px -24px rgb(10 14 21 / 0.4);
+  /* Elevation – ultra subtle, editorial */
+  --shadow-card: 0 1px 2px rgb(17 31 61 / 0.04), 0 8px 24px -16px rgb(17 31 61 / 0.12);
+  --shadow-card-hover: 0 2px 8px rgb(17 31 61 / 0.06), 0 16px 32px -18px rgb(17 31 61 / 0.16);
+  --shadow-lift: 0 4px 16px rgb(17 31 61 / 0.06), 0 24px 48px -20px rgb(17 31 61 / 0.18);
+  --shadow-pop: 0 24px 64px -24px rgb(10 18 34 / 0.28);
+  --shadow-soft: 0 1px 0 rgb(17 31 61 / 0.04) inset, 0 -1px 0 rgb(17 31 61 / 0.02) inset;
 
-  /* Motion */
+  /* Motion – calm, executive */
   --ease-emphasized: cubic-bezier(0.25, 1, 0.5, 1);
-  --animate-fade-in: fade-in 0.4s var(--ease-emphasized) both;
-  --animate-fade-up: fade-up 0.7s var(--ease-emphasized) both;
-  --animate-scale-in: scale-in 0.25s var(--ease-emphasized) both;
-  --animate-toast-in: toast-in 0.35s var(--ease-emphasized) both;
-  --animate-sheet-up: sheet-up 0.28s var(--ease-emphasized) both;
+  --ease-premium: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-fade-in: fade-in 0.5s var(--ease-premium) both;
+  --animate-fade-up: fade-up 0.7s var(--ease-premium) both;
+  --animate-scale-in: scale-in 0.3s var(--ease-premium) both;
+  --animate-toast-in: toast-in 0.4s var(--ease-premium) both;
+  --animate-sheet-up: sheet-up 0.35s var(--ease-premium) both;
 
   @keyframes fade-in {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
+    from { opacity: 0; }
+    to { opacity: 1; }
   }
   @keyframes fade-up {
-    from {
-      opacity: 0;
-      transform: translateY(16px);
-    }
-    to {
-      opacity: 1;
-      transform: none;
-    }
+    from { opacity: 0; transform: translateY(18px); }
+    to { opacity: 1; transform: none; }
   }
   @keyframes scale-in {
-    from {
-      opacity: 0;
-      transform: translateY(8px) scale(0.97);
-    }
-    to {
-      opacity: 1;
-      transform: none;
-    }
+    from { opacity: 0; transform: translateY(10px) scale(0.98); }
+    to { opacity: 1; transform: none; }
   }
   @keyframes toast-in {
-    from {
-      opacity: 0;
-      transform: translateY(12px) scale(0.98);
-    }
-    to {
-      opacity: 1;
-      transform: none;
-    }
+    from { opacity: 0; transform: translateY(12px) scale(0.98); }
+    to { opacity: 1; transform: none; }
   }
   @keyframes sheet-up {
-    from {
-      transform: translateY(100%);
-    }
-    to {
-      transform: none;
-    }
+    from { transform: translateY(100%); }
+    to { transform: none; }
   }
 }
 
 :root {
-  --background: #f7f8fa;
-  --foreground: #10151e;
-  --foreground-muted: rgb(16 21 30 / 0.66);
-  --foreground-subtle: rgb(16 21 30 / 0.46);
+  --background: #faf9f6;
+  --foreground: #111a2c;
+  --foreground-muted: rgb(17 26 44 / 0.66);
+  --foreground-subtle: rgb(17 26 44 / 0.42);
   --surface: #ffffff;
   --surface-raised: #ffffff;
-  --surface-muted: #eff1f5;
-  --border: #e3e7ed;
-  --border-strong: #c9d0da;
-  --ring: #366cf5;
+  --surface-muted: #f2f0eb;
+  --border: #e8e4de;
+  --border-strong: #c9c5be;
+  --ring: #111f3d;
   color-scheme: light;
 }
 
 .dark {
-  --background: #0a0e15;
-  --foreground: #f7f8fa;
-  --foreground-muted: rgb(247 248 250 / 0.72);
-  --foreground-subtle: rgb(247 248 250 / 0.5);
-  --surface: #10151e;
-  --surface-raised: #161d29;
-  --surface-muted: #1a212d;
-  --border: #242e3d;
-  --border-strong: #35435a;
-  --ring: #6b94f8;
+  --background: #0a1222;
+  --foreground: #faf9f6;
+  --foreground-muted: rgb(250 249 246 / 0.70);
+  --foreground-subtle: rgb(250 249 246 / 0.48);
+  --surface: #121e36;
+  --surface-raised: #162747;
+  --surface-muted: #1a2e55;
+  --border: #24365a;
+  --border-strong: #3a4e6e;
+  --ring: #8aa3c1;
   color-scheme: dark;
 }
 
-/* ---------- Base ---------- */
+/* ---------- Base – Editorial Premium ---------- */
 
 html {
   scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
@@ -183,20 +211,26 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans);
   text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  /* Prevents horizontal wobble from long words / wide cards on small screens */
+  font-feature-settings: "ss01" 1, "ss02" 1, "liga" 1, "calt" 1;
   overflow-x: hidden;
+  line-height: 1.6;
 }
 
-h1,
-h2,
-h3 {
+h1, h2, h3, h4 {
   text-wrap: balance;
-  letter-spacing: -0.021em;
+  letter-spacing: -0.025em;
+  font-weight: 700;
+  line-height: 1.08;
 }
+
+h1 { letter-spacing: -0.03em; }
+h2 { letter-spacing: -0.028em; }
 
 ::selection {
-  background: rgb(54 108 245 / 0.2);
+  background: rgb(17 31 61 / 0.12);
+}
+.dark ::selection {
+  background: rgb(250 249 246 / 0.18);
 }
 
 :where(a, button, [role="button"], [role="tab"], summary, [tabindex]):focus-visible {
@@ -205,219 +239,113 @@ h3 {
   border-radius: 8px;
 }
 
-summary::-webkit-details-marker {
-  display: none;
-}
-summary {
-  list-style: none;
-}
+summary::-webkit-details-marker { display: none; }
+summary { list-style: none; }
 
-/* ---------- Layout helpers ----------
- *
- * Width system for the public site (compression + width sprint). Three
- * semantic containers replace the old one-size-fits-all `max-w-6xl` (72rem),
- * which made every section equally narrow on large desktop screens:
- *
- *   .ic-shell          – standard public container (nav, footer, text sections)
- *   .ic-shell-wide     – visual sections: image/lead combos, media bands
- *   .ic-shell-prose    – editorial copy only (never a full-bleed paragraph)
- *
- * Gutters grow with the viewport but never explode; line lengths inside
- * `.ic-shell-prose` stay at a readable measure on purpose.
- */
+/* ---------- Layout System – Premium Editorial Grid ---------- */
 
 .ic-shell {
   width: 100%;
   max-width: 80rem;
   margin-inline: auto;
-  padding-inline: 1rem;
+  padding-inline: 1.25rem;
 }
 @media (min-width: 640px) {
-  .ic-shell {
-    padding-inline: 1.5rem;
-  }
+  .ic-shell { padding-inline: 1.5rem; }
 }
 @media (min-width: 1024px) {
-  .ic-shell {
-    padding-inline: 2rem;
-    max-width: 88rem; /* 1408px content on 1440+ screens */
-  }
+  .ic-shell { padding-inline: 2rem; max-width: 86rem; }
 }
 @media (min-width: 1536px) {
-  .ic-shell {
-    padding-inline: 3rem;
-    max-width: 104rem; /* 1664px on ultrawide – balanced gutters, no dead edges */
-  }
-}
-@media (min-width: 1920px) {
-  .ic-shell {
-    max-width: 110rem;
-  }
+  .ic-shell { padding-inline: 2.5rem; max-width: 96rem; }
 }
 
 .ic-shell-wide {
   width: 100%;
   max-width: 80rem;
   margin-inline: auto;
-  padding-inline: 1rem;
+  padding-inline: 1.25rem;
 }
 @media (min-width: 640px) {
-  .ic-shell-wide {
-    padding-inline: 1.5rem;
-  }
+  .ic-shell-wide { padding-inline: 1.5rem; }
 }
 @media (min-width: 1024px) {
-  .ic-shell-wide {
-    padding-inline: 2.5rem;
-    max-width: 96rem; /* 1536px – media and image bands breathe on desktop */
-  }
+  .ic-shell-wide { padding-inline: 2.5rem; max-width: 94rem; }
 }
 @media (min-width: 1536px) {
-  .ic-shell-wide {
-    padding-inline: 4rem;
-    max-width: 112rem; /* 1792px */
-  }
-}
-@media (min-width: 1920px) {
-  .ic-shell-wide {
-    max-width: 120rem; /* 1920px: full-bleed feel with restrained gutters */
-  }
+  .ic-shell-wide { padding-inline: 3rem; max-width: 104rem; }
 }
 
 .ic-shell-prose {
   width: 100%;
-  max-width: 46rem;
+  max-width: 44rem;
   margin-inline: auto;
-  padding-inline: 1rem;
+  padding-inline: 1.25rem;
 }
 @media (min-width: 640px) {
-  .ic-shell-prose {
-    padding-inline: 1.5rem;
-  }
+  .ic-shell-prose { padding-inline: 1.5rem; }
 }
 @media (min-width: 1024px) {
-  .ic-shell-prose {
-    padding-inline: 2rem;
-  }
+  .ic-shell-prose { padding-inline: 2rem; }
 }
 
 .ic-narrow {
   width: 100%;
-  max-width: 46rem;
+  max-width: 44rem;
   margin-inline: auto;
 }
 
-/* ------------------------------------------------------------------ *
- * App area grid (Sprint 3, spec §25)
- *
- * The member area is a sidebar + flexible app region. The app region uses a
- * responsive 12-column grid so cards can occupy 12/8/6/4 columns while long
- * text stays inside a comfortable measure. This replaces the previous fixed
- * `max-w-6xl` main column, which left a large unused area on wide screens.
- * ------------------------------------------------------------------ */
-
+/* App grid – executive platform */
 .ic-app-main {
   width: 100%;
-  /* 1920px: fills the app region next to the sidebar on 1440/1920 screens and
-     keeps the leftover space on 2560 balanced instead of a dead right edge. */
   max-width: 120rem;
   margin-inline: auto;
-  padding: 1.5rem 1rem;
+  padding: 1.25rem 1rem;
 }
 @media (min-width: 640px) {
-  .ic-app-main {
-    padding-inline: 1.5rem;
-  }
+  .ic-app-main { padding-inline: 1.25rem; }
 }
 @media (min-width: 1024px) {
-  .ic-app-main {
-    padding: 2rem;
-  }
+  .ic-app-main { padding: 1.75rem 1.75rem; }
 }
 @media (min-width: 1600px) {
-  .ic-app-main {
-    padding-inline: 3rem;
-  }
-}
-@media (min-width: 2200px) {
-  .ic-app-main {
-    padding-inline: 4rem;
-  }
+  .ic-app-main { padding-inline: 2.5rem; }
 }
 
-/* 12-column app grid */
 .ic-grid {
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
   gap: 1rem;
 }
-@media (min-width: 640px) {
-  .ic-grid {
-    gap: 1.25rem;
-  }
-}
-@media (min-width: 1280px) {
-  .ic-grid {
-    gap: 1.5rem;
-  }
-}
+@media (min-width: 640px) { .ic-grid { gap: 1.125rem; } }
+@media (min-width: 1280px) { .ic-grid { gap: 1.375rem; } }
 
-/* Column spans: 12 (mobile) → configurable from `sm` upwards */
-.ic-span-4,
-.ic-span-6,
-.ic-span-8,
-.ic-span-12 {
+.ic-span-4, .ic-span-6, .ic-span-8, .ic-span-12 {
   grid-column: span 12 / span 12;
 }
 @media (min-width: 640px) {
-  .ic-span-6 {
-    grid-column: span 6 / span 6;
-  }
-  .ic-span-4 {
-    grid-column: span 6 / span 6;
-  }
+  .ic-span-6 { grid-column: span 6 / span 6; }
+  .ic-span-4 { grid-column: span 6 / span 6; }
 }
 @media (min-width: 1024px) {
-  .ic-span-4 {
-    grid-column: span 4 / span 4;
-  }
-  .ic-span-8 {
-    grid-column: span 8 / span 8;
-  }
+  .ic-span-4 { grid-column: span 4 / span 4; }
+  .ic-span-8 { grid-column: span 8 / span 8; }
 }
 
-/* Comfortable text measure inside a wide grid (never full-bleed paragraphs) */
-.ic-measure {
-  max-width: 46rem;
-}
-.ic-measure-wide {
-  max-width: 62rem;
-}
+.ic-measure { max-width: 42rem; }
+.ic-measure-wide { max-width: 58rem; }
 
-/* App shell: bottom navigation must not cover content on phones */
 .ic-app-bottom-space {
   padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
 }
 @media (min-width: 1280px) {
-  /* The desktop sidebar replaces the bottom navigation from `xl` upwards. */
-  .ic-app-bottom-space {
-    padding-bottom: 2.5rem;
-  }
+  .ic-app-bottom-space { padding-bottom: 2rem; }
 }
+.ic-safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
 
-.ic-safe-bottom {
-  padding-bottom: env(safe-area-inset-bottom, 0px);
-}
+.no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
 
-.no-scrollbar {
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-
-/* Horizontal scroll rows (mobile "shepherd" navigation) that never widen the page */
 .ic-scroll-row {
   display: flex;
   gap: 0.5rem;
@@ -425,29 +353,60 @@ summary {
   scroll-snap-type: x proximity;
   -webkit-overflow-scrolling: touch;
 }
-.ic-scroll-row > * {
-  flex: 0 0 auto;
-  scroll-snap-align: start;
+.ic-scroll-row > * { flex: 0 0 auto; scroll-snap-align: start; }
+
+/* ---------- Premium Editorial Utilities ---------- */
+
+.vp-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border) 15%, var(--border) 85%, transparent);
 }
 
-/* ---------- Scroll reveal (driven by <Reveal/>) ---------- */
+.vp-kicker {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+
+.vp-headline-display {
+  font-size: clamp(2.25rem, 5vw, 4.5rem);
+  line-height: 0.95;
+  letter-spacing: -0.04em;
+  font-weight: 700;
+}
+
+.vp-surface-premium {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card);
+}
+
+.vp-surface-premium:hover {
+  box-shadow: var(--shadow-card-hover);
+}
+
+.vp-focus-ring:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* ---------- Scroll Reveal ---------- */
 
 .ic-reveal {
   opacity: 0;
-  transform: translateY(24px);
+  transform: translateY(20px);
   transition:
-    opacity 0.7s var(--ease-emphasized),
-    transform 0.7s var(--ease-emphasized);
+    opacity 0.65s var(--ease-premium),
+    transform 0.65s var(--ease-premium);
   will-change: opacity, transform;
 }
-
 .ic-reveal.is-visible {
   opacity: 1;
   transform: none;
   will-change: auto;
 }
-
-/* ---------- Swipe discovery ---------- */
 
 .ic-swipe-card {
   touch-action: pan-y;
@@ -455,22 +414,14 @@ summary {
   -webkit-user-select: none;
 }
 
-/* ---------- Reduced motion ---------- */
+/* ---------- Reduced Motion ---------- */
 
 @media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
-  *,
-  ::before,
-  ::after {
+  html { scroll-behavior: auto; }
+  *, ::before, ::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
-  .ic-reveal {
-    opacity: 1;
-    transform: none;
-    transition: none;
-  }
+  .ic-reveal { opacity: 1; transform: none; transition: none; }
 }

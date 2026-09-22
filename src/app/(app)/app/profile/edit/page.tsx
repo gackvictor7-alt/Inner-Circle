@@ -1,8 +1,9 @@
 import { requireUser } from "@/lib/access/server";
 import { interestTaxonomy, updateProfileAction } from "@/app/actions/profile";
-import { ActionForm, type FormField } from "@/components/app/forms";
+import type { FormField } from "@/components/app/forms";
 import { InterestGoalEditor } from "@/components/app/InterestGoalEditor";
 import { LocalizedPageHeader, LocalizedEmptyState, Tr } from "@/components/app/localized";
+import { ProfileEditClient } from "@/components/app/ProfileEditClient";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +17,6 @@ function parseList(json: string | null | undefined): string {
   }
 }
 
-/** Profile editing. Available to verified accounts; full fields need membership. */
 export default async function ProfileEditPage({
   searchParams,
 }: {
@@ -25,10 +25,6 @@ export default async function ProfileEditPage({
   const access = await requireUser("/app/profile/edit");
   const user = access.user;
   const params = await searchParams;
-
-  if (!access.entitlements.profileFull && access.level !== "free") {
-    // Trial accounts may still edit the basics – only the *public depth* is limited.
-  }
 
   const profile = user.profile;
   const taxonomy = await interestTaxonomy();
@@ -40,7 +36,6 @@ export default async function ProfileEditPage({
     { name: "location", labelKey: "app.profile.location", defaultValue: profile?.location ?? "", maxLength: 120, required: true },
     { name: "company", labelKey: "app.profile.company", defaultValue: profile?.company ?? "", maxLength: 120 },
     { name: "jobTitle", labelKey: "app.profile.jobTitle", defaultValue: profile?.jobTitle ?? "", maxLength: 120 },
-    { name: "avatarUrl", labelKey: "app.profile.avatar", helpKey: "app.profile.avatarHint", kind: "url", defaultValue: profile?.avatarUrl ?? "", maxLength: 400 },
     { name: "bio", labelKey: "app.profile.bio", placeholderKey: "app.profile.bioPlaceholder", kind: "textarea", rows: 6, defaultValue: profile?.bio ?? "", maxLength: 1200, required: true },
     { name: "roles", labelKey: "app.profile.roles", helpKey: "app.profile.rolesHint", defaultValue: parseList(profile?.rolesJson) },
     { name: "skills", labelKey: "app.profile.skills", helpKey: "app.profile.skillsHint", defaultValue: parseList(profile?.skillsJson) },
@@ -64,20 +59,19 @@ export default async function ProfileEditPage({
       )}
 
       {params.saved === "interests" && (
-        <p role="status" className="rounded-xl bg-forest-500/10 px-4 py-3 text-sm text-forest-700 dark:text-forest-200">
+        <p role="status" className="rounded-xl bg-sage-100 px-4 py-3 text-sm text-sage-700">
           <Tr k="app.profile.interestsSaved" />
         </p>
       )}
 
-      <ActionForm
+      <ProfileEditClient
         action={updateProfileAction}
         fields={fields}
-        columns={2}
-        submitKey="app.profile.save"
-        successKey="app.profile.saved"
+        avatarUrl={profile?.avatarUrl ?? null}
+        firstName={user.firstName}
+        lastName={user.lastName}
       />
 
-      {/* Interests & goals – same taxonomy as onboarding (spec §23) */}
       <InterestGoalEditor
         interests={taxonomy.interests.map((row) => ({
           id: row.id,

@@ -23,7 +23,7 @@ const navItems = [
 function useScrollShadow() {
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 8);
+    const onScroll = () => setScrolled(window.scrollY > 12);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
@@ -32,14 +32,14 @@ function useScrollShadow() {
 }
 
 /**
- * Public site header.
+ * VENTURE & PARTNERS – Public Site Header 3.0
  *
- * Mobile navigation fix (Sprint 2.0): the menu panel is rendered as a *sibling*
- * of the sticky header. A `backdrop-blur` ancestor creates a containing block
- * for `position: fixed` descendants, which previously clipped the panel and made
- * it appear behind page content. Rendering it outside that subtree, with its own
- * scroll container, focus handling and body scroll lock, makes it reliable on
- * every viewport size.
+ * Premium, editorial, calm:
+ * – Off-white dominant, not dark
+ * – Generous whitespace, fine hairline borders
+ * – No loud colors, no playful elements
+ * – Corporate brand: VENTURE & PARTNERS
+ * – Platform hint: INNER CIRCLE
  */
 export function SiteHeader({ level = "visitor" as AccessLevel }: { level?: AccessLevel }) {
   const { t, locale, setLocale } = useI18n();
@@ -48,14 +48,9 @@ export function SiteHeader({ level = "visitor" as AccessLevel }: { level?: Acces
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const scrolled = useScrollShadow();
-
-  // Static pages render "visitor" on the server; the presence flag flips the
-  // CTA to "Zur App" right after hydration (no identity, no authorization).
   const presenceSignedIn = useSignedInPresence();
-
   const signedIn = level !== "visitor" || presenceSignedIn;
 
-  // Close the menu on navigation.
   useEffect(() => {
     setMenuOpen(false);
   }, [pathname]);
@@ -64,10 +59,8 @@ export function SiteHeader({ level = "visitor" as AccessLevel }: { level?: Acces
     if (!menuOpen) return;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-
     const focusTarget = panelRef.current?.querySelector<HTMLElement>("a, button");
     focusTarget?.focus();
-
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setMenuOpen(false);
@@ -87,49 +80,53 @@ export function SiteHeader({ level = "visitor" as AccessLevel }: { level?: Acces
   return (
     <>
       <header
-        className={`sticky top-0 z-50 border-b transition-shadow duration-300 ${
+        className={`sticky top-0 z-50 border-b transition-all duration-300 ${
           scrolled || menuOpen
-            ? "border-border bg-background/85 shadow-card backdrop-blur-xl"
-            : "border-transparent bg-background/70"
+            ? "border-border bg-background/90 shadow-card backdrop-blur-xl"
+            : "border-transparent bg-background/80 backdrop-blur-md"
         }`}
       >
-        <div className="ic-shell flex h-16 items-center justify-between gap-4">
-          <Logo />
-
-          <nav aria-label={t.brand.name} className="hidden items-center gap-1 lg:flex">
-            {navItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                aria-current={isActive(item.href) ? "page" : undefined}
-                className={`rounded-full px-3.5 py-2 text-sm font-medium transition-colors ${
-                  isActive(item.href)
-                    ? "bg-electric-500/10 text-electric-600 dark:text-electric-300"
-                    : "text-foreground-muted hover:bg-surface-muted hover:text-foreground"
-                }`}
-              >
-                {t.nav[item.key]}
-              </Link>
-            ))}
-          </nav>
+        <div className="ic-shell flex h-[68px] items-center justify-between gap-4 lg:h-[76px]">
+          <div className="flex items-center gap-8">
+            <Logo variant="corporate" />
+            {/* Desktop nav – calm, editorial */}
+            <nav aria-label="Primary" className="hidden items-center gap-1 lg:flex">
+              {navItems.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  aria-current={isActive(item.href) ? "page" : undefined}
+                  className={`relative rounded-full px-4 py-2 text-[13px] font-medium tracking-[-0.01em] transition-all duration-200 ${
+                    isActive(item.href)
+                      ? "bg-navy-900 text-paper-50 dark:bg-paper-50 dark:text-navy-900"
+                      : "text-foreground-muted hover:text-foreground hover:bg-surface-muted"
+                  }`}
+                >
+                  {t.nav[item.key]}
+                </Link>
+              ))}
+            </nav>
+          </div>
 
           <div className="flex items-center gap-2">
-            <ThemeLanguageControls />
+            <div className="hidden items-center gap-1 lg:flex">
+              <ThemeLanguageControls />
+            </div>
 
-            <div className="hidden items-center gap-2 md:flex">
+            <div className="hidden items-center gap-2.5 md:flex">
               {signedIn ? (
-                <Button href="/app" size="sm">
+                <Button href="/app" size="sm" className="rounded-full px-5">
                   {t.publicNav.openApp}
                 </Button>
               ) : (
                 <>
                   <Link
                     href="/login"
-                    className="rounded-full px-3.5 py-2 text-sm font-semibold text-foreground-muted transition-colors hover:bg-surface-muted hover:text-foreground"
+                    className="rounded-full px-4 py-2 text-[13px] font-semibold text-foreground-muted transition-colors hover:text-foreground"
                   >
                     {t.nav.login}
                   </Link>
-                  <Button href="/register" size="sm">
+                  <Button href="/register" size="sm" className="rounded-full px-5">
                     {t.nav.join}
                   </Button>
                 </>
@@ -143,15 +140,22 @@ export function SiteHeader({ level = "visitor" as AccessLevel }: { level?: Acces
               aria-controls="mobile-menu"
               aria-label={menuOpen ? t.nav.menuClose : t.nav.menuOpen}
               onClick={() => setMenuOpen((value) => !value)}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-surface text-foreground transition-colors hover:bg-surface-muted lg:hidden"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-surface text-foreground transition-all hover:bg-surface-muted hover:border-border-strong lg:hidden"
             >
-              {menuOpen ? <XIcon size={20} /> : <MenuIcon size={20} />}
+              {menuOpen ? <XIcon size={18} /> : <MenuIcon size={18} />}
             </button>
           </div>
         </div>
+
+        {/* Fine hairline accent when scrolled – premium detail */}
+        <div
+          className={`pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-border to-transparent transition-opacity duration-300 ${
+            scrolled ? "opacity-100" : "opacity-0"
+          }`}
+        />
       </header>
 
-      {/* Mobile menu – sibling of the header (never inside the blurred subtree) */}
+      {/* Mobile menu – premium sheet */}
       <div
         id="mobile-menu"
         ref={panelRef}
@@ -164,11 +168,11 @@ export function SiteHeader({ level = "visitor" as AccessLevel }: { level?: Acces
           tabIndex={menuOpen ? 0 : -1}
           aria-label={t.nav.menuClose}
           onClick={() => setMenuOpen(false)}
-          className="absolute inset-0 h-full w-full cursor-default bg-midnight-950/40 backdrop-blur-sm"
+          className="absolute inset-0 h-full w-full cursor-default bg-navy-950/30 backdrop-blur-[2px]"
         />
-        <div className="absolute inset-x-0 top-0 max-h-[svh] overflow-y-auto rounded-b-3xl border-b border-border bg-background p-4 shadow-pop sm:p-6">
-          <div className="flex items-center justify-between">
-            <Logo />
+        <div className="absolute inset-x-0 top-0 max-h-[92svh] overflow-y-auto rounded-b-[28px] border-b border-border bg-background shadow-pop">
+          <div className="flex items-center justify-between px-5 py-4 sm:px-6">
+            <Logo variant="corporate" showSubline={false} />
             <button
               type="button"
               onClick={() => {
@@ -176,24 +180,25 @@ export function SiteHeader({ level = "visitor" as AccessLevel }: { level?: Acces
                 menuButtonRef.current?.focus();
               }}
               aria-label={t.nav.menuClose}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border text-foreground"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border text-foreground"
             >
-              <XIcon size={20} />
+              <XIcon size={18} />
             </button>
           </div>
 
-          <nav aria-label={t.brand.name} className="mt-5">
-            <ul className="flex flex-col">
-              {navItems.map((item) => (
-                <li key={item.href}>
+          <div className="px-2 pb-2">
+            <div className="rounded-[20px] bg-surface-muted/60 p-2">
+              <nav aria-label="Primary mobile" className="flex flex-col gap-1">
+                {navItems.map((item) => (
                   <Link
+                    key={item.href}
                     href={item.href}
                     onClick={() => setMenuOpen(false)}
                     aria-current={isActive(item.href) ? "page" : undefined}
-                    className={`flex items-center justify-between rounded-xl px-4 py-3 text-base font-semibold transition-colors ${
+                    className={`flex items-center justify-between rounded-xl px-4 py-3.5 text-[15px] font-medium tracking-[-0.01em] transition-colors ${
                       isActive(item.href)
-                        ? "bg-electric-500/10 text-electric-600 dark:text-electric-300"
-                        : "text-foreground hover:bg-surface-muted"
+                        ? "bg-navy-900 text-paper-50 dark:bg-paper-50 dark:text-navy-900"
+                        : "text-foreground hover:bg-surface"
                     }`}
                   >
                     {t.nav[item.key]}
@@ -201,47 +206,57 @@ export function SiteHeader({ level = "visitor" as AccessLevel }: { level?: Acces
                       →
                     </span>
                   </Link>
-                </li>
-              ))}
-            </ul>
-          </nav>
-
-          <div className="mt-5 flex flex-col gap-3 border-t border-border pt-5">
-            {signedIn ? (
-              <Button href="/app" size="lg" fullWidth>
-                {t.publicNav.openApp}
-              </Button>
-            ) : (
-              <>
-                <Button href="/register" size="lg" fullWidth>
-                  {t.nav.join}
-                </Button>
-                <Button href="/login" size="lg" variant="secondary" fullWidth>
-                  {t.nav.login}
-                </Button>
-              </>
-            )}
-
-            <div className="mt-2 flex items-center justify-between rounded-xl bg-surface-muted px-3 py-2.5">
-              <div className="flex gap-1">
-                {(["de", "en"] as const).map((option) => (
-                  <button
-                    key={option}
-                    type="button"
-                    onClick={() => setLocale(option)}
-                    aria-pressed={locale === option}
-                    className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
-                      locale === option ? "bg-surface text-foreground shadow-card" : "text-foreground-muted"
-                    }`}
-                  >
-                    <span className="flex items-center gap-1.5">
-                      <span aria-hidden="true">{localeFlags[option]}</span>
-                      {localeLabels[option]}
-                    </span>
-                  </button>
                 ))}
+              </nav>
+            </div>
+          </div>
+
+          <div className="px-5 py-5 sm:px-6">
+            <div className="flex flex-col gap-3">
+              {signedIn ? (
+                <Button href="/app" size="lg" fullWidth className="rounded-full">
+                  {t.publicNav.openApp}
+                </Button>
+              ) : (
+                <>
+                  <Button href="/register" size="lg" fullWidth className="rounded-full">
+                    {t.nav.join}
+                  </Button>
+                  <Button href="/login" size="lg" variant="secondary" fullWidth className="rounded-full">
+                    {t.nav.login}
+                  </Button>
+                </>
+              )}
+
+              <div className="mt-2 flex items-center justify-between rounded-full bg-surface-muted px-2 py-2">
+                <div className="flex gap-1">
+                  {(["de", "en"] as const).map((option) => (
+                    <button
+                      key={option}
+                      type="button"
+                      onClick={() => setLocale(option)}
+                      aria-pressed={locale === option}
+                      className={`rounded-full px-3.5 py-2 text-xs font-semibold transition-all ${
+                        locale === option
+                          ? "bg-surface text-foreground shadow-card"
+                          : "text-foreground-muted hover:text-foreground"
+                      }`}
+                    >
+                      <span className="flex items-center gap-1.5">
+                        <span aria-hidden="true">{localeFlags[option]}</span>
+                        {localeLabels[option]}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+                <ThemeLanguageControls compact />
               </div>
-              <ThemeLanguageControls compact />
+
+              <div className="pt-2 text-center">
+                <p className="text-[11px] font-medium tracking-[0.12em] text-foreground-subtle">
+                  INNER CIRCLE by VENTURE & PARTNERS
+                </p>
+              </div>
             </div>
           </div>
         </div>
