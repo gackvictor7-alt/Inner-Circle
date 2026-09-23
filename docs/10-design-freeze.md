@@ -250,6 +250,39 @@ together.“, Hero-Bild/Texte/Buttons/Pillars, „Drei Ergebnisse, die zählen.�
 Events-Band, Kapital-Hinweis, Membership, Final-CTA, Footer, gesamter
 Mitgliederbereich sowie alle Logik/Routen/Auth/DB.
 
+### 1.15 Sprint 10: Live-Nachbesserungen nach PR #23 (2026-09-23)
+
+Reine Fehlerbehebungen im Rahmen von §2 (Überlauf, abgeschnittene Inhalte,
+fehlende Bedienelemente, falsche Texte) – **keine** Gestaltungsänderung an
+Hero, Branding, Ecosystem-Sektion oder Mitgliederbereich:
+
+- **Mobile Hero (`<lg`):** nutzt jetzt dasselbe freigegebene Motiv wie der
+  Desktop (`/images/hero-alpine.jpg`, Alt-Text `home2.heroV3ImageAlt`) statt
+  des alten `hero-home.jpg`. Layout, Texte, Buttons und kompakte Höhe
+  unverändert; Bildausschnitt `object-[55%_50%] sm:object-[60%_45%]`, bei
+  390 px geprüft (Gesicht rechts neben der Headline, Text über der
+  Landschaft). Kein neues Asset.
+- **Desktop-Header (`xl+`, vorher `lg+`):** Die vollständige Kopfzeile
+  (Doppel-Branding, sechs Navigationspunkte, Sprach-/Theme-Wahl, Login,
+  „Zur Plattform“) wird erst ab 1280 px gezeigt; 1024–1279 px nutzen die
+  kompakte Kopfzeile mit Hamburger-Menü, weil die Vollversion dort
+  nachweislich den rechten Rand abschnitt. Der INNER-CIRCLE-Wortmarken-Block
+  neben dem VP-Monogramm erscheint ab 1440 px; das VP-Monogramm bleibt immer
+  sichtbar (im Dark Mode per `dark:invert`, weil die Navy-Bildmarke auf dem
+  dunklen Header sonst unsichtbar war).
+- **Sprach- und Theme-Wahl im Desktop-Header:** wieder vorhanden als zwei
+  kompakte Trigger (Globus + „DE/EN“, Sonne/Mond-Icon) in der bestehenden
+  Pill-Optik; die Menüs zeigen weiterhin Flagge + vollen Sprachnamen
+  (🇩🇪 Deutsch / 🇬🇧 English) bzw. Hell / Dunkel / System mit Häkchen.
+  Persistenz (`ic-locale`, `ic-theme`), Escape/Fokus-Handling und die
+  Mobile-Variante (volle Labels im Menü-Panel) unverändert.
+- **Texte (redaktionelle Korrektur nach §2):** Aussagen „Registrierung und
+  Login werden mit Schritt 04 aktiviert“, „sobald die Registrierung startet“,
+  „sobald Konten freigeschaltet werden“ (Membership-FAQ, Membership-CTA,
+  Network-CTA) waren überholt – Registrierung/Login/48-h-Discovery sind live.
+  Der Hinweis „Zahlungsfunktion noch nicht aktiv“ bleibt (zutreffend), ohne
+  interne Roadmap-Nummer.
+
 ## 2. Ausdrücklich erlaubt (kein Designbruch)
 
 - Technische Responsive-Bugfixes (z. B. Überlauf, abgeschnittene Inhalte,

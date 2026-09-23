@@ -227,7 +227,7 @@ const siteDe = {
       },
       {
         q: "Wann kann ich mich anmelden?",
-        a: "Die Plattform entsteht Schritt für Schritt. Registrierung und Login werden mit Schritt 04 der Roadmap aktiviert. Diese Website zeigt bereits die geplante Struktur.",
+        a: "Jederzeit: Konto erstellen, E-Mail bestätigen, Interessen wählen – die 48-stündige Discovery-Phase startet sofort. Die Mitgliedschaft schaltet danach alle Bereiche frei.",
       },
       {
         q: "Wann startet die Zahlung der Mitgliedschaft?",
@@ -282,7 +282,7 @@ const siteDe = {
       ],
       ctaTitle: "Bereit für deinen inneren Kreis?",
       ctaText:
-        "Die ersten Mitglieder erhalten Zugriff, sobald Konten freigeschaltet werden. Registriere dich vorab.",
+        "Konto erstellen, verifizieren und das Netzwerk 48 Stunden lang entdecken – die Mitgliedschaft schaltet danach den vollen Zugriff frei.",
     },
     businessDeals: {
       kicker: "Business Deals",
@@ -517,10 +517,10 @@ const siteDe = {
       trialNote: "Jedes neue Konto beginnt mit einer kostenlosen 48-Stunden-Entdeckungsphase.",
       payNoteTitle: "Ehrlich gesagt:",
       payNote:
-        "Die Zahlungsfunktion ist noch nicht aktiv. Preise und Abrechnung werden mit der Einführung der Mitgliedschaft (Schritt 05) getestet und freigeschaltet.",
+        "Die Zahlungsfunktion ist noch nicht aktiv. Preise und Abrechnung werden mit der Freischaltung des Zahlungsanbieters getestet und aktiviert – bis dahin entstehen keine Kosten.",
       faqTitle: "Häufige Fragen",
       ctaTitle: "Bereit für den inneren Kreis?",
-      ctaText: "Erstelle dein Konto, sobald die Registrierung startet – und wachse mit der Community.",
+      ctaText: "Erstelle dein Konto, starte 48 Stunden Discovery – und wachse mit der Community.",
     },
     howItWorks: {
       kicker: "Wie es funktioniert",
@@ -923,7 +923,7 @@ const siteEnRaw: SiteDictionary = {
       },
       {
         q: "When can I sign up?",
-        a: "The platform is being built step by step. Registration and login will be activated with Step 04 of the roadmap. This website already shows the planned structure.",
+        a: "Any time: create an account, confirm your e-mail, pick your interests – the 48-hour discovery phase starts right away. The membership then unlocks every area.",
       },
       {
         q: "When does membership billing start?",
@@ -996,7 +996,7 @@ const siteEnRaw: SiteDictionary = {
       ],
       ctaTitle: "Ready for your inner circle?",
       ctaText:
-        "The first members get access as soon as accounts are enabled. Register in advance.",
+        "Create an account, verify it and explore the network for 48 hours – the membership then unlocks full access.",
     },
     businessDeals: {
       kicker: "Business Deals",
@@ -1231,10 +1231,10 @@ const siteEnRaw: SiteDictionary = {
       trialNote: "Every new account starts with a free 48-hour discovery phase.",
       payNoteTitle: "To be fully transparent:",
       payNote:
-        "Payment is not active yet. Pricing and billing will be tested and enabled when the membership launches (Step 05).",
+        "Payment is not active yet. Pricing and billing will be tested and enabled once the payment provider is switched on – no charges until then.",
       faqTitle: "Frequently asked questions",
       ctaTitle: "Ready for the inner circle?",
-      ctaText: "Create your account once registration opens – and grow with the community.",
+      ctaText: "Create your account, start 48 hours of discovery – and grow with the community.",
     },
     login: {
       kicker: "Login",
