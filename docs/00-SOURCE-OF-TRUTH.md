@@ -3,7 +3,18 @@
 **Diese Datei ist der verbindliche Einstiegspunkt für jeden Menschen und jeden
 KI-Agenten, der an diesem Repository arbeitet.**
 
-- **Stand:** 2026-09-23 (Sprint 10 – Live-Nachbesserungen nach PR #23:
+- **Stand:** 2026-09-24 (Sprint 11 – **Discovery-Demo statt Discovery-Trial**:
+  die 48-Stunden-Phase nach der Verifizierung ist jetzt eine klar
+  gekennzeichnete Demo mit fiktiven Beispielprofilen/-angeboten und zeigt
+  **keine** echten Mitglieder, Deals, Jobs oder Investments mehr; echte
+  Kontakte/geschützte Funktionen nur mit serverseitig bestätigter
+  Mitgliedschaft; echte veröffentlichte Events bleiben für verifizierte
+  Nicht-Mitglieder lesbar, Anmeldung serverseitig gesperrt; sieben
+  Kontozustände, Migrationsregel ohne Trial-Reset (Details §1c, §1d,
+  `04-auth-membership.md` §3, `06-permissions.md` §3b,
+  `tests/integration/discovery-demo.test.ts`); außerdem Teil A: dunkle
+  Kernbereichs-Sektion der Startseite auf Desktop verbreitert
+  (`10-design-freeze.md` 1.16). Davor: Sprint 10 – Live-Nachbesserungen nach PR #23:
   Zugangs-Audit mit sieben Kontozuständen → Seiten-Gating für Free/abgelaufenen
   Trial nachgezogen (`LockedArea`, Dashboard-Filter, Billing ohne tote
   Zahlungsbuttons; Details `06-permissions.md` 3a,
@@ -29,8 +40,9 @@ finalisiert, Details `10-design-freeze.md` 1.14; davor: Incident-Fix post-Sprint
   Bildern, Profile humanisiert, Demo-Beiträge, Inbox-Empty-States, kleine
   Visualisierungen, AI-Look-Reduktion; Sprint 5 – Mobile-UX der Startseite,
   Login-UX, Demo-Detail-Dialoge, Event-Bilder)
-- **Technische Basis:** Branch `arena/01a0cf82-inner-circle`, Basis `main` @
-  `5fb915b` (PR #23). Vorheriger dokumentierter Stand: `128295a` (Sprint 8/9)
+- **Technische Basis:** Branch `arena/01a0d03a-inner-circle`, Basis `main` @
+  `87a244a` (Stand nach PR #23/Sprint 10). Vorheriger dokumentierter Stand:
+  `5fb915b` (Sprint 10)
 - **Sprint-6-Auftrag:** ausdrücklicher Gründerauftrag: bestehendes Projekt
   stabilisieren, strukturieren, funktional machen, humanisieren. Kein Rewrite.
   Keine funktionierende Logik löschen. Domain/Resend-Custom-Domain bewusst
@@ -139,17 +151,22 @@ Details: [`01-product.md`](01-product.md)
 ### 1c. Membership (aktueller Stand – verbindlich)
 
 - **Preise:** 24,99 € / Monat (2499 ct) und 249,90 € / Jahr (24990 ct) – „2 Monate geschenkt" = 16% Vorteil. Quelle der Wahrheit: `src/lib/membership/plans.ts` (doppelt in `src/lib/env.ts` als `membershipPricing` – Risiko K-17).
-- **48h Discovery Trial:** serverseitig, genau einmal pro Konto, 3 Kontaktanfragen (`TRIAL_CONNECTION_LIMIT`), Leserechte, kein Messaging/Posten/Verkaufen/Vollprofil. Ablauf lazy in `getAccessContext()`.
+- **48-h-Discovery-Demo (Sprint 11, ersetzt den „Discovery-Trial“ mit Leserechten):** serverseitig, genau einmal pro Konto (`startTrial()`, `Trial`-Tabelle unverändert), Start im Onboarding nach der Verifizierung, Ablauf lazy in `getAccessContext()`. Während der Demo gibt es **keine echten Mitgliederprofile, Kontaktvorschläge, Deals, Jobs oder Investments** – die Bereiche zeigen die zentral gepflegten, als „DEMO · Beispielprofil“/„DEMO · Beispiel“ gekennzeichneten Beispiele (`src/lib/demo`). Das Level `trial` hat dieselben Rechte wie `free` plus `demoAccess` (`src/lib/access/levels.ts`); Kontaktanfragen, Follows, Bewerbungen, Interessensbekundungen und Event-Anmeldungen werden serverseitig mit `membershipRequired` abgewiesen. Die simulierte Kontaktanfrage auf Demo-Profilen läuft rein clientseitig (`DemoConnectDialog`) und schreibt nichts. Echte veröffentlichte Events (Titel, Datum/Uhrzeit, Ort, Programm, freie Plätze aus realer Kapazität − Buchungen) bleiben lesbar; die Anmeldung ist Teil der Mitgliedschaft (Sperrkarte statt Formular, `applyToEventAction` → `membershipRequired`). Nach Ablauf: Konto/Profil bleiben, Level `free`, Demo nicht neu startbar (`already_used`), Mitgliedschafts-Screen (`LockedArea`/Billing).
+- **Sieben Kontozustände (verbindlich):** 1 anonym (`visitor`) · 2 registriert, unverifiziert (kein `/app`) · 3 verifiziert, Discovery nicht gestartet (`free`, kein `Trial`-Datensatz; landet im Onboarding) · 4 aktive 48-h-Demo (`trial`, `demoAccess`) · 5 abgelaufene Demo ohne Mitgliedschaft (`free`, `Trial.status = expired`) · 6 aktive bestätigte Mitgliedschaft (`member`) · 7 Admin. Nachweis: `tests/integration/access-matrix.test.ts`, `tests/integration/discovery-demo.test.ts`.
+- **Migrations-/Übergangsregel (Sprint 11, kein Schema-Change):** bestehende **aktive** Trials laufen bis zu ihrem ursprünglichen `expiresAt` weiter – ab dem Deploy unter Demo-Semantik (keine echten Daten mehr); bestehende **abgelaufene** Trials bleiben abgelaufen und werden **nie** zurückgesetzt; aktive Mitgliedschaften sind unberührt; Konten ohne `Trial`-Datensatz starten ihre Demo weiterhin genau einmal im Onboarding. Es gibt keine Datenmigration und keinen Reset-Pfad.
 - **Keine zusätzlichen Membership-Tiers.** Nur `free`, `trial`, `member`, `admin` (Level). Keine künstlichen Pakete.
 - **Bezahlung:** Stripe Checkout + signierte Webhooks implementiert, aber BLOCKED (keine Schlüssel). Dev-Aktivierung nur ohne Stripe und außerhalb Produktion (`ALLOW_DEV_MEMBERSHIP_ACTIVATION`), klar gekennzeichnet. **Auf dem Live-Worker (`NODE_ENV=production`, keine Stripe-Variablen in `wrangler.jsonc`) sind daher aktuell keine echten Zahlungen möglich und keine Mitgliedschaft aktivierbar**; `/app/billing` zeigt deshalb deaktivierte Plan-Buttons mit „Zahlung noch nicht freigeschaltet“ statt eines Checkout-Formulars ins Leere.
-- **Free/abgelaufener Trial im `/app`-Bereich (Sprint 10):** Verzeichnis, Jobs, Deal-/Investment-Details und fremde Profile sind seitenweise gesperrt (`LockedArea`), das Dashboard zeigt statt Vollansicht ein Mitgliedschafts-Panel; erlaubt bleiben eigenes Profil/Einstellungen, Marketplace- und Event-Liste, Inbox (Anfragen annehmen/ablehnen, Mitteilungen), Billing. Matrix und Nachweis: `06-permissions.md` §3/3a.
+- **Free/abgelaufene Demo im `/app`-Bereich (Sprint 10/11):** Verzeichnis, Discover, Chancen, Jobs, Investments, Deal-/Investment-Details, fremde Profile und Demo-Profilseiten sind seitenweise gesperrt (`LockedArea`), das Dashboard zeigt statt Vollansicht ein Mitgliedschafts-Panel; erlaubt bleiben eigenes Profil/Einstellungen, Marketplace- und Event-Liste inkl. Event-Details (ohne Anmeldung), Inbox (Anfragen annehmen/ablehnen, Mitteilungen), Billing. Matrix und Nachweis: `06-permissions.md` §3/3a/3b.
+- **Zahlungsstatus ehrlich:** `/app/billing` nennt den echten Stand („Keine Zahlung hinterlegt – es besteht keine aktive Mitgliedschaft. Eine Mitgliedschaft wird ausschließlich nach bestätigter Zahlung aktiviert – nie durch einen Klick, eine Demo-Aktion oder eine fehlgeschlagene Zahlung.“). Ohne Stripe-Schlüssel und mit `ALLOW_DEV_MEMBERSHIP_ACTIVATION=false` (Standard in `.env.example`) antwortet `/api/billing/checkout` mit `?error=stripeNotConfigured` und legt **keine** Mitgliedschaft an (`discovery-demo.test.ts`).
 - **Mitgliedskarte:** Format `IC-<Jahr>-<5-stellige Nummer>`, öffentliche `publicId`, Status `active`/`expired`.
 
 ### 1d. Demo-Daten (verbindliche Regeln – Sprint 6 verschärft)
 
 - **Quelle:** zentral `src/lib/demo/index.ts` (`DEMO_CONTENT_ENABLED` als Notausschalter) + `src/components/app/DemoSections.tsx`.
-- **Gating (Sprint 7):** echte Daten verdrängen Demo. `/app/network` zeigt **echte Mitglieder zuerst** und ergänzt bei weniger als 8 echten (gefilterten) Mitgliedern mit den klar als `DEMO-PROFIL` markierten Beispielprofilen, bis 8 Karten sichtbar sind (Trial-Cap 12 bleibt erhalten). Ab 8 echten Mitgliedern treten Demo-Profile automatisch zurück. Dieselben Filter (Suche/Rolle/Standort/Interesse) gelten für beide. `/app/profile` zeigt Demo-Beiträge UNTER echten Beiträgen.
-- **Sichtbarkeit:** Badge „Demo"/„Beispiel"/„DEMO-PROFIL"/„Beispiel-Event", Hinweistext `app.demo.notice`, Demo-Posts „Demo · keine echten Reaktionen".
+- **Gating (Sprint 7, für Mitglieder unverändert):** echte Daten verdrängen Demo. `/app/network` zeigt **echte Mitglieder zuerst** und ergänzt bei weniger als 8 echten (gefilterten) Mitgliedern mit den klar als `DEMO · Beispielprofil` markierten Beispielprofilen, bis 8 Karten sichtbar sind. Ab 8 echten Mitgliedern treten Demo-Profile automatisch zurück. Dieselben Filter (Suche/Rolle/Standort/Interesse) gelten für beide. `/app/profile` zeigt Demo-Beiträge UNTER echten Beiträgen.
+- **Discovery-Demo (Sprint 11, Level `trial`):** `/app/network`, `/app/discover`, `/app/opportunities`, `/app/jobs` und `/app/investments` rendern für die 48-h-Demo **ausschließlich** Demo-Inhalte – die Mitglieder-/Deal-/Investment-Abfragen werden gar nicht ausgeführt (kein Count, kein Teaser, nichts im RSC-Payload). Discover nutzt die **echten** Filter und das **echte** regelbasierte Ranking (`src/lib/demo/discover.ts` → `applyDiscoverFilters`/`rankCandidates`), sortiert nach den im Onboarding gewählten Interessen/Zielen; Demo-Profile tragen dafür Slugs der echten Taxonomie (`interestSlugs`/`goalSlugs`). Jede Demo-Seite trägt den Hinweis `DemoAreaNotice` („Discovery-Demo · …“), Mitglieder/Admins (`demoAccess=false`) sehen die Demo-Zweige nie (Gate: `demoAccess && !<echtes Entitlement>`).
+- **Demo-Investments (Sprint 11):** drei fiktive, offene Beispiele (`DEMO_INVESTMENTS`) ohne Renditeversprechen, Ticket als „Beispiel-Ticket“, keine abgeschlossenen/„funded“ Zustände; Deals/Jobs analog ohne erfundene Erfolge.
+- **Sichtbarkeit:** Badge „Demo"/„Beispiel"/„DEMO · Beispielprofil"/„DEMO · Beispiel"/„Beispiel-Event", Hinweistext `app.demo.notice`, Demo-Posts „Demo · keine echten Reaktionen"; keine technischen Begriffe („Mock“, „Seed“, „Placeholder“) in der Oberfläche.
 - **Verboten (hart):**
   - keine echten Statistiken verändern
   - keinen Trust erzeugen
@@ -169,6 +186,7 @@ Details: [`01-product.md`](01-product.md)
 - **Member Eventkarte (Sprint 6):** Bild (wiederverwendet aus Public-Assets), Titel, Demo-/Beispiel-Badge falls nötig, Stadt, Datum/geplanter Zeitraum, kurzer Satz, `Event ansehen`.
 - **Detailansicht:** Bild, Beschreibung, Location, geplantes Format, Zielgruppe, CTA (Bewerben/Abbestätigen).
 - **Public Events-Seite:** ehrlicher Leerzustand, keine erfundenen Termine.
+- **Lesbar ohne Mitgliedschaft, Anmeldung nur mit Mitgliedschaft (Sprint 11):** verifizierte Konten (`free`/`trial`) sehen echte veröffentlichte Events (Titel, Datum **und Uhrzeit**, Ort, Beschreibung/Programm, Bild) in Liste und Detail; freie Plätze werden nur angezeigt, wenn `capacity` gesetzt ist (`capacity − Bewerbungen applied/confirmed/attended`), nie erfunden. Statt des Anmeldeformulars steht eine Sperrkarte („Anmeldung ist Teil der Mitgliedschaft“ + freie Plätze + CTA Billing); `applyToEventAction` prüft `eventsApply` serverseitig (`membershipRequired`). Bestehende Anmeldungen, Rückzug und Admin-Funktionen unverändert (`discovery-demo.test.ts` §4).
 
 ### 1f. Investments – klare Trennung (verbindlich)
 
@@ -261,14 +279,17 @@ Discover → Profil → Connect (Pflichtnachricht) → Anfrage → Inbox (Anfrag
   Connections, offene Anfragen und andere Profile; Mitglieder mit
   Verbindung tragen das `Verbunden`-Badge, Karten zeigen je Richtung die
   passenden Actions. Demo-Profile erscheinen nur in „Alle“.
-- **Demo-Profile** (TEIL T): erzeugen **nie** echte Daten – kein
-  `ConnectionRequest`, keine Inbox-Einträge, kein Follow, kein Trust.
-  „Connect“ auf einem Demo-Profil öffnet `DemoConnectDialog`
-  („Dies ist ein Demo-Profil. Bei echten Mitgliedern kannst du hier eine
-  persönliche Connection-Anfrage senden.“). `sendConnectionRequestAction`
-  blockiert zusätzlich DB-Demo-User serverseitig (`demoConnectBlocked`).
-- **Trial-Limits** bleiben erhalten: max. 3 Kontaktanfragen
-  (`TRIAL_CONNECTION_LIMIT`, serverseitig), Freigabe bei Rückzug/Ablehnung.
+- **Demo-Profile** (TEIL T, Sprint 11 erweitert): erzeugen **nie** echte
+  Daten – kein `ConnectionRequest`, keine Inbox-Einträge, kein Follow, kein
+  Trust. „Kontakt anfragen“ auf einem Demo-Profil öffnet `DemoConnectDialog`
+  mit simuliertem Nachrichten-Flow (min. 20 / max. 600 Zeichen) und dem
+  Abschluss „So funktioniert eine Kontaktanfrage bei INNER CIRCLE. Dies war
+  eine Demo – es wurde keine Nachricht an eine echte Person gesendet.“
+  `sendConnectionRequestAction` blockiert zusätzlich DB-Demo-User
+  serverseitig (`demoConnectBlocked`).
+- **Kontaktanfragen nur für Mitglieder (Sprint 11):** `connect` ist für
+  `trial` `"no"` → `membershipRequired`; der frühere Trial-Zähler
+  (`TRIAL_CONNECTION_LIMIT`) wird von keiner Action mehr verbraucht.
   Rate-Limit `connect:<userId>` 30/h, `message:<userId>` 60/10 min.
 - **Authorization** (serverseitig, `getAccessContext()`): nur eingeloggte
   Nutzer senden Connect; nur Empfänger antwortet; nur Sender zieht zurück;
@@ -364,13 +385,14 @@ existiert. Backend + Daten + Berechtigungen + Nachweis gehören dazu.
 | Funktion | Status | Nachweis |
 | -------- | ------ | -------- |
 | Free-Account (Status `free`) | WORKING | `entitlementsFor(\"free\")` |
-| 48-h-Discovery-Trial (serverseitig, einmalig, Ablauf) | WORKING | `src/lib/trial/service.ts`, `tests/integration/trial.test.ts` |
-| Trial-Einschränkungen (3 Kontaktanfragen, nur lesend) | WORKING | `TRIAL_CONNECTION_LIMIT`, `entitlements` |
+| 48-h-Discovery-Demo (serverseitig, einmalig, Ablauf, kein Neustart) | WORKING | `src/lib/trial/service.ts`, `tests/integration/trial.test.ts`, `tests/integration/discovery-demo.test.ts` |
+| Demo-Semantik der Discovery-Phase (keine echten Mitglieder/Deals/Jobs/Investments, simulierte Anfrage ohne Datenbankschreibung, echte Events lesbar/Anmeldung gesperrt) | WORKING | `entitlementsFor("trial")` = free + `demoAccess`, `src/lib/demo/discover.ts`, `DemoConnectDialog`, `access-matrix.test.ts`, `discovery-demo.test.ts` |
+| Trial-Kontaktanfragen-Zähler (`TRIAL_CONNECTION_LIMIT`) | PREPARED | Service + Test bleiben, wird seit Sprint 11 von keiner Action mehr verbraucht (Trial darf keine echten Anfragen senden) |
 | Paid Membership (Monat/Jahr) über Service | WORKING | `src/lib/membership/service.ts`, `tests/integration/membership.test.ts` |
 | Stripe-Checkout + signierte Webhooks | BLOCKED | Code vollständig (`/api/billing/checkout`, `/api/webhooks/stripe`, `webhook.test.ts`), aber kein Stripe-Konto/Schlüssel |
 | Dev-Mitgliedschaftsaktivierung (klar gekennzeichnet) | WORKING | nur ohne Stripe und außerhalb Produktion (`ALLOW_DEV_MEMBERSHIP_ACTIVATION`) |
 | Mitgliedskarte (Nummer + öffentliche Verifizierung) | WORKING | `issueCardIfNeeded`, `/member/[publicId]` |
-| Paywall/Weiterleitung unterhalb des Levels | WORKING | `requireAccess()`, `/app/billing?paywall=…`; Sprint 10: Seiten-Locked-State `LockedArea` für Free/abgelaufenen Trial, `tests/integration/access-matrix.test.ts` (25 Fälle, 7 Kontozustände) |
+| Paywall/Weiterleitung unterhalb des Levels | WORKING | `requireAccess()`, `/app/billing?paywall=…`; Sprint 10/11: Seiten-Locked-State `LockedArea` für Free/abgelaufene Demo, `tests/integration/access-matrix.test.ts` (26 Fälle, 7 Kontozustände) |
 | Mitgliedsantrag mit manueller Prüfung | WORKING | `/app/membership-application`, Admin-Prüfung |
 | Rechnungen (`Invoice`) | PREPARED | Tabelle + `recordInvoice()`, keine echten Rechnungen ohne Stripe |
 
@@ -396,8 +418,9 @@ existiert. Backend + Daten + Berechtigungen + Nachweis gehören dazu.
 | -------- | ------ | -------- |
 | Member Discovery (Verzeichnis mit Suche/Filter) | WORKING | `/app/network`, `listDirectoryMembers()`; Sprint 6 humanisiert: 20-35, Mix Founder/Unternehmer/Investor/Creator/Consultant/Operator/Freelancer, uneven Bios/Skills, Städte variabel; **Sprint 7: Filterleiste Suche + Rolle + Standort + Interesse** (Rolle via `jobTitle`/`rolesJson`), Demo-Ergänzung laut §4a |
 | **Verbindungsstatus richtungsabhängig (Sprint 7)** | WORKING | eigene gesendete Anfrage → „Anfrage gesendet" + **Zurückziehen**; erhaltene Anfrage → **Annehmen / Ablehnen** direkt auf der Mitgliedskarte (`outgoingRequestId`/`incomingRequestId` aus `listDirectoryMembers()`); Follow-Button heißt „Nicht mehr folgen" (kein „Ablehnen" mehr, der nur für erhaltene Anfragen steht); `network-directory.test.ts` |
-| **Demo-Profilansicht (Sprint 7)** | WORKING | „Profil ansehen" auf Demo-Karten → `/app/people/demo/[key]`: vollständige, eindeutig als DEMO-PROFIL gekennzeichnete Ansicht ohne DB-Zugriff; Connect erklärt stattdessen: „Dies ist ein Demo-Profil. …" (`DemoConnectDialog`), es wird **keine** echte Anfrage erzeugt |
-| Follow | WORKING | `followAction` (bei Demo-Profile nicht angeboten – keine echten Follower) |
+| **Demo-Profilansicht (Sprint 7, Sprint 11 erweitert)** | WORKING | „Profil ansehen" auf Demo-Karten → `/app/people/demo/[key]`: vollständige, eindeutig als „DEMO · Beispielprofil" gekennzeichnete Ansicht (Interessen, Businessziele aus der echten Taxonomie, Suche/Biete, Skills) ohne Mitglieder-DB-Zugriff; „Kontakt anfragen“ öffnet den simulierten Anfrage-Flow mit Pflichtnachricht und Abschluss „So funktioniert eine Kontaktanfrage bei INNER CIRCLE. Dies war eine Demo – es wurde keine Nachricht an eine echte Person gesendet.“ (`DemoConnectDialog`, keine Server-Action, keine DB-Zeile); nur für `demoAccess` oder Verzeichnis-Berechtigte, sonst `LockedArea` |
+| **Discovery-Demo in Network/Discover (Sprint 11)** | WORKING | Level `trial` sieht in `/app/network` und `/app/discover` ausschließlich die acht Demo-Profile (echte Abfragen werden nicht ausgeführt), mit den echten Filtern (Rolle, Standort, Umkreis, Branche, Interesse, Investmentinteresse, Suche/Biete), aktiven Filtern + Zurücksetzen und ehrlichem Leerzustand; Sortierung nach eigenen Interessen/Zielen (`demoDiscoverResults`); `demo-discover.test.ts`, `discovery-demo.test.ts` |
+| Follow | WORKING | `followAction` (nur Mitglieder; Trial → `membershipRequired`; bei Demo-Profilen nicht angeboten – keine echten Follower) |
 | Connection Requests (senden/annehmen/ablehnen/zurückziehen) | WORKING | `network.ts`, `connection-request.test.ts`, `messaging-authorization.test.ts` |
 | **Core Connection Loop (Sprint 8)** | WORKING | Discover → Profil (zustandsabhängige Aktionen) → Connect mit Pflichtnachricht → Anfrage in Inbox → Annehmen/Ablehnen → Chat (nur Mitglieder) + Business Connection → Network (`Alle/Verbindungen/Anfragen`). Details §1i; `core-loop.test.ts` (accept/decline/withdraw, Notification-Deep-Links, kein implizites Follow), `connection-request.test.ts`, `messaging-authorization.test.ts` |
 | **Verbindungsanfrage nur mit Pflichtnachricht** (min. 10 Zeichen, max. 600) | WORKING | serverseitig in `sendConnectionRequestAction` (`CONNECTION_MESSAGE_MIN_LENGTH`/`CONNECTION_MESSAGE_MAX_LENGTH`), UI `ConnectDialog` (Zähler + Fehler), `connection-request.test.ts` |
@@ -446,8 +469,8 @@ existiert. Backend + Daten + Berechtigungen + Nachweis gehören dazu.
 
 | Funktion | Status | Nachweis |
 | -------- | ------ | -------- |
-| Events ansehen (Mitgliederbereich) | WORKING | `/app/events`, `Event`-Tabelle; Sprint 6: Karten mit Bild (wiederverwendet aus Public), Titel, Demo-Badge, Stadt, Datum, kurzer Satz, „Event ansehen" |
-| Bewerben/Abbestätigen, Warteliste-Flag | WORKING (Datenmodell) | `applyToEventAction`, `cancelEventApplicationAction` |
+| Events ansehen (Mitgliederbereich) | WORKING | `/app/events`, `Event`-Tabelle; Sprint 6: Karten mit Bild (wiederverwendet aus Public), Titel, Demo-Badge, Stadt, Datum, kurzer Satz, „Event ansehen"; **Sprint 11:** Datum · Uhrzeit, für verifizierte Nicht-Mitglieder lesbar (Liste + Detail), freie Plätze nur aus echter Kapazität − Buchungen |
+| Bewerben/Abbestätigen, Warteliste-Flag | WORKING (Datenmodell) | `applyToEventAction` (nur `eventsApply` = Mitglied/Admin, sonst `membershipRequired`; Detailseite zeigt Nicht-Mitgliedern eine Sperrkarte statt Formular), `cancelEventApplicationAction` |
 | Tickets, QR-Check-in, Attendance | NOT IMPLEMENTED | Bewerbungen existieren, keine Ticket-/Check-in-Tabellen |
 | Events anlegen (Mitglieder) | **NOT IMPLEMENTED – bewusst** | INNER CIRCLE kuratiert Events selbst; kein Create-Eintrag, keine Route, keine Server-Action – abgesichert durch `event-permissions.test.ts` |
 | Öffentliche Events-Seite mit echten Daten | PARTIAL | `/events` ist eine öffentliche Preview mit ehrlichem Leerzustand |
@@ -494,11 +517,20 @@ existiert. Backend + Daten + Berechtigungen + Nachweis gehören dazu.
 - **Quelle:** alles Fiktive lebt zentral in `src/lib/demo/index.ts`
   (`DEMO_CONTENT_ENABLED` als Notausschalter) und wird über
   `src/components/app/DemoSections.tsx` gerendert.
-- **Gating (Sprint 7):** echte Daten verdrängen Demo-Daten. `/app/network` zeigt
-  die echten Mitglieder **zuerst** und ergänzt die klar als `DEMO-PROFIL`
+- **Gating (Sprint 7, Mitglieder):** echte Daten verdrängen Demo-Daten. `/app/network` zeigt
+  die echten Mitglieder **zuerst** und ergänzt die klar als `DEMO · Beispielprofil`
   markierten Beispielprofile, solange die echte (gefilterte) Liste kleiner als 8
-  ist – bis 8 Karten insgesamt (Trial-Cap 12 bleibt bestehen); ab 8 echten
-  Mitgliedern treten die Demo-Profile automatisch zurück. Die Demo-Profile nutzen
+  ist – bis 8 Karten insgesamt; ab 8 echten
+  Mitgliedern treten die Demo-Profile automatisch zurück.
+- **Discovery-Demo (Sprint 11, Level `trial`):** Network, Discover, Chancen,
+  Jobs und Investments zeigen **nur** Demo-Inhalte, echte Abfragen laufen nicht;
+  Demo-Profile (8, `DEMO_PROFILES`) nutzen Slugs der echten Taxonomie, damit die
+  echten Filter und das echte Ranking greifen (`src/lib/demo/discover.ts`);
+  Avatare ausschließlich aus `public/images/avatars/*` oder neutraler
+  Initialen-Avatar (`avatarUrl: null`), nie Mitgliederfotos; die simulierte
+  Kontaktanfrage (`DemoConnectDialog`) erzeugt keine Anfrage, Nachricht,
+  Benachrichtigung oder sonstige Zeile. Demo-Profilseiten sind nach Ablauf der
+  Demo gesperrt (`LockedArea`). Die Demo-Profile nutzen
   dieselben Filter wie die echten (Suche, Rolle, Standort, Interesse) und werden
   in der Zählzeile separat als „… Demo-Profile (Beispiele – keine echten
   Mitglieder)" ausgewiesen. `/app/profile` blendet die Beispielbeiträge **unter**

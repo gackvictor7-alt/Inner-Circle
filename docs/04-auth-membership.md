@@ -20,7 +20,8 @@ Registered, unverified        ← Session existiert bereits, Bereich /app ist ge
 Verified (free)               ← E-Mail ODER Telefon bestätigt
   │  /onboarding/interests   (mind. 3 Interessen, optional Ziele/Profilfelder, „Discovery starten")
   ▼
-Trial (48 h, genau einmal)    ← 3 Kontaktanfragen, Leserechte, eingeschränktes Profil
+Discovery-Demo (48 h, einmal) ← Rechte wie free + Demo-Inhalte; keine echten Mitglieder/Deals; echte Events lesbar
+  │  Ablauf → free (Konto/Profil bleiben, Demo nicht neu startbar) ODER
   │  /app/billing             (Plan wählen → Stripe-Checkout ODER Dev-Aktivierung)
   ▼
 Paid Member                   ← Aktivierung ausschließlich über Membership-Service / Webhook
@@ -122,7 +123,7 @@ Präsenz-Flag gelöscht, Redirect `/`. Kein reiner Client-Logout. Audit
 | Voraussetzung | angemeldet **und** verifiziert (`requireVerifiedUser`), Onboarding noch nicht abgeschlossen |
 | Eingaben | mind. 3 Interessen (Taxonomie-ID **oder** Slug), optionale Ziele, Headline/Ort/Firma, `startTrial=1` |
 | DB-Änderungen | `Profile.onboardingCompletedAt`, Felder, `UserInterest` (ersetzt), `UserGoal` (ersetzt), `Trial` (bei `startTrial` und ohne aktive Mitgliedschaft), `AdminAuditLog` (`onboarding.completed`, `trial.started`) |
-| Trial-Regeln | 48 h ab Start, genau **einmal** pro Konto, `connectionRequestLimit` (Default 3, `TRIAL_CONNECTION_LIMIT`), Fingerprint-Missbrauchsschutz |
+| Trial-Regeln | 48 h ab Start, genau **einmal** pro Konto, Fingerprint-Missbrauchsschutz; seit Sprint 11 ist die Phase eine **Demo** (siehe §3) – `connectionRequestLimit` bleibt im Datensatz, wird aber von keiner Action mehr verbraucht |
 | Weiterleitung | `/app` (bzw. `?trial=used`, `?trial=blocked`) |
 | Fehlerzustände | `unauthorized`, `verificationRequired`, `validation.minInterests`, `abuseBlocked`/`trialUsed` (als Redirect mit Query) |
 
@@ -135,11 +136,37 @@ Präsenz-Flag gelöscht, Redirect `/`. Kein reiner Client-Logout. Audit
 - Ablauf wird **lazy** beim Aufruf von `getAccessContext()` geprüft: ein
   abgelaufener Trial wird auf `expired` gesetzt (oder `converted`, wenn
   inzwischen eine Mitgliedschaft aktiv ist).
-- Kontaktanfragen während des Trials: `registerTrialConnectionRequest()`
-  zählt hoch, `releaseTrialConnectionRequest()` gibt bei Rückzug wieder frei.
-- Rechte während des Trials: siehe [`06-permissions.md`](06-permissions.md) –
-  insbesondere **kein** Vollprofil (`profileFull=false`), **kein** Messaging,
-  **kein** Posten, **kein** Verkaufen.
+- **Discovery-Demo (Sprint 11):** Das Level `trial` ist eine Demo, kein
+  eingeschränkter Echtzugang. `entitlementsFor("trial")` = `free` +
+  `demoAccess: true`; alle Rechte auf echte Mitglieder- und Geschäftsdaten
+  (`networkDirectory`, `networkDiscover`, `follow`, `connect`,
+  `opportunitiesBrowse/Apply`, `investmentsBrowse`, `eventsApply`, `trustView`)
+  sind `false`/`"no"`. Seiten rendern stattdessen die gekennzeichneten
+  Demo-Inhalte (`src/lib/demo`, Gate `demoAccess && !<echtes Entitlement>`),
+  Server Actions antworten mit `membershipRequired`. Die simulierte
+  Kontaktanfrage (`DemoConnectDialog`) ist rein clientseitig.
+- `registerTrialConnectionRequest()` / `releaseTrialConnectionRequest()`
+  bleiben als Service erhalten (Tests), werden aber von keiner Action mehr
+  aufgerufen – ein Trial sendet keine echten Anfragen.
+- **Nach Ablauf:** Level `free`, `Trial.status = expired`; Konto, Profil,
+  Interessen/Ziele, Inbox, Events (lesend), Marketplace-Liste und Billing
+  bleiben; Discover/Network/Chancen/Jobs/Investments/Demo-Profile zeigen den
+  Mitgliedschafts-Screen (`LockedArea` bzw. `/app/billing?paywall=trial`).
+  `startTrial()` antwortet mit `already_used`; ein erneutes Onboarding legt
+  keinen zweiten Datensatz an.
+- **Migration bestehender Konten (kein Schema-Change, keine Datenmigration):**
+  aktive Trials laufen bis zum ursprünglichen `expiresAt` weiter, ab dem Deploy
+  mit Demo-Semantik; abgelaufene Trials bleiben abgelaufen und werden **nie**
+  zurückgesetzt; Mitgliedschaften unberührt; Konten ohne `Trial`-Datensatz
+  starten die Demo einmalig im Onboarding.
+- **Sieben Kontozustände:** 1 anonym (`visitor`) · 2 registriert,
+  unverifiziert (`/app` gesperrt, `/verify`) · 3 verifiziert, Discovery nicht
+  gestartet (`free` ohne `Trial`, Onboarding) · 4 aktive Demo (`trial`) ·
+  5 abgelaufene Demo ohne Mitgliedschaft (`free` + `expired`) · 6 aktive
+  bestätigte Mitgliedschaft (`member`) · 7 Admin. Nachweis:
+  `tests/integration/access-matrix.test.ts`,
+  `tests/integration/discovery-demo.test.ts`.
+- Rechte im Detail: siehe [`06-permissions.md`](06-permissions.md) §3/3b.
 
 ## 4. Membership – Zustände und Übergänge
 
@@ -187,7 +214,7 @@ der UI als Entwicklungsmodus gekennzeichnet und über
 | SMS-Code empfangen | BLOCKED | Twilio-Zugangsdaten fehlen (`TWILIO_*`) |
 | E-Mail-Posteingang ohne Spam-Ordner | PARTIAL | E-Mail-Versand über Resend funktioniert technisch, aber die Testdomain `resend.dev` wird von Spamfiltern oft abgestraft; produktiv ist eine verifizierte Domain nötig |
 | Google-/Apple-Login | NOT IMPLEMENTED | Route `/api/auth/oauth/*` existiert nicht; Buttons sind seit Sprint 5 echte `disabled`-Elemente mit Badge „Einrichtung erforderlich" (K-04 behoben – kein toter Link, kein 404) |
-| Bezahlung | BLOCKED | Stripe-Schlüssel fehlen; Dev-Aktivierung nur lokal |
+| Bezahlung | BLOCKED | Stripe-Schlüssel fehlen; Dev-Aktivierung nur lokal und nur mit `ALLOW_DEV_MEMBERSHIP_ACTIVATION` ≠ `false` (Standard in `.env.example`: `false`). Ohne beides: `/api/billing/checkout` → `?error=stripeNotConfigured`, keine Mitgliedschaft; `/app/billing` zeigt den Zahlungsstatus ehrlich (`app.billing.paymentStatusNone/paymentStatusHonest`), Plan-Buttons deaktiviert |
 | 2FA | PREPARED | `VerificationCode.purpose = login_2fa` bzw. Schema vorhanden, keine UI |
 
 Details und Status: [`11-known-issues.md`](11-known-issues.md).

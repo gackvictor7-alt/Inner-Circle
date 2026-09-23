@@ -248,7 +248,8 @@ Zustand ist beauftragt, umgesetzt und jetzt seinerseits eingefroren:
 VP-Branding/Monogramm, Desktop-Hero inkl. Headline „A stronger tomorrow,
 together.“, Hero-Bild/Texte/Buttons/Pillars, „Drei Ergebnisse, die zählen.“,
 Events-Band, Kapital-Hinweis, Membership, Final-CTA, Footer, gesamter
-Mitgliederbereich sowie alle Logik/Routen/Auth/DB.
+Mitgliederbereich sowie alle Logik/Routen/Auth/DB. Desktop-Breite/Proportionen
+der Sektion: siehe 1.16 (Sprint 11).
 
 ### 1.15 Sprint 10: Live-Nachbesserungen nach PR #23 (2026-09-23)
 
@@ -292,6 +293,28 @@ Hero, Branding, Ecosystem-Sektion oder Mitgliederbereich:
   Network-CTA) waren überholt – Registrierung/Login/48-h-Discovery sind live.
   Der Hinweis „Zahlungsfunktion noch nicht aktiv“ bleibt (zutreffend), ohne
   interne Roadmap-Nummer.
+
+### 1.16 Sprint 11: Desktop-Breite der dunklen Kernbereichs-Sektion (2026-09-24)
+
+**Ausdrücklicher Gründerauftrag** (Teil A von Sprint 11): Die in 1.14
+eingefrorene alternierende Sektion nutzt auf dem Desktop (`lg+`) jetzt nahezu
+die volle nutzbare Breite mit gleichmäßigen Premium-Rändern; Bild und Text
+bilden eine ruhige Reihe. **Nur** Layoutbreite, Bild-/Textproportionen und
+responsive Abstände wurden verändert – Reihenfolge, Bilder, Texte,
+Farben, Typografie, Links, Hover-Zustände sowie Tablet/Mobile sind
+unverändert (390/768 px pixelidentisch, Hero bei 1440/1920/768/390
+pixelidentisch geprüft). Werte (`src/app/(site)/HomeContent.tsx`):
+
+| Element | vorher | jetzt |
+| ------- | ------ | ----- |
+| Container | `max-w-[1480px] px-8 pt-14 pb-12 xl:px-14` | `max-w-[1800px] px-10 pt-14 pb-10 xl:px-14 xl:pb-12 2xl:px-16` (Seitenränder 40/56/64 px, bei 1920 px ≈ 124 px inkl. Auto-Rand) |
+| Divider unter dem Abschnittskopf | `mb-16` | `mb-14` |
+| Reihen | `gap-16 py-14` | `gap-12 py-10 xl:gap-16 xl:py-12` |
+| Bild | `col-span-7 h-[360px] xl:h-[420px]`, `sizes="55vw"` | `col-span-7 aspect-[16/10] h-auto w-full object-cover` (`width={1200} height={750}`, `sizes="(min-width: 1800px) 980px, 56vw"`) → ≈ 755×472 px bei 1440, ≈ 950×594 px bei 1920 |
+| Text | `col-span-5 max-w-[420px]` | `col-span-5 max-w-[460px] 2xl:max-w-[500px]` + `xl:pl-2` / `xl:pr-6` je nach Seite |
+
+Kein horizontaler Überlauf zwischen 390 und 1920 px. Dieser Zustand ist ab
+jetzt Teil des Freeze.
 
 ## 2. Ausdrücklich erlaubt (kein Designbruch)
 
