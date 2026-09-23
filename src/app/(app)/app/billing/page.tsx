@@ -11,6 +11,7 @@ import { Card } from "@/components/ui/Card";
 import { CheckIcon, InfoIcon } from "@/components/ui/icons";
 import { LocalizedPageHeader, Tr } from "@/components/app/localized";
 import { InfoRow } from "@/components/app/ui";
+import { lockedCopyFor } from "@/components/app/LockedArea";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +29,9 @@ export default async function BillingPage({
   const params = await searchParams;
   const integration = integrationStatus();
   const stripeReady = integration.stripeConfigured && integration.stripeWebhookConfigured;
+  // A checkout can only be started when the provider is fully configured or the
+  // development activation (never in production) is enabled.
+  const checkoutAvailable = stripeReady || integration.devMembershipActivation;
 
   const myInvoices = await db
     .select()
@@ -38,7 +42,21 @@ export default async function BillingPage({
 
   const membership = access.membership;
   const saving = annualSaving();
+  const levelKey = {
+    visitor: "app.access.levelVisitor",
+    free: "app.access.levelFree",
+    trial: "app.access.levelTrial",
+    member: "app.access.levelMember",
+    admin: "app.access.levelAdmin",
+  }[access.level];
   const planRows = [PLANS.monthly, PLANS.annual];
+  // The paywall notice describes the viewer's actual state: an active trial
+  // hitting a member-only function vs. a free/expired account (which is
+  // never told it is "in the trial").
+  const paywallCopy =
+    access.level === "trial"
+      ? { titleKey: "app.access.trialLockedTitle", textKey: "app.access.trialLockedText" }
+      : lockedCopyFor(access);
 
   return (
     <div className="space-y-8">
@@ -47,10 +65,10 @@ export default async function BillingPage({
       {params.paywall && (
         <Card className="border-electric-500/40 bg-electric-500/[0.04] p-5">
           <p className="font-semibold">
-            {params.paywall === "trial" ? <Tr k="app.access.trialLockedTitle" /> : <Tr k="app.access.lockedTitle" />}
+            <Tr k={paywallCopy.titleKey} />
           </p>
           <p className="mt-1 text-sm text-foreground-muted">
-            {params.paywall === "trial" ? <Tr k="app.access.trialLockedText" /> : <Tr k="app.access.lockedText" />}
+            <Tr k={paywallCopy.textKey} />
           </p>
         </Card>
       )}
@@ -59,7 +77,7 @@ export default async function BillingPage({
         <Card className="p-6">
           <h2 className="text-lg font-bold tracking-tight"><Tr k="app.billing.currentPlan" /></h2>
           <dl className="mt-4 divide-y divide-border">
-            <InfoRow label={<Tr k="app.dev.level" />} value={<Badge variant="electric">{access.level}</Badge>} />
+            <InfoRow label={<Tr k="app.dev.level" />} value={<Badge variant="electric"><Tr k={levelKey} /></Badge>} />
             <InfoRow
               label={<Tr k="app.billing.title" />}
               value={
@@ -85,7 +103,7 @@ export default async function BillingPage({
               }
             />
             <InfoRow
-              label={<Tr k="app.billing.nextRenewal" />}
+              label={<Tr k="app.billing.renewalLabel" />}
               value={membership?.currentPeriodEnd ? membership.currentPeriodEnd.toLocaleDateString("de-DE") : "–"}
             />
           </dl>
@@ -115,7 +133,11 @@ export default async function BillingPage({
           )}
           {params.error && (
             <p role="alert" className="mt-4 rounded-xl bg-danger-500/10 px-3 py-2 text-xs text-danger-700 dark:text-danger-200">
-              {params.error}
+              {params.error === "stripeNotConfigured" ? (
+                <Tr k="app.billing.notConfiguredText" />
+              ) : (
+                <Tr k="app.billing.errorStripe" params={{ error: params.error }} />
+              )}
             </p>
           )}
         </Card>
@@ -172,10 +194,19 @@ export default async function BillingPage({
                     {formatMoney(PLANS.annual.priceCents, PLANS.annual.currency, "de")}
                   </p>
                 ) : null}
+                {/* No dead buttons: without a configured provider (and outside the
+                    explicitly labelled development activation) there is no checkout
+                    to start, so the button says so instead of bouncing to an error. */}
                 <form action="/api/billing/checkout" method="post" className="mt-6">
                   <input type="hidden" name="plan" value={plan.id} />
-                  <Button type="submit" fullWidth>
-                    <Tr k="app.billing.startCheckout" />
+                  <Button type="submit" fullWidth disabled={!checkoutAvailable} aria-disabled={!checkoutAvailable}>
+                    {stripeReady ? (
+                      <Tr k="app.billing.startCheckout" />
+                    ) : integration.devMembershipActivation ? (
+                      <Tr k="app.billing.devActivationCta" />
+                    ) : (
+                      <Tr k="app.billing.checkoutUnavailable" />
+                    )}
                   </Button>
                 </form>
               </Card>

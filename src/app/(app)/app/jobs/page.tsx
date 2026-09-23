@@ -7,12 +7,18 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { LocalizedEmptyState, LocalizedPageHeader, Tr } from "@/components/app/localized";
+import { LockedArea } from "@/components/app/LockedArea";
 import { JobsDemoSection } from "@/components/app/DemoSections";
 
 export const dynamic = "force-dynamic";
 
 export default async function JobsPage() {
   const access = await requireUser("/app/jobs");
+
+  // Jobs & projects are opportunities (docs/06-permissions.md: browse = trial/member).
+  if (!access.entitlements.opportunitiesBrowse) {
+    return <LockedArea access={access} icon="grid" />;
+  }
 
   const rows = await db
     .select({

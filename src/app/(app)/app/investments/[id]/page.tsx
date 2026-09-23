@@ -9,6 +9,7 @@ import { ActionForm, type FormField } from "@/components/app/forms";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { LocalizedPageHeader, Tr } from "@/components/app/localized";
+import { LockedArea } from "@/components/app/LockedArea";
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +26,12 @@ export default async function InvestmentDetailPage({ params }: { params: Promise
 
   const isSubmitter = opportunity.submittedById === access.user.id;
   if (opportunity.status !== "approved" && !isSubmitter && access.user.role !== "admin") notFound();
+
+  // Detail pages follow the list (docs/06-permissions.md: browse = trial/member);
+  // submitters keep access to their own submission.
+  if (!access.entitlements.investmentsBrowse && !isSubmitter && access.user.role !== "admin") {
+    return <LockedArea access={access} icon="chart" />;
+  }
 
   const [interest] = await db
     .select()

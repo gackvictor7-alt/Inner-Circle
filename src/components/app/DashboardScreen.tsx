@@ -22,6 +22,8 @@ import type { ForYouItem } from "@/lib/platform/queries";
 export type DashboardData = {
   firstName: string;
   level: "visitor" | "free" | "trial" | "member" | "admin";
+  /** True when the account's discovery trial has ended (drives the wording of the free-state panel). */
+  trialExpired: boolean;
   trialMsRemaining: number | null;
   trialRequestsUsed: number;
   trialRequestLimit: number;
@@ -64,6 +66,7 @@ export function DashboardScreen({ data }: { data: DashboardData }) {
   const countdown = useCountdown(data.trialMsRemaining);
   const isTrial = data.level === "trial";
   const isMember = data.level === "member" || data.level === "admin";
+  const isFree = !isTrial && !isMember;
 
   const areas = [
     {
@@ -170,12 +173,40 @@ export function DashboardScreen({ data }: { data: DashboardData }) {
           <Button href="/app/notifications" size="sm" variant="ghost" aria-label={t.app.nav.notifications}>
             <BellIcon size={16} />
           </Button>
-          <Button href="/app/discover" size="sm">
-            <CompassIcon size={16} />
-            {t.app.nav.discover}
-          </Button>
+          {!isFree && (
+            <Button href="/app/discover" size="sm">
+              <CompassIcon size={16} />
+              {t.app.nav.discover}
+            </Button>
+          )}
         </div>
       </header>
+
+      {/* Free accounts (no trial / trial ended / membership lapsed): a clear,
+          restricted membership panel first – not a seemingly full dashboard.
+          What remains usable without membership is listed in
+          docs/06-permissions.md (own profile, inbox, events & marketplace lists). */}
+      {isFree && (
+        <section
+          aria-labelledby="membership-required"
+          className="flex flex-col gap-4 rounded-2xl border border-sand-400/50 bg-sand-200/30 px-5 py-5 dark:bg-sand-400/5 sm:flex-row sm:items-center sm:justify-between sm:px-6"
+        >
+          <div className="max-w-2xl">
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-sand-600 dark:text-sand-300">
+              {t.app.access.yourLevel}
+            </p>
+            <h2 id="membership-required" className="mt-1 text-lg font-bold tracking-tight">
+              {data.trialExpired ? t.app.dashboard.trialEndedTitle : t.app.billing.paywallTitle}
+            </h2>
+            <p className="mt-1 text-sm leading-6 text-foreground-muted">
+              {data.trialExpired ? t.app.dashboard.trialEndedText : t.app.dashboard.membershipRequiredText}
+            </p>
+          </div>
+          <Button href="/app/billing" size="md" className="shrink-0">
+            {t.app.access.upgradeCta}
+          </Button>
+        </section>
+      )}
 
       {/* “Für dich” (Sprint 8, TEIL E): 3–5 real, currently relevant entries –
           request, unread message, matching member, newest deal, event,
@@ -199,11 +230,13 @@ export function DashboardScreen({ data }: { data: DashboardData }) {
           <>
             <p className="mt-2 text-sm leading-6 text-foreground-muted">{t.app.dashboard.forYouEmpty}</p>
             <ul className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-              <li>
-                <Link href="/app/discover" className="block rounded-xl px-3 py-2 text-sm hover:bg-surface-muted">
-                  {t.app.dashboard.forYouDiscover}
-                </Link>
-              </li>
+              {!isFree && (
+                <li>
+                  <Link href="/app/discover" className="block rounded-xl px-3 py-2 text-sm hover:bg-surface-muted">
+                    {t.app.dashboard.forYouDiscover}
+                  </Link>
+                </li>
+              )}
               <li>
                 <Link href="/app/inbox" className="block rounded-xl px-3 py-2 text-sm hover:bg-surface-muted">
                   {t.app.dashboard.forYouInbox}
@@ -224,16 +257,6 @@ export function DashboardScreen({ data }: { data: DashboardData }) {
           </>
         )}
       </section>
-
-      {/* Free accounts: one honest line, not a wall of copy */}
-      {data.level === "free" && (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-sand-400/40 bg-sand-200/30 px-4 py-3 text-sm dark:bg-sand-400/5">
-          <p className="max-w-2xl text-foreground-muted">{t.app.dashboard.trialEndedText}</p>
-          <Button href="/app/billing" size="sm">
-            {t.app.billing.paywallTitle}
-          </Button>
-        </div>
-      )}
 
       {/* ------------------------------------------------ six core areas */}
       <section aria-labelledby="core-areas">

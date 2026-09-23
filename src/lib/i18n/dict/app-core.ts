@@ -124,6 +124,8 @@ export const appCoreDe = {
     freeLockedTitle: "Discovery-Zugang beendet",
     freeLockedText:
       "Dein 48-stündiger Discovery-Zugang ist abgelaufen. Dein Konto bleibt bestehen – mit der Mitgliedschaft erhältst du wieder vollen Zugang.",
+    memberRequiredText:
+      "Dieser Bereich ist Teil der Vollmitgliedschaft. Dein Konto bleibt bestehen – mit der Mitgliedschaft schaltest du ihn frei.",
     memberOnly: "Nur für Mitglieder",
     limitReached: "Limit erreicht",
     limitText: "Du hast das Limit von {limit} Kontaktanfragen im Trial erreicht.",
@@ -325,6 +327,8 @@ export const appCoreDe = {
     trialExploreCta: "Mitgliedschaft vergleichen",
     trialEndedTitle: "Deine Discovery-Phase ist beendet",
     trialEndedText: "Dein Konto besteht weiter. Mit der Mitgliedschaft schaltest du Netzwerk, Messaging und alle Bereiche frei.",
+    membershipRequiredText:
+      "Netzwerk, Messaging, Deals, Jobs und Investments sind Teil der Vollmitgliedschaft. Dein Konto, dein Profil, Events und Marketplace bleiben erreichbar.",
     memberCardTeaser: "Deine digitale Member Card steht bereit.",
     greetingName: "Hallo, {name}",
     trialCompact: "Discovery-Trial · noch {time}",
@@ -649,6 +653,8 @@ export const appCoreEn: AppCoreDict = {
     freeLockedTitle: "Discovery access ended",
     freeLockedText:
       "Your 48-hour discovery access has expired. Your account remains – a membership restores full access.",
+    memberRequiredText:
+      "This area is part of full membership. Your account remains – a membership unlocks it.",
     memberOnly: "Members only",
     limitReached: "Limit reached",
     limitText: "You have reached the limit of {limit} connection requests during the trial.",
@@ -849,6 +855,8 @@ export const appCoreEn: AppCoreDict = {
     trialEndedTitle: "Your discovery phase has ended",
     trialEndedText:
       "Your account remains. A membership unlocks the network, messaging and all areas.",
+    membershipRequiredText:
+      "Network, messaging, deals, jobs and investments are part of full membership. Your account, profile, events and marketplace remain available.",
     memberCardTeaser: "Your digital member card is ready.",
     greetingName: "Hello, {name}",
     trialCompact: "Discovery trial · {time} left",
