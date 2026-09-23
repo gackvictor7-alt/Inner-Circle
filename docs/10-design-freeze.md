@@ -262,6 +262,16 @@ Hero, Branding, Ecosystem-Sektion oder Mitgliederbereich:
   unverändert; Bildausschnitt `object-[55%_50%] sm:object-[60%_45%]`, bei
   390 px geprüft (Gesicht rechts neben der Headline, Text über der
   Landschaft). Kein neues Asset.
+- **Mobile Hero – Kicker und Headline (Gründerentscheidung „Option A“):**
+  Kicker `PEOPLE · OPPORTUNITIES · PROGRESS` und Headline „A stronger
+  tomorrow, together.“ (Schlüssel `home2.heroV3Kicker`/`heroV3TitleA`/
+  `heroV3TitleB`, identisch mit dem Desktop-Hero) ersetzen mobil „Business-
+  Netzwerk“ / „Dein Business braucht die richtigen Köpfe. Keine zusätzlichen
+  Kontakte.“ **Ausdrücklich unverändert:** Lead-Text, CTA „INNER CIRCLE
+  entdecken“, Zeile „48h Discovery starten“, Preishinweis, Layout, Größen,
+  Abstände, Buttons, Bild, Akzentfarbe der zweiten Headline-Zeile, mobiler
+  Header. Bei 360/390 px geprüft: Kicker einzeilig (283 px), Headline exakt
+  zwei Zeilen, kein Überlauf; Hero dadurch ~60 px kompakter.
 - **Desktop-Header (`xl+`, vorher `lg+`):** Die vollständige Kopfzeile
   (Doppel-Branding, sechs Navigationspunkte, Sprach-/Theme-Wahl, Login,
   „Zur Plattform“) wird erst ab 1280 px gezeigt; 1024–1279 px nutzen die

@@ -174,12 +174,14 @@ export function HomeContent() {
           <div className="max-w-3xl animate-fade-up lg:ml-[6%] xl:ml-[10%]">
             <Badge variant="electric" className="backdrop-blur-sm">
               <SparkleIcon size={14} />
-              {t.home2.heroKicker}
+              {t.home2.heroV3Kicker}
             </Badge>
+            {/* Sprint 10 (founder decision, option A): kicker + headline share the
+                approved desktop wording; lead, CTAs, hint and styling unchanged. */}
             <h1 className="mt-4 text-[1.85rem] font-bold leading-[1.12] tracking-tight text-paper-50 sm:mt-6 sm:text-6xl sm:leading-[1.05] lg:text-7xl">
-              {t.home2.heroTitleA}
+              {t.home2.heroV3TitleA}
               <br />
-              <span className="text-electric-300">{t.home2.heroTitleB}</span>
+              <span className="text-electric-300">{t.home2.heroV3TitleB}</span>
             </h1>
             <p className="mt-4 max-w-2xl text-[15px] leading-6 text-paper-50/85 sm:mt-6 sm:text-lg sm:leading-8">
               {t.home2.heroLead}
