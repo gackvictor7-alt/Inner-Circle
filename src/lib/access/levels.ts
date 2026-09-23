@@ -1,10 +1,12 @@
 /**
  * Access levels and the entitlement matrix (client-safe, pure logic).
  *
- * Levels (spec §22):
+ * Levels (spec §22, Sprint 11 discovery model):
  *   visitor    – public website only
  *   free       – account created, no active trial and no active membership
- *   trial      – restricted 48-hour discovery access
+ *                (includes: verified but discovery not started, expired demo)
+ *   trial      – 48-hour discovery DEMO: fictional demo content only, no real
+ *                member data, no real contact requests, real events read-only
  *   member     – active paid membership (monthly or annual)
  *   admin      – administrative access (always on top of a level)
  *
@@ -24,13 +26,23 @@ export const ACCESS_ORDER: Record<AccessLevel, number> = {
 };
 
 export type Entitlements = {
-  /** Browse the member directory. */
+  /**
+   * Guided demo of the member areas with clearly labelled, fictional content
+   * (demo profiles, demo deals, simulated contact request). Only the 48-hour
+   * discovery phase has it – members always see real data, never the demo.
+   */
+  demoAccess: boolean;
+  /** Browse the member directory (real members). */
   networkDirectory: boolean;
   /** Use the swipe discovery mode. */
   networkDiscover: boolean;
   /** Follow other members. */
   follow: boolean;
-  /** Send connection requests (subject to a counter during the trial). */
+  /**
+   * Send real connection requests. "limited" (counter-based) is kept for
+   * compatibility with the trial counter columns; since Sprint 11 no level uses
+   * it – the demo simulates the request without touching the server.
+   */
   connect: "no" | "limited" | "unlimited";
   /** Private messaging (confirmed connections only). */
   messaging: boolean;
@@ -48,7 +60,7 @@ export type Entitlements = {
   marketplaceBrowse: boolean;
   /** Create marketplace listings (requires approved seller status). */
   marketplaceSell: boolean;
-  /** Full lesson access; trial only sees preview lessons. */
+  /** Full lesson access; non-members only see preview lessons. */
   courseFullAccess: boolean;
   /** Express interest in investments. */
   investmentsBrowse: boolean;
@@ -57,7 +69,7 @@ export type Entitlements = {
   /** Browse events and apply. */
   eventsBrowse: boolean;
   eventsApply: boolean;
-  /** See member profiles in full (trial sees a limited, anonymised view). */
+  /** See member profiles in full (only members; the demo shows fictional profiles). */
   profileFull: boolean;
   /** Trust & performance details. */
   trustView: boolean;
@@ -72,6 +84,7 @@ export type Entitlements = {
 };
 
 const FREE: Entitlements = {
+  demoAccess: false,
   networkDirectory: false,
   networkDiscover: false,
   follow: false,
@@ -97,33 +110,44 @@ const FREE: Entitlements = {
   adminConsole: false,
 };
 
+/**
+ * The 48-hour discovery phase is a DEMO (Sprint 11): it unlocks nothing that
+ * touches real members or protected business data. Every real member
+ * capability below stays exactly as for a free account; the pages render the
+ * labelled demo instead. Real events remain readable (like for every verified
+ * account), registration needs a membership.
+ */
 const TRIAL: Entitlements = {
   ...FREE,
-  networkDirectory: true,
-  networkDiscover: true,
-  follow: true,
-  connect: "limited",
-  feedRead: true,
-  opportunitiesBrowse: true,
-  opportunitiesApply: true,
+  demoAccess: true,
   marketplaceBrowse: true,
-  investmentsBrowse: true,
   eventsBrowse: true,
-  eventsApply: true,
-  profileFull: false, // anonymised/limited view during the trial
-  trustView: true,
+  eventsApply: false,
+  profileFull: false,
 };
 
 const MEMBER: Entitlements = {
-  ...TRIAL,
+  ...FREE,
+  demoAccess: false,
+  networkDirectory: true,
+  networkDiscover: true,
+  follow: true,
   connect: "unlimited",
   messaging: true,
+  feedRead: true,
   postCreate: true,
+  opportunitiesBrowse: true,
   opportunitiesManage: true,
+  opportunitiesApply: true,
+  marketplaceBrowse: true,
   marketplaceSell: true,
   courseFullAccess: true,
+  investmentsBrowse: true,
   investmentsSubmit: true,
+  eventsBrowse: true,
+  eventsApply: true,
   profileFull: true,
+  trustView: true,
   memberCard: true,
 };
 
@@ -145,18 +169,6 @@ export function entitlementsFor(level: AccessLevel): Entitlements {
       return ADMIN;
   }
 }
-
-/** Trial members only see a limited slice of the platform. */
-export const TRIAL_VISIBLE = {
-  /** Number of members shown in directory + discovery per page. */
-  pageSize: 12,
-  /** Number of business opportunities shown. */
-  opportunities: 6,
-  /** Number of events shown in full. */
-  events: 6,
-  /** Number of investment opportunities shown. */
-  investments: 3,
-};
 
 export function isPaid(level: AccessLevel): boolean {
   return level === "member" || level === "admin";

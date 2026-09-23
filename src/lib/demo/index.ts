@@ -42,6 +42,15 @@ export type DemoProfile = {
   positioning: string; // short, headline-style
   bio: string; // a bit longer
   interests: string[];
+  /**
+   * Interests and business goals of the fictional member expressed in the
+   * REAL taxonomy (scripts/taxonomy.ts slugs). This is what lets the demo use
+   * the existing Discover filters (interest, industry, investment interest)
+   * and the existing rule-based ranking against the viewer's own selection –
+   * no second matching engine (Sprint 11).
+   */
+  interestSlugs: string[];
+  goalSlugs: string[];
   lookingFor: string[];
   offering: string[];
   skills: string[];
@@ -51,8 +60,11 @@ export type DemoProfile = {
    * otherwise. Never shown as a trust value.
    */
   completion: number;
-  /** Avatars are provisional AI-generated placeholder visuals. */
-  avatarUrl: string;
+  /**
+   * Avatars come from the approved in-repo placeholder set only – never real
+   * member photos. `null` renders the neutral initials avatar.
+   */
+  avatarUrl: string | null;
   /**
    * English rendering of the free-text fields. The demo profiles stay in the
    * same order in both languages; only the wording differs.
@@ -69,7 +81,17 @@ export type DemoProfile = {
   };
 };
 
-/* ------------------------------------------------------------------ *\n * NETWORK DEMO – mixing rules (Sprint 7).\n *\n * The member directory shows REAL members first and tops the list up with the\n * clearly labelled demo profiles while the community is still small, so a new\n * (trial) user immediately understands what the network will look like later.\n * As soon as enough real members exist, the demo profiles recede on their\n * own – no configuration, no extra table, no DB rows.\n * ------------------------------------------------------------------ */
+/* ------------------------------------------------------------------ *
+ * NETWORK DEMO – mixing rules (Sprint 7, refined in Sprint 11).
+ *
+ * For MEMBERS the directory shows real members first and tops the list up
+ * with the clearly labelled demo profiles while the community is still small.
+ * As soon as enough real members exist, the demo profiles recede on their
+ * own – no configuration, no extra table, no DB rows.
+ *
+ * The 48-hour discovery demo (level `trial`) never mixes: it sees the complete
+ * demo set only (`DEMO_PROFILES`) and the member query is not executed.
+ * ------------------------------------------------------------------ */
 
 /** With at least this many real (filtered) members the demo profiles are hidden entirely. */
 export const NETWORK_DEMO_MIN_REAL = 8;
@@ -169,6 +191,8 @@ export const DEMO_PROFILES: DemoProfile[] = [
     positioning: "Gründer: Software für Bau-Projektkoordination.",
     bio: "Wir koordinieren Nachunternehmer, Termine und Mängel auf der Baustelle. 14 Kunden im Süden, jetzt suchen wir einen Vertriebspartner für NRW.",
     interests: ["Proptech", "B2B Vertrieb", "Projektentwicklung"],
+    interestSlugs: ["startups", "real-estate", "sales", "technology"],
+    goalSlugs: ["find-partners", "raise-capital", "find-customers"],
     lookingFor: ["Vertriebspartner DACH", "Seed-Ticket bis 300k"],
     offering: ["Produkt-Demo", "Reseller-Modell"],
     skills: ["Product", "B2B Sales", "Bauleitung"],
@@ -195,6 +219,8 @@ export const DEMO_PROFILES: DemoProfile[] = [
     positioning: "Angel für Seed und Pre-Seed in Europa.",
     bio: "Ich schaue auf Teams mit echtem Kundenproblem, nicht auf Folien. Zwei Tickets im Quartal, Software und Climate.",
     interests: ["Venture Capital", "Climate Tech"],
+    interestSlugs: ["venture-capital", "investing", "startups", "technology"],
+    goalSlugs: ["invest", "find-partners", "build-network"],
     lookingFor: ["Deals mit First Revenue", "Co-Investoren in Frankreich"],
     offering: ["Seed-Ticket", "Go-to-Market-Spitzen"],
     skills: ["Fundraising", "Due Diligence"],
@@ -221,6 +247,8 @@ export const DEMO_PROFILES: DemoProfile[] = [
     positioning: "Content- und Brand-Creatorin für Tech-Marken.",
     bio: "Kurzvideos und Markenauftritte für SaaS- und D2C-Teams. Über 100 Kampagnen, Fokus auf Messaging statt Reichweite.",
     interests: ["Content", "Personal Branding", "Video", "Design"],
+    interestSlugs: ["content-creation", "personal-branding", "marketing"],
+    goalSlugs: ["find-customers", "find-partners", "build-network"],
     lookingFor: ["Brand-Partner", "Lizenz-Projekte"],
     offering: ["Creative Direction", "Content-Systeme", "Workshops"],
     skills: ["Storytelling", "Video", "Brand"],
@@ -247,6 +275,8 @@ export const DEMO_PROFILES: DemoProfile[] = [
     positioning: "B2B-Vertrieb und RevOps.",
     bio: "Ich mache Vertrieb wiederholbar: ICP, Pipeline, CRM, Enablement. Kein Papier, sondern ein Playbook, das das Team nutzt.",
     interests: ["B2B Vertrieb", "RevOps"],
+    interestSlugs: ["consulting", "sales", "business-development"],
+    goalSlugs: ["sell-services", "find-customers"],
     lookingFor: ["Zwei Mandate ab Q4"],
     offering: ["Sales-Audit", "RevOps-Programm"],
     skills: ["Sales Ops", "Pipeline", "Enablement", "CRM"],
@@ -273,6 +303,8 @@ export const DEMO_PROFILES: DemoProfile[] = [
     positioning: "Performance- und CRM-Marketing für E-Commerce.",
     bio: "E-Mail- und Retention-Strecken für D2C-Marken – von der Kohortenanalyse bis zur Automation.",
     interests: ["E-Commerce", "Retention", "Marketing Automation"],
+    interestSlugs: ["freelancing", "ecommerce", "marketing"],
+    goalSlugs: ["discover-projects", "find-customers", "sell-services"],
     lookingFor: ["Projektmandate", "Retainer", "Kooperationen mit Agenturen"],
     offering: ["Retention-Audit"],
     skills: ["Klaviyo", "Analytics"],
@@ -300,6 +332,8 @@ export const DEMO_PROFILES: DemoProfile[] = [
     positioning: "Inhaber eines Logistikunternehmens mit 120 Köpfen.",
     bio: "Digitalisierung, Nachfolge und Beteiligungen im Mittelstand sind meine drei Themen. Ich mag Gespräche mit Zahlen, nicht mit Buzzwords.",
     interests: ["Mittelstand", "Logistik", "Nachfolge", "Beteiligungen"],
+    interestSlugs: ["entrepreneurship", "ma", "private-equity", "business-development"],
+    goalSlugs: ["find-partners", "invest", "learn"],
     lookingFor: ["Digital-Partner", "Käufer für ein Tochterunternehmen"],
     offering: ["Branchen-Know-how", "Kapital für Beteiligungen"],
     skills: ["Operations", "Unternehmensführung"],
@@ -312,6 +346,62 @@ export const DEMO_PROFILES: DemoProfile[] = [
       lookingFor: ["Digital partner", "Buyer for a subsidiary"],
       offering: ["Industry know-how", "Capital for stakes"],
       skills: ["Operations", "Company management"],
+    },
+  },
+  {
+    key: "demo-founder-leonie",
+    firstName: "Leonie",
+    lastName: "Brandt",
+    role: "Gründerin",
+    roleEn: "Founder",
+    roleKey: "founder",
+    company: "Kontoklar (Buchhaltung für Handwerk)",
+    location: "Berlin",
+    positioning: "Gründerin: automatisierte Buchhaltung für Handwerksbetriebe.",
+    bio: "Wir nehmen Handwerksbetrieben Belege, Mahnwesen und Vorbereitung für den Steuerberater ab. Erste Pilotkunden laufen – jetzt suche ich eine technische Mitgründung und ein Pre-Seed-Ticket.",
+    interests: ["KI & Automatisierung", "Fintech", "Handwerk"],
+    interestSlugs: ["ai", "technology", "startups", "finance"],
+    goalSlugs: ["raise-capital", "find-cofounders", "find-customers"],
+    lookingFor: ["Technische Mitgründung", "Pre-Seed-Investoren"],
+    offering: ["Pilotkunden-Zugang", "Produkt-Sparring"],
+    skills: ["Product", "Fintech", "Go-to-Market"],
+    completion: 84,
+    avatarUrl: null,
+    en: {
+      positioning: "Founder: automated bookkeeping for trade businesses.",
+      bio: "We take receipts, dunning and tax-advisor preparation off the plate of trade businesses. First pilot customers are live – now I am looking for a technical co-founder and a pre-seed ticket.",
+      interests: ["AI & automation", "Fintech", "Trades"],
+      lookingFor: ["Technical co-founder", "Pre-seed investors"],
+      offering: ["Pilot customer access", "Product sparring"],
+      skills: ["Product", "Fintech", "Go-to-market"],
+    },
+  },
+  {
+    key: "demo-investor-samuel",
+    firstName: "Samuel",
+    lastName: "Adeyemi",
+    role: "Investor",
+    roleEn: "Investor",
+    roleKey: "investor",
+    company: "Adeyemi Family Office",
+    location: "Frankfurt",
+    positioning: "Family Office: Mittelstandsbeteiligungen und Immobilien.",
+    bio: "Wir beteiligen uns langfristig an inhabergeführten Unternehmen, gern im Rahmen einer Nachfolge, und investieren in Wohn- und Gewerbeimmobilien in Rhein-Main. Entscheidungen fallen im kleinen Kreis und mit Zahlen.",
+    interests: ["Private Equity", "Immobilien", "Nachfolge"],
+    interestSlugs: ["private-equity", "real-estate", "ma", "investing"],
+    goalSlugs: ["invest", "find-partners", "attend-events"],
+    lookingFor: ["Nachfolgelösungen im Mittelstand", "Co-Investments Immobilien"],
+    offering: ["Eigenkapital für Beteiligungen", "Langfristige Partnerschaft"],
+    skills: ["Due Diligence", "Strukturierung", "Immobilien"],
+    completion: 88,
+    avatarUrl: null,
+    en: {
+      positioning: "Family office: mid-market stakes and real estate.",
+      bio: "We take long-term stakes in owner-managed companies, ideally as part of a succession, and invest in residential and commercial real estate in the Rhine-Main region. Decisions are made in a small circle and with numbers.",
+      interests: ["Private equity", "Real estate", "Succession"],
+      lookingFor: ["Mid-market succession deals", "Real estate co-investments"],
+      offering: ["Equity for stakes", "Long-term partnership"],
+      skills: ["Due diligence", "Structuring", "Real estate"],
     },
   },
 ];
@@ -639,6 +729,14 @@ export type DemoJob = {
   description: string;
   location: string;
   seekingRole: string;
+  /** English variant of every free-text field (demo parity rule). */
+  en: {
+    title: string;
+    kind: string;
+    description: string;
+    location: string;
+    seekingRole: string;
+  };
 };
 
 export const DEMO_JOBS: DemoJob[] = [
@@ -650,6 +748,14 @@ export const DEMO_JOBS: DemoJob[] = [
       "Ein validiertes B2B-Konzept mit ersten Design-Partnern sucht eine technische Mitgründung (Product/Engineering).",
     location: "Berlin oder remote",
     seekingRole: "Technical Co-Founder",
+    en: {
+      title: "Co-founder wanted for AI SaaS",
+      kind: "Co-founder",
+      description:
+        "A validated B2B concept with first design partners is looking for a technical co-founder (product/engineering).",
+      location: "Berlin or remote",
+      seekingRole: "Technical co-founder",
+    },
   },
   {
     key: "job-performance-marketer",
@@ -659,15 +765,31 @@ export const DEMO_JOBS: DemoJob[] = [
       "Für eine D2C-Marke: Kampagnenaufbau und -optimierung über Meta und Google, 2–3 Tage/Woche, remote.",
     location: "Remote",
     seekingRole: "Performance Marketer",
+    en: {
+      title: "Freelance performance marketer",
+      kind: "Freelance",
+      description:
+        "For a D2C brand: building and optimising campaigns on Meta and Google, 2–3 days per week, remote.",
+      location: "Remote",
+      seekingRole: "Performance marketer",
+    },
   },
   {
     key: "job-webdesign-hospitality",
     title: "Webdesign-Projekt für Hospitality Brand",
     kind: "Projekt",
     description:
-      "Relatiertes Projekt für eine Hotelmarke: Website-Relaunch inkl. Brand-Guide, ca. 8 Wochen, Budget nach Angebot.",
+      "Projekt für eine Hotelmarke: Website-Relaunch inkl. Brand-Guide, ca. 8 Wochen, Budget nach Angebot.",
     location: "Remote / München",
     seekingRole: "Webdesign-Studio",
+    en: {
+      title: "Web design project for a hospitality brand",
+      kind: "Project",
+      description:
+        "Project for a hotel brand: website relaunch including brand guide, approx. 8 weeks, budget on quotation.",
+      location: "Remote / Munich",
+      seekingRole: "Web design studio",
+    },
   },
   {
     key: "job-sales-partner",
@@ -677,6 +799,132 @@ export const DEMO_JOBS: DemoJob[] = [
       "Ein internationales SaaS expandiert nach DACH und sucht einen erfahrenen Sales-Partner mit Bestandskunden.",
     location: "DACH",
     seekingRole: "Sales-Partner",
+    en: {
+      title: "Sales partner for DACH expansion",
+      kind: "Partnership",
+      description:
+        "An international SaaS company is expanding into the DACH region and is looking for an experienced sales partner with existing customers.",
+      location: "DACH",
+      seekingRole: "Sales partner",
+    },
+  },
+];
+
+/* ------------------------------------------------------------------ *
+ * INVESTMENTS DEMO (Sprint 11) – fictional examples for the discovery
+ * demo. No real figures, no promised returns, no "funded"/"closed" states:
+ * each entry is an open example of how an opportunity is presented.
+ * ------------------------------------------------------------------ */
+
+export type DemoInvestment = {
+  key: string;
+  title: string;
+  sector: string;
+  stage: string;
+  investmentType: string;
+  region: string;
+  /** Illustrative ticket band – explicitly labelled as a sample, never a real amount. */
+  ticketLabel: string;
+  summary: string;
+  description: string;
+  sought: string;
+  offered: string;
+  /** English variant of every free-text field (demo parity rule). */
+  en: {
+    title: string;
+    sector: string;
+    stage: string;
+    investmentType: string;
+    region: string;
+    ticketLabel: string;
+    summary: string;
+    description: string;
+    sought: string;
+    offered: string;
+  };
+};
+
+export const DEMO_INVESTMENTS: DemoInvestment[] = [
+  {
+    key: "invest-handwerk-software",
+    title: "Software für Handwerksbetriebe – Seed-Beispiel",
+    sector: "Software / B2B",
+    stage: "Seed",
+    investmentType: "Eigenkapital",
+    region: "Berlin",
+    ticketLabel: "Beispiel: mittlere fünfstellige Tickets",
+    summary: "Fiktives Beispiel: ein B2B-Softwareteam mit ersten zahlenden Pilotkunden sucht eine Seed-Runde.",
+    description:
+      "So wird eine Opportunity dargestellt: Team, Produktstand, Marktzugang und die Struktur der Runde – jeweils aus den Angaben des einreichenden Mitglieds und nach Freigabe durch INNER CIRCLE. Dieses Beispiel ist frei erfunden und enthält bewusst keine Renditeangaben.",
+    sought: "Seed-Investoren mit B2B-Software-Erfahrung",
+    offered: "Beteiligung an der Runde, Reporting im Quartalsrhythmus",
+    en: {
+      title: "Software for trade businesses – seed example",
+      sector: "Software / B2B",
+      stage: "Seed",
+      investmentType: "Equity",
+      region: "Berlin",
+      ticketLabel: "Sample: mid five-figure tickets",
+      summary: "Fictional example: a B2B software team with first paying pilot customers is raising a seed round.",
+      description:
+        "This is how an opportunity is presented: team, product status, market access and the structure of the round – each from the submitting member's details and after approval by INNER CIRCLE. This example is entirely fictional and deliberately contains no return figures.",
+      sought: "Seed investors with B2B software experience",
+      offered: "Stake in the round, quarterly reporting",
+    },
+  },
+  {
+    key: "invest-gewerbeimmobilie",
+    title: "Gewerbeimmobilie Rhein-Main – Co-Investment-Beispiel",
+    sector: "Immobilien",
+    stage: "Bestand",
+    investmentType: "Co-Investment",
+    region: "Frankfurt",
+    ticketLabel: "Beispiel: sechsstellige Tickets",
+    summary: "Fiktives Beispiel: ein Bestandsobjekt mit langfristigen Mietern, für das Co-Investoren gesucht werden.",
+    description:
+      "Bei Immobilien-Opportunities stehen Objekt, Lage, Mietstruktur und die geplante Haltedauer im Vordergrund. Unterlagen werden erst nach Interessensbekundung und Prüfung geteilt. Dieses Beispiel ist frei erfunden.",
+    sought: "Co-Investoren für eine gemeinsame Objektgesellschaft",
+    offered: "Anteil an der Objektgesellschaft, laufende Mieteinnahmen nach Kosten",
+    en: {
+      title: "Commercial property Rhine-Main – co-investment example",
+      sector: "Real estate",
+      stage: "Existing asset",
+      investmentType: "Co-investment",
+      region: "Frankfurt",
+      ticketLabel: "Sample: six-figure tickets",
+      summary: "Fictional example: an existing property with long-term tenants seeking co-investors.",
+      description:
+        "Real estate opportunities focus on the asset, location, rental structure and the planned holding period. Documents are only shared after an expression of interest and review. This example is entirely fictional.",
+      sought: "Co-investors for a joint property company",
+      offered: "Share in the property company, ongoing rental income after costs",
+    },
+  },
+  {
+    key: "invest-nachfolge-logistik",
+    title: "Nachfolge Logistikbetrieb – Beteiligungsbeispiel",
+    sector: "Mittelstand / Logistik",
+    stage: "Nachfolge",
+    investmentType: "Minderheitsbeteiligung",
+    region: "Bayern",
+    ticketLabel: "Beispiel: sechsstellige Tickets",
+    summary: "Fiktives Beispiel: ein inhabergeführter Logistikbetrieb sucht einen Partner für die Nachfolge.",
+    description:
+      "Nachfolge-Opportunities zeigen Geschäftsmodell, Team und den geplanten Übergang – Zahlen werden erst im geschützten Bereich nach Prüfung offengelegt. Dieses Beispiel ist frei erfunden.",
+    sought: "Unternehmerisch denkende Beteiligung mit operativer Erfahrung",
+    offered: "Minderheitsanteil mit Option auf schrittweise Übernahme",
+    en: {
+      title: "Succession of a logistics company – stake example",
+      sector: "Mid-market / logistics",
+      stage: "Succession",
+      investmentType: "Minority stake",
+      region: "Bavaria",
+      ticketLabel: "Sample: six-figure tickets",
+      summary: "Fictional example: an owner-managed logistics company is looking for a succession partner.",
+      description:
+        "Succession opportunities show the business model, team and the planned transition – figures are only disclosed in the protected area after review. This example is entirely fictional.",
+      sought: "Entrepreneurial investor with operational experience",
+      offered: "Minority stake with an option for a gradual takeover",
+    },
   },
 ];
 

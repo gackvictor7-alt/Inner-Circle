@@ -241,7 +241,7 @@ export const appBusinessDe = {
     },
     payoutNotice:
       "Auszahlungen sind noch nicht aktiv: Dafür müssen Zahlungsanbieter und Unternehmensdaten vollständig eingerichtet sein.",
-    demoNotice: "Demo-Angebot aus den Seed-Daten.",
+    demoNotice: "Beispielangebot – kein echtes Angebot eines Mitglieds.",
     sellerProfile: "Anbieterprofil",
     sellerListings: "Weitere Angebote",
   },
@@ -271,7 +271,7 @@ export const appBusinessDe = {
     noProgress: "Kein Fortschritt",
     purchaseNotice:
       "Ein echter Kurskauf benötigt die Zahlungsanbieter-Einrichtung. Bis dahin kannst du Kurse als Demo-Teilnehmer starten.",
-    demoEnrollment: "Demo-Teilnahme (aus Seed-Daten).",
+    demoEnrollment: "Beispiel-Teilnahme – keine echte Buchung.",
     duration: "Dauer: {minutes} Minuten",
     certificateNote: "Zertifikate folgen, sobald Abschlüsse geprüft werden können.",
     player: "Kursplayer",
@@ -412,10 +412,18 @@ export const appBusinessDe = {
       capacityReached: "Ausgebucht",
       conceptNotice:
         "Konzeptereignis: Dieser Event ist noch nicht bestätigt. Die Darstellung zeigt eine Planung, keinen verbindlichen Termin.",
-      demoNotice: "Demo-Event aus den Seed-Daten – kein reales INNER CIRCLE Event.",
+      demoNotice: "Beispiel-Event – kein tatsächlich angekündigtes INNER CIRCLE Event.",
       galleryNote: "Impressionen vergangener Events – vorläufige, KI-generierte Visualisierungen.",
       topic: "Thema",
+      seatsLeft: "Noch {count} freie Plätze",
+      seatsLeftOne: "Noch 1 freier Platz",
+      registrationLockedTitle: "Anmeldung ist Teil der Mitgliedschaft",
+      registrationLockedText:
+        "Dieses Event ist echt und wird von INNER CIRCLE veranstaltet. Für die Anmeldung benötigst du eine bestätigte Mitgliedschaft – dein Konto und dein Profil bleiben unabhängig davon bestehen.",
+      registrationLockedCta: "Mitgliedschaft ansehen",
     },
+    realNotice:
+      "Diese Events sind echt: Du siehst tatsächlich veröffentlichte INNER CIRCLE Events. Die Anmeldung ist Teil der Mitgliedschaft.",
     applySuccess: "Anfrage übermittelt.",
     cancelSuccess: "Anmeldung zurückgezogen.",
     emptyUpcoming: "Aktuell sind keine Events ausgeschrieben.",
@@ -456,8 +464,13 @@ export const appBusinessDe = {
     checkoutPreparing: "Weiterleitung wird vorbereitet…",
     paywallTitle: "Mitgliedschaft erforderlich",
     paywallText:
-      "Netzwerk, Messaging und alle sechs Kernbereiche sind Teil der Vollmitgliedschaft. Die 48-stündige Discovery-Phase zeigt dir vorab, was dich erwartet.",
-    paywallTrialEnded: "Deine Discovery-Phase ist beendet.",
+      "Netzwerk, Messaging und alle sechs Kernbereiche sind Teil der Vollmitgliedschaft. Die 48-stündige Discovery-Demo zeigt dir vorab anhand von Beispielen, was dich erwartet.",
+    paywallTrialEnded: "Deine Discovery-Demo ist beendet.",
+    demoFootnote: "Discovery-Demo · {hours} Stunden · gekennzeichnete Beispielinhalte, keine echten Kontakte",
+    paymentStatusTitle: "Zahlungsstatus",
+    paymentStatusNone: "Keine Zahlung hinterlegt – es besteht keine aktive Mitgliedschaft.",
+    paymentStatusHonest:
+      "Eine Mitgliedschaft wird ausschließlich nach bestätigter Zahlung aktiviert – nie durch einen Klick, eine Demo-Aktion oder eine fehlgeschlagene Zahlung.",
     includedTitle: "In der Mitgliedschaft enthalten",
     cancelMembership: "Mitgliedschaft kündigen",
     cancelConfirm: "Mitgliedschaft zum Periodenende kündigen?",
@@ -476,9 +489,9 @@ export const appBusinessDe = {
     testModeTitle: "Testmodus",
     testModeText:
       "Zahlungen laufen ausschließlich im Testmodus. Es wird kein echtes Geld abgebucht.",
-    notConfiguredTitle: "Zahlungsanbieter nicht konfiguriert",
+    notConfiguredTitle: "Zahlung noch nicht freigeschaltet",
     notConfiguredText:
-      "Es sind keine Stripe-Zugangsdaten hinterlegt. Bis dahin ist der echte Checkout deaktiviert und es wird kein Zahlungsstatus vorgetäuscht.",
+      "Der Zahlungsweg für Mitgliedschaften ist noch nicht freigeschaltet. Bis dahin kann keine Mitgliedschaft abgeschlossen werden – und es wird kein Zahlungsstatus vorgetäuscht.",
     devActivationTitle: "Entwicklungs-Aktivierung (kein Zahlungsvorgang)",
     devActivationText:
       "Für Tests kannst du eine Mitgliedschaft ohne Zahlung aktivieren. Der Datensatz wird als „Entwicklung“ markiert und nie als echter Umsatz dargestellt.",
@@ -520,7 +533,7 @@ export const appBusinessDe = {
     reviewNote: "Hinweis der Administration",
     requiresMembershipTitle: "Antrag erst nach bestätigter Mitgliedschaft",
     requiresMembershipText: "Schließe zuerst die Zahlung ab oder schließe die Testphase mit einer Mitgliedschaft ab. Danach ist der Antrag freigeschaltet.",
-    demoNotice: "Demo-Antrag aus den Seed-Daten.",
+    demoNotice: "Beispiel-Antrag – kein echter Antrag.",
     statusPending: "In Prüfung",
     statusApproved: "Bestätigt",
     statusRejected: "Abgelehnt",
@@ -689,7 +702,7 @@ export const appBusinessDe = {
     networkTitle: "Beispielprofile für jede Rolle.",
     networkLead:
       "Diese Profile sind fiktiv und zeigen, wie Mitglieder sich später präsentieren. Sie sind eindeutig als DEMO-PROFIL gekennzeichnet und keine echten Mitglieder.",
-    networkBadge: "DEMO-PROFIL",
+    networkBadge: "DEMO · Beispielprofil",
     networkCompletion: "Profil",
     networkCompletionShort: "Profil",
     profilePostsTitle: "Beispielbeiträge",
@@ -788,6 +801,45 @@ export const appBusinessDe = {
     portfolioAssetList: "Unternehmen · Startups · Immobilien · Aktien/ETFs (oder künftig definierte Assetklassen)",
     portfolioDemoNotice:
       "Vorschau-Darstellung – es werden keine echten Investments, Beträge oder Entwicklungen dargestellt.",
+    /* Sprint 11 – 48-hour discovery demo */
+    profileBadge: "DEMO · Beispielprofil",
+    offerBadge: "DEMO · Beispiel",
+    discoveryKicker: "Discovery-Demo",
+    discoverDemoChip: "Beispielprofile",
+    discoverDemoLead:
+      "Fiktive Beispielprofile, sortiert nach deinen Interessen und Business-Zielen. Filter, Profilansicht und Kontaktanfrage funktionieren wie bei echten Mitgliedern – es wird nichts an echte Personen gesendet.",
+    discoverDemoEmptyTitle: "Kein Beispielprofil passt zu diesen Filtern",
+    discoverDemoEmptyText:
+      "Die Discovery-Demo umfasst eine kleine, kuratierte Auswahl. Setze die Filter zurück, um alle Beispielprofile zu sehen.",
+    networkDemoLead:
+      "In der Discovery-Demo siehst du fiktive Beispielprofile statt echter Mitglieder. Das Mitgliederverzeichnis wird mit einer bestätigten Mitgliedschaft freigeschaltet.",
+    connectTitle: "Kontakt anfragen",
+    connectLead: "Schreib {name} eine kurze persönliche Nachricht – genau wie bei einer echten Kontaktanfrage.",
+    connectMessageLabel: "Deine Nachricht",
+    connectMessagePlaceholder: "Warum möchtest du dich vernetzen? Worum geht es konkret?",
+    connectMinLength: "Bitte formuliere mindestens {min} Zeichen – kurze, konkrete Nachrichten werden am ehesten beantwortet.",
+    connectSubmit: "Kontaktanfrage senden",
+    connectDoneTitle: "So funktioniert eine Kontaktanfrage bei INNER CIRCLE.",
+    connectDoneText:
+      "Dies war eine Demo – es wurde keine Nachricht an eine echte Person gesendet. Als Mitglied erreicht deine Anfrage echte Mitglieder, die sie annehmen oder ablehnen können.",
+    dealsDemoOnlyLead:
+      "In der Discovery-Demo siehst du fiktive Beispiel-Deals. Echte Geschäftschancen von Mitgliedern sind Teil der Mitgliedschaft.",
+    jobsDemoOnlyLead:
+      "In der Discovery-Demo siehst du fiktive Beispiele. Echte Jobs und Projekte von Mitgliedern sind Teil der Mitgliedschaft.",
+    investmentsKicker: "Beispiel-Investments",
+    investmentsTitle: "So werden Investment Opportunities dargestellt.",
+    investmentsLead:
+      "Fiktive Beispiele ohne echte Zahlen, ohne Rendite-Versprechen und ohne abgeschlossene Investments. Echte Opportunities sind Teil der Mitgliedschaft.",
+    investmentsCta: "Beispiel ansehen",
+    investmentsDetailTitle: "Investment-Beispiel",
+    investmentsDetailNotice:
+      "Dies ist ein Beispiel – keine echte Opportunity, keine Interessensbekundung möglich. Bei echten Opportunities bekundest du hier als Mitglied dein Interesse.",
+    investmentsTicketLabel: "Beispiel-Ticket",
+    investmentsTypeLabel: "Beteiligungsform",
+    investmentsStageLabel: "Phase",
+    investmentsRegionLabel: "Region",
+    investmentsSoughtLabel: "Gesucht",
+    investmentsOfferedLabel: "Geboten",
   },
 };
 
@@ -1022,7 +1074,7 @@ export const appBusinessEn: AppBusinessDict = {
     },
     payoutNotice:
       "Payouts are not active yet: payment providers and company details must be fully set up first.",
-    demoNotice: "Demo offer from the seed data.",
+    demoNotice: "Sample offer – not a real member offer.",
     sellerProfile: "Provider profile",
     sellerListings: "More offers",
   },
@@ -1052,7 +1104,7 @@ export const appBusinessEn: AppBusinessDict = {
     noProgress: "No progress",
     purchaseNotice:
       "A real course purchase requires the payment provider setup. Until then you can start courses as a demo participant.",
-    demoEnrollment: "Demo enrollment (from seed data).",
+    demoEnrollment: "Sample enrollment – not a real booking.",
     duration: "Duration: {minutes} minutes",
     certificateNote: "Certificates follow once completions can be verified.",
     player: "Course player",
@@ -1193,10 +1245,18 @@ export const appBusinessEn: AppBusinessDict = {
       capacityReached: "Fully booked",
       conceptNotice:
         "Concept event: not confirmed yet. This is a planning view, not a binding date.",
-      demoNotice: "Demo event from the seed data – not a real INNER CIRCLE event.",
+      demoNotice: "Sample event – not an actually announced INNER CIRCLE event.",
       galleryNote: "Impressions of past events – provisional, AI-generated visuals.",
       topic: "Topic",
+      seatsLeft: "{count} seats left",
+      seatsLeftOne: "1 seat left",
+      registrationLockedTitle: "Registration is part of the membership",
+      registrationLockedText:
+        "This event is real and hosted by INNER CIRCLE. Registering requires a confirmed membership – your account and profile remain regardless.",
+      registrationLockedCta: "See membership",
     },
+    realNotice:
+      "These events are real: you are looking at actually published INNER CIRCLE events. Registration is part of the membership.",
     applySuccess: "Request submitted.",
     cancelSuccess: "Registration withdrawn.",
     emptyUpcoming: "No events are listed right now.",
@@ -1237,8 +1297,13 @@ export const appBusinessEn: AppBusinessDict = {
     checkoutPreparing: "Preparing redirect…",
     paywallTitle: "Membership required",
     paywallText:
-      "The network, messaging and all six core areas are part of full membership. The 48-hour discovery phase shows you what to expect.",
-    paywallTrialEnded: "Your discovery phase has ended.",
+      "The network, messaging and all six core areas are part of full membership. The 48-hour discovery demo shows you what to expect through examples.",
+    paywallTrialEnded: "Your discovery demo has ended.",
+    demoFootnote: "Discovery demo · {hours} hours · labelled sample content, no real contacts",
+    paymentStatusTitle: "Payment status",
+    paymentStatusNone: "No payment on file – there is no active membership.",
+    paymentStatusHonest:
+      "A membership is only activated after a confirmed payment – never by a click, a demo action or a failed payment.",
     includedTitle: "Included in the membership",
     cancelMembership: "Cancel membership",
     cancelConfirm: "Cancel the membership at the end of the period?",
@@ -1256,9 +1321,9 @@ export const appBusinessEn: AppBusinessDict = {
     memberSince: "Member since {date}",
     testModeTitle: "Test mode",
     testModeText: "Payments run in test mode only. No real money is charged.",
-    notConfiguredTitle: "Payment provider not configured",
+    notConfiguredTitle: "Payment not yet available",
     notConfiguredText:
-      "No Stripe credentials are configured. Until then the real checkout stays disabled and no payment state is simulated.",
+      "The payment route for memberships is not available yet. Until then no membership can be purchased – and no payment status is faked.",
     devActivationTitle: "Development activation (no payment)",
     devActivationText:
       "For testing you can activate a membership without payment. The record is flagged as “development” and never shown as real revenue.",
@@ -1299,7 +1364,7 @@ export const appBusinessEn: AppBusinessDict = {
     reviewNote: "Note from administration",
     requiresMembershipTitle: "Application only after a confirmed membership",
     requiresMembershipText: "Complete the payment first, or convert your trial into a membership. The application unlocks afterwards.",
-    demoNotice: "Demo application from the seed data.",
+    demoNotice: "Sample application – not a real application.",
     statusPending: "Under review",
     statusApproved: "Confirmed",
     statusRejected: "Rejected",
@@ -1468,7 +1533,7 @@ export const appBusinessEn: AppBusinessDict = {
     networkTitle: "Sample profiles for every role.",
     networkLead:
       "These profiles are fictional and show how members will present themselves later. They are clearly labelled as DEMO PROFILES and are not real members.",
-    networkBadge: "DEMO PROFILE",
+    networkBadge: "DEMO · Sample profile",
     networkCompletion: "Profile",
     networkCompletionShort: "profile",
     profilePostsTitle: "Sample posts",
@@ -1566,5 +1631,44 @@ export const appBusinessEn: AppBusinessDict = {
     portfolioAssetList: "Companies · startups · real estate · stocks/ETFs (or asset classes defined later)",
     portfolioDemoNotice:
       "Preview view – no real investments, amounts or developments are shown.",
+    /* Sprint 11 – 48-hour discovery demo */
+    profileBadge: "DEMO · Sample profile",
+    offerBadge: "DEMO · Example",
+    discoveryKicker: "Discovery demo",
+    discoverDemoChip: "Sample profiles",
+    discoverDemoLead:
+      "Fictional sample profiles, sorted by your interests and business goals. Filters, profile view and contact request work like with real members – nothing is sent to real people.",
+    discoverDemoEmptyTitle: "No sample profile matches these filters",
+    discoverDemoEmptyText:
+      "The discovery demo contains a small, curated selection. Reset the filters to see all sample profiles.",
+    networkDemoLead:
+      "During the discovery demo you see fictional sample profiles instead of real members. The member directory is unlocked with a confirmed membership.",
+    connectTitle: "Request contact",
+    connectLead: "Write {name} a short personal message – exactly like a real contact request.",
+    connectMessageLabel: "Your message",
+    connectMessagePlaceholder: "Why do you want to connect? What is it about, specifically?",
+    connectMinLength: "Please write at least {min} characters – short, specific messages get answered most often.",
+    connectSubmit: "Send contact request",
+    connectDoneTitle: "This is how a contact request works at INNER CIRCLE.",
+    connectDoneText:
+      "This was a demo – no message was sent to a real person. As a member, your request reaches real members who can accept or decline it.",
+    dealsDemoOnlyLead:
+      "During the discovery demo you see fictional sample deals. Real business opportunities from members are part of the membership.",
+    jobsDemoOnlyLead:
+      "During the discovery demo you see fictional examples. Real jobs and projects from members are part of the membership.",
+    investmentsKicker: "Sample investments",
+    investmentsTitle: "This is how investment opportunities are presented.",
+    investmentsLead:
+      "Fictional examples without real figures, without promised returns and without completed investments. Real opportunities are part of the membership.",
+    investmentsCta: "View example",
+    investmentsDetailTitle: "Investment example",
+    investmentsDetailNotice:
+      "This is an example – not a real opportunity, no expression of interest possible. With real opportunities, this is where you express your interest as a member.",
+    investmentsTicketLabel: "Sample ticket",
+    investmentsTypeLabel: "Investment type",
+    investmentsStageLabel: "Stage",
+    investmentsRegionLabel: "Region",
+    investmentsSoughtLabel: "Sought",
+    investmentsOfferedLabel: "Offered",
   },
 };

@@ -25,8 +25,6 @@ export type DashboardData = {
   /** True when the account's discovery trial has ended (drives the wording of the free-state panel). */
   trialExpired: boolean;
   trialMsRemaining: number | null;
-  trialRequestsUsed: number;
-  trialRequestLimit: number;
   unreadInbox: number;
   membershipDevelopment: boolean;
   /** Real, currently relevant entries (Sprint 8, TEIL E) – may be empty. */
@@ -77,6 +75,7 @@ export function DashboardScreen({ data }: { data: DashboardData }) {
       short: t.app.dashboard.areaNetworkShort,
       accent: "electric" as const,
       locked: !isTrial && !isMember,
+      demo: isTrial,
     },
     {
       href: "/app/opportunities",
@@ -86,6 +85,7 @@ export function DashboardScreen({ data }: { data: DashboardData }) {
       short: t.app.dashboard.areaDealsShort,
       accent: "forest" as const,
       locked: !isTrial && !isMember,
+      demo: isTrial,
     },
     {
       href: "/app/jobs",
@@ -95,6 +95,7 @@ export function DashboardScreen({ data }: { data: DashboardData }) {
       short: t.app.dashboard.areaJobsShort,
       accent: "sand" as const,
       locked: !isTrial && !isMember,
+      demo: isTrial,
     },
     {
       href: "/app/investments",
@@ -104,6 +105,7 @@ export function DashboardScreen({ data }: { data: DashboardData }) {
       short: t.app.dashboard.areaInvestmentsShort,
       accent: "navy" as const,
       locked: !isTrial && !isMember,
+      demo: isTrial,
     },
     {
       href: "/app/marketplace",
@@ -113,6 +115,7 @@ export function DashboardScreen({ data }: { data: DashboardData }) {
       short: t.app.dashboard.areaMarketplaceShort,
       accent: "sand" as const,
       locked: false,
+      demo: false,
     },
     {
       href: "/app/events",
@@ -122,6 +125,7 @@ export function DashboardScreen({ data }: { data: DashboardData }) {
       short: t.app.dashboard.areaEventsShort,
       accent: "electric" as const,
       locked: false,
+      demo: false,
     },
   ];
 
@@ -153,14 +157,6 @@ export function DashboardScreen({ data }: { data: DashboardData }) {
               {tf(t.app.dashboard.trialCompact, { time: countdown })}
             </span>
           )}
-          {isTrial && (
-            <span className="text-xs text-foreground-subtle">
-              {tf(t.app.dashboard.trialFeature1, {
-                limit: data.trialRequestLimit,
-                used: data.trialRequestsUsed,
-              })}
-            </span>
-          )}
           <Button href="/app/inbox" size="sm" variant="secondary">
             <InboxIcon size={16} />
             {t.app.nav.inbox}
@@ -181,6 +177,36 @@ export function DashboardScreen({ data }: { data: DashboardData }) {
           )}
         </div>
       </header>
+
+      {/* Discovery demo (Sprint 11): one calm panel that names the demo and
+          leads into it – the remaining time stays in the compact status chip
+          above and in the sidebar, never as a banner on every card. */}
+      {isTrial && (
+        <section
+          aria-labelledby="discovery-demo"
+          className="flex flex-col gap-4 rounded-2xl border border-sand-400/50 bg-sand-200/30 px-5 py-5 dark:bg-sand-400/5 sm:flex-row sm:items-center sm:justify-between sm:px-6"
+        >
+          <div className="max-w-2xl">
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-sand-600 dark:text-sand-300">
+              {t.app.demo.discoveryKicker}
+            </p>
+            <h2 id="discovery-demo" className="mt-1 text-lg font-bold tracking-tight">
+              {t.app.dashboard.trialTitle}
+            </h2>
+            <p className="mt-1 text-sm leading-6 text-foreground-muted">{t.app.dashboard.trialLead}</p>
+            <p className="mt-2 text-xs leading-5 text-foreground-subtle">{t.app.dashboard.trialNotice}</p>
+          </div>
+          <div className="flex shrink-0 flex-wrap gap-2">
+            <Button href="/app/discover" size="md">
+              <CompassIcon size={16} />
+              {t.app.nav.discover}
+            </Button>
+            <Button href="/app/billing" size="md" variant="secondary">
+              {t.app.access.upgradeCta}
+            </Button>
+          </div>
+        </section>
+      )}
 
       {/* Free accounts (no trial / trial ended / membership lapsed): a clear,
           restricted membership panel first – not a seemingly full dashboard.
@@ -285,6 +311,7 @@ export function DashboardScreen({ data }: { data: DashboardData }) {
                     {t.app.dashboard.lockedHint}
                   </Badge>
                 )}
+                {area.demo && <Badge variant="outline">{t.app.demo.badge}</Badge>}
               </span>
               <h3 className="mt-3 text-[15px] font-bold tracking-tight sm:mt-5 sm:text-xl">{area.title}</h3>
               <p className="mt-1 flex-1 text-[13px] leading-5 text-foreground-muted sm:mt-2 sm:text-[15px] sm:leading-7">

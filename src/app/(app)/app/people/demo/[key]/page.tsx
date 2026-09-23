@@ -1,8 +1,13 @@
 import { notFound } from "next/navigation";
+import { asc } from "drizzle-orm";
+import { db } from "@/db/client";
+import { goals } from "@/db/schema";
 import { requireUser } from "@/lib/access/server";
 import { DEMO_CONTENT_ENABLED, DEMO_PROFILES, demoProfileHandle } from "@/lib/demo";
 import { DemoProfileActions } from "@/components/app/DemoProfileActions";
 import { LocalizedPageHeader, Tr } from "@/components/app/localized";
+import { LockedArea } from "@/components/app/LockedArea";
+import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -11,12 +16,13 @@ import { MapPinIcon } from "@/components/ui/icons";
 export const dynamic = "force-dynamic";
 
 /**
- * Full demo profile view (Sprint 7).
+ * Full demo profile view (Sprint 7, extended in Sprint 11).
  *
- * "Profil ansehen" on a demo network card lands here – a complete, clearly
- * labelled profile of a fictional member. Demo profiles have no database rows:
- * nothing here reads or writes production data, creates no connections,
- * follows, trust or notifications.
+ * "Profil ansehen" on a demo card lands here – a complete, clearly labelled
+ * profile of a fictional member. Demo profiles have no database rows: nothing
+ * here reads or writes member data, creates no connections, follows, trust or
+ * notifications. The only database read is the goal taxonomy (labels), which
+ * is public vocabulary, not member data.
  */
 export default async function DemoProfilePage({ params }: { params: Promise<{ key: string }> }) {
   const { key } = await params;
@@ -26,7 +32,18 @@ export default async function DemoProfilePage({ params }: { params: Promise<{ ke
   const profile = DEMO_PROFILES.find((candidate) => candidate.key === key);
   if (!profile) notFound();
 
+  // Demo profiles belong to the discovery demo (trial) and to the directory
+  // supplement (members). After the demo has ended the same membership screen
+  // as for the directory replaces them – the demo is not browsable for free.
+  if (!access.entitlements.demoAccess && !access.entitlements.networkDirectory) {
+    return <LockedArea access={access} icon="users" />;
+  }
+
   const en = access.user.locale === "en";
+  const goalTaxonomy = await db.select().from(goals).orderBy(asc(goals.position));
+  const goalLabels = goalTaxonomy
+    .filter((goal) => profile.goalSlugs.includes(goal.slug))
+    .map((goal) => (en ? goal.labelEn : goal.labelDe));
   const text = {
     role: en ? profile.roleEn : profile.role,
     company: en ? (profile.en.company ?? profile.company) : profile.company,
@@ -49,26 +66,30 @@ export default async function DemoProfilePage({ params }: { params: Promise<{ ke
         }
       />
 
-      {/* Clearly labelled as demo from the first pixel. */}
+      {/* Clearly labelled as demo from the first pixel – subtle, not shouting. */}
       <p className="rounded-xl border border-sand-400/40 bg-sand-200/40 px-4 py-3 text-xs leading-5 text-sand-800 dark:bg-sand-400/10 dark:text-sand-100">
-        <Tr k="app.demo.notice" />
+        <span className="font-semibold"><Tr k="app.demo.profileBadge" /></span> · <Tr k="app.demo.notice" />
       </p>
 
       <Card className="p-6">
         <div className="flex flex-wrap items-start gap-5">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={profile.avatarUrl}
-            alt=""
-            className="h-20 w-20 shrink-0 rounded-full object-cover"
-          />
+          {profile.avatarUrl ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={profile.avatarUrl}
+              alt=""
+              className="h-20 w-20 shrink-0 rounded-full object-cover"
+            />
+          ) : (
+            <Avatar name={`${profile.firstName} ${profile.lastName}`} size={80} />
+          )}
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-2xl font-bold tracking-tight">
                 {profile.firstName} {profile.lastName}
               </h2>
               <Badge variant="sand">
-                <Tr k="app.demo.networkBadge" />
+                <Tr k="app.demo.profileBadge" />
               </Badge>
               <Badge variant="outline">{text.role}</Badge>
             </div>
@@ -92,12 +113,13 @@ export default async function DemoProfilePage({ params }: { params: Promise<{ ke
         </p>
 
         <div className="mt-6 flex flex-wrap gap-2">
-          <DemoProfileActions />
+          <DemoProfileActions targetName={profile.firstName} />
         </div>
       </Card>
 
       <div className="grid gap-5 lg:grid-cols-2">
         <TagSection titleKey="app.discover.interests" items={text.interests} />
+        <TagSection titleKey="app.profile.goalsTitle" items={goalLabels} />
         <TagSection titleKey="app.profile.lookingFor" items={text.lookingFor} tone="electric" />
         <TagSection titleKey="app.profile.offering" items={text.offering} tone="forest" />
         <TagSection titleKey="app.discover.skills" items={text.skills} />
@@ -120,7 +142,12 @@ function TagSection({
   items,
   tone = "neutral",
 }: {
-  titleKey: "app.discover.interests" | "app.profile.lookingFor" | "app.profile.offering" | "app.discover.skills";
+  titleKey:
+    | "app.discover.interests"
+    | "app.profile.goalsTitle"
+    | "app.profile.lookingFor"
+    | "app.profile.offering"
+    | "app.discover.skills";
   items: string[];
   tone?: "neutral" | "electric" | "forest";
 }) {

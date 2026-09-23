@@ -8,7 +8,9 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { LocalizedEmptyState, LocalizedPageHeader, LocalizedSectionHeading, Tr } from "@/components/app/localized";
-import { PortfolioSection } from "@/components/app/DemoSections";
+import { InvestmentsDemoSection, PortfolioSection } from "@/components/app/DemoSections";
+import { LockedArea } from "@/components/app/LockedArea";
+import { DemoAreaNotice } from "@/components/app/DemoAreaNotice";
 
 export const dynamic = "force-dynamic";
 
@@ -21,14 +23,24 @@ export default async function InvestmentsPage({
   const params = await searchParams;
 
   if (!access.entitlements.investmentsBrowse) {
-    return (
-      <LocalizedEmptyState
-        icon="chart"
-        titleKey="app.access.lockedTitle"
-        textKey="app.access.investmentEligibility"
-        action={{ labelKey: "app.billing.upgradeCta", href: "/app/billing" }}
-      />
-    );
+    // Discovery demo (Sprint 11): fictional examples only – no opportunity,
+    // interest or submission query runs for a demo account.
+    if (access.entitlements.demoAccess) {
+      return (
+        <div className="space-y-8">
+          <LocalizedPageHeader titleKey="app.investments.title" leadKey="app.investments.lead" />
+          <DemoAreaNotice leadKey="app.demo.investmentsLead" />
+          <Card className="p-5">
+            <h2 className="text-sm font-bold uppercase tracking-[0.18em] text-foreground-subtle">
+              <Tr k="app.investments.regulatedTitle" />
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-foreground-muted"><Tr k="app.investments.regulatedText" /></p>
+          </Card>
+          <InvestmentsDemoSection />
+        </div>
+      );
+    }
+    return <LockedArea access={access} icon="chart" />;
   }
 
   const rows = await db
