@@ -7,56 +7,16 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import {
   ArrowRightIcon,
-  BriefcaseIcon,
   CalendarIcon,
   ChartIcon,
   CheckIcon,
   GridIcon,
   SparkleIcon,
-  StoreIcon,
   UsersIcon,
 } from "@/components/ui/icons";
 import { Kicker, Section } from "@/components/site/Section";
 import { Reveal } from "@/components/site/Reveal";
 import { MembershipBlock } from "@/components/site/MembershipBlock";
-
-type AreaKey = "network" | "opportunities" | "jobs" | "investments" | "marketplace" | "events";
-
-/**
- * Homepage image set. These six visuals define the public image language
- * (bright, young, real working situations) – subpages reference the same
- * files instead of inventing a second, darker visual world.
- */
-const areaImages: Record<AreaKey, { src: string; alt: string }> = {
-  network: { src: "/images/network.jpg", alt: "Zwei junge Business-Personen schauen gemeinsam auf ein Tablet in einem hellen Büro" },
-  opportunities: { src: "/images/business.jpg", alt: "Zwei junge Projektentwickler besprechen Baupläne auf einer modernen Baustelle" },
-  jobs: { src: "/images/community-meetup.jpg", alt: "Community-Abend in einem modernen Raum" },
-  investments: { src: "/images/investments-modern.jpg", alt: "Team bespricht Kennzahlen an einem Screen" },
-  marketplace: { src: "/images/marketplace-learn.jpg", alt: "Creatorin zeichnet ein Video in ihrem Studio auf" },
-  events: { src: "/images/events-experience.jpg", alt: "Networking-Abend auf einer Dachterrasse" },
-};
-
-const areaLinks: Record<AreaKey, string> = {
-  network: "/network",
-  opportunities: "/business-deals",
-  jobs: "/business-deals",
-  investments: "/investments",
-  marketplace: "/marketplace",
-  events: "/events",
-};
-
-/**
- * Small icon per area – used by the compact 2×3 mobile overview (Sprint 8).
- * The desktop image rows keep their existing visuals, unchanged.
- */
-const areaIcons: Record<AreaKey, (props: { size?: number; className?: string }) => React.JSX.Element> = {
-  network: UsersIcon,
-  opportunities: BriefcaseIcon,
-  jobs: GridIcon,
-  investments: ChartIcon,
-  marketplace: StoreIcon,
-  events: CalendarIcon,
-};
 
 /**
  * Public homepage – compressed conversion flow (compression + width sprint):
@@ -74,43 +34,59 @@ const areaIcons: Record<AreaKey, (props: { size?: number; className?: string }) 
  * es, Trust, Portfolio-Teaser) now lives on /how-it-works. Static prerender
  * only: no request-time data, no access context.
  */
+function GlobeGlyph({ size = 24, className }: { size?: number; className?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.3" className={className} aria-hidden="true">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M3 12h18M12 3c2.8 2.8 2.8 15.2 0 18M12 3c-2.8 2.8-2.8 15.2 0 18M5 7.5h14M5 16.5h14" />
+    </svg>
+  );
+}
+
+function BarsGlyph({ size = 24, className }: { size?: number; className?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" className={className} aria-hidden="true">
+      <path d="M5 20v-5h2.5v5M9.5 20v-8H12v8M14 20v-11h2.5v11M18.5 20V5H21v15" />
+    </svg>
+  );
+}
+
+function BulbGlyph({ size = 24, className }: { size?: number; className?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" className={className} aria-hidden="true">
+      <path d="M9 17.5h6M9.5 20h5M12 3a6 6 0 0 0-3.6 10.8c.7.6 1.1 1.4 1.1 2.2v1.5h5V16c0-.8.4-1.6 1.1-2.2A6 6 0 0 0 12 3Z" />
+    </svg>
+  );
+}
+
+function HandshakeGlyph({ size = 24, className }: { size?: number; className?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+      <path d="M2 9.5 5 7l3 1.2L11 7l2.5 1M22 9.5 19 7l-3 1.2M8 8.2l-2.5 4.3M16 8.2l2.5 4.3M11 7l-2.2 3a1.2 1.2 0 0 0 1.9 1.4L12.5 10l4 3.5a1 1 0 0 1-1.4 1.5l-1.6-1.4M15.1 15l-1.5-1.3M13.6 16.4l-1.4-1.2M12 17.6l-1.2-1M5.5 12.5l4.2 4.2" />
+    </svg>
+  );
+}
+
+type AreaV3Key = "network" | "deals" | "jobs" | "investments" | "events" | "insights";
+
+/**
+ * Alternating editorial rows (founder reference: deep navy, Bild→Text /
+ * Text→Bild, 2026-09-23 finalized). Order per founder brief: Network →
+ * Business Deals → Jobs & Projekte → Investments → Events → Insights.
+ * Only existing public assets and existing preview pages – no dead links.
+ */
+const areaV3Visuals: Record<AreaV3Key, { src: string; href: string; icon: (p: { size?: number; className?: string }) => React.JSX.Element }> = {
+  network: { src: "/images/network.jpg", href: "/network", icon: UsersIcon },
+  deals: { src: "/images/business-deal.jpg", href: "/business-deals", icon: HandshakeGlyph },
+  jobs: { src: "/images/business.jpg", href: "/business-deals", icon: GridIcon },
+  investments: { src: "/images/areas-investments-tower.jpg", href: "/investments", icon: BarsGlyph },
+  events: { src: "/images/areas-events-stage.jpg", href: "/events", icon: CalendarIcon },
+  insights: { src: "/images/areas-insights-desk.jpg", href: "/marketplace", icon: BulbGlyph },
+};
+
 export function HomeContent() {
   const { t } = useI18n();
   usePageMeta(t.meta.title, t.meta.description);
-
-  const areaKeys: AreaKey[] = [
-    "network",
-    "opportunities",
-    "jobs",
-    "investments",
-    "marketplace",
-    "events",
-  ];
-
-  const areaContent: Record<AreaKey, { title: string; text: string; short: string }> = {
-    network: {
-      title: t.home2.enablesNetworkTitle,
-      text: t.home2.enablesNetworkText,
-      short: t.home2.enablesNetworkShort,
-    },
-    opportunities: {
-      title: t.home2.enablesOpportunitiesTitle,
-      text: t.home2.enablesOpportunitiesText,
-      short: t.home2.enablesOpportunitiesShort,
-    },
-    jobs: { title: t.home2.enablesJobsTitle, text: t.home2.enablesJobsText, short: t.home2.enablesJobsShort },
-    investments: {
-      title: t.home2.enablesInvestmentsTitle,
-      text: t.home2.enablesInvestmentsText,
-      short: t.home2.enablesInvestmentsShort,
-    },
-    marketplace: {
-      title: t.home2.enablesMarketplaceTitle,
-      text: t.home2.enablesMarketplaceText,
-      short: t.home2.enablesMarketplaceShort,
-    },
-    events: { title: t.home2.enablesEventsTitle, text: t.home2.enablesEventsText, short: t.home2.enablesEventsShort },
-  };
 
   const outcomes = [
     { key: "build", title: t.home2.outcomeBuildTitle, text: t.home2.outcomeBuildText, short: t.home2.outcomeBuildShort },
@@ -120,8 +96,62 @@ export function HomeContent() {
 
   return (
     <>
-      {/* ------------------------------------------------------------ hero */}
-      <div className="relative isolate overflow-hidden border-b border-border/70">
+      {/* ------------------------------------------------ desktop hero (V&P) */}
+      <section className="relative isolate hidden overflow-hidden bg-midnight-950 lg:block">
+        <Image
+          src="/images/hero-alpine.jpg"
+          alt={t.home2.heroV3ImageAlt}
+          priority
+          width={1568}
+          height={672}
+          sizes="100vw"
+          className="absolute inset-0 -z-10 h-full w-full object-cover object-[60%_35%]"
+        />
+        <div aria-hidden="true" className="absolute inset-0 -z-10 bg-gradient-to-r from-[#07111f]/75 via-[#07111f]/30 to-transparent" />
+        <div aria-hidden="true" className="absolute inset-x-0 bottom-0 -z-10 h-2/5 bg-gradient-to-t from-[#07111f]/90 via-[#07111f]/50 to-transparent" />
+        <div className="relative mx-auto flex min-h-[calc(100svh-76px)] max-h-[900px] min-h-[720px] max-w-[1480px] flex-col px-8 xl:px-14">
+          <div className="flex flex-1 items-center justify-between gap-10 pt-16 pb-10">
+            <div className="min-w-0 flex-1">
+              <p className="text-[13px] font-medium tracking-[0.35em] text-white/90">{t.home2.heroV3Kicker}</p>
+              <h1 className="mt-5 font-serif whitespace-nowrap text-[4.5rem] font-normal leading-[1.02] tracking-[-0.02em] text-white xl:text-[5.5rem]">
+                <span className="block whitespace-nowrap">{t.home2.heroV3TitleA}</span>
+                <span className="block whitespace-nowrap">{t.home2.heroV3TitleB}</span>
+              </h1>
+              <p className="mt-7 max-w-[540px] text-[20px] leading-[1.5] text-white/90">{t.home2.heroV3Lead}</p>
+              <div className="mt-9 flex items-center gap-4">
+                <Link href="/app" className="flex h-[52px] items-center gap-3 rounded-full bg-electric-500 px-8 font-serif text-[17px] text-white hover:bg-electric-600">
+                  {t.home2.heroV3CtaPrimary}
+                  <ArrowRightIcon size={18} />
+                </Link>
+                <Link href="#outcomes" className="flex h-[52px] items-center rounded-full border border-white/80 px-10 font-serif text-[17px] text-white hover:bg-white/10">
+                  {t.home2.heroV3CtaSecondary}
+                </Link>
+              </div>
+            </div>
+            <div className="self-end pb-4 text-[13px] font-medium leading-[1.9] tracking-[0.3em] text-white/90">
+              {t.home2.heroV3Claims.map((c) => (
+                <p key={c}>{c}</p>
+              ))}
+              <span aria-hidden="true" className="mt-4 block h-px w-10 bg-white/70" />
+            </div>
+          </div>
+          <ul className="grid grid-cols-4 pb-10 text-center text-white">
+            {t.home2.heroV3Pillars.map((p, i) => {
+              const Icon = [UsersIcon, SparkleIcon, ChartIcon, GlobeGlyph][i];
+              return (
+                <li key={p.title} className={`flex flex-col items-center px-6 ${i > 0 ? "border-l border-white/40" : ""}`}>
+                  <Icon size={34} className="text-white" />
+                  <p className="mt-4 text-[12.5px] font-semibold tracking-[0.3em]">{p.title}</p>
+                  <p className="mt-2 max-w-[250px] text-[14.5px] leading-snug text-white/85">{p.text}</p>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      </section>
+
+      {/* ------------------------------------------- mobile/tablet hero (unchanged) */}
+      <div className="relative isolate overflow-hidden border-b border-border/70 lg:hidden">
         <Image
           src="/images/hero-home.jpg"
           alt={t.home2.heroImageAlt}
@@ -196,7 +226,45 @@ export function HomeContent() {
       </div>
 
       {/* ------------------------------------------------ drei Ergebnisse */}
-      <Section bg="default" id="outcomes" tight>
+      <div id="outcomes" className="scroll-mt-20">
+      {/* Desktop (founder reference Bild 2, 2026-09-23). */}
+      <section className="hidden border-b border-[#0a1a33]/10 bg-[#f8f7f3] dark:bg-midnight-950 lg:block">
+        <div className="mx-auto max-w-[1480px] px-8 pt-16 pb-14 xl:px-14">
+          <div className="grid grid-cols-[auto_minmax(0,1fr)] items-end gap-16">
+            <div>
+              <p className="text-[12px] font-medium uppercase tracking-[0.3em] text-electric-600 dark:text-electric-300">
+                {t.home2.outcomeKicker}
+              </p>
+              <h2 className="mt-4 whitespace-nowrap font-serif text-[3.25rem] font-normal leading-[1.05] tracking-[-0.02em] text-[#0a1a33] dark:text-paper-50 xl:text-[3.75rem]">
+                {t.home2.outcomeTitle}
+              </h2>
+            </div>
+            <p className="ml-auto max-w-[480px] pb-2 font-serif text-[18px] leading-[1.6] text-[#0a1a33]/75 dark:text-paper-50/75">
+              {t.home2.outcomeV3Lead}
+            </p>
+          </div>
+          <ul className="mt-10 grid grid-cols-3 border-t border-[#0a1a33]/12 pt-10 dark:border-white/15">
+            {t.home2.outcomeV3Items.map((item, i) => {
+              const Icon = [UsersIcon, BarsGlyph, BulbGlyph][i];
+              return (
+                <li
+                  key={item.key}
+                  className={`flex items-start gap-6 ${i === 0 ? "pr-10" : "px-10"} ${i > 0 ? "border-l border-[#0a1a33]/12 dark:border-white/15" : ""}`}
+                >
+                  <Icon size={48} className="shrink-0 text-[#0a1a33] dark:text-paper-50" />
+                  <div>
+                    <p className="text-[12px] font-semibold uppercase tracking-[0.3em] text-electric-600 dark:text-electric-300">{item.title}</p>
+                    <p className="mt-3 max-w-[300px] font-serif text-[16px] leading-[1.6] text-[#0a1a33]/80 dark:text-paper-50/80">{item.text}</p>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      </section>
+
+      {/* Mobile/tablet – unchanged. */}
+      <Section bg="default" tight className="lg:hidden">
         <Reveal>
           <Kicker>{t.home2.outcomeKicker}</Kicker>
           <h2 className="mt-3 max-w-2xl text-[1.6rem] font-bold tracking-tight sm:mt-4 sm:text-4xl lg:text-5xl">
@@ -219,104 +287,124 @@ export function HomeContent() {
           ))}
         </div>
       </Section>
+      </div>
 
       {/* ------------------------------------------- sechs Kernbereiche */}
-      <Section bg="surface" id="areas" width="wide" tight>
-        <Reveal>
-          <div className="flex flex-wrap items-end justify-between gap-4 sm:gap-6">
-            <div className="max-w-2xl">
-              <Kicker>{t.home2.enablesKicker}</Kicker>
-              <h2 className="mt-3 text-[1.6rem] font-bold tracking-tight sm:mt-4 sm:text-4xl lg:text-5xl">
+      <div id="areas" className="scroll-mt-20">
+      {/* Desktop (founder reference Bild 2, finalized 2026-09-23): calm,
+          editorial, alternating image/text rows on deep navy. */}
+      <section className="relative hidden overflow-hidden bg-[#0a1628] text-white lg:block">
+        {/* deliberate seam: the light outcomes chapter closes into the dark
+            ecosystem chapter – soft top depth instead of a hard random cut */}
+        <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-56 bg-gradient-to-b from-[#050b16] to-transparent" />
+        <div className="relative mx-auto max-w-[1480px] px-8 pt-14 pb-12 xl:px-14">
+          <div aria-hidden="true" className="mx-auto mb-16 h-20 w-px bg-gradient-to-b from-white/0 via-white/40 to-white/15" />
+          <div className="flex items-end justify-between gap-12 border-b border-white/15 pb-12">
+            <div className="max-w-[640px]">
+              <p className="text-[12px] font-medium uppercase tracking-[0.3em] text-electric-300">{t.home2.enablesKicker}</p>
+              <h2 className="mt-5 font-serif text-[3.5rem] font-normal leading-[1.06] tracking-[-0.02em] xl:text-[4rem]">
                 {t.home2.enablesTitle}
               </h2>
-              <p className="mt-4 hidden text-base leading-7 text-foreground-muted lg:block">{t.home2.enablesLead}</p>
+              <p className="mt-6 max-w-[540px] text-[17px] leading-[1.65] text-white/70">{t.home2.areasV3Lead}</p>
             </div>
             <Link
               href="/how-it-works"
-              className="group inline-flex items-center gap-1.5 text-sm font-semibold text-electric-600 transition-colors hover:text-electric-700 dark:text-electric-300"
+              className="group mb-2 inline-flex shrink-0 items-center gap-2 text-[15px] font-medium text-electric-300 hover:text-white"
             >
-              {t.home2.howItWorksLink}
-              <ArrowRightIcon
-                size={15}
-                className="transition-transform duration-200 group-hover:translate-x-0.5"
-              />
+              {t.home2.enablesCta}
+              <ArrowRightIcon size={16} className="transition-transform group-hover:translate-x-0.5" />
             </Link>
           </div>
-        </Reveal>
 
-        {/* Mobile (Sprint 8): compact 2×3 overview – icon, title and one
-            benefit line per area. The whole tile is tappable; the detailed
-            images and copy stay on the area subpages (desktop rows below). */}
-        <ul className="mt-5 grid grid-cols-2 gap-2.5 sm:mt-6 sm:gap-3 lg:hidden">
-          {areaKeys.map((key) => {
-            const content = areaContent[key];
-            const Icon = areaIcons[key];
-            return (
-              <li key={key}>
-                <Link
-                  href={areaLinks[key]}
-                  className="flex h-full flex-col rounded-xl border border-border bg-background p-3 transition-colors hover:border-electric-500/40"
-                >
-                  <Icon size={18} className="text-electric-600 dark:text-electric-300" />
-                  <span className="mt-2 block text-[13px] font-bold leading-tight tracking-tight">
-                    {content.title}
-                  </span>
-                  <span className="mt-1 line-clamp-2 text-[11px] leading-4 text-foreground-muted">
-                    {content.short}
-                  </span>
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-
-        {/* Desktop: the approved image/text rows (unchanged). */}
-        <div className="mt-10 hidden lg:mt-12 lg:block">
-          {areaKeys.map((key, index) => {
-            const content = areaContent[key];
-            const image = areaImages[key];
-            const reverse = index % 2 === 1;
-            return (
-              <Reveal key={key} delay={index * 40}>
-                <Link
-                  href={areaLinks[key]}
-                  className="group grid items-center gap-6 border-t border-border py-7 sm:gap-10 sm:py-9 lg:grid-cols-12 lg:gap-14"
-                >
-                  <span
-                    className={`relative block overflow-hidden rounded-2xl bg-surface-muted lg:col-span-6 ${
-                      reverse ? "lg:order-2" : ""
-                    }`}
-                  >
-                    <Image
-                      src={image.src}
-                      alt=""
-                      width={900}
-                      height={560}
-                      sizes="(max-width: 1024px) 100vw, 46vw"
-                      className="h-44 w-full object-cover transition-transform duration-500 group-hover:scale-[1.03] sm:h-56 lg:h-64 xl:h-72"
-                    />
-                  </span>
-                  <span className={`lg:col-span-6 ${reverse ? "lg:order-1" : ""}`}>
-                    <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-foreground-subtle">
-                      0{index + 1}
+          <ol>
+            {t.home2.areasV3Items.map((item, index) => {
+              const v = areaV3Visuals[item.key as AreaV3Key];
+              const Icon = v.icon;
+              const reverse = index % 2 === 1;
+              return (
+                <li key={item.key} className="border-b border-white/15 last:border-b-0">
+                  <Link href={v.href} className="group grid grid-cols-12 items-center gap-16 py-14">
+                    <span className={`col-span-7 block overflow-hidden rounded-md ${reverse ? "order-2" : ""}`}>
+                      <Image
+                        src={v.src}
+                        alt=""
+                        width={1200}
+                        height={700}
+                        sizes="55vw"
+                        className="h-[360px] w-full object-cover transition-transform duration-700 group-hover:scale-[1.03] xl:h-[420px]"
+                      />
                     </span>
-                    <span className="mt-2 block text-2xl font-bold tracking-tight sm:text-3xl">
-                      {content.title}
+                    <span className={`col-span-5 block ${reverse ? "order-1" : ""}`}>
+                      <span className="flex items-center gap-4 text-[12px] font-medium tracking-[0.3em] text-white/50">
+                        <span>0{index + 1}</span>
+                        <span aria-hidden="true" className="h-px w-10 bg-white/30" />
+                        <Icon size={22} className="text-white/80" />
+                      </span>
+                      <span className="mt-5 block font-serif text-[2.5rem] leading-[1.1] tracking-[-0.01em]">{item.title}</span>
+                      <span className="mt-4 block max-w-[420px] text-[16px] leading-[1.65] text-white/70">{item.text}</span>
+                      <span className="mt-7 inline-flex items-center gap-2 text-[14px] font-medium text-electric-300 group-hover:text-white">
+                        {t.home2.areasV3Cta}
+                        <ArrowRightIcon size={15} className="transition-transform group-hover:translate-x-0.5" />
+                      </span>
                     </span>
-                    <span className="mt-3 block max-w-xl text-sm leading-7 text-foreground-muted sm:text-base">
-                      {content.text}
-                    </span>
-                    <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-electric-600 dark:text-electric-300">
-                      {t.common.discover}
-                      <ArrowRightIcon size={14} />
-                    </span>
-                  </span>
-                </Link>
-              </Reveal>
-            );
-          })}
+                  </Link>
+                </li>
+              );
+            })}
+          </ol>
         </div>
-      </Section>
+      </section>
+
+      {/* Mobile/tablet: the same editorial rows, compact and stacked
+          (Bild → Text), on deep navy – founder brief 2026-09-23. */}
+      <section className="relative overflow-hidden bg-[#0a1628] text-white lg:hidden">
+        <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-[#050b16] to-transparent" />
+        <div className="relative ic-shell-wide pt-12 pb-10 sm:pt-16 sm:pb-14">
+          <div aria-hidden="true" className="mx-auto mb-10 h-14 w-px bg-gradient-to-b from-white/0 via-white/40 to-white/15" />
+          <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-electric-300">{t.home2.enablesKicker}</p>
+          <h2 className="mt-3 font-serif text-[2.1rem] leading-[1.12] tracking-[-0.01em] sm:text-[2.6rem]">
+            {t.home2.enablesTitle}
+          </h2>
+          <p className="mt-4 max-w-xl text-[14.5px] leading-6 text-white/70 sm:text-[15.5px] sm:leading-7">
+            {t.home2.areasV3Lead}
+          </p>
+
+          <ol className="mt-4">
+            {t.home2.areasV3Items.map((item, index) => {
+              const v = areaV3Visuals[item.key as AreaV3Key];
+              const Icon = v.icon;
+              return (
+                <li key={item.key} className="border-t border-white/12 py-7 first:border-t-0 sm:py-8">
+                  <Link href={v.href} className="group block">
+                    <span className="block overflow-hidden rounded-md">
+                      <Image
+                        src={v.src}
+                        alt=""
+                        width={900}
+                        height={560}
+                        sizes="100vw"
+                        className="h-48 w-full object-cover transition-transform duration-500 group-hover:scale-[1.02] sm:h-60"
+                      />
+                    </span>
+                    <span className="mt-5 flex items-center gap-3 text-[11px] font-medium tracking-[0.3em] text-white/50">
+                      <span>0{index + 1}</span>
+                      <span aria-hidden="true" className="h-px w-8 bg-white/30" />
+                      <Icon size={17} className="text-white/80" />
+                    </span>
+                    <span className="mt-3 block font-serif text-[1.65rem] leading-tight sm:text-[1.9rem]">{item.title}</span>
+                    <span className="mt-2 block max-w-md text-[14px] leading-6 text-white/70 sm:text-[15px]">{item.text}</span>
+                    <span className="mt-3.5 inline-flex items-center gap-2 text-[13.5px] font-medium text-electric-300 group-hover:text-white">
+                      {t.home2.areasV3Cta}
+                      <ArrowRightIcon size={14} className="transition-transform group-hover:translate-x-0.5" />
+                    </span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ol>
+        </div>
+      </section>
+      </div>
 
       {/* --------------------------------------------------------- events */}
       <Section bg="muted" id="events-feel" width="wide" tight className="hidden lg:block">
@@ -325,7 +413,7 @@ export function HomeContent() {
             <div className="relative overflow-hidden rounded-2xl">
               <Image
                 src="/images/events-experience.jpg"
-                alt={areaImages.events.alt}
+                alt="Networking-Abend auf einer Dachterrasse"
                 width={1200}
                 height={760}
                 sizes="(max-width: 1024px) 100vw, 55vw"

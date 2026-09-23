@@ -216,6 +216,40 @@ bleiben unverändert.
 **Nicht angefasst:** Auth, Resend, Trial, Membership, Stripe, Cloudflare-
 Logik, Public-Desktop-Layout, Farbtokens, Bildsprache, Branding/Name/Logo.
 
+### 1.14 Sprint 9: Alternierende Ecosystem-Sektion der Public Homepage (2026-09-23)
+
+**Ausdrücklicher Gründerauftrag** (Finalisierung des Bereichs unterhalb der
+freigegebenen „Drei Ergebnisse, die zählen.“, Maßstab ist das bereitgestellte
+Navy-Referenzlayout mit alternierender Bild-/Text-Struktur) – der folgende
+Zustand ist beauftragt, umgesetzt und jetzt seinerseits eingefroren:
+
+- **Desktop (`lg+`):** sechs Kernbereiche als große, ruhige editorial Rows auf
+  Deep Navy `#0a1628`, feste Reihenfolge: 01 Network → 02 Business Deals →
+  03 Jobs & Projekte → 04 Investments → 05 Events → 06 Insights. Jede Reihe:
+  großes Bild (~55 % Breite, `h-[360px]`/`xl:h-[420px]`, alternierend links/
+  rechts beginnend mit Bild links), kleine Nummer + Haarlinie + Icon,
+  Serif-Titel, 1–2 Sätze, CTA „Entdecken →“; feine horizontale Divider
+  zwischen den Reihen. Abschnittskopf: Kicker + Serif-Titel links,
+  „Alle Bereiche ansehen →“ rechts. Bewusster Übergang aus dem hellen
+  Ergebnis-Bereich: vertikale Haarlinie + weicher Top-Gradient (kein harter
+  zufälliger Cut).
+- **Mobile (`<lg`):** dieselben Reihen kompakt gestapelt (Bild → Nummer →
+  Serif-Titel → 1–2 Sätze → „Entdecken →“) auf Deep Navy; ersetzt die
+  2×3-Icon-Übersicht aus Sprint 8. Übrige Mobile-Struktur (Hero, Outcomes,
+  Trust-Zeile, Membership, Footer) unverändert.
+- **Bilder der Sektion (eingefroren):** `network.jpg`, `business-deal.jpg`,
+  `business.jpg`, `areas-investments-tower.jpg`, `areas-events-stage.jpg`,
+  `areas-insights-desk.jpg` – ausschließlich bestehende Assets, keine neuen
+  Bilder.
+- **Texte:** DE+EN über `src/lib/i18n` (`dict/site-v2.ts`: `areasV3Items`,
+  `areasV3Cta`), Parität getestet.
+
+**Unverändert eingefroren bleiben:** freigegebener Header/Navigation,
+VP-Branding/Monogramm, Desktop-Hero inkl. Headline „A stronger tomorrow,
+together.“, Hero-Bild/Texte/Buttons/Pillars, „Drei Ergebnisse, die zählen.“,
+Events-Band, Kapital-Hinweis, Membership, Final-CTA, Footer, gesamter
+Mitgliederbereich sowie alle Logik/Routen/Auth/DB.
+
 ## 2. Ausdrücklich erlaubt (kein Designbruch)
 
 - Technische Responsive-Bugfixes (z. B. Überlauf, abgeschnittene Inhalte,

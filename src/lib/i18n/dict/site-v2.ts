@@ -5,6 +5,24 @@
 
 export const siteV2De = {
   home2: {
+    heroV3Kicker: "PEOPLE · OPPORTUNITIES · PROGRESS",
+    heroV3TitleA: "A stronger",
+    heroV3TitleB: "tomorrow, together.",
+    heroV3Lead:
+      "Wir verbinden ambitionierte Unternehmer, erfahrene Investoren und zukunftsorientierte Unternehmen – für eine bessere Zukunft.",
+    heroV3CtaPrimary: "Zur INNER CIRCLE Plattform",
+    heroV3CtaSecondary: "Mehr erfahren",
+    heroV3Claims: ["BETTER PEOPLE", "BOLDER IDEAS", "BRIGHTER FUTURES"],
+    heroV3Pillars: [
+      { title: "PEOPLE", text: "Außergewöhnliche Menschen gehen gemeinsam weiter." },
+      { title: "OPPORTUNITIES", text: "Sinnvolle Verbindungen schaffen reale Chancen." },
+      { title: "PROGRESS", text: "Durch Kapital, Wissen und Community eine stärkere Zukunft." },
+      { title: "A GLOBAL COMMUNITY", text: "Für Unternehmer, Investoren und Vordenker." },
+    ],
+    heroV3ImageAlt: "Business-Menschen im Gespräch auf einer Terrasse vor Bergen und See",
+    headerNav: { network: "Network", businessDeals: "Business Deals", investments: "Investments", events: "Events", insights: "Insights", about: "About" },
+    headerToPlatform: "Zur Plattform",
+    headerBrandTagline: "Entrepreneurship · Network · Investments",
     heroKicker: "Business-Netzwerk",
     heroTitleA: "Dein Business braucht die richtigen Köpfe.",
     heroTitleB: "Keine zusätzlichen Kontakte.",
@@ -27,6 +45,13 @@ export const siteV2De = {
       events: "Events und Begegnungen",
     },
     outcomeKicker: "Warum INNER CIRCLE",
+    outcomeV3Lead:
+      "Finde Kunden, Geschäftspartner und Investment-Chancen – und triff die richtigen Menschen, um deine Ziele schneller zu erreichen.",
+    outcomeV3Items: [
+      { key: "people", title: "People", text: "Finde Kunden, Geschäftspartner und Experten, die zu deinen Zielen passen." },
+      { key: "capital", title: "Capital", text: "Triff Investoren und entdecke geprüfte Investment Opportunities." },
+      { key: "experience", title: "Experience", text: "Erlebe relevante Menschen bei ausgewählten Events – nicht nur im Chat." },
+    ],
     outcomeTitle: "Drei Ergebnisse, die zählen.",
     outcomeBuildTitle: "Build",
     outcomeBuildText: "Finde Kunden, Geschäftspartner und Projekte, die zu deinen Zielen passen.",
@@ -81,6 +106,19 @@ export const siteV2De = {
       "Alle Werte stammen aus der Plattform-Datenbank. Vor dem Launch sind sie klar als Ziel- oder Demowert gekennzeichnet.",
     proofCta: "Mitglied werden",
     enablesKicker: "Sechs Kernbereiche",
+    areasV3Lead:
+      "Kein Unterhaltungs-Feed: Kunden, Partner, Kapital, Wissen, Projekte und Abende, an denen Entscheidungen entstehen – in sechs Bereichen.",
+    areasV3More: "Mehr erfahren",
+    areasV3Cta: "Entdecken",
+    areasV3ImageAlt: "Zwei Business-Personen besprechen Kennzahlen auf einem Tablet in einem hellen Büro",
+    areasV3Items: [
+      { key: "network", title: "Network", text: "Finde Geschäftspartner, Kunden und Experten, die zu deinen Zielen passen." },
+      { key: "deals", title: "Business Deals", text: "Entdecke reale Projekte, Partnerschaften und Geschäftschancen." },
+      { key: "jobs", title: "Jobs & Projekte", text: "Finde relevante Rollen, Projekte, Mandate und Zusammenarbeit." },
+      { key: "investments", title: "Investments", text: "Entdecke Investment Opportunities und Kapitalzugänge." },
+      { key: "events", title: "Events", text: "Exklusive eigene Veranstaltungen für Unternehmer, Investoren und relevante Partner." },
+      { key: "insights", title: "Insights", text: "Wissen, Perspektiven und Best Practices aus dem Netzwerk." },
+    ],
     enablesTitle: "Was du hier konkret bekommst.",
     enablesLead:
       "Kein Unterhaltungs-Feed: Kunden, Partner, Kapital, Wissen, Projekte und Abende, an denen Entscheidungen entstehen – in sechs Bereichen.",
@@ -280,6 +318,24 @@ export type SiteV2Dict = typeof siteV2De;
 
 export const siteV2En: SiteV2Dict = {
   home2: {
+    heroV3Kicker: "PEOPLE · OPPORTUNITIES · PROGRESS",
+    heroV3TitleA: "A stronger",
+    heroV3TitleB: "tomorrow, together.",
+    heroV3Lead:
+      "We connect ambitious entrepreneurs, experienced investors and forward-looking companies – for a better future.",
+    heroV3CtaPrimary: "Go to the INNER CIRCLE platform",
+    heroV3CtaSecondary: "Learn more",
+    heroV3Claims: ["BETTER PEOPLE", "BOLDER IDEAS", "BRIGHTER FUTURES"],
+    heroV3Pillars: [
+      { title: "PEOPLE", text: "Exceptional people go further together." },
+      { title: "OPPORTUNITIES", text: "Meaningful connections create real opportunities." },
+      { title: "PROGRESS", text: "A stronger future through capital, knowledge and community." },
+      { title: "A GLOBAL COMMUNITY", text: "For entrepreneurs, investors and thought leaders." },
+    ],
+    heroV3ImageAlt: "Business people talking on a terrace in front of mountains and a lake",
+    headerNav: { network: "Network", businessDeals: "Business Deals", investments: "Investments", events: "Events", insights: "Insights", about: "About" },
+    headerToPlatform: "Go to platform",
+    headerBrandTagline: "Entrepreneurship · Network · Investments",
     heroKicker: "Business network",
     heroTitleA: "Your business needs the right heads.",
     heroTitleB: "Not more contacts.",
@@ -302,6 +358,13 @@ export const siteV2En: SiteV2Dict = {
       events: "Events and encounters",
     },
     outcomeKicker: "Why INNER CIRCLE",
+    outcomeV3Lead:
+      "Find customers, business partners and investment opportunities – and meet the right people to reach your goals faster.",
+    outcomeV3Items: [
+      { key: "people", title: "People", text: "Find customers, business partners and experts who match your goals." },
+      { key: "capital", title: "Capital", text: "Meet investors and explore reviewed investment opportunities." },
+      { key: "experience", title: "Experience", text: "Meet relevant people at selected events – not only in chat." },
+    ],
     outcomeTitle: "Three outcomes that matter.",
     outcomeBuildTitle: "Build",
     outcomeBuildText: "Find customers, partners and projects that match your goals.",
@@ -356,6 +419,19 @@ export const siteV2En: SiteV2Dict = {
       "Every value comes from the platform database. Before launch they are clearly labelled as target or demo values.",
     proofCta: "Become a member",
     enablesKicker: "Six core areas",
+    areasV3Lead:
+      "No entertainment feed: customers, partners, capital, knowledge, projects and evenings where decisions are made – in six areas.",
+    areasV3More: "Learn more",
+    areasV3Cta: "Explore",
+    areasV3ImageAlt: "Two business people reviewing figures on a tablet in a bright office",
+    areasV3Items: [
+      { key: "network", title: "Network", text: "Find business partners, customers and experts who match your goals." },
+      { key: "deals", title: "Business Deals", text: "Discover real projects, partnerships and business opportunities." },
+      { key: "jobs", title: "Jobs & Projects", text: "Find relevant roles, projects, mandates and collaboration." },
+      { key: "investments", title: "Investments", text: "Discover investment opportunities and access to capital." },
+      { key: "events", title: "Events", text: "Exclusive in-house events for entrepreneurs, investors and relevant partners." },
+      { key: "insights", title: "Insights", text: "Knowledge, perspectives and best practices from the network." },
+    ],
     enablesTitle: "What you actually get here.",
     enablesLead:
       "Not an entertainment feed: customers, partners, capital, knowledge, projects and evenings where decisions get made – in six areas.",
