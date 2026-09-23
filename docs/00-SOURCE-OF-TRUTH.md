@@ -3,7 +3,13 @@
 **Diese Datei ist der verbindliche Einstiegspunkt für jeden Menschen und jeden
 KI-Agenten, der an diesem Repository arbeitet.**
 
-- **Stand:** 2026-09-22 (Incident-Fix post-Sprint-8: Produktions-500 auf
+- **Stand:** 2026-09-23 (Sprint V&P-1: Rebranding der **öffentlichen
+  Homepage + Header** auf VENTURE & PARTNERS / INNER CIRCLE by VENTURE &
+  PARTNERS nach den freigegebenen Referenzbildern – Logo-SVGs, Cormorant-
+  Garamond-Serif, V&P-Farbtokens, lizenzierte Berg-/Pflanzenfotos, kürzere
+  Mobile-Seite; **keine** Änderung an Plattform, Unterseiten, Auth, DB,
+  Trial, Billing, API; Details `15-brand-assets.md`; visuelle Freigabe offen);
+  vorher 2026-09-22 (Incident-Fix post-Sprint-8: Produktions-500 auf
   `/app` durch rohe `Date`-Binds in `forYouItems()` unter D1 behoben +
   D1-Regressionstest, Details K-20 in
   [`11-known-issues.md`](11-known-issues.md); Sprint 8 – Mobile Public Homepage radikal verkürzt,
@@ -63,7 +69,16 @@ Details: [`01-product.md`](01-product.md)
 
 #### Public Navigation (statisch, keine DB, kein getAccessContext)
 
-- `/` – Startseite, **getrennte Informationsdichte je Viewport (Sprint 8)**:
+- `/` – Startseite, **Sprint V&P-1 (2026-09-23): VENTURE & PARTNERS
+  Homepage** nach Mockup – Hero (Off-White-Textspalte + Bergsee-Foto +
+  Side-Words) → 4 Säulen (People · Network · Investments · Impact) → INNER
+  CIRCLE by V&P (4 Bereiche + Alpen-Foto) → V&P Events / V&P Portfolio →
+  Membership (Preise aus `PLANS`, ein CTA) → Abschlusszeile. Mobile: gleiche
+  Sektionen in kürzester Form (Hero-Bild als Band, 2×2-Raster, keine
+  Doppelaussagen), keine horizontale Scrollbarkeit. Texte:
+  `src/lib/i18n/dict/vp-home.ts`. Statisch vorgerendert. Die folgende
+  Sprint-8-Beschreibung ist damit **historisch**:
+- `/` (Sprint 8, abgelöst) – **getrennte Informationsdichte je Viewport**:
   - **Mobile (`<lg`):** radikal verkürzt – Hero (Headline + EIN kurzer Satz +
     CTA „INNER CIRCLE entdecken“ + kleine Zeile „48h Discovery starten“,
     Facts-Liste ausgeblendet) → 3 Outcomes (je Titel + 1 kurze Zeile) →
@@ -81,7 +96,7 @@ Details: [`01-product.md`](01-product.md)
 - `/member/[publicId]` – öffentliche Karten-Verifikation.
 - `/imprint`, `/privacy`, `/terms` – Rechts-Platzhalter (PARTIAL).
 - `/design` – internes Design-System.
-- Header: Logo → 6 Preview-Links → Sprach-/Theme-Umschalter (Flagge + voller Name: 🇩🇪 Deutsch / 🇬🇧 English) → Login/Join oder „Zur App" (Präsenz-Flag `ic_presence`, keine Autorisierung).
+- Header (Sprint V&P-1): VP-Monogramm + Wortmarke „VENTURE & PARTNERS“ + Subline → 6 Preview-Links → Sprach-/Theme-Umschalter (Flagge + Kürzel, voller Name ab `2xl`; unter `sm` nur im Mobile-Menü) → Login/Join (Navy-Pill) oder „Zur App" (Präsenz-Flag `ic_presence`, keine Autorisierung).
 
 #### Member Navigation (6 Primärbereiche + 6 sekundäre Bereiche)
 
@@ -316,7 +331,7 @@ existiert. Backend + Daten + Berechtigungen + Nachweis gehören dazu.
 
 | Funktion | Status | Nachweis |
 | -------- | ------ | -------- |
-| Startseite `/` – Conversion-Flow (Hero mit 3 Outcomes + Preis-Hinweis → schmales 20-%-Kapital-Band → Membership-Preis → 6 Kernbereiche → Events → CTA) | WORKING | `src/app/(site)/HomeContent.tsx`; Hero-Bild unverändert, Hero nennt beide Preise (24,99 €/249,90 €); **statisch vorgeneriert** |
+| Startseite `/` – VENTURE & PARTNERS Homepage (Hero → 4 Säulen → INNER CIRCLE by V&P → V&P Events/Portfolio → Membership → Abschluss) | WORKING / **visuelle Freigabe offen** | `src/app/(site)/HomeContent.tsx`, `dict/vp-home.ts`, Assets `public/brand/`, `public/images/brand/` (Lizenzen `15-brand-assets.md`); Preise aus `PLANS`; **statisch vorgeneriert**; Screenshots `docs/screenshots/vp-home/` |
 | Preview-Seiten `/network`, `/business-deals`, `/investments`, `/marketplace`, `/events` | WORKING | statische Inhalte, nicht aktivierte Funktionen als „Demnächst verfügbar\" gekennzeichnet; **statisch vorgeneriert** |
 | `/portfolio` – INNER CIRCLE Portfolio (Arbeitstitel) | WORKING | `src/app/(site)/portfolio/`; 20-%-/25-%-/75-%-Modell (bezogen auf 100 %: 5 % IC / 15 % extern) + 100-€-Beispiel; **kein Fonds, keine Renditeversprechen**; transparent als geplante strategische Zielallokation; **statisch vorgeneriert** |
 | `/membership` (Preise, Leistungen) | WORKING | 24,99 €/Monat **und** 249,90 €/Jahr („2 Monate geschenkt\"); K-03 gelöst, Checkout weiter Dev-Aktivierung bis Stripe scharf ist |

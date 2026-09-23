@@ -44,8 +44,8 @@ export function ThemeLanguageControls({ compact = false }: { compact?: boolean }
           <>
             <GlobeIcon size={16} className="hidden sm:inline" />
             <span aria-hidden="true">{localeFlags[locale]}</span>
-            <span className={compact ? "sr-only sm:not-sr-only sm:inline" : "hidden lg:inline"}>{localeLabels[locale]}</span>
-            <span className={compact ? "inline sm:hidden" : "hidden"}>{localeShort[locale]}</span>
+            <span className={compact ? "sr-only sm:not-sr-only sm:inline" : "hidden 2xl:inline"}>{localeLabels[locale]}</span>
+            <span className={compact ? "inline sm:hidden" : "inline 2xl:hidden"}>{localeShort[locale]}</span>
           </>
         }
       >
@@ -74,7 +74,7 @@ export function ThemeLanguageControls({ compact = false }: { compact?: boolean }
         trigger={
           <>
             {themeIcon}
-            <span className="hidden xl:inline">{themeText}</span>
+            <span className="hidden 2xl:inline">{themeText}</span>
           </>
         }
       >

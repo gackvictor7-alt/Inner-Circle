@@ -11,3 +11,17 @@ export const fontSans = localFont({
   variable: "--font-inter",
   display: "swap",
 });
+
+/**
+ * VENTURE & PARTNERS editorial serif – Cormorant Garamond (SIL OFL 1.1, see
+ * ./fonts/OFL-CormorantGaramond.txt). Self-hosted like Inter; two weights only
+ * to keep the public homepage light.
+ */
+export const fontSerif = localFont({
+  src: [
+    { path: "./fonts/CormorantGaramond-500.woff2", weight: "500", style: "normal" },
+    { path: "./fonts/CormorantGaramond-600.woff2", weight: "600", style: "normal" },
+  ],
+  variable: "--font-cormorant",
+  display: "swap",
+});

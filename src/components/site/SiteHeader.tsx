@@ -87,25 +87,27 @@ export function SiteHeader({ level = "visitor" as AccessLevel }: { level?: Acces
   return (
     <>
       <header
-        className={`sticky top-0 z-50 border-b transition-shadow duration-300 ${
+        className={`vp-home sticky top-0 z-50 border-b transition-shadow duration-300 ${
           scrolled || menuOpen
-            ? "border-border bg-background/85 shadow-card backdrop-blur-xl"
-            : "border-transparent bg-background/70"
+            ? "border-border bg-background/90 shadow-card backdrop-blur-xl"
+            : "border-border/60 bg-background/85 backdrop-blur-md"
         }`}
       >
-        <div className="ic-shell flex h-16 items-center justify-between gap-4">
-          <Logo />
+        <div className="ic-shell flex h-16 items-center justify-between gap-3 sm:h-[72px] sm:gap-4">
+          <div className="min-w-0 shrink">
+            <Logo />
+          </div>
 
-          <nav aria-label={t.brand.name} className="hidden items-center gap-1 lg:flex">
+          <nav aria-label={t.brand.name} className="hidden items-center gap-0.5 lg:flex xl:gap-1">
             {navItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
                 aria-current={isActive(item.href) ? "page" : undefined}
-                className={`rounded-full px-3.5 py-2 text-sm font-medium transition-colors ${
+                className={`whitespace-nowrap rounded-full px-2.5 py-2 text-[13px] font-medium tracking-wide transition-colors xl:px-3 ${
                   isActive(item.href)
-                    ? "bg-electric-500/10 text-electric-600 dark:text-electric-300"
-                    : "text-foreground-muted hover:bg-surface-muted hover:text-foreground"
+                    ? "text-vp-navy-900 underline decoration-vp-green-600 decoration-2 underline-offset-8 dark:text-vp-paper-50 dark:decoration-vp-green-300"
+                    : "text-vp-charcoal-700 hover:text-vp-navy-900 dark:text-vp-paper-50/75 dark:hover:text-vp-paper-50"
                 }`}
               >
                 {t.nav[item.key]}
@@ -113,23 +115,25 @@ export function SiteHeader({ level = "visitor" as AccessLevel }: { level?: Acces
             ))}
           </nav>
 
-          <div className="flex items-center gap-2">
-            <ThemeLanguageControls />
+          <div className="flex shrink-0 items-center gap-2">
+            <div className="hidden sm:block">
+              <ThemeLanguageControls />
+            </div>
 
             <div className="hidden items-center gap-2 md:flex">
               {signedIn ? (
-                <Button href="/app" size="sm">
+                <Button href="/app" size="sm" className="vp-btn-dark">
                   {t.publicNav.openApp}
                 </Button>
               ) : (
                 <>
                   <Link
                     href="/login"
-                    className="rounded-full px-3.5 py-2 text-sm font-semibold text-foreground-muted transition-colors hover:bg-surface-muted hover:text-foreground"
+                    className="rounded-full px-3.5 py-2 text-[13px] font-semibold text-vp-charcoal-700 transition-colors hover:text-vp-navy-900 dark:text-vp-paper-50/75 dark:hover:text-vp-paper-50"
                   >
                     {t.nav.login}
                   </Link>
-                  <Button href="/register" size="sm">
+                  <Button href="/register" size="sm" className="vp-btn-dark">
                     {t.nav.join}
                   </Button>
                 </>
@@ -156,7 +160,7 @@ export function SiteHeader({ level = "visitor" as AccessLevel }: { level?: Acces
         id="mobile-menu"
         ref={panelRef}
         hidden={!menuOpen}
-        className={`fixed inset-0 z-[60] lg:hidden ${menuOpen ? "" : "pointer-events-none"}`}
+        className={`vp-home fixed inset-0 z-[60] lg:hidden ${menuOpen ? "" : "pointer-events-none"}`}
         aria-hidden={!menuOpen}
       >
         <button
@@ -164,7 +168,7 @@ export function SiteHeader({ level = "visitor" as AccessLevel }: { level?: Acces
           tabIndex={menuOpen ? 0 : -1}
           aria-label={t.nav.menuClose}
           onClick={() => setMenuOpen(false)}
-          className="absolute inset-0 h-full w-full cursor-default bg-midnight-950/40 backdrop-blur-sm"
+          className="absolute inset-0 h-full w-full cursor-default bg-vp-navy-950/50 backdrop-blur-sm"
         />
         <div className="absolute inset-x-0 top-0 max-h-[svh] overflow-y-auto rounded-b-3xl border-b border-border bg-background p-4 shadow-pop sm:p-6">
           <div className="flex items-center justify-between">
@@ -192,7 +196,7 @@ export function SiteHeader({ level = "visitor" as AccessLevel }: { level?: Acces
                     aria-current={isActive(item.href) ? "page" : undefined}
                     className={`flex items-center justify-between rounded-xl px-4 py-3 text-base font-semibold transition-colors ${
                       isActive(item.href)
-                        ? "bg-electric-500/10 text-electric-600 dark:text-electric-300"
+                        ? "bg-vp-navy-900/[0.06] text-vp-navy-900 dark:bg-vp-paper-50/10 dark:text-vp-paper-50"
                         : "text-foreground hover:bg-surface-muted"
                     }`}
                   >
@@ -208,12 +212,12 @@ export function SiteHeader({ level = "visitor" as AccessLevel }: { level?: Acces
 
           <div className="mt-5 flex flex-col gap-3 border-t border-border pt-5">
             {signedIn ? (
-              <Button href="/app" size="lg" fullWidth>
+              <Button href="/app" size="lg" className="vp-btn-dark" fullWidth>
                 {t.publicNav.openApp}
               </Button>
             ) : (
               <>
-                <Button href="/register" size="lg" fullWidth>
+                <Button href="/register" size="lg" className="vp-btn-dark" fullWidth>
                   {t.nav.join}
                 </Button>
                 <Button href="/login" size="lg" variant="secondary" fullWidth>

@@ -33,6 +33,8 @@
   --color-ring: var(--ring);
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system,
     "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  /* VENTURE & PARTNERS editorial serif (public homepage + header, Sprint V&P-1) */
+  --font-serif: var(--font-cormorant), "Cormorant Garamond", "Times New Roman", Georgia, serif;
 }
 
 @theme {
@@ -70,6 +72,26 @@
   --color-sand-400: #cbb694;
   --color-sand-500: #a98e65;
   --color-sand-600: #7e6844;
+
+  /* VENTURE & PARTNERS brand palette (brand board 2026-09-23). Used by the
+     public homepage + header only in this sprint – the member platform keeps
+     its existing tokens until the design language is rolled out there. */
+  --color-vp-navy-950: #0a1222;
+  --color-vp-navy-900: #111f3d;
+  --color-vp-navy-800: #182a4f;
+  --color-vp-navy-700: #22386a;
+  --color-vp-blue-500: #5c7e9e;
+  --color-vp-blue-600: #4a6a8a;
+  --color-vp-blue-300: #9db4cb;
+  --color-vp-green-700: #1f3a2f;
+  --color-vp-green-600: #2d4a3e;
+  --color-vp-green-300: #7fa68f;
+  --color-vp-charcoal-900: #2b2f33;
+  --color-vp-charcoal-700: #4a4f55;
+  --color-vp-paper-50: #faf9f6;
+  --color-vp-paper-100: #f3f1eb;
+  --color-vp-paper-200: #e6e2d8;
+  --color-vp-ink-900: #171d27;
 
   --color-success-500: #10b981;
   --color-success-600: #059669;
@@ -428,6 +450,71 @@ summary {
 .ic-scroll-row > * {
   flex: 0 0 auto;
   scroll-snap-align: start;
+}
+
+/* ---------- VENTURE & PARTNERS public homepage helpers ----------
+ * Scoped to `.vp-home` so no other route changes. The warm off-white paper
+ * tone and the editorial serif only apply here (Sprint V&P-1). */
+.font-serif {
+  font-family: var(--font-serif);
+}
+.vp-home {
+  --background: #faf9f6;
+  --surface: #ffffff;
+  --surface-muted: #f3f1eb;
+  --border: #e6e2d8;
+  --border-strong: #cfc9bb;
+  background: var(--background);
+}
+.dark .vp-home {
+  --background: #0a1222;
+  --surface: #111f3d;
+  --surface-muted: #14213f;
+  --border: #22386a;
+  --border-strong: #35508a;
+}
+.vp-home h1,
+.vp-home h2,
+.vp-home h3 {
+  letter-spacing: -0.005em;
+}
+/* Navy pill CTA (mockup "Join the Community"). Light: navy on paper – dark
+   mode: paper on navy, both ≥ 12:1 contrast. */
+.vp-btn-dark {
+  background: #111f3d !important;
+  color: #faf9f6 !important;
+  box-shadow: 0 10px 24px -14px rgb(17 31 61 / 0.55);
+}
+.vp-btn-dark:hover {
+  background: #182a4f !important;
+}
+.dark .vp-btn-dark {
+  background: #faf9f6 !important;
+  color: #111f3d !important;
+}
+.dark .vp-btn-dark:hover {
+  background: #ffffff !important;
+}
+.vp-btn-outline {
+  border: 1px solid rgb(17 31 61 / 0.35) !important;
+  background: transparent !important;
+  color: #111f3d !important;
+}
+.vp-btn-outline:hover {
+  background: rgb(17 31 61 / 0.05) !important;
+}
+.dark .vp-btn-outline {
+  border-color: rgb(250 249 246 / 0.4) !important;
+  color: #faf9f6 !important;
+}
+.dark .vp-btn-outline:hover {
+  background: rgb(250 249 246 / 0.08) !important;
+}
+.vp-kicker {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
 }
 
 /* ---------- Scroll reveal (driven by <Reveal/>) ---------- */

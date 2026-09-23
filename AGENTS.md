@@ -15,7 +15,7 @@
    `01-product` · `02-architecture` · `03-routes` · `04-auth-membership` ·
    `05-database` · `06-permissions` · `07-integrations` · `08-testing` ·
    `09-deployment` · `11-known-issues` · `12-roadmap` · `13-decisions` ·
-   `14-environment`.
+   `14-environment` · `15-brand-assets` (Marke, Logo, Bildlizenzen).
 
 ## 2. Die acht Regeln
 

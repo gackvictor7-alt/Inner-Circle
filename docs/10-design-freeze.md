@@ -2,8 +2,19 @@
 
 ## DESIGN STATUS: APPROVED / DO NOT REDESIGN WITHOUT EXPLICIT FOUNDER REQUEST
 
-**Stand:** 2026-09-21 · Der aktuelle visuelle Stand des Projekts ist vom
+**Stand:** 2026-09-23 · Der aktuelle visuelle Stand des Projekts ist vom
 Gründer freigegeben und **eingefroren**. Diese Datei schützt ihn.
+
+> **Sprint V&P-1 (2026-09-23, ausdrücklicher Gründerauftrag):** Rebranding auf
+> **VENTURE & PARTNERS** (Dachmarke) / **INNER CIRCLE by VENTURE & PARTNERS**
+> (Plattform) – **nur** öffentliche Homepage (`/`), `SiteHeader`, `Logo`,
+> `SiteFooter` (Markenzeile) und Root-Metadaten. Verbindliche Grundlage: die
+> beiden Referenzbilder des Gründers (Markenboard + Website-Mockup). Alle
+> Details, Farben, Logo-Dateien und Bildlizenzen: `15-brand-assets.md`.
+> **Status: PR erstellt, visuelle Freigabe durch den Gründer steht aus.**
+> Abschnitte 1.1–1.4 unten beschreiben den Stand der **übrigen** öffentlichen
+> Seiten und der Plattform, die in diesem Sprint bewusst unverändert blieben;
+> die Designsprache wird erst nach Freigabe der Homepage dorthin übertragen.
 
 Ein KI-Agent, eine Entwicklerin oder ein Dienstleister darf die unten
 aufgeführten Bereiche **nur** verändern, wenn der Gründer **ausdrücklich eine
