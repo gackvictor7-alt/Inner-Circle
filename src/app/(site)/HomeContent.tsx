@@ -303,8 +303,12 @@ export function HomeContent() {
         {/* deliberate seam: the light outcomes chapter closes into the dark
             ecosystem chapter – soft top depth instead of a hard random cut */}
         <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-56 bg-gradient-to-b from-[#050b16] to-transparent" />
-        <div className="relative mx-auto max-w-[1480px] px-8 pt-14 pb-12 xl:px-14">
-          <div aria-hidden="true" className="mx-auto mb-16 h-20 w-px bg-gradient-to-b from-white/0 via-white/40 to-white/15" />
+        {/* Sprint 11 (Teil A): the rows use almost the full usable desktop
+            width with even premium gutters (40 / 56 / 64 px) instead of the
+            1480 px column – images grow, text stays measured. Hero, header and
+            the light outcomes chapter keep their own containers. */}
+        <div className="relative mx-auto max-w-[1800px] px-10 pt-14 pb-10 xl:px-14 xl:pb-12 2xl:px-16">
+          <div aria-hidden="true" className="mx-auto mb-14 h-20 w-px bg-gradient-to-b from-white/0 via-white/40 to-white/15" />
           <div className="flex items-end justify-between gap-12 border-b border-white/15 pb-12">
             <div className="max-w-[640px]">
               <p className="text-[12px] font-medium uppercase tracking-[0.3em] text-electric-300">{t.home2.enablesKicker}</p>
@@ -329,25 +333,27 @@ export function HomeContent() {
               const reverse = index % 2 === 1;
               return (
                 <li key={item.key} className="border-b border-white/15 last:border-b-0">
-                  <Link href={v.href} className="group grid grid-cols-12 items-center gap-16 py-14">
+                  {/* One harmonious row: image 7/12 with a uniform 16:10 crop,
+                      text 5/12 with a fixed measure (never stretched). */}
+                  <Link href={v.href} className="group grid grid-cols-12 items-center gap-12 py-10 xl:gap-16 xl:py-12">
                     <span className={`col-span-7 block overflow-hidden rounded-md ${reverse ? "order-2" : ""}`}>
                       <Image
                         src={v.src}
                         alt=""
                         width={1200}
-                        height={700}
-                        sizes="55vw"
-                        className="h-[360px] w-full object-cover transition-transform duration-700 group-hover:scale-[1.03] xl:h-[420px]"
+                        height={750}
+                        sizes="(min-width: 1800px) 980px, 56vw"
+                        className="aspect-[16/10] h-auto w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
                       />
                     </span>
-                    <span className={`col-span-5 block ${reverse ? "order-1" : ""}`}>
+                    <span className={`col-span-5 block ${reverse ? "order-1 xl:pr-6" : "xl:pl-2"}`}>
                       <span className="flex items-center gap-4 text-[12px] font-medium tracking-[0.3em] text-white/50">
                         <span>0{index + 1}</span>
                         <span aria-hidden="true" className="h-px w-10 bg-white/30" />
                         <Icon size={22} className="text-white/80" />
                       </span>
                       <span className="mt-5 block font-serif text-[2.5rem] leading-[1.1] tracking-[-0.01em]">{item.title}</span>
-                      <span className="mt-4 block max-w-[420px] text-[16px] leading-[1.65] text-white/70">{item.text}</span>
+                      <span className="mt-4 block max-w-[460px] text-[16px] leading-[1.65] text-white/70 2xl:max-w-[500px]">{item.text}</span>
                       <span className="mt-7 inline-flex items-center gap-2 text-[14px] font-medium text-electric-300 group-hover:text-white">
                         {t.home2.areasV3Cta}
                         <ArrowRightIcon size={15} className="transition-transform group-hover:translate-x-0.5" />
