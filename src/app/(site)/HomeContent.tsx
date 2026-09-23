@@ -7,56 +7,16 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import {
   ArrowRightIcon,
-  BriefcaseIcon,
   CalendarIcon,
   ChartIcon,
   CheckIcon,
   GridIcon,
   SparkleIcon,
-  StoreIcon,
   UsersIcon,
 } from "@/components/ui/icons";
 import { Kicker, Section } from "@/components/site/Section";
 import { Reveal } from "@/components/site/Reveal";
 import { MembershipBlock } from "@/components/site/MembershipBlock";
-
-type AreaKey = "network" | "opportunities" | "jobs" | "investments" | "marketplace" | "events";
-
-/**
- * Homepage image set. These six visuals define the public image language
- * (bright, young, real working situations) – subpages reference the same
- * files instead of inventing a second, darker visual world.
- */
-const areaImages: Record<AreaKey, { src: string; alt: string }> = {
-  network: { src: "/images/network.jpg", alt: "Zwei junge Business-Personen schauen gemeinsam auf ein Tablet in einem hellen Büro" },
-  opportunities: { src: "/images/business.jpg", alt: "Zwei junge Projektentwickler besprechen Baupläne auf einer modernen Baustelle" },
-  jobs: { src: "/images/community-meetup.jpg", alt: "Community-Abend in einem modernen Raum" },
-  investments: { src: "/images/investments-modern.jpg", alt: "Team bespricht Kennzahlen an einem Screen" },
-  marketplace: { src: "/images/marketplace-learn.jpg", alt: "Creatorin zeichnet ein Video in ihrem Studio auf" },
-  events: { src: "/images/events-experience.jpg", alt: "Networking-Abend auf einer Dachterrasse" },
-};
-
-const areaLinks: Record<AreaKey, string> = {
-  network: "/network",
-  opportunities: "/business-deals",
-  jobs: "/business-deals",
-  investments: "/investments",
-  marketplace: "/marketplace",
-  events: "/events",
-};
-
-/**
- * Small icon per area – used by the compact 2×3 mobile overview (Sprint 8).
- * The desktop image rows keep their existing visuals, unchanged.
- */
-const areaIcons: Record<AreaKey, (props: { size?: number; className?: string }) => React.JSX.Element> = {
-  network: UsersIcon,
-  opportunities: BriefcaseIcon,
-  jobs: GridIcon,
-  investments: ChartIcon,
-  marketplace: StoreIcon,
-  events: CalendarIcon,
-};
 
 /**
  * Public homepage – compressed conversion flow (compression + width sprint):
@@ -107,55 +67,26 @@ function HandshakeGlyph({ size = 24, className }: { size?: number; className?: s
   );
 }
 
-type AreaV3Key = "network" | "deals" | "investments" | "events" | "insights" | "impact";
+type AreaV3Key = "network" | "deals" | "jobs" | "investments" | "events" | "insights";
 
-/** Desktop 2×3 area grid (Bild 2). Insights → /marketplace, Impact → /how-it-works (existing pages, no dead links). */
+/**
+ * Alternating editorial rows (founder reference: deep navy, Bild→Text /
+ * Text→Bild, 2026-09-23 finalized). Order per founder brief: Network →
+ * Business Deals → Jobs & Projekte → Investments → Events → Insights.
+ * Only existing public assets and existing preview pages – no dead links.
+ */
 const areaV3Visuals: Record<AreaV3Key, { src: string; href: string; icon: (p: { size?: number; className?: string }) => React.JSX.Element }> = {
   network: { src: "/images/network.jpg", href: "/network", icon: UsersIcon },
   deals: { src: "/images/business-deal.jpg", href: "/business-deals", icon: HandshakeGlyph },
+  jobs: { src: "/images/business.jpg", href: "/business-deals", icon: GridIcon },
   investments: { src: "/images/areas-investments-tower.jpg", href: "/investments", icon: BarsGlyph },
   events: { src: "/images/areas-events-stage.jpg", href: "/events", icon: CalendarIcon },
   insights: { src: "/images/areas-insights-desk.jpg", href: "/marketplace", icon: BulbGlyph },
-  impact: { src: "/images/areas-impact-mountain.jpg", href: "/how-it-works", icon: GlobeGlyph },
 };
 
 export function HomeContent() {
   const { t } = useI18n();
   usePageMeta(t.meta.title, t.meta.description);
-
-  const areaKeys: AreaKey[] = [
-    "network",
-    "opportunities",
-    "jobs",
-    "investments",
-    "marketplace",
-    "events",
-  ];
-
-  const areaContent: Record<AreaKey, { title: string; text: string; short: string }> = {
-    network: {
-      title: t.home2.enablesNetworkTitle,
-      text: t.home2.enablesNetworkText,
-      short: t.home2.enablesNetworkShort,
-    },
-    opportunities: {
-      title: t.home2.enablesOpportunitiesTitle,
-      text: t.home2.enablesOpportunitiesText,
-      short: t.home2.enablesOpportunitiesShort,
-    },
-    jobs: { title: t.home2.enablesJobsTitle, text: t.home2.enablesJobsText, short: t.home2.enablesJobsShort },
-    investments: {
-      title: t.home2.enablesInvestmentsTitle,
-      text: t.home2.enablesInvestmentsText,
-      short: t.home2.enablesInvestmentsShort,
-    },
-    marketplace: {
-      title: t.home2.enablesMarketplaceTitle,
-      text: t.home2.enablesMarketplaceText,
-      short: t.home2.enablesMarketplaceShort,
-    },
-    events: { title: t.home2.enablesEventsTitle, text: t.home2.enablesEventsText, short: t.home2.enablesEventsShort },
-  };
 
   const outcomes = [
     { key: "build", title: t.home2.outcomeBuildTitle, text: t.home2.outcomeBuildText, short: t.home2.outcomeBuildShort },
@@ -360,9 +291,14 @@ export function HomeContent() {
 
       {/* ------------------------------------------- sechs Kernbereiche */}
       <div id="areas" className="scroll-mt-20">
-      {/* Desktop (founder reference Bild 2, 2026-09-23). */}
-      <section className="hidden bg-[#0a1628] text-white lg:block">
-        <div className="mx-auto max-w-[1480px] px-8 pt-24 pb-12 xl:px-14">
+      {/* Desktop (founder reference Bild 2, finalized 2026-09-23): calm,
+          editorial, alternating image/text rows on deep navy. */}
+      <section className="relative hidden overflow-hidden bg-[#0a1628] text-white lg:block">
+        {/* deliberate seam: the light outcomes chapter closes into the dark
+            ecosystem chapter – soft top depth instead of a hard random cut */}
+        <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-56 bg-gradient-to-b from-[#050b16] to-transparent" />
+        <div className="relative mx-auto max-w-[1480px] px-8 pt-14 pb-12 xl:px-14">
+          <div aria-hidden="true" className="mx-auto mb-16 h-20 w-px bg-gradient-to-b from-white/0 via-white/40 to-white/15" />
           <div className="flex items-end justify-between gap-12 border-b border-white/15 pb-12">
             <div className="max-w-[640px]">
               <p className="text-[12px] font-medium uppercase tracking-[0.3em] text-electric-300">{t.home2.enablesKicker}</p>
@@ -395,7 +331,7 @@ export function HomeContent() {
                         width={1200}
                         height={700}
                         sizes="55vw"
-                        className="h-[340px] w-full object-cover transition-transform duration-700 group-hover:scale-[1.03] xl:h-[380px]"
+                        className="h-[360px] w-full object-cover transition-transform duration-700 group-hover:scale-[1.03] xl:h-[420px]"
                       />
                     </span>
                     <span className={`col-span-5 block ${reverse ? "order-1" : ""}`}>
@@ -407,7 +343,7 @@ export function HomeContent() {
                       <span className="mt-5 block font-serif text-[2.5rem] leading-[1.1] tracking-[-0.01em]">{item.title}</span>
                       <span className="mt-4 block max-w-[420px] text-[16px] leading-[1.65] text-white/70">{item.text}</span>
                       <span className="mt-7 inline-flex items-center gap-2 text-[14px] font-medium text-electric-300 group-hover:text-white">
-                        {t.home2.areasV3More}
+                        {t.home2.areasV3Cta}
                         <ArrowRightIcon size={15} className="transition-transform group-hover:translate-x-0.5" />
                       </span>
                     </span>
@@ -419,103 +355,55 @@ export function HomeContent() {
         </div>
       </section>
 
-      {/* Mobile/tablet – unchanged. */}
-      <Section bg="surface" width="wide" tight className="lg:hidden">
-        <Reveal>
-          <div className="flex flex-wrap items-end justify-between gap-4 sm:gap-6">
-            <div className="max-w-2xl">
-              <Kicker>{t.home2.enablesKicker}</Kicker>
-              <h2 className="mt-3 text-[1.6rem] font-bold tracking-tight sm:mt-4 sm:text-4xl lg:text-5xl">
-                {t.home2.enablesTitle}
-              </h2>
-              <p className="mt-4 hidden text-base leading-7 text-foreground-muted lg:block">{t.home2.enablesLead}</p>
-            </div>
-            <Link
-              href="/how-it-works"
-              className="group inline-flex items-center gap-1.5 text-sm font-semibold text-electric-600 transition-colors hover:text-electric-700 dark:text-electric-300"
-            >
-              {t.home2.howItWorksLink}
-              <ArrowRightIcon
-                size={15}
-                className="transition-transform duration-200 group-hover:translate-x-0.5"
-              />
-            </Link>
-          </div>
-        </Reveal>
+      {/* Mobile/tablet: the same editorial rows, compact and stacked
+          (Bild → Text), on deep navy – founder brief 2026-09-23. */}
+      <section className="relative overflow-hidden bg-[#0a1628] text-white lg:hidden">
+        <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-[#050b16] to-transparent" />
+        <div className="relative ic-shell-wide pt-12 pb-10 sm:pt-16 sm:pb-14">
+          <div aria-hidden="true" className="mx-auto mb-10 h-14 w-px bg-gradient-to-b from-white/0 via-white/40 to-white/15" />
+          <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-electric-300">{t.home2.enablesKicker}</p>
+          <h2 className="mt-3 font-serif text-[2.1rem] leading-[1.12] tracking-[-0.01em] sm:text-[2.6rem]">
+            {t.home2.enablesTitle}
+          </h2>
+          <p className="mt-4 max-w-xl text-[14.5px] leading-6 text-white/70 sm:text-[15.5px] sm:leading-7">
+            {t.home2.areasV3Lead}
+          </p>
 
-        {/* Mobile (Sprint 8): compact 2×3 overview – icon, title and one
-            benefit line per area. The whole tile is tappable; the detailed
-            images and copy stay on the area subpages (desktop rows below). */}
-        <ul className="mt-5 grid grid-cols-2 gap-2.5 sm:mt-6 sm:gap-3 lg:hidden">
-          {areaKeys.map((key) => {
-            const content = areaContent[key];
-            const Icon = areaIcons[key];
-            return (
-              <li key={key}>
-                <Link
-                  href={areaLinks[key]}
-                  className="flex h-full flex-col rounded-xl border border-border bg-background p-3 transition-colors hover:border-electric-500/40"
-                >
-                  <Icon size={18} className="text-electric-600 dark:text-electric-300" />
-                  <span className="mt-2 block text-[13px] font-bold leading-tight tracking-tight">
-                    {content.title}
-                  </span>
-                  <span className="mt-1 line-clamp-2 text-[11px] leading-4 text-foreground-muted">
-                    {content.short}
-                  </span>
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-
-        {/* Desktop: the approved image/text rows (unchanged). */}
-        <div className="mt-10 hidden lg:mt-12 lg:block">
-          {areaKeys.map((key, index) => {
-            const content = areaContent[key];
-            const image = areaImages[key];
-            const reverse = index % 2 === 1;
-            return (
-              <Reveal key={key} delay={index * 40}>
-                <Link
-                  href={areaLinks[key]}
-                  className="group grid items-center gap-6 border-t border-border py-7 sm:gap-10 sm:py-9 lg:grid-cols-12 lg:gap-14"
-                >
-                  <span
-                    className={`relative block overflow-hidden rounded-2xl bg-surface-muted lg:col-span-6 ${
-                      reverse ? "lg:order-2" : ""
-                    }`}
-                  >
-                    <Image
-                      src={image.src}
-                      alt=""
-                      width={900}
-                      height={560}
-                      sizes="(max-width: 1024px) 100vw, 46vw"
-                      className="h-44 w-full object-cover transition-transform duration-500 group-hover:scale-[1.03] sm:h-56 lg:h-64 xl:h-72"
-                    />
-                  </span>
-                  <span className={`lg:col-span-6 ${reverse ? "lg:order-1" : ""}`}>
-                    <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-foreground-subtle">
-                      0{index + 1}
+          <ol className="mt-4">
+            {t.home2.areasV3Items.map((item, index) => {
+              const v = areaV3Visuals[item.key as AreaV3Key];
+              const Icon = v.icon;
+              return (
+                <li key={item.key} className="border-t border-white/12 py-7 first:border-t-0 sm:py-8">
+                  <Link href={v.href} className="group block">
+                    <span className="block overflow-hidden rounded-md">
+                      <Image
+                        src={v.src}
+                        alt=""
+                        width={900}
+                        height={560}
+                        sizes="100vw"
+                        className="h-48 w-full object-cover transition-transform duration-500 group-hover:scale-[1.02] sm:h-60"
+                      />
                     </span>
-                    <span className="mt-2 block text-2xl font-bold tracking-tight sm:text-3xl">
-                      {content.title}
+                    <span className="mt-5 flex items-center gap-3 text-[11px] font-medium tracking-[0.3em] text-white/50">
+                      <span>0{index + 1}</span>
+                      <span aria-hidden="true" className="h-px w-8 bg-white/30" />
+                      <Icon size={17} className="text-white/80" />
                     </span>
-                    <span className="mt-3 block max-w-xl text-sm leading-7 text-foreground-muted sm:text-base">
-                      {content.text}
+                    <span className="mt-3 block font-serif text-[1.65rem] leading-tight sm:text-[1.9rem]">{item.title}</span>
+                    <span className="mt-2 block max-w-md text-[14px] leading-6 text-white/70 sm:text-[15px]">{item.text}</span>
+                    <span className="mt-3.5 inline-flex items-center gap-2 text-[13.5px] font-medium text-electric-300 group-hover:text-white">
+                      {t.home2.areasV3Cta}
+                      <ArrowRightIcon size={14} className="transition-transform group-hover:translate-x-0.5" />
                     </span>
-                    <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-electric-600 dark:text-electric-300">
-                      {t.common.discover}
-                      <ArrowRightIcon size={14} />
-                    </span>
-                  </span>
-                </Link>
-              </Reveal>
-            );
-          })}
+                  </Link>
+                </li>
+              );
+            })}
+          </ol>
         </div>
-      </Section>
+      </section>
       </div>
 
       {/* --------------------------------------------------------- events */}
@@ -525,7 +413,7 @@ export function HomeContent() {
             <div className="relative overflow-hidden rounded-2xl">
               <Image
                 src="/images/events-experience.jpg"
-                alt={areaImages.events.alt}
+                alt="Networking-Abend auf einer Dachterrasse"
                 width={1200}
                 height={760}
                 sizes="(max-width: 1024px) 100vw, 55vw"

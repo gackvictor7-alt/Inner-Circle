@@ -3,7 +3,9 @@
 **Diese Datei ist der verbindliche Einstiegspunkt für jeden Menschen und jeden
 KI-Agenten, der an diesem Repository arbeitet.**
 
-- **Stand:** 2026-09-22 (Incident-Fix post-Sprint-8: Produktions-500 auf
+- **Stand:** 2026-09-23 (Sprint 9 – alternierende Ecosystem-Sektion der Public
+Homepage (Desktop + Mobile) auf Basis des Checkpoints `arena/01a0ce9d`
+finalisiert, Details `10-design-freeze.md` 1.14; davor: Incident-Fix post-Sprint-8: Produktions-500 auf
   `/app` durch rohe `Date`-Binds in `forYouItems()` unter D1 behoben +
   D1-Regressionstest, Details K-20 in
   [`11-known-issues.md`](11-known-issues.md); Sprint 8 – Mobile Public Homepage radikal verkürzt,
@@ -67,14 +69,18 @@ Details: [`01-product.md`](01-product.md)
   - **Mobile (`<lg`):** radikal verkürzt – Hero (Headline + EIN kurzer Satz +
     CTA „INNER CIRCLE entdecken“ + kleine Zeile „48h Discovery starten“,
     Facts-Liste ausgeblendet) → 3 Outcomes (je Titel + 1 kurze Zeile) →
-    6 Kernbereiche als kompakte **2×3-Übersicht** (Icon + Titel + 1 Nutzenzeile,
-    tappt auf die Unterseite, keine Bilder) → Trust als kompakte 3-Punkte-Zeile
-    (keine große Marketing-Section) → Membership kompakt (Titel + beide Preise
-    in einer Zeile + CTA „48h Discovery starten“) → Footer (2-Spalten-Links
-    unter `sm`). **Keine** Events-/Kapital-/Final-CTA-Sections auf Mobile.
+    6 Kernbereiche als kompakte gestapelte editorial Rows auf Deep Navy
+    (Bild → Nummer → Serif-Titel → 1–2 Sätze → „Entdecken →“, tappt auf die
+    Unterseite; Sprint 9, ersetzt die Sprint-8-2×3-Übersicht) → Trust als
+    kompakte 3-Punkte-Zeile (keine große Marketing-Section) → Membership
+    kompakt (Titel + beide Preise in einer Zeile + CTA „48h Discovery
+    starten“) → Footer (2-Spalten-Links unter `sm`). **Keine** Events-/
+    Kapital-/Final-CTA-Sections auf Mobile.
   - **Desktop (`lg+`):** unverändert – Hero (beide Preise) → 3 Outcomes (volle
-    Sätze) → 6 Kernbereiche als reiche Bild-Text-Reihen (`hidden lg:block`) →
-    Events → Kapital-Hinweis → Membership (2-Spalten) → Final-CTA.
+    Sätze) → 6 Kernbereiche als alternierende editorial Rows auf Deep Navy
+    (Network → Business Deals → Jobs & Projekte → Investments → Events →
+    Insights, CTA „Entdecken →“, `hidden lg:block`, Sprint 9) → Events →
+    Kapital-Hinweis → Membership (2-Spalten) → Final-CTA.
   - Statisches Prerendering bleibt erhalten: keine Request-Time-Datenbankzugriffe.
 - `/network`, `/business-deals`, `/investments`, `/marketplace`, `/events`, `/membership`, `/portfolio` – Preview-Seiten mit statischem Content, nicht aktive Funktionen als „Demnächst verfügbar".
 - `/login`, `/register`, `/verify`, `/forgot-password`, `/reset-password` – Auth.

@@ -109,14 +109,15 @@ export const siteV2De = {
     areasV3Lead:
       "Kein Unterhaltungs-Feed: Kunden, Partner, Kapital, Wissen, Projekte und Abende, an denen Entscheidungen entstehen – in sechs Bereichen.",
     areasV3More: "Mehr erfahren",
+    areasV3Cta: "Entdecken",
     areasV3ImageAlt: "Zwei Business-Personen besprechen Kennzahlen auf einem Tablet in einem hellen Büro",
     areasV3Items: [
       { key: "network", title: "Network", text: "Finde Geschäftspartner, Kunden und Experten, die zu deinen Zielen passen." },
-      { key: "deals", title: "Business Deals", text: "Entdecke reale Projekte, Partnerschaften und Wachstumschancen." },
-      { key: "investments", title: "Investments", text: "Zugang zu Kapital und geprüften Investment-Chancen." },
-      { key: "events", title: "Events", text: "Exklusive Veranstaltungen für Gründer, Investoren und Vordenker." },
-      { key: "insights", title: "Insights", text: "Wissen, Perspektiven und Best Practices aus unserem Netzwerk." },
-      { key: "impact", title: "Impact", text: "Ein stärkeres Netzwerk. Bessere Unternehmen. Eine positivere Zukunft." },
+      { key: "deals", title: "Business Deals", text: "Entdecke reale Projekte, Partnerschaften und Geschäftschancen." },
+      { key: "jobs", title: "Jobs & Projekte", text: "Finde relevante Rollen, Projekte, Mandate und Zusammenarbeit." },
+      { key: "investments", title: "Investments", text: "Entdecke Investment Opportunities und Kapitalzugänge." },
+      { key: "events", title: "Events", text: "Exklusive eigene Veranstaltungen für Unternehmer, Investoren und relevante Partner." },
+      { key: "insights", title: "Insights", text: "Wissen, Perspektiven und Best Practices aus dem Netzwerk." },
     ],
     enablesTitle: "Was du hier konkret bekommst.",
     enablesLead:
@@ -421,14 +422,15 @@ export const siteV2En: SiteV2Dict = {
     areasV3Lead:
       "No entertainment feed: customers, partners, capital, knowledge, projects and evenings where decisions are made – in six areas.",
     areasV3More: "Learn more",
+    areasV3Cta: "Explore",
     areasV3ImageAlt: "Two business people reviewing figures on a tablet in a bright office",
     areasV3Items: [
       { key: "network", title: "Network", text: "Find business partners, customers and experts who match your goals." },
-      { key: "deals", title: "Business Deals", text: "Discover real projects, partnerships and growth opportunities." },
-      { key: "investments", title: "Investments", text: "Access to capital and reviewed investment opportunities." },
-      { key: "events", title: "Events", text: "Exclusive events for founders, investors and thought leaders." },
-      { key: "insights", title: "Insights", text: "Knowledge, perspectives and best practices from our network." },
-      { key: "impact", title: "Impact", text: "A stronger network. Better companies. A more positive future." },
+      { key: "deals", title: "Business Deals", text: "Discover real projects, partnerships and business opportunities." },
+      { key: "jobs", title: "Jobs & Projects", text: "Find relevant roles, projects, mandates and collaboration." },
+      { key: "investments", title: "Investments", text: "Discover investment opportunities and access to capital." },
+      { key: "events", title: "Events", text: "Exclusive in-house events for entrepreneurs, investors and relevant partners." },
+      { key: "insights", title: "Insights", text: "Knowledge, perspectives and best practices from the network." },
     ],
     enablesTitle: "What you actually get here.",
     enablesLead:
