@@ -3,7 +3,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import { connectionRequests, connections } from "@/db/schema";
 import { loadUserContext } from "@/db/queries";
-import { startTrial } from "@/lib/trial/service";
+import { activateMembership } from "@/lib/membership/service";
 import { createTestUser, deleteTestUser, notificationsFor } from "../helpers";
 
 vi.mock("next/navigation", () => ({
@@ -36,11 +36,15 @@ afterEach(async () => {
   await Promise.all(created.splice(0).map((id) => deleteTestUser(id)));
 });
 
+/**
+ * Sprint 11: real follow/connect/withdraw flows need a confirmed membership –
+ * the 48 h discovery trial is a demo without member capabilities. The
+ * fixtures therefore use development-activated members.
+ */
 async function trialUser(name: string) {
   const id = await createTestUser({ firstName: name, lastName: "Person" });
   created.push(id);
-  const trial = await startTrial(id);
-  expect(trial.ok).toBe(true);
+  await activateMembership({ userId: id, plan: "monthly", provider: "dev" });
   return id;
 }
 

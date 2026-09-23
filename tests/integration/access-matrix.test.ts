@@ -12,8 +12,12 @@ import { createTestUser, deleteTestUser, trialFor } from "../helpers";
  * founder brief against the server-side authorization of the platform.
  *
  *   1 visitor · 2 signed in but unverified · 3 verified free (no trial, no
- *   membership) · 4 active 48 h discovery trial · 5 expired trial without
- *   membership · 6 active paid membership · 7 admin
+ *   membership) · 4 active 48 h discovery demo (trial) · 5 expired demo
+ *   without membership · 6 active paid membership · 7 admin
+ *
+ * Sprint 11: state 4 is a DEMO – it has no real member capability at all
+ * (no directory, discover, deals, jobs, investments, follow or connect). The
+ * pages render the labelled demo instead of member data.
  *
  * Every assertion runs against the real server actions / `getAccessContext()`
  * with a doubled session – never against UI state. The matrix mirrors
@@ -54,6 +58,7 @@ import { submitMembershipApplicationAction } from "@/app/actions/membership";
 import { setUserSuspendedAction } from "@/app/actions/admin";
 import { initialActionState, type ActionState } from "@/app/actions/state";
 import { LockedArea } from "@/components/app/LockedArea";
+import { DemoAreaNotice } from "@/components/app/DemoAreaNotice";
 import NetworkPage from "@/app/(app)/app/network/page";
 import JobsPage from "@/app/(app)/app/jobs/page";
 import OpportunitiesPage from "@/app/(app)/app/opportunities/page";
@@ -155,20 +160,27 @@ describe("access levels resolve server-side for every account state", () => {
     expect(access.entitlements.billing).toBe(true);
   });
 
-  it("4 trial: active 48 h discovery → trial with read rights and limited connect", async () => {
+  it("4 trial: active 48 h discovery demo → demo access only, no real member capability", async () => {
     const access = await as("trial");
     expect(access.level).toBe("trial");
     expect(access.trial?.active).toBe(true);
     expect(access.trial?.msRemaining).toBeGreaterThan(47 * 3_600_000);
-    expect(access.entitlements.networkDirectory).toBe(true);
-    expect(access.entitlements.opportunitiesBrowse).toBe(true);
-    expect(access.entitlements.investmentsBrowse).toBe(true);
-    expect(access.entitlements.connect).toBe("limited");
+    expect(access.entitlements.demoAccess).toBe(true);
+    expect(access.entitlements.networkDirectory).toBe(false);
+    expect(access.entitlements.networkDiscover).toBe(false);
+    expect(access.entitlements.opportunitiesBrowse).toBe(false);
+    expect(access.entitlements.opportunitiesApply).toBe(false);
+    expect(access.entitlements.investmentsBrowse).toBe(false);
+    expect(access.entitlements.follow).toBe(false);
+    expect(access.entitlements.connect).toBe("no");
     expect(access.entitlements.messaging).toBe(false);
     expect(access.entitlements.postCreate).toBe(false);
     expect(access.entitlements.marketplaceSell).toBe(false);
     expect(access.entitlements.profileFull).toBe(false);
     expect(access.entitlements.memberCard).toBe(false);
+    // Real events stay readable, registration is part of the membership.
+    expect(access.entitlements.eventsBrowse).toBe(true);
+    expect(access.entitlements.eventsApply).toBe(false);
   });
 
   it("5 expired trial: lazily set to 'expired' and demoted to free on the next request, no restart", async () => {
@@ -177,6 +189,7 @@ describe("access levels resolve server-side for every account state", () => {
     expect(access.trial?.active).toBe(false);
     expect(access.trial?.status).toBe("expired");
     expect((await trialFor(accounts.expired))?.status).toBe("expired");
+    expect(access.entitlements.demoAccess).toBe(false);
     expect(access.entitlements.networkDirectory).toBe(false);
     expect(access.entitlements.connect).toBe("no");
 
@@ -189,6 +202,11 @@ describe("access levels resolve server-side for every account state", () => {
     const access = await as("member");
     expect(access.level).toBe("member");
     expect(access.membership?.active).toBe(true);
+    expect(access.entitlements.demoAccess).toBe(false);
+    expect(access.entitlements.networkDirectory).toBe(true);
+    expect(access.entitlements.opportunitiesBrowse).toBe(true);
+    expect(access.entitlements.investmentsBrowse).toBe(true);
+    expect(access.entitlements.eventsApply).toBe(true);
     expect(access.entitlements.messaging).toBe(true);
     expect(access.entitlements.postCreate).toBe(true);
     expect(access.entitlements.connect).toBe("unlimited");
@@ -232,8 +250,8 @@ describe("write actions: accounts without valid access are refused server-side",
     });
   }
 
-  for (const state of ["unverified", "free", "expired"] as StateKey[]) {
-    it(`${state}: trial-level actions (follow, connect, apply, event, investment interest) are refused`, async () => {
+  for (const state of ["unverified", "free", "expired", "trial"] as StateKey[]) {
+    it(`${state}: member actions (follow, connect, apply, event, investment interest) are refused`, async () => {
       currentUserId = accounts[state];
 
       const follow = await followAction(initialActionState, form({ userId: target }));
@@ -249,7 +267,7 @@ describe("write actions: accounts without valid access are refused server-side",
         initialActionState,
         form({ opportunityId: "x", reason: "Ich bringe zehn Jahre Vertriebserfahrung mit." }),
       );
-      expect(["trialRequired", "verificationRequired"]).toContain(errorCode(apply));
+      expect(["membershipRequired", "verificationRequired"]).toContain(errorCode(apply));
 
       const event = await applyToEventAction(initialActionState, form({ eventId: "x" }));
       expect(["membershipRequired", "verificationRequired"]).toContain(errorCode(event));
@@ -267,17 +285,17 @@ describe("write actions: accounts without valid access are refused server-side",
     expect(errorCode(event)).toBe("verificationRequired");
   });
 
-  it("trial: may follow and send a limited number of connection requests, nothing paid", async () => {
+  it("trial: the discovery demo never creates a real follow or connection request", async () => {
     currentUserId = accounts.trial;
     const follow = await followAction(initialActionState, form({ userId: target }));
-    expect(follow.status).toBe("success");
+    expect(errorCode(follow)).toBe("membershipRequired");
 
     const connect = await sendConnectionRequestAction(
       initialActionState,
       form({ userId: target, message: "Ich möchte mich gerne mit dir zu B2B-Vertrieb austauschen." }),
     );
-    expect(connect.status).toBe("success");
-    expect((await trialFor(accounts.trial))?.connectionRequestsUsed).toBe(1);
+    expect(errorCode(connect)).toBe("membershipRequired");
+    expect((await trialFor(accounts.trial))?.connectionRequestsUsed).toBe(0);
   });
 
   it("member: paid actions pass the entitlement gate (later failures are validation/data only)", async () => {
@@ -344,7 +362,7 @@ describe("page-level read access of the gated member areas", () => {
     });
   }
 
-  for (const state of ["trial", "member", "admin"] as StateKey[]) {
+  for (const state of ["member", "admin"] as StateKey[]) {
     it(`${state}: the same pages render their content`, async () => {
       currentUserId = accounts[state];
       const pages = await renderGatedPages();
@@ -353,6 +371,43 @@ describe("page-level read access of the gated member areas", () => {
       }
     });
   }
+
+  /** Walks a server-rendered element tree and returns every element type + serialisable props. */
+  function collect(node: unknown, out: { type: unknown; props: Record<string, unknown> }[] = []) {
+    if (Array.isArray(node)) {
+      for (const child of node) collect(child, out);
+      return out;
+    }
+    if (node && typeof node === "object" && "props" in node) {
+      const element = node as { type: unknown; props: Record<string, unknown> };
+      out.push(element);
+      collect(element.props.children, out);
+    }
+    return out;
+  }
+
+  it("trial (discovery demo): directory, jobs and deals render the labelled demo – detail pages and member profiles stay locked", async () => {
+    currentUserId = accounts.trial;
+    const pages = await renderGatedPages();
+    // Real detail pages / profiles: locked exactly like a free account.
+    expect(isLocked(pages.profile), "profile").toBe(true);
+    if (pages.opportunityDetail) expect(isLocked(pages.opportunityDetail), "opportunityDetail").toBe(true);
+    if (pages.investmentDetail) expect(isLocked(pages.investmentDetail), "investmentDetail").toBe(true);
+
+    // List pages: not the locked screen but the demo – marked with the notice.
+    for (const name of ["network", "jobs", "opportunities"] as const) {
+      const element = pages[name];
+      expect(isLocked(element), name).toBe(false);
+      const elements = collect(element);
+      expect(elements.some((item) => item.type === DemoAreaNotice), `${name} carries the demo notice`).toBe(true);
+      // No real member reaches the tree: the target user's handle never appears.
+      const [targetUser] = await db.select({ handle: users.handle }).from(users).where(eq(users.id, target)).limit(1);
+      const serialised = JSON.stringify(elements.map((item) => item.props), (_key, value) =>
+        typeof value === "function" || (value && typeof value === "object" && "$$typeof" in value) ? undefined : value,
+      );
+      expect(serialised.includes(targetUser!.handle!), `${name} leaks a real handle`).toBe(false);
+    }
+  });
 
   it("free: the own profile stays reachable", async () => {
     currentUserId = accounts.free;
