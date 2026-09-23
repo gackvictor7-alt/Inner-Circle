@@ -7,12 +7,16 @@ import type { ReactNode } from "react";
  * Accessible dropdown menu (used for language/theme selection and context
  * menus). Keyboard: Escape closes, ArrowUp/Down cycle, Enter/Space select.
  */
+const defaultTriggerClassName =
+  "inline-flex h-10 items-center gap-2 rounded-full border border-border bg-surface px-3.5 text-sm font-medium text-foreground-muted transition-colors hover:border-border-strong hover:bg-surface-muted hover:text-foreground";
+
 export function Dropdown({
   label,
   trigger,
   children,
   align = "end",
   menuLabel,
+  triggerClassName = defaultTriggerClassName,
 }: {
   /** Accessible label for the trigger button. */
   label: string;
@@ -22,6 +26,8 @@ export function Dropdown({
   children: (close: () => void) => ReactNode;
   align?: "start" | "end";
   menuLabel?: string;
+  /** Replaces the default pill styling of the trigger (e.g. to match a header's own pills). */
+  triggerClassName?: string;
 }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -54,7 +60,7 @@ export function Dropdown({
         aria-controls={open ? menuId : undefined}
         aria-label={label}
         onClick={() => setOpen((v) => !v)}
-        className="inline-flex h-10 items-center gap-2 rounded-full border border-border bg-surface px-3.5 text-sm font-medium text-foreground-muted transition-colors hover:border-border-strong hover:bg-surface-muted hover:text-foreground"
+        className={triggerClassName}
       >
         {trigger}
       </button>

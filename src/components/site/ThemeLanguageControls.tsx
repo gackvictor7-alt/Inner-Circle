@@ -14,15 +14,35 @@ export const localeShort: Record<Locale, string> = { de: "DE", en: "EN" };
 export const localeFlags: Record<Locale, string> = { de: "🇩🇪", en: "🇬🇧" };
 
 /**
+ * Pill styling of the VENTURE & PARTNERS desktop header (same height, type
+ * and colours as its "Login" pill) – used when `variant="desktopHeader"`.
+ */
+const desktopHeaderTrigger =
+  "inline-flex h-11 items-center gap-2 whitespace-nowrap rounded-full border border-border px-3.5 text-[13px] font-medium text-[#0a1a33] transition-colors hover:bg-surface-muted dark:text-paper-50";
+
+/**
  * Language + appearance controls (shared by desktop header and mobile menu).
  * Language toggle and light/dark/system switch from Step 01, kept intact.
  * Founder request 2026-09-21: the chooser shows flag + written language name
  * next to the short code; the switching logic and `ic-locale` persistence
  * (see `src/lib/i18n/context.tsx`) are unchanged.
+ *
+ * `variant="desktopHeader"` (2026-09-23): the same two menus – 🇩🇪 Deutsch /
+ * 🇬🇧 English and Hell / Dunkel / System – rendered as the desktop header's
+ * pills. The triggers stay compact (globe + DE/EN, theme icon) because the
+ * double branding, six navigation links and the two call-to-action pills
+ * have to share one row down to 1280 px; the full labels live in the menus.
  */
-export function ThemeLanguageControls({ compact = false }: { compact?: boolean }) {
+export function ThemeLanguageControls({
+  compact = false,
+  variant = "default",
+}: {
+  compact?: boolean;
+  variant?: "default" | "desktopHeader";
+}) {
   const { locale, setLocale, t } = useI18n();
   const { theme, setTheme } = useTheme();
+  const desktopHeader = variant === "desktopHeader";
 
   const themeIcon =
     theme === "light" ? <SunIcon size={16} /> : theme === "dark" ? <MoonIcon size={16} /> : <MonitorIcon size={16} />;
@@ -35,18 +55,29 @@ export function ThemeLanguageControls({ compact = false }: { compact?: boolean }
     { value: "system", label: t.nav.themeSystem, icon: <MonitorIcon size={16} /> },
   ];
 
+  const triggerClassName = desktopHeader ? desktopHeaderTrigger : undefined;
+
   return (
     <div className="flex items-center gap-2">
       <Dropdown
         label={t.nav.languageSwitch}
         menuLabel={t.nav.languageLabel}
+        triggerClassName={triggerClassName}
         trigger={
-          <>
-            <GlobeIcon size={16} className="hidden sm:inline" />
-            <span aria-hidden="true">{localeFlags[locale]}</span>
-            <span className={compact ? "sr-only sm:not-sr-only sm:inline" : "hidden lg:inline"}>{localeLabels[locale]}</span>
-            <span className={compact ? "inline sm:hidden" : "hidden"}>{localeShort[locale]}</span>
-          </>
+          desktopHeader ? (
+            <>
+              <GlobeIcon size={17} />
+              <span>{localeShort[locale]}</span>
+              <span className="sr-only">{localeLabels[locale]}</span>
+            </>
+          ) : (
+            <>
+              <GlobeIcon size={16} className="hidden sm:inline" />
+              <span aria-hidden="true">{localeFlags[locale]}</span>
+              <span className={compact ? "sr-only sm:not-sr-only sm:inline" : "hidden lg:inline"}>{localeLabels[locale]}</span>
+              <span className={compact ? "inline sm:hidden" : "hidden"}>{localeShort[locale]}</span>
+            </>
+          )
         }
       >
         {(close) =>
@@ -71,11 +102,19 @@ export function ThemeLanguageControls({ compact = false }: { compact?: boolean }
       <Dropdown
         label={t.nav.themeSwitch}
         menuLabel={t.nav.themeLabel}
+        triggerClassName={triggerClassName}
         trigger={
-          <>
-            {themeIcon}
-            <span className="hidden xl:inline">{themeText}</span>
-          </>
+          desktopHeader ? (
+            <>
+              {themeIcon}
+              <span className="sr-only">{themeText}</span>
+            </>
+          ) : (
+            <>
+              {themeIcon}
+              <span className="hidden xl:inline">{themeText}</span>
+            </>
+          )
         }
       >
         {(close) =>
