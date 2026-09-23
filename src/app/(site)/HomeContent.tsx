@@ -150,16 +150,20 @@ export function HomeContent() {
         </div>
       </section>
 
-      {/* ------------------------------------------- mobile/tablet hero (unchanged) */}
+      {/* ------------------------------------------- mobile/tablet hero
+          Same approved imagery as the desktop hero (`hero-alpine.jpg`, 2026-09-23);
+          layout, copy, CTAs and compact height unchanged. The 2.33:1 asset is
+          cropped towards the group on the right so the people – not an empty
+          mountain slope – carry the 390 px viewport. */}
       <div className="relative isolate overflow-hidden border-b border-border/70 lg:hidden">
         <Image
-          src="/images/hero-home.jpg"
-          alt={t.home2.heroImageAlt}
+          src="/images/hero-alpine.jpg"
+          alt={t.home2.heroV3ImageAlt}
           priority
-          width={1600}
-          height={1000}
+          width={1915}
+          height={821}
           sizes="100vw"
-          className="absolute inset-0 -z-10 h-full w-full object-cover"
+          className="absolute inset-0 -z-10 h-full w-full object-cover object-[55%_50%] sm:object-[60%_45%]"
         />
         <div
           aria-hidden="true"
