@@ -74,6 +74,51 @@ const areaIcons: Record<AreaKey, (props: { size?: number; className?: string }) 
  * es, Trust, Portfolio-Teaser) now lives on /how-it-works. Static prerender
  * only: no request-time data, no access context.
  */
+function GlobeGlyph({ size = 24, className }: { size?: number; className?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.3" className={className} aria-hidden="true">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M3 12h18M12 3c2.8 2.8 2.8 15.2 0 18M12 3c-2.8 2.8-2.8 15.2 0 18M5 7.5h14M5 16.5h14" />
+    </svg>
+  );
+}
+
+function BarsGlyph({ size = 24, className }: { size?: number; className?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" className={className} aria-hidden="true">
+      <path d="M5 20v-5h2.5v5M9.5 20v-8H12v8M14 20v-11h2.5v11M18.5 20V5H21v15" />
+    </svg>
+  );
+}
+
+function BulbGlyph({ size = 24, className }: { size?: number; className?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" className={className} aria-hidden="true">
+      <path d="M9 17.5h6M9.5 20h5M12 3a6 6 0 0 0-3.6 10.8c.7.6 1.1 1.4 1.1 2.2v1.5h5V16c0-.8.4-1.6 1.1-2.2A6 6 0 0 0 12 3Z" />
+    </svg>
+  );
+}
+
+function HandshakeGlyph({ size = 24, className }: { size?: number; className?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+      <path d="M2 9.5 5 7l3 1.2L11 7l2.5 1M22 9.5 19 7l-3 1.2M8 8.2l-2.5 4.3M16 8.2l2.5 4.3M11 7l-2.2 3a1.2 1.2 0 0 0 1.9 1.4L12.5 10l4 3.5a1 1 0 0 1-1.4 1.5l-1.6-1.4M15.1 15l-1.5-1.3M13.6 16.4l-1.4-1.2M12 17.6l-1.2-1M5.5 12.5l4.2 4.2" />
+    </svg>
+  );
+}
+
+type AreaV3Key = "network" | "deals" | "investments" | "events" | "insights" | "impact";
+
+/** Desktop 2×3 area grid (Bild 2). Insights → /marketplace, Impact → /how-it-works (existing pages, no dead links). */
+const areaV3Visuals: Record<AreaV3Key, { src: string; href: string; icon: (p: { size?: number; className?: string }) => React.JSX.Element }> = {
+  network: { src: "/images/network.jpg", href: "/network", icon: UsersIcon },
+  deals: { src: "/images/business-deal.jpg", href: "/business-deals", icon: HandshakeGlyph },
+  investments: { src: "/images/areas-investments-tower.jpg", href: "/investments", icon: BarsGlyph },
+  events: { src: "/images/areas-events-stage.jpg", href: "/events", icon: CalendarIcon },
+  insights: { src: "/images/areas-insights-desk.jpg", href: "/marketplace", icon: BulbGlyph },
+  impact: { src: "/images/areas-impact-mountain.jpg", href: "/how-it-works", icon: GlobeGlyph },
+};
+
 export function HomeContent() {
   const { t } = useI18n();
   usePageMeta(t.meta.title, t.meta.description);
@@ -120,8 +165,62 @@ export function HomeContent() {
 
   return (
     <>
-      {/* ------------------------------------------------------------ hero */}
-      <div className="relative isolate overflow-hidden border-b border-border/70">
+      {/* ------------------------------------------------ desktop hero (V&P) */}
+      <section className="relative isolate hidden overflow-hidden bg-midnight-950 lg:block">
+        <Image
+          src="/images/hero-alpine.jpg"
+          alt={t.home2.heroV3ImageAlt}
+          priority
+          width={1568}
+          height={672}
+          sizes="100vw"
+          className="absolute inset-0 -z-10 h-full w-full object-cover object-[60%_35%]"
+        />
+        <div aria-hidden="true" className="absolute inset-0 -z-10 bg-gradient-to-r from-[#07111f]/75 via-[#07111f]/30 to-transparent" />
+        <div aria-hidden="true" className="absolute inset-x-0 bottom-0 -z-10 h-2/5 bg-gradient-to-t from-[#07111f]/90 via-[#07111f]/50 to-transparent" />
+        <div className="relative mx-auto flex min-h-[calc(100svh-76px)] max-h-[900px] min-h-[720px] max-w-[1480px] flex-col px-8 xl:px-14">
+          <div className="flex flex-1 items-center justify-between gap-10 pt-16 pb-10">
+            <div className="min-w-0 flex-1">
+              <p className="text-[13px] font-medium tracking-[0.35em] text-white/90">{t.home2.heroV3Kicker}</p>
+              <h1 className="mt-5 font-serif whitespace-nowrap text-[4.5rem] font-normal leading-[1.02] tracking-[-0.02em] text-white xl:text-[5.5rem]">
+                <span className="block whitespace-nowrap">{t.home2.heroV3TitleA}</span>
+                <span className="block whitespace-nowrap">{t.home2.heroV3TitleB}</span>
+              </h1>
+              <p className="mt-7 max-w-[540px] text-[20px] leading-[1.5] text-white/90">{t.home2.heroV3Lead}</p>
+              <div className="mt-9 flex items-center gap-4">
+                <Link href="/app" className="flex h-[52px] items-center gap-3 rounded-full bg-electric-500 px-8 font-serif text-[17px] text-white hover:bg-electric-600">
+                  {t.home2.heroV3CtaPrimary}
+                  <ArrowRightIcon size={18} />
+                </Link>
+                <Link href="#outcomes" className="flex h-[52px] items-center rounded-full border border-white/80 px-10 font-serif text-[17px] text-white hover:bg-white/10">
+                  {t.home2.heroV3CtaSecondary}
+                </Link>
+              </div>
+            </div>
+            <div className="self-end pb-4 text-[13px] font-medium leading-[1.9] tracking-[0.3em] text-white/90">
+              {t.home2.heroV3Claims.map((c) => (
+                <p key={c}>{c}</p>
+              ))}
+              <span aria-hidden="true" className="mt-4 block h-px w-10 bg-white/70" />
+            </div>
+          </div>
+          <ul className="grid grid-cols-4 pb-10 text-center text-white">
+            {t.home2.heroV3Pillars.map((p, i) => {
+              const Icon = [UsersIcon, SparkleIcon, ChartIcon, GlobeGlyph][i];
+              return (
+                <li key={p.title} className={`flex flex-col items-center px-6 ${i > 0 ? "border-l border-white/40" : ""}`}>
+                  <Icon size={34} className="text-white" />
+                  <p className="mt-4 text-[12.5px] font-semibold tracking-[0.3em]">{p.title}</p>
+                  <p className="mt-2 max-w-[250px] text-[14.5px] leading-snug text-white/85">{p.text}</p>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      </section>
+
+      {/* ------------------------------------------- mobile/tablet hero (unchanged) */}
+      <div className="relative isolate overflow-hidden border-b border-border/70 lg:hidden">
         <Image
           src="/images/hero-home.jpg"
           alt={t.home2.heroImageAlt}
@@ -196,7 +295,45 @@ export function HomeContent() {
       </div>
 
       {/* ------------------------------------------------ drei Ergebnisse */}
-      <Section bg="default" id="outcomes" tight>
+      <div id="outcomes" className="scroll-mt-20">
+      {/* Desktop (founder reference Bild 2, 2026-09-23). */}
+      <section className="hidden border-b border-[#0a1a33]/10 bg-[#f8f7f3] dark:bg-midnight-950 lg:block">
+        <div className="mx-auto max-w-[1480px] px-8 pt-16 pb-14 xl:px-14">
+          <div className="grid grid-cols-[auto_minmax(0,1fr)] items-end gap-16">
+            <div>
+              <p className="text-[12px] font-medium uppercase tracking-[0.3em] text-electric-600 dark:text-electric-300">
+                {t.home2.outcomeKicker}
+              </p>
+              <h2 className="mt-4 whitespace-nowrap font-serif text-[3.25rem] font-normal leading-[1.05] tracking-[-0.02em] text-[#0a1a33] dark:text-paper-50 xl:text-[3.75rem]">
+                {t.home2.outcomeTitle}
+              </h2>
+            </div>
+            <p className="ml-auto max-w-[480px] pb-2 font-serif text-[18px] leading-[1.6] text-[#0a1a33]/75 dark:text-paper-50/75">
+              {t.home2.outcomeV3Lead}
+            </p>
+          </div>
+          <ul className="mt-10 grid grid-cols-3 border-t border-[#0a1a33]/12 pt-10 dark:border-white/15">
+            {t.home2.outcomeV3Items.map((item, i) => {
+              const Icon = [UsersIcon, BarsGlyph, BulbGlyph][i];
+              return (
+                <li
+                  key={item.key}
+                  className={`flex items-start gap-6 ${i === 0 ? "pr-10" : "px-10"} ${i > 0 ? "border-l border-[#0a1a33]/12 dark:border-white/15" : ""}`}
+                >
+                  <Icon size={48} className="shrink-0 text-[#0a1a33] dark:text-paper-50" />
+                  <div>
+                    <p className="text-[12px] font-semibold uppercase tracking-[0.3em] text-electric-600 dark:text-electric-300">{item.title}</p>
+                    <p className="mt-3 max-w-[300px] font-serif text-[16px] leading-[1.6] text-[#0a1a33]/80 dark:text-paper-50/80">{item.text}</p>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      </section>
+
+      {/* Mobile/tablet – unchanged. */}
+      <Section bg="default" tight className="lg:hidden">
         <Reveal>
           <Kicker>{t.home2.outcomeKicker}</Kicker>
           <h2 className="mt-3 max-w-2xl text-[1.6rem] font-bold tracking-tight sm:mt-4 sm:text-4xl lg:text-5xl">
@@ -219,9 +356,71 @@ export function HomeContent() {
           ))}
         </div>
       </Section>
+      </div>
 
       {/* ------------------------------------------- sechs Kernbereiche */}
-      <Section bg="surface" id="areas" width="wide" tight>
+      <div id="areas" className="scroll-mt-20">
+      {/* Desktop (founder reference Bild 2, 2026-09-23). */}
+      <section className="hidden bg-[#0a1628] text-white lg:block">
+        <div className="mx-auto max-w-[1480px] px-8 pt-24 pb-12 xl:px-14">
+          <div className="flex items-end justify-between gap-12 border-b border-white/15 pb-12">
+            <div className="max-w-[640px]">
+              <p className="text-[12px] font-medium uppercase tracking-[0.3em] text-electric-300">{t.home2.enablesKicker}</p>
+              <h2 className="mt-5 font-serif text-[3.5rem] font-normal leading-[1.06] tracking-[-0.02em] xl:text-[4rem]">
+                {t.home2.enablesTitle}
+              </h2>
+              <p className="mt-6 max-w-[540px] text-[17px] leading-[1.65] text-white/70">{t.home2.areasV3Lead}</p>
+            </div>
+            <Link
+              href="/how-it-works"
+              className="group mb-2 inline-flex shrink-0 items-center gap-2 text-[15px] font-medium text-electric-300 hover:text-white"
+            >
+              {t.home2.enablesCta}
+              <ArrowRightIcon size={16} className="transition-transform group-hover:translate-x-0.5" />
+            </Link>
+          </div>
+
+          <ol>
+            {t.home2.areasV3Items.map((item, index) => {
+              const v = areaV3Visuals[item.key as AreaV3Key];
+              const Icon = v.icon;
+              const reverse = index % 2 === 1;
+              return (
+                <li key={item.key} className="border-b border-white/15 last:border-b-0">
+                  <Link href={v.href} className="group grid grid-cols-12 items-center gap-16 py-14">
+                    <span className={`col-span-7 block overflow-hidden rounded-md ${reverse ? "order-2" : ""}`}>
+                      <Image
+                        src={v.src}
+                        alt=""
+                        width={1200}
+                        height={700}
+                        sizes="55vw"
+                        className="h-[340px] w-full object-cover transition-transform duration-700 group-hover:scale-[1.03] xl:h-[380px]"
+                      />
+                    </span>
+                    <span className={`col-span-5 block ${reverse ? "order-1" : ""}`}>
+                      <span className="flex items-center gap-4 text-[12px] font-medium tracking-[0.3em] text-white/50">
+                        <span>0{index + 1}</span>
+                        <span aria-hidden="true" className="h-px w-10 bg-white/30" />
+                        <Icon size={22} className="text-white/80" />
+                      </span>
+                      <span className="mt-5 block font-serif text-[2.5rem] leading-[1.1] tracking-[-0.01em]">{item.title}</span>
+                      <span className="mt-4 block max-w-[420px] text-[16px] leading-[1.65] text-white/70">{item.text}</span>
+                      <span className="mt-7 inline-flex items-center gap-2 text-[14px] font-medium text-electric-300 group-hover:text-white">
+                        {t.home2.areasV3More}
+                        <ArrowRightIcon size={15} className="transition-transform group-hover:translate-x-0.5" />
+                      </span>
+                    </span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ol>
+        </div>
+      </section>
+
+      {/* Mobile/tablet – unchanged. */}
+      <Section bg="surface" width="wide" tight className="lg:hidden">
         <Reveal>
           <div className="flex flex-wrap items-end justify-between gap-4 sm:gap-6">
             <div className="max-w-2xl">
@@ -317,6 +516,7 @@ export function HomeContent() {
           })}
         </div>
       </Section>
+      </div>
 
       {/* --------------------------------------------------------- events */}
       <Section bg="muted" id="events-feel" width="wide" tight className="hidden lg:block">

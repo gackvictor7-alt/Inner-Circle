@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useI18n } from "@/lib/i18n/context";
+import Image from "next/image";
 import { Logo } from "./Logo";
 import { ThemeLanguageControls, localeFlags, localeLabels } from "./ThemeLanguageControls";
 import { Button } from "@/components/ui/Button";
@@ -18,6 +19,16 @@ const navItems = [
   { href: "/marketplace", key: "marketplace" },
   { href: "/events", key: "events" },
   { href: "/membership", key: "membership" },
+] as const;
+
+/** Desktop navigation (founder spec). Insights → Academy/Marketplace, About → How it works (existing pages, no dead links). */
+const desktopNav = [
+  { href: "/network", key: "network" },
+  { href: "/business-deals", key: "businessDeals" },
+  { href: "/investments", key: "investments" },
+  { href: "/events", key: "events" },
+  { href: "/marketplace", key: "insights" },
+  { href: "/how-it-works", key: "about" },
 ] as const;
 
 function useScrollShadow() {
@@ -93,7 +104,66 @@ export function SiteHeader({ level = "visitor" as AccessLevel }: { level?: Acces
             : "border-transparent bg-background/70"
         }`}
       >
-        <div className="ic-shell flex h-16 items-center justify-between gap-4">
+        {/* Desktop header (VENTURE & PARTNERS, founder request 2026-09-23). */}
+        <div className="mx-auto hidden h-[76px] max-w-[1480px] items-center justify-between gap-4 px-6 lg:flex xl:px-8">
+          <Link href="/" aria-label="VENTURE & PARTNERS – INNER CIRCLE" className="flex items-center gap-5">
+            <span className="flex items-center gap-3">
+              <Image src="/brand/vp-monogram.png" alt="" width={48} height={48} className="h-12 w-12 object-contain" priority />
+              <span className="flex flex-col leading-none text-[#0a1a33] dark:text-paper-50">
+                <span className="whitespace-nowrap font-serif text-[18px] tracking-[0.08em]">VENTURE &amp; PARTNERS</span>
+                <span className="mt-1.5 whitespace-nowrap text-[7.5px] font-medium uppercase tracking-[0.2em] opacity-75">
+                  {t.home2.headerBrandTagline}
+                </span>
+              </span>
+            </span>
+            <span aria-hidden="true" className="h-9 w-px bg-border" />
+            <span className="flex items-center gap-2.5 text-[#0a1a33] dark:text-paper-50">
+              <span className="flex h-9 w-9 items-center justify-center rounded-full border-[2.5px] border-current font-serif text-[15px]">C</span>
+              <span className="flex flex-col leading-none">
+                <span className="whitespace-nowrap font-serif text-[14px] tracking-[0.16em]">INNER CIRCLE</span>
+                <span className="mt-1 whitespace-nowrap text-[6.5px] uppercase tracking-[0.22em] opacity-70">by VENTURE &amp; PARTNERS</span>
+              </span>
+            </span>
+          </Link>
+
+          <nav aria-label={t.brand.name} className="flex items-center gap-1 xl:gap-3">
+            {desktopNav.map((item) => (
+              <Link
+                key={item.key}
+                href={item.href}
+                aria-current={isActive(item.href) ? "page" : undefined}
+                className={`whitespace-nowrap px-2 py-2 text-[13px] font-medium transition-colors ${
+                  isActive(item.href) ? "text-[#0a1a33] underline underline-offset-8 dark:text-paper-50" : "text-[#0a1a33]/85 hover:text-[#0a1a33] dark:text-paper-50/80"
+                }`}
+              >
+                {t.home2.headerNav[item.key]}
+              </Link>
+            ))}
+          </nav>
+
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setLocale(locale === "de" ? "en" : "de")}
+              aria-label={t.nav.languageSwitch}
+              className="flex h-11 items-center gap-2 rounded-full border border-border px-4 text-[13px] font-medium text-[#0a1a33] hover:bg-surface-muted dark:text-paper-50"
+            >
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 2.5 15.3 0 18M12 3c-2.5 2.7-2.5 15.3 0 18"/></svg>
+              {locale.toUpperCase()}
+            </button>
+            {!signedIn && (
+              <Link href="/login" className="flex h-11 items-center rounded-full border border-border whitespace-nowrap px-5 font-serif text-[15px] text-[#0a1a33] hover:bg-surface-muted dark:text-paper-50">
+                {t.nav.login}
+              </Link>
+            )}
+            <Link href="/app" className="flex h-11 items-center rounded-full bg-[#0a1a33] whitespace-nowrap px-6 font-serif text-[15px] text-white hover:bg-[#13284a]">
+              {t.home2.headerToPlatform}
+            </Link>
+          </div>
+        </div>
+
+        {/* Mobile/tablet header – unchanged. */}
+        <div className="ic-shell flex h-16 items-center justify-between gap-4 lg:hidden">
           <Logo />
 
           <nav aria-label={t.brand.name} className="hidden items-center gap-1 lg:flex">

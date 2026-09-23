@@ -11,3 +11,10 @@ export const fontSans = localFont({
   variable: "--font-inter",
   display: "swap",
 });
+
+/** Brand serif (VENTURE & PARTNERS header/hero) – Libre Caslon Text, SIL OFL 1.1. */
+export const fontSerif = localFont({
+  src: "./fonts/LibreCaslonText-Regular.woff2",
+  variable: "--font-caslon",
+  display: "swap",
+});

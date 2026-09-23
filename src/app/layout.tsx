@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
-import { fontSans } from "./fonts";
+import { fontSans, fontSerif } from "./fonts";
 import { ThemeInitScript, ThemeProvider } from "@/components/ThemeProvider";
 import { I18nProvider } from "@/lib/i18n/context";
 import { dictionaries } from "@/lib/i18n/dictionaries";
@@ -37,7 +37,7 @@ export const viewport: Viewport = {
  */
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="de" suppressHydrationWarning className={fontSans.variable}>
+    <html lang="de" suppressHydrationWarning className={`${fontSans.variable} ${fontSerif.variable}`}>
       <head>
         <ThemeInitScript />
       </head>
