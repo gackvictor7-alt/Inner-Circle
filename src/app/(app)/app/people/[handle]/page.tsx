@@ -16,6 +16,7 @@ import { Card } from "@/components/ui/Card";
 import { RatingStars } from "@/components/ui/RatingStars";
 import { GlobeIcon, InstagramIcon, XSocialIcon } from "@/components/ui/icons";
 import { LocalizedPageHeader, Tr } from "@/components/app/localized";
+import { LockedArea } from "@/components/app/LockedArea";
 
 export const dynamic = "force-dynamic";
 
@@ -36,6 +37,13 @@ export default async function MemberProfilePage({ params }: { params: Promise<{ 
   if (!profile) notFound();
 
   const isSelf = profile.id === access.user.id;
+
+  // Member profiles are part of the directory (docs/06-permissions.md:
+  // Free ➖, Trial ⚠️ limited, Member ✅). Own profile stays visible.
+  if (!access.entitlements.networkDirectory && !isSelf) {
+    return <LockedArea access={access} icon="users" />;
+  }
+
   const [stats, trust, posts, connected, blocked, requestState, interestLabels] = await Promise.all([
     profileStats(profile.id),
     trustProfile(profile.id),

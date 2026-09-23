@@ -9,6 +9,7 @@ import { ActionForm, InlineAction, type FormField } from "@/components/app/forms
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { LocalizedPageHeader, Tr, LocalizedEmptyState } from "@/components/app/localized";
+import { LockedArea } from "@/components/app/LockedArea";
 
 export const dynamic = "force-dynamic";
 
@@ -34,6 +35,12 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
 
   const opportunity = row.opportunity;
   const isOwner = opportunity.ownerId === access.user.id || access.user.role === "admin";
+
+  // Detail pages follow the list (docs/06-permissions.md: browse = trial/member);
+  // owners keep access to their own listing after a membership lapses.
+  if (!access.entitlements.opportunitiesBrowse && !isOwner) {
+    return <LockedArea access={access} icon="briefcase" />;
+  }
 
   if (opportunity.status !== "published" && !isOwner) {
     return (

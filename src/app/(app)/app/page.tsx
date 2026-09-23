@@ -63,15 +63,28 @@ export default async function AppDashboardPage() {
 
   // "Für dich" (Sprint 8, TEIL E): a few real, currently relevant entries –
   // request, unread message, matching member, newest deal, event, investment.
-  const forYou = await forYouItems(
-    user.id,
-    user.interests.map((interest) => interest.slug),
-    user.locale === "en" ? "en" : "de",
-  );
+  // Entries are filtered by the viewer's entitlements so a free account is
+  // never pointed at member/trial-only content (directory, deals, investments).
+  const { entitlements } = access;
+  const forYou = (
+    await forYouItems(user.id, user.interests.map((interest) => interest.slug), user.locale === "en" ? "en" : "de")
+  ).filter((item) => {
+    switch (item.kind) {
+      case "person":
+        return entitlements.networkDirectory;
+      case "deal":
+        return entitlements.opportunitiesBrowse;
+      case "investment":
+        return entitlements.investmentsBrowse;
+      default:
+        return true;
+    }
+  });
 
   const data: DashboardData = {
     firstName: user.firstName,
     level: access.level,
+    trialExpired: access.trial?.status === "expired",
     trialMsRemaining: access.trial?.active ? access.trial.msRemaining : null,
     trialRequestsUsed: access.trial?.connectionRequestsUsed ?? 0,
     trialRequestLimit: access.trial?.connectionRequestLimit ?? 0,

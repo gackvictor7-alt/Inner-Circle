@@ -11,6 +11,7 @@ import {
 } from "@/lib/demo";
 import { dictionaries } from "@/lib/i18n/dictionaries";
 import { LocalizedEmptyState, LocalizedPageHeader, Tr } from "@/components/app/localized";
+import { LockedArea } from "@/components/app/LockedArea";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -33,6 +34,13 @@ export default async function NetworkPage({
   searchParams: Promise<{ q?: string; role?: string; interest?: string; location?: string; view?: string }>;
 }) {
   const access = await requireUser("/app/network");
+
+  // Directory is part of trial/membership (docs/06-permissions.md: Free ➖).
+  // Own connections and requests remain reachable via /app/inbox for every level.
+  if (!access.entitlements.networkDirectory) {
+    return <LockedArea access={access} icon="users" />;
+  }
+
   const params = await searchParams;
   const locale = access.user.locale === "en" ? "en" : "de";
   const dict = dictionaries[locale];

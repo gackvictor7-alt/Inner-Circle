@@ -150,16 +150,20 @@ export function HomeContent() {
         </div>
       </section>
 
-      {/* ------------------------------------------- mobile/tablet hero (unchanged) */}
+      {/* ------------------------------------------- mobile/tablet hero
+          Same approved imagery as the desktop hero (`hero-alpine.jpg`, 2026-09-23);
+          layout, copy, CTAs and compact height unchanged. The 2.33:1 asset is
+          cropped towards the group on the right so the people – not an empty
+          mountain slope – carry the 390 px viewport. */}
       <div className="relative isolate overflow-hidden border-b border-border/70 lg:hidden">
         <Image
-          src="/images/hero-home.jpg"
-          alt={t.home2.heroImageAlt}
+          src="/images/hero-alpine.jpg"
+          alt={t.home2.heroV3ImageAlt}
           priority
-          width={1600}
-          height={1000}
+          width={1915}
+          height={821}
           sizes="100vw"
-          className="absolute inset-0 -z-10 h-full w-full object-cover"
+          className="absolute inset-0 -z-10 h-full w-full object-cover object-[55%_50%] sm:object-[60%_45%]"
         />
         <div
           aria-hidden="true"
@@ -170,12 +174,14 @@ export function HomeContent() {
           <div className="max-w-3xl animate-fade-up lg:ml-[6%] xl:ml-[10%]">
             <Badge variant="electric" className="backdrop-blur-sm">
               <SparkleIcon size={14} />
-              {t.home2.heroKicker}
+              {t.home2.heroV3Kicker}
             </Badge>
+            {/* Sprint 10 (founder decision, option A): kicker + headline share the
+                approved desktop wording; lead, CTAs, hint and styling unchanged. */}
             <h1 className="mt-4 text-[1.85rem] font-bold leading-[1.12] tracking-tight text-paper-50 sm:mt-6 sm:text-6xl sm:leading-[1.05] lg:text-7xl">
-              {t.home2.heroTitleA}
+              {t.home2.heroV3TitleA}
               <br />
-              <span className="text-electric-300">{t.home2.heroTitleB}</span>
+              <span className="text-electric-300">{t.home2.heroV3TitleB}</span>
             </h1>
             <p className="mt-4 max-w-2xl text-[15px] leading-6 text-paper-50/85 sm:mt-6 sm:text-lg sm:leading-8">
               {t.home2.heroLead}

@@ -1,6 +1,6 @@
 # 06 – Zugangsstufen, Rollen & Berechtigungen (Ist-Zustand)
 
-**Stand:** 2026-09-21 · Quelle im Code: `src/lib/access/levels.ts` (Matrix,
+**Stand:** 2026-09-23 · Quelle im Code: `src/lib/access/levels.ts` (Matrix,
 client-safe) und `src/lib/access/server.ts` (Durchsetzung, serverseitig).
 Ersetzt das frühere Zielbild in `06-access-roles.md`.
 
@@ -104,6 +104,34 @@ Stufe. Es existiert weder eine Route (`/app/events/new` → 404) noch eine
 Server-Action mit `insert`/`update`/`delete` auf `events`. Der Create-Eintrag
 in der `AppShell` ist deaktiviert und verlinkt nichts. Abgesichert durch
 `tests/unit/event-permissions.test.ts`.
+
+### 3a. Seitenweise Durchsetzung für Free/abgelaufenen Trial (Zugangs-Audit nach PR #23)
+
+Ein Audit mit sieben getrennten Konten (anonym, unverifiziert, frei ohne Trial,
+aktiver Trial, abgelaufener Trial, Mitglied, Admin) ergab: Server Actions und
+API-Routen waren korrekt gesperrt, aber fünf **Seiten** lieferten für `free`
+Inhalte, die laut Matrix erst ab `trial` vorgesehen sind. Ist-Zustand seit dem
+Audit-Fix (`tests/integration/access-matrix.test.ts`, 25 Fälle):
+
+| Seite | Free / abgelaufener Trial | Trial | Member/Admin |
+| ----- | ------------------------- | ----- | ------------ |
+| `/app/network` (Verzeichnis) | Locked-State (`LockedArea`), keine Daten geladen | ✅ (12 pro Seite) | ✅ |
+| `/app/jobs` | Locked-State | ✅ | ✅ |
+| `/app/opportunities/[id]` | Locked-State (Owner ausgenommen) | ✅ | ✅ |
+| `/app/investments/[id]` | Locked-State | ✅ | ✅ |
+| `/app/people/[handle]` | Locked-State (eigenes Profil ausgenommen) | ⚠️ eingeschränkt | ✅ |
+| `/app` (Dashboard) | Kennzahlen/„Für dich“ nur für freigegebene Bereiche; statt Vollansicht ein Mitgliedschafts-Panel („Discovery-Zugang beendet“ bzw. „Teil der Vollmitgliedschaft“) + Events | ✅ mit Trial-Hinweis | ✅ |
+| `/app/billing` | ✅ – Planwahl-Buttons sind **deaktiviert**, solange weder Stripe konfiguriert noch Dev-Aktivierung erlaubt ist („Zahlung noch nicht freigeschaltet“); Paywall-Hinweis beschreibt den echten Kontostand (Trial-Text nur für aktiven Trial) | ✅ | ✅ |
+
+`LockedArea` (`src/components/app/LockedArea.tsx`) ist der gemeinsame
+Locked-State: Er ersetzt den Seiteninhalt vollständig (kein „Teaser“ mit
+echten Daten), unterscheidet abgelaufenen Trial und Free und verlinkt auf
+`/app/billing`. Die Entscheidung fällt weiterhin serverseitig über
+`access.entitlements.*`; ein Client-Umweg gibt es nicht.
+
+**Nicht verändert:** Registrierung, Verifizierung, Trial-Start (einmalig in
+`completeOnboardingAction`) und Trial-Ablauf (lazy expiry über
+`getAccessContext()`), Admin-Konsole.
 
 ## 4. Wo die Durchsetzung passiert (niemals nur in der UI)
 

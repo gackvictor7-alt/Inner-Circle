@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { LocalizedEmptyState, LocalizedPageHeader, Tr } from "@/components/app/localized";
+import { LockedArea } from "@/components/app/LockedArea";
 import { DealsDemoSection } from "@/components/app/DemoSections";
 
 export const dynamic = "force-dynamic";
@@ -21,14 +22,7 @@ export default async function OpportunitiesPage({
   const params = await searchParams;
 
   if (!access.entitlements.opportunitiesBrowse) {
-    return (
-      <LocalizedEmptyState
-        icon="briefcase"
-        titleKey="app.access.freeLockedTitle"
-        textKey="app.access.freeLockedText"
-        action={{ labelKey: "app.billing.upgradeCta", href: "/app/billing" }}
-      />
-    );
+    return <LockedArea access={access} icon="briefcase" />;
   }
 
   const rows = await db

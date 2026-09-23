@@ -440,6 +440,7 @@ export const appBusinessDe = {
     statusIncomplete: "Nicht abgeschlossen",
     statusNone: "Keine Mitgliedschaft",
     nextRenewal: "Verlängerung am {date}",
+    renewalLabel: "Nächste Verlängerung",
     endsOn: "Endet am {date}",
     cancelAtPeriodEnd: "Die Mitgliedschaft endet zum Periodenende.",
     monthly: "Monatlich",
@@ -451,6 +452,7 @@ export const appBusinessDe = {
     chooseAnnual: "Jährlich wählen",
     annualHint: "Jahresoption: 2 Monate geschenkt",
     startCheckout: "Zur sicheren Zahlung",
+    checkoutUnavailable: "Zahlung noch nicht freigeschaltet",
     checkoutPreparing: "Weiterleitung wird vorbereitet…",
     paywallTitle: "Mitgliedschaft erforderlich",
     paywallText:
@@ -1219,6 +1221,7 @@ export const appBusinessEn: AppBusinessDict = {
     statusIncomplete: "Not completed",
     statusNone: "No membership",
     nextRenewal: "Renews on {date}",
+    renewalLabel: "Next renewal",
     endsOn: "Ends on {date}",
     cancelAtPeriodEnd: "The membership ends at the end of the period.",
     monthly: "Monthly",
@@ -1230,6 +1233,7 @@ export const appBusinessEn: AppBusinessDict = {
     chooseAnnual: "Choose annual",
     annualHint: "Annual option: 2 months free",
     startCheckout: "Continue to secure payment",
+    checkoutUnavailable: "Payment not yet enabled",
     checkoutPreparing: "Preparing redirect…",
     paywallTitle: "Membership required",
     paywallText:

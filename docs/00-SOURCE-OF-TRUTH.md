@@ -3,7 +3,14 @@
 **Diese Datei ist der verbindliche Einstiegspunkt für jeden Menschen und jeden
 KI-Agenten, der an diesem Repository arbeitet.**
 
-- **Stand:** 2026-09-23 (Sprint 9 – alternierende Ecosystem-Sektion der Public
+- **Stand:** 2026-09-23 (Sprint 10 – Live-Nachbesserungen nach PR #23:
+  Zugangs-Audit mit sieben Kontozuständen → Seiten-Gating für Free/abgelaufenen
+  Trial nachgezogen (`LockedArea`, Dashboard-Filter, Billing ohne tote
+  Zahlungsbuttons; Details `06-permissions.md` 3a,
+  `tests/integration/access-matrix.test.ts`), Mobile-Hero auf das
+  freigegebene Alpine-Motiv, Desktop-Header mit Sprach-/Theme-Wahl ab 1280 px
+  ohne Abschneiden, überholte „Registrierung startet später“-Texte korrigiert
+  (Details `10-design-freeze.md` 1.15); davor: Sprint 9 – alternierende Ecosystem-Sektion der Public
 Homepage (Desktop + Mobile) auf Basis des Checkpoints `arena/01a0ce9d`
 finalisiert, Details `10-design-freeze.md` 1.14; davor: Incident-Fix post-Sprint-8: Produktions-500 auf
   `/app` durch rohe `Date`-Binds in `forYouItems()` unter D1 behoben +
@@ -22,8 +29,8 @@ finalisiert, Details `10-design-freeze.md` 1.14; davor: Incident-Fix post-Sprint
   Bildern, Profile humanisiert, Demo-Beiträge, Inbox-Empty-States, kleine
   Visualisierungen, AI-Look-Reduktion; Sprint 5 – Mobile-UX der Startseite,
   Login-UX, Demo-Detail-Dialoge, Event-Bilder)
-- **Technische Basis:** Branch `arena/01a0cad6-inner-circle`, Basis `main` @
-  `128295a`. Vorheriger dokumentierter Stand: `8f57987` (Sprint 7)
+- **Technische Basis:** Branch `arena/01a0cf82-inner-circle`, Basis `main` @
+  `5fb915b` (PR #23). Vorheriger dokumentierter Stand: `128295a` (Sprint 8/9)
 - **Sprint-6-Auftrag:** ausdrücklicher Gründerauftrag: bestehendes Projekt
   stabilisieren, strukturieren, funktional machen, humanisieren. Kein Rewrite.
   Keine funktionierende Logik löschen. Domain/Resend-Custom-Domain bewusst
@@ -87,7 +94,7 @@ Details: [`01-product.md`](01-product.md)
 - `/member/[publicId]` – öffentliche Karten-Verifikation.
 - `/imprint`, `/privacy`, `/terms` – Rechts-Platzhalter (PARTIAL).
 - `/design` – internes Design-System.
-- Header: Logo → 6 Preview-Links → Sprach-/Theme-Umschalter (Flagge + voller Name: 🇩🇪 Deutsch / 🇬🇧 English) → Login/Join oder „Zur App" (Präsenz-Flag `ic_presence`, keine Autorisierung).
+- Header: Logo → 6 Preview-Links → Sprach-/Theme-Umschalter (Flagge + voller Name: 🇩🇪 Deutsch / 🇬🇧 English) → Login/Join oder „Zur App" (Präsenz-Flag `ic_presence`, keine Autorisierung). Sprint 10: Vollzeile ab `xl` (1280 px) mit kompakten Triggern (Globus + DE/EN, Theme-Icon; volle Labels im Menü), Wortmarke ab 1440 px, darunter kompakte Kopfzeile + Menü-Panel; `/app` prüft serverseitig (anonym → `/login?next=/app`, unverifiziert → `/verify`).
 
 #### Member Navigation (6 Primärbereiche + 6 sekundäre Bereiche)
 
@@ -134,7 +141,8 @@ Details: [`01-product.md`](01-product.md)
 - **Preise:** 24,99 € / Monat (2499 ct) und 249,90 € / Jahr (24990 ct) – „2 Monate geschenkt" = 16% Vorteil. Quelle der Wahrheit: `src/lib/membership/plans.ts` (doppelt in `src/lib/env.ts` als `membershipPricing` – Risiko K-17).
 - **48h Discovery Trial:** serverseitig, genau einmal pro Konto, 3 Kontaktanfragen (`TRIAL_CONNECTION_LIMIT`), Leserechte, kein Messaging/Posten/Verkaufen/Vollprofil. Ablauf lazy in `getAccessContext()`.
 - **Keine zusätzlichen Membership-Tiers.** Nur `free`, `trial`, `member`, `admin` (Level). Keine künstlichen Pakete.
-- **Bezahlung:** Stripe Checkout + signierte Webhooks implementiert, aber BLOCKED (keine Schlüssel). Dev-Aktivierung nur ohne Stripe und außerhalb Produktion (`ALLOW_DEV_MEMBERSHIP_ACTIVATION`), klar gekennzeichnet.
+- **Bezahlung:** Stripe Checkout + signierte Webhooks implementiert, aber BLOCKED (keine Schlüssel). Dev-Aktivierung nur ohne Stripe und außerhalb Produktion (`ALLOW_DEV_MEMBERSHIP_ACTIVATION`), klar gekennzeichnet. **Auf dem Live-Worker (`NODE_ENV=production`, keine Stripe-Variablen in `wrangler.jsonc`) sind daher aktuell keine echten Zahlungen möglich und keine Mitgliedschaft aktivierbar**; `/app/billing` zeigt deshalb deaktivierte Plan-Buttons mit „Zahlung noch nicht freigeschaltet“ statt eines Checkout-Formulars ins Leere.
+- **Free/abgelaufener Trial im `/app`-Bereich (Sprint 10):** Verzeichnis, Jobs, Deal-/Investment-Details und fremde Profile sind seitenweise gesperrt (`LockedArea`), das Dashboard zeigt statt Vollansicht ein Mitgliedschafts-Panel; erlaubt bleiben eigenes Profil/Einstellungen, Marketplace- und Event-Liste, Inbox (Anfragen annehmen/ablehnen, Mitteilungen), Billing. Matrix und Nachweis: `06-permissions.md` §3/3a.
 - **Mitgliedskarte:** Format `IC-<Jahr>-<5-stellige Nummer>`, öffentliche `publicId`, Status `active`/`expired`.
 
 ### 1d. Demo-Daten (verbindliche Regeln – Sprint 6 verschärft)
@@ -322,7 +330,7 @@ existiert. Backend + Daten + Berechtigungen + Nachweis gehören dazu.
 
 | Funktion | Status | Nachweis |
 | -------- | ------ | -------- |
-| Startseite `/` – Conversion-Flow (Hero mit 3 Outcomes + Preis-Hinweis → schmales 20-%-Kapital-Band → Membership-Preis → 6 Kernbereiche → Events → CTA) | WORKING | `src/app/(site)/HomeContent.tsx`; Hero-Bild unverändert, Hero nennt beide Preise (24,99 €/249,90 €); **statisch vorgeneriert** |
+| Startseite `/` – Conversion-Flow (Hero mit 3 Outcomes + Preis-Hinweis → schmales 20-%-Kapital-Band → Membership-Preis → 6 Kernbereiche → Events → CTA) | WORKING | `src/app/(site)/HomeContent.tsx`; Hero-Bild unverändert (Sprint 10: Mobile nutzt dasselbe `hero-alpine.jpg`), Hero nennt beide Preise (24,99 €/249,90 €); **statisch vorgeneriert** |
 | Preview-Seiten `/network`, `/business-deals`, `/investments`, `/marketplace`, `/events` | WORKING | statische Inhalte, nicht aktivierte Funktionen als „Demnächst verfügbar\" gekennzeichnet; **statisch vorgeneriert** |
 | `/portfolio` – INNER CIRCLE Portfolio (Arbeitstitel) | WORKING | `src/app/(site)/portfolio/`; 20-%-/25-%-/75-%-Modell (bezogen auf 100 %: 5 % IC / 15 % extern) + 100-€-Beispiel; **kein Fonds, keine Renditeversprechen**; transparent als geplante strategische Zielallokation; **statisch vorgeneriert** |
 | `/membership` (Preise, Leistungen) | WORKING | 24,99 €/Monat **und** 249,90 €/Jahr („2 Monate geschenkt\"); K-03 gelöst, Checkout weiter Dev-Aktivierung bis Stripe scharf ist |
@@ -362,7 +370,7 @@ existiert. Backend + Daten + Berechtigungen + Nachweis gehören dazu.
 | Stripe-Checkout + signierte Webhooks | BLOCKED | Code vollständig (`/api/billing/checkout`, `/api/webhooks/stripe`, `webhook.test.ts`), aber kein Stripe-Konto/Schlüssel |
 | Dev-Mitgliedschaftsaktivierung (klar gekennzeichnet) | WORKING | nur ohne Stripe und außerhalb Produktion (`ALLOW_DEV_MEMBERSHIP_ACTIVATION`) |
 | Mitgliedskarte (Nummer + öffentliche Verifizierung) | WORKING | `issueCardIfNeeded`, `/member/[publicId]` |
-| Paywall/Weiterleitung unterhalb des Levels | WORKING | `requireAccess()`, `/app/billing?paywall=…` |
+| Paywall/Weiterleitung unterhalb des Levels | WORKING | `requireAccess()`, `/app/billing?paywall=…`; Sprint 10: Seiten-Locked-State `LockedArea` für Free/abgelaufenen Trial, `tests/integration/access-matrix.test.ts` (25 Fälle, 7 Kontozustände) |
 | Mitgliedsantrag mit manueller Prüfung | WORKING | `/app/membership-application`, Admin-Prüfung |
 | Rechnungen (`Invoice`) | PREPARED | Tabelle + `recordInvoice()`, keine echten Rechnungen ohne Stripe |
 
