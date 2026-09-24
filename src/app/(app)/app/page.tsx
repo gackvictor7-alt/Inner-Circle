@@ -86,8 +86,6 @@ export default async function AppDashboardPage() {
     level: access.level,
     trialExpired: access.trial?.status === "expired",
     trialMsRemaining: access.trial?.active ? access.trial.msRemaining : null,
-    trialRequestsUsed: access.trial?.connectionRequestsUsed ?? 0,
-    trialRequestLimit: access.trial?.connectionRequestLimit ?? 0,
     unreadInbox: unreadNotifications + pendingRequests + unreadMessages,
     membershipDevelopment: access.membership?.isDevelopment ?? false,
     forYou,

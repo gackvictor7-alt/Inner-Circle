@@ -133,7 +133,7 @@ export function MemberCard({
             <Link href={profileHref} className="truncate font-bold tracking-tight hover:underline">
               {member.firstName} {member.lastName}
             </Link>
-            {isDemoCard && <Badge variant="sand">{t.app.demo.networkBadge}</Badge>}
+            {isDemoCard && <Badge variant="sand">{t.app.demo.profileBadge}</Badge>}
             {member.foundingMember && (
               <Badge variant="sand">
                 <AwardIcon size={12} />
@@ -187,7 +187,7 @@ export function MemberCard({
         {isDemoCard ? (
           <Button size="sm" onClick={() => setDemoConnectOpen(true)} className="w-full sm:w-auto">
             <UserPlusIcon size={15} />
-            {t.app.network.connectCta}
+            {t.app.demo.connectTitle}
           </Button>
         ) : member.isConnected ? (
           <Button
@@ -290,7 +290,13 @@ export function MemberCard({
           onSent={() => setRequestSent(true)}
         />
       )}
-      {isDemoCard && <DemoConnectDialog open={demoConnectOpen} onClose={() => setDemoConnectOpen(false)} />}
+      {isDemoCard && (
+        <DemoConnectDialog
+          open={demoConnectOpen}
+          onClose={() => setDemoConnectOpen(false)}
+          targetName={member.firstName}
+        />
+      )}
     </Card>
   );
 }

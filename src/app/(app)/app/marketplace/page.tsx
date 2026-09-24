@@ -3,12 +3,15 @@ import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/db/client";
 import { marketplaceListings, profiles, users } from "@/db/schema";
 import { requireUser } from "@/lib/access/server";
+import { hasMemberAccess } from "@/lib/access/levels";
 import { formatMoney } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { LocalizedEmptyState, LocalizedPageHeader, Tr } from "@/components/app/localized";
 import { MarketplaceDemoSection } from "@/components/app/DemoSections";
+import { DemoAreaNotice } from "@/components/app/DemoAreaNotice";
+import { LockedArea } from "@/components/app/LockedArea";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +22,23 @@ export default async function MarketplacePage({
 }) {
   const access = await requireUser("/app/marketplace");
   const params = await searchParams;
+
+  // New product model (Sprint 11 follow-up): non-members see ONLY clearly
+  // labelled demo offers, never real provider profiles. Real events remain
+  // the explicit exception. Members see real + demo listings.
+  const isMember = hasMemberAccess(access.level);
+  if (!isMember) {
+    // Free and trial (including expired trial that became free) see demo only.
+    // The demo marketplace is the product preview, not the 48h interactive demo.
+    // It uses fictional providers like "Nina Kovač (Beispiel)" – no real member data.
+    return (
+      <div className="space-y-8">
+        <LocalizedPageHeader titleKey="app.marketplace.title" leadKey="app.marketplace.lead" />
+        <DemoAreaNotice leadKey="app.demo.marketplaceDemoOnlyLead" />
+        <MarketplaceDemoSection />
+      </div>
+    );
+  }
 
   const rows = await db
     .select({

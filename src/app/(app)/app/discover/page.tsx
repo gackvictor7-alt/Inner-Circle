@@ -22,6 +22,7 @@ import {
 import { DiscoverDeck, type DiscoverCardData } from "@/components/app/DiscoverDeck";
 import { DiscoverDemoSection } from "@/components/app/DemoSections";
 import { LocalizedEmptyState, LocalizedPageHeader } from "@/components/app/localized";
+import { demoDiscoverResults } from "@/lib/demo/discover";
 
 export const dynamic = "force-dynamic";
 
@@ -41,6 +42,11 @@ function parseList(json: string | null | undefined): string[] {
  * Ranking is rule-based on existing profile data only (interests, goals,
  * industry, location, "looking for"/"offering"). No invented signals, no
  * placeholder members: an empty community renders an honest empty state.
+ *
+ * Discovery demo (Sprint 11): a trial account has no Discover entitlement.
+ * It gets the same deck, filters and ranking over the fictional demo profiles
+ * only – the member query is never executed, cards link to demo profiles and
+ * "Kontakt anfragen" runs the simulated, client-only flow.
  */
 export default async function DiscoverPage({
   searchParams,
@@ -59,7 +65,8 @@ export default async function DiscoverPage({
   }>;
 }) {
   const access = await requireUser("/app/discover");
-  if (!access.entitlements.networkDiscover) redirect("/app/billing?paywall=trial");
+  const isDemo = access.entitlements.demoAccess && !access.entitlements.networkDiscover;
+  if (!access.entitlements.networkDiscover && !isDemo) redirect("/app/billing?paywall=trial");
 
   const params = await searchParams;
   const locale = access.user.locale === "en" ? "en" : "de";
@@ -105,14 +112,6 @@ export default async function DiscoverPage({
   };
   const moreOpen = params.more === "1";
 
-  const candidates = await listDiscoverCandidates({
-    viewerId: access.user.id,
-    limit: access.level === "trial" ? 24 : 120,
-  });
-
-  const filtered = applyDiscoverFilters(candidates, filters);
-  const ranked = rankCandidates(viewer, filtered);
-
   const viewerInterestSlugs = new Set(viewer.interestSlugs);
   const interestLabelBySlug = new Map(
     interestTaxonomy.map((row) => [row.slug, locale === "de" ? row.labelDe : row.labelEn]),
@@ -120,6 +119,88 @@ export default async function DiscoverPage({
   const goalLabelBySlug = new Map(
     goalTaxonomy.map((row) => [row.slug, locale === "de" ? row.labelDe : row.labelEn]),
   );
+
+  // The viewer's own interests are the most useful filter vocabulary.
+  const viewerInterests = candidateInterestOptions(interestTaxonomy, viewerInterestSlugs, locale);
+  const deckFilters = {
+    role: filters.role,
+    location: filters.location,
+    industry: filters.industry,
+    interest: filters.interest,
+    lookingFor: filters.lookingFor,
+    offering: filters.offering,
+    investInterest: filters.investInterest,
+    radius: filters.radius,
+    kind: filters.kind,
+  };
+  const filterOptions = {
+    industries: [...industryLabelBySlug.entries()].map(([value, label]) => ({ value, label })),
+    interests: viewerInterests,
+    investmentInterests: investmentInterestOptions(interestTaxonomy, locale),
+    radiusKm: [...RADIUS_OPTIONS_KM],
+  };
+
+  if (isDemo) {
+    const demoRanked = demoDiscoverResults(viewer, filters, {
+      locale,
+      industryByInterestSlug: groupByInterestSlug,
+    });
+    const demoCards: DiscoverCardData[] = demoRanked.map(({ candidate, score, signals }) => ({
+      id: candidate.id,
+      firstName: candidate.firstName,
+      lastName: candidate.lastName,
+      handle: candidate.key,
+      profileHref: `/app/people/demo/${candidate.key}`,
+      avatarUrl: candidate.avatarUrl,
+      headline: candidate.headline,
+      jobTitle: null,
+      company: candidate.company,
+      location: candidate.location,
+      bio: candidate.bio,
+      isDemo: true,
+      foundingMember: false,
+      roles: [locale === "en" ? candidate.profile.roleEn : candidate.profile.role],
+      skills: candidate.skills,
+      interests: candidate.interestLabels,
+      lookingFor: candidate.lookingFor,
+      offering: candidate.offering,
+      trustScore10: null,
+      metrics: { connections: 0, opportunities: 0, listings: 0, verifiedRecords: 0 },
+      sharedConnectionCount: 0,
+      sharedInterests: signals.sharedInterests
+        .map((slug) => interestLabelBySlug.get(slug) ?? slug)
+        .slice(0, 6),
+      sharedGoals: signals.sharedGoals.map((slug) => goalLabelBySlug.get(slug) ?? slug).slice(0, 4),
+      supplyDemand: signals.supplyDemand > 0,
+      sameLocation: signals.sameLocation,
+      matchPercent: matchPercentFromScore(score),
+      isFollowing: false,
+      isConnected: false,
+      requestPending: false,
+    }));
+
+    return (
+      <DiscoverDeck
+        mode="demo"
+        members={demoCards}
+        canFollow={false}
+        canConnect
+        trialRemaining={null}
+        filters={deckFilters}
+        moreOpen={moreOpen}
+        locationGeocodable={geocodeLocation(filters.location) !== null}
+        filterOptions={filterOptions}
+      />
+    );
+  }
+
+  const candidates = await listDiscoverCandidates({
+    viewerId: access.user.id,
+    limit: 120,
+  });
+
+  const filtered = applyDiscoverFilters(candidates, filters);
+  const ranked = rankCandidates(viewer, filtered);
 
   const cards: DiscoverCardData[] = ranked.map(({ candidate, score, signals }) => ({
     id: candidate.id,
@@ -154,9 +235,6 @@ export default async function DiscoverPage({
     requestPending: candidate.requestPending,
   }));
 
-  // The viewer's own interests are the most useful filter vocabulary.
-  const viewerInterests = candidateInterestOptions(interestTaxonomy, viewerInterestSlugs, locale);
-
   if (cards.length === 0) {
     return (
       <div className="space-y-6">
@@ -188,31 +266,12 @@ export default async function DiscoverPage({
       members={cards}
       canFollow={access.entitlements.follow}
       canConnect={access.entitlements.connect !== "no"}
-      trialRemaining={
-        access.trial?.active
-          ? access.trial.connectionRequestLimit - access.trial.connectionRequestsUsed
-          : null
-      }
-      filters={{
-        role: filters.role,
-        location: filters.location,
-        industry: filters.industry,
-        interest: filters.interest,
-        lookingFor: filters.lookingFor,
-        offering: filters.offering,
-        investInterest: filters.investInterest,
-        radius: filters.radius,
-        kind: filters.kind,
-      }}
+      trialRemaining={null}
+      filters={deckFilters}
       moreOpen={moreOpen}
       /** The radius only really works for cities in the offline table. */
       locationGeocodable={geocodeLocation(filters.location) !== null}
-      filterOptions={{
-        industries: [...industryLabelBySlug.entries()].map(([value, label]) => ({ value, label })),
-        interests: viewerInterests,
-        investmentInterests: investmentInterestOptions(interestTaxonomy, locale),
-        radiusKm: [...RADIUS_OPTIONS_KM],
-      }}
+      filterOptions={filterOptions}
     />
   );
 }

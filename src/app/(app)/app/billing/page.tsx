@@ -53,10 +53,7 @@ export default async function BillingPage({
   // The paywall notice describes the viewer's actual state: an active trial
   // hitting a member-only function vs. a free/expired account (which is
   // never told it is "in the trial").
-  const paywallCopy =
-    access.level === "trial"
-      ? { titleKey: "app.access.trialLockedTitle", textKey: "app.access.trialLockedText" }
-      : lockedCopyFor(access);
+  const paywallCopy = lockedCopyFor(access);
 
   return (
     <div className="space-y-8">
@@ -107,6 +104,17 @@ export default async function BillingPage({
               value={membership?.currentPeriodEnd ? membership.currentPeriodEnd.toLocaleDateString("de-DE") : "–"}
             />
           </dl>
+
+          {/* Honest payment status (Sprint 11): no membership is ever activated
+              by a click, a demo action or a failed payment. */}
+          <p className="mt-4 text-xs leading-5 text-foreground-subtle">
+            {!membership?.active && (
+              <>
+                <Tr k="app.billing.paymentStatusNone" />{" "}
+              </>
+            )}
+            <Tr k="app.billing.paymentStatusHonest" />
+          </p>
 
           {membership?.isDevelopment && (
             <p className="mt-5 rounded-xl bg-sand-200/40 px-3 py-2 text-xs leading-5 text-sand-800 dark:bg-sand-400/10 dark:text-sand-100">
@@ -161,8 +169,7 @@ export default async function BillingPage({
             ))}
           </ul>
           <p className="mt-5 text-xs text-foreground-subtle">
-            <Tr k="app.trial.title" /> · {trialConfig.hours} h · {trialConfig.connectionRequestLimit}{" "}
-            <Tr k="app.network.requestsTitle" />
+            <Tr k="app.billing.demoFootnote" params={{ hours: trialConfig.hours }} />
           </p>
         </Card>
       </div>

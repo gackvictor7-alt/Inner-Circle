@@ -103,8 +103,8 @@ Upload-Funktion**.
 | -------- | ------------- | ------ | ------- | ----- | ---------------- |
 | `ENABLE_DEV_OUTBOX` | Runtime | nein | aus (Produktion), lokal automatisch an, solange kein Provider existiert | zeichnet E-Mails/SMS in `DevOutbox` auf statt zu senden | nur bewusst für den Testbetrieb; **vor dem Launch entfernen** |
 | `DEV_OUTBOX_RECIPIENTS` | Runtime | nein | leer (alle) | Empfänger-Allowlist, kommagetrennt, `@domain` erlaubt | dringend setzen, solange der Postausgang aktiv ist |
-| `ALLOW_DEV_MEMBERSHIP_ACTIVATION` | Runtime | nein | lokal an, Produktion aus | erlaubt Dev-Mitgliedschaftsaktivierung ohne Stripe (`provider="dev"`) | **niemals** in Produktion setzen |
-| `TRIAL_CONNECTION_LIMIT` | Runtime | nein | `3` | Kontaktanfragen während des 48-h-Trials | bewusst wählen (Default 3) |
+| `ALLOW_DEV_MEMBERSHIP_ACTIVATION` | Runtime | nein | `.env.example`: `false`; nur bewusst lokal auf `true` setzen; Produktion aus | erlaubt Dev-Mitgliedschaftsaktivierung ohne Stripe (`provider="dev"`) | **niemals** in Produktion setzen |
+| `TRIAL_CONNECTION_LIMIT` | Runtime | nein | `3` | Zähler-Limit im `Trial`-Datensatz; seit Sprint 11 (Discovery-Demo) von keiner Action mehr verbraucht – Demo-Konten senden keine echten Anfragen | ohne Wirkung auf den Zugang; bleibt nur für das Datenmodell |
 | `SEED_DEMO_PASSWORD` | Runtime (Skript) | **ja** | leer | Passwort der fiktiven Seed-Konten (`npm run db:seed`) | nur lokal; Seed läuft nie remote |
 
 ## 9. Zusammenfassung: Was für den Start zwingend ist

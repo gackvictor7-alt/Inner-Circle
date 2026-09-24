@@ -1,7 +1,8 @@
 # 11 – Known Issues
 
-**Stand:** 2026-09-22 · Basis: Branch `arena/01a0cad6-inner-circle`
-(Basis `main` @ `128295a`, Sprint 8). Hinweis: Sprint 8 hat einen
+**Stand:** 2026-09-24 · Basis: Branch `arena/01a0d03a-inner-circle`
+(Basis `main` @ `87a244a`, Sprint 11). Sprint 11 ergänzt K-21 (Discovery-Demo:
+bekannte Grenzen) und aktualisiert K-19 (Browserprüfung). Hinweis: Sprint 8 hat einen
 Render-500-Fehler im neuen-Paar-Chat behoben (`?to=` ohne bestehende
 Konversation rief eine Server Action während des Renders auf –
 `revalidatePath during render is unsupported`); `ensureDirectConversation()`
@@ -214,9 +215,33 @@ P2 mittelfristig · P3 Aufräumen.
   `docs/08-testing-checklist.md`, `vitest.config.ts` auf `docs/11-testing.md`.
   Beide zeigen jetzt auf vorhandene Dokumente.
 
-### K-19 · Kein Browser-Test in der Sandbox möglich
+### K-19 · Browser-Test in der Sandbox nur mit Zusatzaufwand
 
-- In der Entwicklungsumgebung ist kein Chromium installierbar; Layout-,
-  Breakpoint- und Gestenprüfungen erfolgen manuell/über Code-Review. Die
-  vollständige manuelle QA-Liste steht in
-  [`08-testing.md`](08-testing.md) → Testmatrix.
+- Die offiziellen Playwright-Browser-Downloads sind in der Entwicklungsumgebung
+  nicht erreichbar. Seit Sprint 11 gelingt die Prüfung mit einem headless
+  Chromium-Build außerhalb des Repos (Screenshots 390/768/1440/1920, Dialog-
+  Flows, Light/Dark, DE/EN); die Werkzeuge sind **nicht** Teil des Repos und
+  laufen nicht in `npm test`. Gesten (Swipe) und Fokus-Fallen bleiben manuelle
+  Prüfung. QA-Liste: [`08-testing.md`](08-testing.md) → Testmatrix.
+
+### K-21 · Discovery-Demo: bekannte Grenzen (Sprint 11)
+
+- **Echte Zahlung nicht testbar:** ohne Stripe-Schlüssel ist der Weg
+  Zustand 5 → 6 (Demo abgelaufen → bestätigte Mitgliedschaft) nur über den
+  Membership-Service (Tests) bzw. die lokale Dev-Aktivierung nachgestellt;
+  `/app/billing` zeigt das ehrlich („Zahlung noch nicht freigeschaltet“).
+- **Marketplace-Liste** bleibt – wie vor Sprint 11 – für Free/Demo lesbar und
+  nennt Anbieter (Firma/Name) der Listings; das ist bestehendes, dokumentiertes
+  Verhalten (`06-permissions.md`), keine geschützte Geschäftsinformation.
+  Falls die Gründer das ändern wollen: eigener Auftrag.
+- **Netzwerk-Ergänzung für Mitglieder (Sprint 7)** bleibt: Mitglieder sehen bei
+  weniger als 8 echten Mitgliedern zusätzlich gekennzeichnete Demo-Profile
+  (nie statt echter Daten).
+- **Trial-Kontaktanfragen-Zähler** (`registerTrialConnectionRequest`,
+  `TRIAL_CONNECTION_LIMIT`) wird von keiner Action mehr verwendet; Service und
+  Tests bleiben bewusst erhalten (Datenmodell unverändert). Aufräumen erst mit
+  einer Schema-Entscheidung.
+- **Dashboard zeigt den Demo-Status dreifach** (Seitenleiste mit Countdown,
+  Kopfzeilen-Chip, Badge neben der Begrüßung) – vorbestehende Elemente der
+  `AppShell`/`DashboardScreen`, in Sprint 11 nur umbenannt; Reduktion wäre eine
+  Gestaltungsentscheidung (Design Freeze).

@@ -28,7 +28,7 @@ describe("networkDemoSupplement", () => {
 
   it("tops up small real lists to the target total", () => {
     expect(networkDemoSupplement(5, 12)).toHaveLength(NETWORK_DEMO_TARGET - 5);
-    expect(networkDemoSupplement(2, 60)).toHaveLength(DEMO_PROFILES.length);
+    expect(networkDemoSupplement(2, 60)).toHaveLength(Math.min(DEMO_PROFILES.length, NETWORK_DEMO_TARGET - 2));
   });
 
   it("never exceeds the target total (any real count below the threshold)", () => {
@@ -65,8 +65,8 @@ describe("filterDemoProfiles", () => {
   });
 
   it("matches the role filter in DE and EN", () => {
-    expect(filterDemoProfiles(DEMO_PROFILES, { role: "Founder" })).toHaveLength(1);
-    expect(filterDemoProfiles(DEMO_PROFILES, { role: "investor" })).toHaveLength(1);
+    expect(filterDemoProfiles(DEMO_PROFILES, { role: "Founder" })).toHaveLength(2);
+    expect(filterDemoProfiles(DEMO_PROFILES, { role: "investor" })).toHaveLength(2);
     // "Owner / Operator" EN label
     expect(filterDemoProfiles(DEMO_PROFILES, { role: "operator" })).toHaveLength(1);
     expect(filterDemoProfiles(DEMO_PROFILES, { role: "Mediziner" })).toHaveLength(0);
@@ -74,7 +74,8 @@ describe("filterDemoProfiles", () => {
 
   it("matches the location filter", () => {
     expect(filterDemoProfiles(DEMO_PROFILES, { location: "stuttgart" })).toHaveLength(1);
-    expect(filterDemoProfiles(DEMO_PROFILES, { location: "Berlin" })).toHaveLength(0);
+    expect(filterDemoProfiles(DEMO_PROFILES, { location: "Berlin" })).toHaveLength(1);
+    expect(filterDemoProfiles(DEMO_PROFILES, { location: "Hamburg" })).toHaveLength(0);
   });
 
   it("matches the interest filter by DE or EN label", () => {

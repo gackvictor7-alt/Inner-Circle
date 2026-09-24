@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/Badge";
 import { RatingStars } from "@/components/ui/RatingStars";
 import { EmptyState } from "@/components/app/ui";
 import { ConnectDialog } from "@/components/app/ConnectDialog";
+import { DemoConnectDialog } from "@/components/app/DemoConnectDialog";
 import { useI18n } from "@/lib/i18n/context";
 import { followAction } from "@/app/actions/network";
 import { initialActionState } from "@/app/actions/state";
@@ -28,6 +29,8 @@ export type DiscoverCardData = {
   firstName: string;
   lastName: string;
   handle: string;
+  /** Explicit profile link (demo profiles live under /app/people/demo/…). */
+  profileHref?: string;
   avatarUrl: string | null;
   headline: string | null;
   jobTitle: string | null;
@@ -90,6 +93,7 @@ export function DiscoverDeck({
   moreOpen: moreOpenInitial = false,
   locationGeocodable = true,
   filterOptions,
+  mode = "live",
 }: {
   members: DiscoverCardData[];
   canFollow: boolean;
@@ -99,8 +103,15 @@ export function DiscoverDeck({
   moreOpen?: boolean;
   locationGeocodable?: boolean;
   filterOptions: DiscoverFilterOptions;
+  /**
+   * "demo" = discovery demo (Sprint 11): every card is a fictional profile,
+   * the deck is labelled as such and "Kontakt anfragen" runs the simulated,
+   * client-only flow instead of the real connect dialog.
+   */
+  mode?: "live" | "demo";
 }) {
   const { t, tf } = useI18n();
+  const isDemo = mode === "demo";
   const [index, setIndex] = useState(0);
   const [skipped, setSkipped] = useState<string[]>([]);
   const [touchStart, setTouchStart] = useState<number | null>(null);
@@ -244,13 +255,19 @@ export function DiscoverDeck({
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{t.app.discover.title}</h1>
-          <p className="mt-1 max-w-2xl text-sm leading-6 text-foreground-muted">{t.app.discover.leadShort}</p>
+          <p className="mt-1 max-w-2xl text-sm leading-6 text-foreground-muted">
+            {isDemo ? t.app.demo.discoverDemoLead : t.app.discover.leadShort}
+          </p>
         </div>
-        {trialRemaining !== null && (
+        {isDemo ? (
+          <span className="rounded-full border border-sand-400/40 bg-sand-200/40 px-3 py-1 text-xs font-semibold text-sand-800 dark:bg-sand-400/10 dark:text-sand-100">
+            {t.app.demo.discoveryKicker} · {t.app.demo.discoverDemoChip}
+          </span>
+        ) : trialRemaining !== null ? (
           <span className="rounded-full border border-sand-400/40 bg-sand-200/40 px-3 py-1 text-xs font-semibold text-sand-800 dark:bg-sand-400/10 dark:text-sand-100">
             {t.app.discover.trialNotice}
           </span>
-        )}
+        ) : null}
       </header>
 
       {/* ----------------------------------------------------------- filters */}
@@ -447,9 +464,21 @@ export function DiscoverDeck({
       {/* -------------------------------------------------------------- card */}
       {!current ? (
         <EmptyState
-          icon={hasFilters ? CompassIcon : CompassIcon}
-          title={hasFilters ? t.app.discover.filtersEmpty : t.app.discover.emptyTitle}
-          text={hasFilters ? t.app.discover.filtersEmptyText : t.app.discover.emptyText}
+          icon={CompassIcon}
+          title={
+            isDemo && hasFilters
+              ? t.app.demo.discoverDemoEmptyTitle
+              : hasFilters
+                ? t.app.discover.filtersEmpty
+                : t.app.discover.emptyTitle
+          }
+          text={
+            isDemo && hasFilters
+              ? t.app.demo.discoverDemoEmptyText
+              : hasFilters
+                ? t.app.discover.filtersEmptyText
+                : t.app.discover.emptyText
+          }
           action={
             hasFilters ? (
               <Button href="/app/discover" size="sm" variant="secondary">
@@ -497,7 +526,7 @@ export function DiscoverDeck({
                 </span>
                 {current.isDemo && (
                   <span className="absolute right-3 top-3 rounded-full bg-sand-400/90 px-2.5 py-1 text-[11px] font-bold text-midnight-950">
-                    {t.app.discover.demoBadge}
+                    {isDemo ? t.app.demo.profileBadge : t.app.discover.demoBadge}
                   </span>
                 )}
               </div>
@@ -511,7 +540,7 @@ export function DiscoverDeck({
                   {current.requestPending && <Badge variant="electric">{t.app.discover.pendingBadge}</Badge>}
                   {current.isConnected && <Badge variant="forest">{t.app.discover.connectedBadge}</Badge>}
                 </div>
-                <p className="mt-1 text-sm text-foreground-subtle">@{current.handle}</p>
+                {!isDemo && <p className="mt-1 text-sm text-foreground-subtle">@{current.handle}</p>}
                 {(current.jobTitle || current.headline) && (
                   <p className="mt-2 text-sm font-medium">{current.jobTitle ?? current.headline}</p>
                 )}
@@ -604,12 +633,16 @@ export function DiscoverDeck({
                 );
               })()}
 
-              <div className="ic-grid hidden gap-3 lg:grid">
-                <MetricTile label={t.app.discover.metricConnections} value={current.metrics.connections} />
-                <MetricTile label={t.app.discover.metricOpportunities} value={current.metrics.opportunities} />
-                <MetricTile label={t.app.discover.metricListings} value={current.metrics.listings} />
-                <MetricTile label={t.app.discover.metricVerified} value={current.metrics.verifiedRecords} />
-              </div>
+              {/* Platform activity counters exist for real members only –
+                  fictional demo profiles show none instead of zeros. */}
+              {!isDemo && (
+                <div className="ic-grid hidden gap-3 lg:grid">
+                  <MetricTile label={t.app.discover.metricConnections} value={current.metrics.connections} />
+                  <MetricTile label={t.app.discover.metricOpportunities} value={current.metrics.opportunities} />
+                  <MetricTile label={t.app.discover.metricListings} value={current.metrics.listings} />
+                  <MetricTile label={t.app.discover.metricVerified} value={current.metrics.verifiedRecords} />
+                </div>
+              )}
 
               <div className="hidden lg:block">
                 <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-foreground-subtle">
@@ -645,7 +678,7 @@ export function DiscoverDeck({
                 <XIcon size={16} />
                 {t.app.discover.actionSkip}
               </Button>
-              <Button variant="secondary" href={`/app/people/${current.handle}`} className="w-full">
+              <Button variant="secondary" href={current.profileHref ?? `/app/people/${current.handle}`} className="w-full">
                 <GlobeIcon size={16} />
                 {t.app.discover.actionView}
               </Button>
@@ -662,7 +695,7 @@ export function DiscoverDeck({
               {canConnect && !current.isConnected && !current.requestPending && (
                 <Button className="col-span-2 w-full" size="lg" onClick={() => setConnectTarget(current)}>
                   <UserPlusIcon size={18} />
-                  {t.app.discover.actionConnect}
+                  {isDemo ? t.app.demo.connectTitle : t.app.discover.actionConnect}
                 </Button>
               )}
               {current.requestPending && (
@@ -688,7 +721,7 @@ export function DiscoverDeck({
                 <XIcon size={16} />
                 {t.app.discover.actionSkip}
               </Button>
-              <Button variant="ghost" href={`/app/people/${current.handle}`}>
+              <Button variant="ghost" href={current.profileHref ?? `/app/people/${current.handle}`}>
                 <GlobeIcon size={16} />
                 {t.app.discover.actionView}
               </Button>
@@ -705,7 +738,7 @@ export function DiscoverDeck({
               {canConnect && !current.isConnected && !current.requestPending && (
                 <Button className="ml-auto" onClick={() => setConnectTarget(current)}>
                   <UserPlusIcon size={16} />
-                  {t.app.discover.actionConnect}
+                  {isDemo ? t.app.demo.connectTitle : t.app.discover.actionConnect}
                 </Button>
               )}
               {current.requestPending && (
@@ -728,7 +761,14 @@ export function DiscoverDeck({
         {t.app.discover.swipeHint} · {t.app.discover.keyboardHint}
       </p>
 
-      {connectTarget && (
+      {connectTarget && isDemo && (
+        <DemoConnectDialog
+          open
+          onClose={() => setConnectTarget(null)}
+          targetName={connectTarget.firstName}
+        />
+      )}
+      {connectTarget && !isDemo && (
         <ConnectDialog
           open
           onClose={() => setConnectTarget(null)}

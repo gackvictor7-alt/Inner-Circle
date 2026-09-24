@@ -4,6 +4,7 @@ import { listDirectoryMembers, listInterests } from "@/lib/platform/queries";
 import { MemberCard, type MemberCardData } from "@/components/app/MemberCard";
 import {
   DEMO_CONTENT_ENABLED,
+  DEMO_PROFILES,
   demoProfileHandle,
   filterDemoProfiles,
   networkDemoSupplement,
@@ -12,6 +13,7 @@ import {
 import { dictionaries } from "@/lib/i18n/dictionaries";
 import { LocalizedEmptyState, LocalizedPageHeader, Tr } from "@/components/app/localized";
 import { LockedArea } from "@/components/app/LockedArea";
+import { DemoAreaNotice } from "@/components/app/DemoAreaNotice";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -27,6 +29,14 @@ export const dynamic = "force-dynamic";
  * network will look later. Demo profiles live outside the database: they
  * create no connections, follows, trust, notifications or statistics, and
  * they recede automatically once enough real members exist.
+ *
+ * Discovery demo (Sprint 11): a trial account has no directory entitlement.
+ * Instead of the locked screen it gets the same page over the fictional demo
+ * profiles only – the real member query is never executed for it.
+ *
+ * Sprint 11 follow-up: for paying members demo profiles are never mixed
+ * with real members. They appear in a separate, clearly labelled section
+ * with an explanatory lead and can only trigger the simulated demo dialog.
  */
 export default async function NetworkPage({
   searchParams,
@@ -35,9 +45,10 @@ export default async function NetworkPage({
 }) {
   const access = await requireUser("/app/network");
 
-  // Directory is part of trial/membership (docs/06-permissions.md: Free ➖).
+  // Directory is part of the membership (docs/06-permissions.md: Free ➖).
   // Own connections and requests remain reachable via /app/inbox for every level.
-  if (!access.entitlements.networkDirectory) {
+  const isDemo = access.entitlements.demoAccess && !access.entitlements.networkDirectory;
+  if (!access.entitlements.networkDirectory && !isDemo) {
     return <LockedArea access={access} icon="users" />;
   }
 
@@ -45,8 +56,7 @@ export default async function NetworkPage({
   const locale = access.user.locale === "en" ? "en" : "de";
   const dict = dictionaries[locale];
 
-  const isTrial = access.level === "trial";
-  const limit = isTrial ? 12 : 60;
+  const limit = 60;
 
   // View segments (Sprint 8, TEIL Q): the network distinguishes business
   // connections, open requests and other profiles instead of one flat list.
@@ -71,22 +81,27 @@ export default async function NetworkPage({
     return qs ? `/app/network?${qs}` : "/app/network";
   }
 
+  // The demo never touches the member table – not even for a count.
   const [members, interests] = await Promise.all([
-    listDirectoryMembers({
-      viewerId: access.user.id,
-      limit,
-      search,
-      interestSlug: params.interest || undefined,
-      location,
-      role,
-    }),
+    isDemo
+      ? Promise.resolve([])
+      : listDirectoryMembers({
+          viewerId: access.user.id,
+          limit,
+          search,
+          interestSlug: params.interest || undefined,
+          location,
+          role,
+        }),
     listInterests(),
   ]);
 
-  // Demo supplement: same filters as the real list, capped by the same limit.
+  // Demo profiles: the whole curated set for the discovery demo, otherwise the
+  // supplement for a still-small community – same filters as the real list.
   const selectedInterest = interests.find((interest) => interest.slug === params.interest);
+  const demoPool = isDemo ? DEMO_PROFILES : networkDemoSupplement(members.length, limit);
   const demoProfiles = DEMO_CONTENT_ENABLED
-    ? filterDemoProfiles(networkDemoSupplement(members.length, limit), {
+    ? filterDemoProfiles(demoPool, {
         search,
         role,
         location,
@@ -103,7 +118,9 @@ export default async function NetworkPage({
         : members;
 
   const canFollow = access.entitlements.follow;
-  const canConnect = access.entitlements.connect !== "no";
+  // Demo cards run the simulated (client-only) request flow; real cards need
+  // the real entitlement.
+  const canConnect = access.entitlements.connect !== "no" || isDemo;
 
   return (
     <div className="space-y-8">
@@ -111,7 +128,7 @@ export default async function NetworkPage({
         titleKey="app.network.title"
         leadKey="app.network.lead"
         actions={
-          access.entitlements.networkDiscover ? (
+          access.entitlements.networkDiscover || isDemo ? (
             <Button href="/app/discover" variant="secondary" size="sm">
               <Tr k="app.network.openDiscover" />
             </Button>
@@ -119,11 +136,7 @@ export default async function NetworkPage({
         }
       />
 
-      {isTrial && (
-        <p className="rounded-xl bg-sand-200/40 px-4 py-3 text-sm text-sand-800 dark:bg-sand-400/10 dark:text-sand-100">
-          <Tr k="app.network.trialLimited" />
-        </p>
-      )}
+      {isDemo && <DemoAreaNotice leadKey="app.demo.networkDemoLead" />}
 
       <Card className="p-4">
         <form
@@ -202,7 +215,9 @@ export default async function NetworkPage({
         </form>
       </Card>
 
-      {/* View segments – connections, open requests, all profiles (TEIL Q) */}
+      {/* View segments – connections, open requests, all profiles (TEIL Q).
+          Not offered in the demo: there are no real connections to segment. */}
+      {!isDemo && (
       <nav aria-label={dict.app.network.segmentLabel} className="flex flex-wrap gap-2">
         {(
           [
@@ -225,6 +240,7 @@ export default async function NetworkPage({
           </Link>
         ))}
       </nav>
+      )}
 
       {view === "all" && members.length + demoProfiles.length === 0 ? (
         <LocalizedEmptyState
@@ -249,37 +265,83 @@ export default async function NetworkPage({
         <>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm text-foreground-muted">
-              {filteredMembers.length} <Tr k="app.common.results" />
-              {view === "all" && demoProfiles.length > 0 && (
-                <span className="text-foreground-subtle">
-                  {" "}
-                  {dict.app.network.demoSupplement.replace("{count}", String(demoProfiles.length))}
-                </span>
+              {isDemo ? (
+                <>
+                  {demoProfiles.length} <Tr k="app.demo.discoverDemoChip" />
+                </>
+              ) : (
+                <>
+                  {filteredMembers.length} <Tr k="app.common.results" />
+                  {view === "all" && demoProfiles.length > 0 && (
+                    <span className="text-foreground-subtle">
+                      {" "}
+                      {dict.app.network.demoSupplement.replace("{count}", String(demoProfiles.length))}
+                    </span>
+                  )}
+                </>
               )}
             </p>
-            {isTrial && (
+            {isDemo && (
               <Badge variant="sand">
                 <Tr k="app.access.levelTrial" />
               </Badge>
             )}
           </div>
+
+          {/* Real members – always first, never mixed with demo for members */}
           <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {filteredMembers.map((member) => (
               <li key={member.id}>
                 <MemberCard member={member} canFollow={canFollow} canConnect={canConnect} />
               </li>
             ))}
-            {view === "all" &&
-              demoProfiles.map((profile) => (
-              <li key={profile.key}>
-                <MemberCard
-                  member={demoCardData(profile, locale)}
-                  canFollow={canFollow}
-                  canConnect={canConnect}
-                />
-              </li>
-            ))}
           </ul>
+
+          {/* Demo supplement for paying members – clearly separated section */}
+          {view === "all" && !isDemo && demoProfiles.length > 0 && (
+            <section className="space-y-4 rounded-2xl border border-sand-400/30 bg-sand-50/50 p-5 dark:bg-sand-400/5">
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-base font-bold tracking-tight">
+                  <Tr k="app.network.demoSupplementTitle" />
+                </h2>
+                <Badge variant="sand">
+                  <Tr k="app.demo.profileBadge" />
+                </Badge>
+              </div>
+              <p className="max-w-3xl text-sm leading-6 text-foreground-muted">
+                <Tr k="app.network.demoSupplementLead" />
+              </p>
+              <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                {demoProfiles.map((profile) => (
+                  <li key={profile.key}>
+                    <MemberCard
+                      member={demoCardData(profile, locale)}
+                      canFollow={false}
+                      canConnect={true}
+                    />
+                  </li>
+                ))}
+              </ul>
+              <p className="rounded-xl border border-sand-400/40 bg-sand-200/40 px-4 py-3 text-xs leading-5 text-sand-800 dark:bg-sand-400/10 dark:text-sand-100">
+                <Tr k="app.demo.notice" />
+              </p>
+            </section>
+          )}
+
+          {/* Demo profiles for trial – own page, no real members */}
+          {isDemo && (
+            <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {demoProfiles.map((profile) => (
+                <li key={profile.key}>
+                  <MemberCard
+                    member={demoCardData(profile, locale)}
+                    canFollow={canFollow}
+                    canConnect={canConnect}
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
         </>
       )}
     </div>

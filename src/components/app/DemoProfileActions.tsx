@@ -7,10 +7,10 @@ import { useI18n } from "@/lib/i18n/context";
 import { DemoConnectDialog } from "@/components/app/DemoConnectDialog";
 
 /**
- * Actions row for the demo profile view. "Connect" never sends a real
- * request – it opens the honest demo explanation (Sprint 7).
+ * Actions row for the demo profile view. "Kontakt anfragen" never sends a real
+ * request – it runs the simulated, client-only request flow (Sprint 7/11).
  */
-export function DemoProfileActions() {
+export function DemoProfileActions({ targetName }: { targetName?: string }) {
   const { t } = useI18n();
   const [demoConnectOpen, setDemoConnectOpen] = useState(false);
 
@@ -18,9 +18,13 @@ export function DemoProfileActions() {
     <>
       <Button size="sm" onClick={() => setDemoConnectOpen(true)}>
         <UserPlusIcon size={15} />
-        {t.app.network.connectCta}
+        {t.app.demo.connectTitle}
       </Button>
-      <DemoConnectDialog open={demoConnectOpen} onClose={() => setDemoConnectOpen(false)} />
+      <DemoConnectDialog
+        open={demoConnectOpen}
+        onClose={() => setDemoConnectOpen(false)}
+        targetName={targetName}
+      />
     </>
   );
 }

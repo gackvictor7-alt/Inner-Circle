@@ -8,10 +8,19 @@ import { formatMoney } from "@/lib/utils";
 import { applyToEventAction, cancelEventApplicationAction } from "@/app/actions/business";
 import { ActionForm, InlineAction, type FormField } from "@/components/app/forms";
 import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { LocalizedPageHeader, Tr } from "@/components/app/localized";
 
 export const dynamic = "force-dynamic";
+
+/** Real date *and* time of an event – never a placeholder. */
+function formatWhen(date: Date | null): string {
+  if (!date) return "–";
+  const day = date.toLocaleDateString("de-DE");
+  const time = date.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+  return `${day} · ${time}`;
+}
 
 export default async function EventDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -82,7 +91,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ sl
 
         <dl className="mt-5 grid gap-3 sm:grid-cols-4">
           {[
-            { key: "app.common.date", value: event.startsAt?.toLocaleDateString("de-DE") ?? "–" },
+            { key: "app.common.date", value: formatWhen(event.startsAt) },
             { key: "app.common.location", value: [event.location, event.city, event.country].filter(Boolean).join(", ") },
             { key: "app.events.capacity", value: event.capacity ? `${taken}/${event.capacity}` : "–" },
             { key: "app.events.price", value: event.priceCents ? formatMoney(event.priceCents, event.currency, "de") : "–" },
@@ -129,7 +138,38 @@ export default async function EventDetailPage({ params }: { params: Promise<{ sl
             )}
           </>
         ) : (
-          <Card className="p-5 text-sm text-foreground-muted"><Tr k="app.access.freeLockedText" /></Card>
+          /* Verified accounts without membership (discovery demo, expired
+             demo, free) may read the real event but cannot register: the
+             server action checks the same entitlement, so this card is
+             information, not the gate (Sprint 11). Seats are shown only when
+             they follow from real capacity and booking data. */
+          <Card className="p-5">
+            <h3 className="text-base font-bold tracking-tight">
+              <Tr k="app.events.detail.registrationLockedTitle" />
+            </h3>
+            <p className="mt-2 text-sm leading-6 text-foreground-muted">
+              <Tr k="app.events.detail.registrationLockedText" />
+            </p>
+            {remaining !== null && remaining > 0 && (
+              <p className="mt-3 text-sm font-medium">
+                {remaining === 1 ? (
+                  <Tr k="app.events.detail.seatsLeftOne" />
+                ) : (
+                  <Tr k="app.events.detail.seatsLeft" params={{ count: remaining }} />
+                )}
+              </p>
+            )}
+            {remaining !== null && remaining <= 0 && (
+              <p className="mt-3 text-sm text-warning-600 dark:text-warning-400">
+                <Tr k="app.events.detail.capacityReached" />
+              </p>
+            )}
+            <div className="mt-4">
+              <Button href="/app/billing" size="sm">
+                <Tr k="app.events.detail.registrationLockedCta" />
+              </Button>
+            </div>
+          </Card>
         )}
       </section>
     </div>

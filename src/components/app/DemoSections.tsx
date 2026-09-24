@@ -7,14 +7,17 @@ import { Dialog } from "@/components/ui/Dialog";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { Avatar } from "@/components/ui/Avatar";
 import { InboxIcon } from "@/components/ui/icons";
 import { useI18n } from "@/lib/i18n/context";
+import { initials } from "@/components/app/MemberCard";
 import {
   DEMO_CONTENT_ENABLED,
   DEMO_COURSES,
   DEMO_DEALS,
   DEMO_EVENTS,
   DEMO_INBOX_THREADS,
+  DEMO_INVESTMENTS,
   DEMO_JOBS,
   DEMO_LISTINGS,
   DEMO_PROFILES,
@@ -24,6 +27,7 @@ import {
   type DemoCourse,
   type DemoDeal,
   type DemoEvent,
+  type DemoInvestment,
   type DemoListing,
   type DemoProfile,
 } from "@/lib/demo";
@@ -73,7 +77,18 @@ function DemoDetailDialog({
     <Dialog open={open} onClose={onClose} title={title} closeLabel={t.app.common.close}>
       <div className="flex flex-wrap items-center gap-2">
         {badges.map((badge) => (
-          <Badge key={badge} variant={badge === t.app.demo.badge || badge === t.app.demo.sampleBadge || badge === t.app.demo.eventsBadge ? "sand" : "outline"}>
+          <Badge
+            key={badge}
+            variant={
+              badge === t.app.demo.badge ||
+              badge === t.app.demo.sampleBadge ||
+              badge === t.app.demo.eventsBadge ||
+              badge === t.app.demo.offerBadge ||
+              badge === t.app.demo.profileBadge
+                ? "sand"
+                : "outline"
+            }
+          >
             {badge}
           </Badge>
         ))}
@@ -173,18 +188,22 @@ function DemoProfileCard({ profile }: { profile: DemoProfile }) {
   return (
     <Card className="flex h-full flex-col overflow-hidden">
       <div className="flex items-start gap-4 p-5 pb-4">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={profile.avatarUrl}
-          alt=""
-          className="h-16 w-16 shrink-0 rounded-full object-cover"
-        />
+        {profile.avatarUrl ? (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img
+            src={profile.avatarUrl}
+            alt=""
+            className="h-16 w-16 shrink-0 rounded-full object-cover"
+          />
+        ) : (
+          <Avatar name={`${profile.firstName} ${profile.lastName}`} size={64} />
+        )}
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-1.5">
             <p className="truncate font-bold tracking-tight">
               {profile.firstName} {profile.lastName}
             </p>
-            <Badge variant="sand">{t.app.demo.networkBadge}</Badge>
+            <Badge variant="sand">{t.app.demo.profileBadge}</Badge>
           </div>
           <p className="mt-0.5 text-sm font-medium text-foreground-muted">{text.role}</p>
           <p className="mt-0.5 truncate text-xs text-foreground-subtle">{text.company}</p>
@@ -273,12 +292,21 @@ export function DiscoverDemoSection() {
             <article className="overflow-hidden rounded-2xl border border-border bg-surface">
               <div className="grid gap-0 sm:grid-cols-[10rem_1fr]">
                 <div className="relative">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={current.avatarUrl}
-                    alt=""
-                    className="aspect-[4/5] h-full w-full object-cover"
-                  />
+                  {current.avatarUrl ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={current.avatarUrl}
+                      alt=""
+                      className="aspect-[4/5] h-full w-full object-cover"
+                    />
+                  ) : (
+                    <span
+                      aria-hidden="true"
+                      className="flex aspect-[4/5] h-full w-full items-center justify-center bg-gradient-to-br from-electric-500 to-electric-700 text-4xl font-bold text-white"
+                    >
+                      {initials(current.firstName, current.lastName)}
+                    </span>
+                  )}
                   <span className="absolute left-2 top-2 rounded-full bg-midnight-950/75 px-2.5 py-1 text-[11px] font-bold text-paper-50 backdrop-blur">
                     {current.completion} % {t.app.demo.networkCompletionShort}
                   </span>
@@ -288,7 +316,7 @@ export function DiscoverDemoSection() {
                     <h3 className="text-lg font-bold tracking-tight">
                       {current.firstName} {current.lastName}
                     </h3>
-                    <Badge variant="sand">{t.app.demo.networkBadge}</Badge>
+                    <Badge variant="sand">{t.app.demo.profileBadge}</Badge>
                   </div>
                   <p className="mt-1 text-sm font-medium text-foreground-muted">{text.role}</p>
                   <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-foreground-muted">
@@ -401,7 +429,7 @@ export function DiscoverDemoSection() {
         onClose={() => setDetailOpen(false)}
         title={current ? `${current.firstName} ${current.lastName}` : ""}
         badges={current ? [t.app.demo.badge, locale === "en" ? current.roleEn : current.role] : []}
-        image={current?.avatarUrl}
+        image={current?.avatarUrl ?? undefined}
         imageAlt=""
       >
         {current && (
@@ -446,7 +474,7 @@ export function DiscoverDemoSection() {
  * BUSINESS DEALS DEMO
  * ------------------------------------------------------------------ */
 
-export function DealsDemoSection() {
+export function DealsDemoSection({ canCreate = false }: { canCreate?: boolean }) {
   const { t, locale } = useI18n();
   const [selected, setSelected] = useState<DemoDeal | null>(null);
   if (!DEMO_CONTENT_ENABLED) return null;
@@ -462,7 +490,7 @@ export function DealsDemoSection() {
           <li key={deal.key}>
             <Card className="flex h-full flex-col p-5">
               <div className="flex flex-wrap items-center gap-2">
-                <Badge variant="sand">{t.app.demo.badge}</Badge>
+                <Badge variant="sand">{t.app.demo.offerBadge}</Badge>
                 <Badge variant="outline">{text(deal).category}</Badge>
                 <Badge variant="neutral">{text(deal).industry}</Badge>
               </div>
@@ -503,7 +531,7 @@ export function DealsDemoSection() {
         open={selected !== null}
         onClose={() => setSelected(null)}
         title={current?.title ?? ""}
-        badges={selected ? [t.app.demo.badge, current?.category ?? "", current?.industry ?? ""] : []}
+        badges={selected ? [t.app.demo.offerBadge, current?.category ?? "", current?.industry ?? ""] : []}
       >
         {selected && current && (
           <>
@@ -547,10 +575,17 @@ export function DealsDemoSection() {
             <p className="mt-1.5 text-sm leading-6 text-foreground-muted">{current.nextAction}</p>
             <p className="mt-2 text-xs leading-5 text-foreground-subtle">{t.app.demo.dealsNextText}</p>
             <div className="mt-4 flex flex-wrap gap-2">
-              <Button size="sm" variant="secondary" href="/app/opportunities/new">
-                {t.app.create.opportunity}
-                <ArrowRightIcon size={14} />
-              </Button>
+              {canCreate ? (
+                <Button size="sm" variant="secondary" href="/app/opportunities/new">
+                  {t.app.create.opportunity}
+                  <ArrowRightIcon size={14} />
+                </Button>
+              ) : (
+                <Button size="sm" variant="secondary" href="/app/billing">
+                  {t.app.access.upgradeCta}
+                  <ArrowRightIcon size={14} />
+                </Button>
+              )}
               <Button size="sm" variant="ghost" onClick={() => setSelected(null)}>
                 {t.app.common.close}
               </Button>
@@ -567,30 +602,144 @@ export function DealsDemoSection() {
  * ------------------------------------------------------------------ */
 
 export function JobsDemoSection() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   if (!DEMO_CONTENT_ENABLED) return null;
+  const en = locale === "en";
 
   return (
     <SectionBlock kicker={t.app.demo.sampleBadge} title={t.app.demo.jobsTitle} lead={t.app.demo.jobsLead}>
       <ul className="grid gap-4 md:grid-cols-2">
-        {DEMO_JOBS.map((job) => (
-          <li key={job.key}>
+        {DEMO_JOBS.map((job) => {
+          const text = en ? job.en : job;
+          return (
+            <li key={job.key}>
+              <Card className="flex h-full flex-col p-5">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant="sand">{t.app.demo.offerBadge}</Badge>
+                  <Badge variant="electric">{text.kind}</Badge>
+                </div>
+                <h3 className="mt-3 text-base font-bold tracking-tight">{text.title}</h3>
+                <p className="mt-2 flex-1 text-sm leading-6 text-foreground-muted">{text.description}</p>
+                <p className="mt-3 text-xs text-foreground-subtle">
+                  {t.app.demo.dealsRoleLabel}: <span className="font-medium text-foreground">{text.seekingRole}</span>
+                  {" · "}
+                  <MapPinIcon size={12} className="inline" /> {text.location}
+                </p>
+              </Card>
+            </li>
+          );
+        })}
+      </ul>
+    </SectionBlock>
+  );
+}
+
+/* ------------------------------------------------------------------ *
+ * INVESTMENTS DEMO (Sprint 11)
+ * ------------------------------------------------------------------ */
+
+export function InvestmentsDemoSection() {
+  const { t, locale } = useI18n();
+  const [selected, setSelected] = useState<DemoInvestment | null>(null);
+  if (!DEMO_CONTENT_ENABLED) return null;
+
+  const en = locale === "en";
+  const text = (item: DemoInvestment) => (en ? item.en : item);
+  const current = selected ? text(selected) : null;
+
+  return (
+    <SectionBlock
+      kicker={t.app.demo.investmentsKicker}
+      title={t.app.demo.investmentsTitle}
+      lead={t.app.demo.investmentsLead}
+    >
+      <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {DEMO_INVESTMENTS.map((item) => (
+          <li key={item.key}>
             <Card className="flex h-full flex-col p-5">
               <div className="flex flex-wrap items-center gap-2">
-                <Badge variant="sand">{t.app.demo.badge}</Badge>
-                <Badge variant="electric">{job.kind}</Badge>
+                <Badge variant="sand">{t.app.demo.offerBadge}</Badge>
+                <Badge variant="electric">{text(item).sector}</Badge>
+                <Badge variant="outline">{text(item).stage}</Badge>
               </div>
-              <h3 className="mt-3 text-base font-bold tracking-tight">{job.title}</h3>
-              <p className="mt-2 flex-1 text-sm leading-6 text-foreground-muted">{job.description}</p>
-              <p className="mt-3 text-xs text-foreground-subtle">
-                {t.app.demo.dealsRoleLabel}: <span className="font-medium text-foreground">{job.seekingRole}</span>
-                {" · "}
-                <MapPinIcon size={12} className="inline" /> {job.location}
-              </p>
+              <h3 className="mt-3 text-base font-bold tracking-tight">{text(item).title}</h3>
+              <p className="mt-2 flex-1 text-sm leading-6 text-foreground-muted">{text(item).summary}</p>
+              <dl className="mt-4 grid gap-2 text-xs text-foreground-subtle">
+                <div className="flex justify-between gap-3 border-b border-border pb-2">
+                  <dt>{t.app.demo.investmentsTypeLabel}</dt>
+                  <dd className="text-right font-medium text-foreground">{text(item).investmentType}</dd>
+                </div>
+                <div className="flex justify-between gap-3 border-b border-border pb-2">
+                  <dt>{t.app.demo.investmentsRegionLabel}</dt>
+                  <dd className="text-right font-medium text-foreground">{text(item).region}</dd>
+                </div>
+                <div className="flex justify-between gap-3">
+                  <dt>{t.app.demo.investmentsTicketLabel}</dt>
+                  <dd className="text-right font-medium text-foreground">{text(item).ticketLabel}</dd>
+                </div>
+              </dl>
+              <div className="mt-4">
+                <Button size="sm" variant="secondary" onClick={() => setSelected(item)}>
+                  {t.app.demo.investmentsCta}
+                  <ArrowRightIcon size={14} />
+                </Button>
+              </div>
             </Card>
           </li>
         ))}
       </ul>
+
+      <DemoDetailDialog
+        open={selected !== null}
+        onClose={() => setSelected(null)}
+        title={current?.title ?? ""}
+        badges={selected && current ? [t.app.demo.offerBadge, current.sector, current.stage] : []}
+      >
+        {selected && current && (
+          <>
+            <div className="rounded-xl border border-sand-400/30 bg-sand-200/20 px-3 py-2 text-xs leading-5 text-foreground-muted">
+              {t.app.demo.investmentsDetailNotice}
+            </div>
+            <p className="mt-4 text-sm leading-6 text-foreground-muted">{current.description}</p>
+            <dl className="mt-5 grid gap-3 text-sm">
+              <div className="rounded-xl border border-border p-3">
+                <dt className="text-[11px] font-bold uppercase tracking-[0.14em] text-foreground-subtle">
+                  {t.app.demo.investmentsSoughtLabel}
+                </dt>
+                <dd className="mt-1 font-medium">{current.sought}</dd>
+              </div>
+              <div className="rounded-xl border border-border p-3">
+                <dt className="text-[11px] font-bold uppercase tracking-[0.14em] text-foreground-subtle">
+                  {t.app.demo.investmentsOfferedLabel}
+                </dt>
+                <dd className="mt-1 font-medium">{current.offered}</dd>
+              </div>
+            </dl>
+            <dl className="mt-4 grid gap-2 text-xs text-foreground-subtle">
+              {[
+                { label: t.app.demo.investmentsTypeLabel, value: current.investmentType },
+                { label: t.app.demo.investmentsStageLabel, value: current.stage },
+                { label: t.app.demo.investmentsRegionLabel, value: current.region },
+                { label: t.app.demo.investmentsTicketLabel, value: current.ticketLabel },
+              ].map((row) => (
+                <div key={row.label} className="flex justify-between gap-3 border-b border-border pb-2">
+                  <dt>{row.label}</dt>
+                  <dd className="text-right font-medium text-foreground">{row.value}</dd>
+                </div>
+              ))}
+            </dl>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Button size="sm" variant="secondary" href="/app/billing">
+                {t.app.access.upgradeCta}
+                <ArrowRightIcon size={14} />
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setSelected(null)}>
+                {t.app.common.close}
+              </Button>
+            </div>
+          </>
+        )}
+      </DemoDetailDialog>
     </SectionBlock>
   );
 }

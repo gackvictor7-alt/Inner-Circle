@@ -36,9 +36,12 @@ export default async function EventsPage({
     <div className="space-y-8">
       <LocalizedPageHeader titleKey="app.events.title" leadKey="app.events.lead" />
 
-      {/* Events are curated by INNER CIRCLE – members never publish them (spec §14). */}
+      {/* Events are curated by INNER CIRCLE – members never publish them (spec §14).
+          Accounts without membership (discovery demo, expired demo, free) read
+          the same real events; the notice tells them registration needs a
+          membership (Sprint 11). */}
       <p className="rounded-xl border border-sand-400/40 bg-sand-200/30 px-4 py-3 text-sm leading-6 text-sand-800 dark:bg-sand-400/10 dark:text-sand-100">
-        <Tr k="app.events.curatedNotice" />
+        <Tr k={access.entitlements.eventsApply ? "app.events.curatedNotice" : "app.events.realNotice"} />
       </p>
 
       <nav aria-label="Events" className="flex flex-wrap gap-2">
@@ -124,7 +127,10 @@ export default async function EventsPage({
                 </Link>
                 <p className="mt-2 hidden flex-1 text-sm leading-6 text-foreground-muted sm:block">{event.summary}</p>
                 <p className="mt-2 text-xs text-foreground-subtle sm:mt-3">
-                  {event.startsAt?.toLocaleDateString("de-DE")} · {[event.location, event.city].filter(Boolean).join(", ")}
+                  {event.startsAt?.toLocaleDateString("de-DE")}
+                  {event.startsAt ? ` · ${event.startsAt.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}` : ""}
+                  {" · "}
+                  {[event.location, event.city].filter(Boolean).join(", ")}
                   {event.capacity ? ` · max. ${event.capacity}` : ""}
                 </p>
                 <div className="mt-3 sm:mt-4">
@@ -141,9 +147,9 @@ export default async function EventsPage({
 
       {/* Planned formats – the future INNER CIRCLE calendar. Clearly labelled
           “Beispiel-Event”: these are format previews, NOT announced events.
-          Real events (above) replace them over time (spec: only INNER CIRCLE
-          / admins create events). */}
-      <EventsDemoSection />
+          Since Sprint 11 they only appear while a tab has no real event, so
+          real events are never mixed with examples. */}
+      {tab !== "mine" && shown.length === 0 && <EventsDemoSection />}
 
       <p className="text-xs leading-5 text-foreground-subtle"><Tr k="app.events.ticketsNotice" /></p>
     </div>

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { trialConfig } from "@/lib/env";
-import { TRIAL_VISIBLE } from "@/lib/access/levels";
+import { entitlementsFor } from "@/lib/access/levels";
 
 /**
  * Trial rules (spec §12/§13): 48 hours, server-controlled, with a hard cap on
@@ -18,8 +18,13 @@ describe("trial configuration", () => {
     expect(trialConfig.otpResendCooldownSeconds).toBeGreaterThanOrEqual(30);
   });
 
-  it("limits what a trial account can browse", () => {
-    expect(TRIAL_VISIBLE.pageSize).toBeLessThanOrEqual(12);
-    expect(TRIAL_VISIBLE.investments).toBeLessThanOrEqual(3);
+  it("gives the 48 h discovery demo no real member data at all (Sprint 11)", () => {
+    const demo = entitlementsFor("trial");
+    expect(demo.demoAccess).toBe(true);
+    expect(demo.networkDirectory).toBe(false);
+    expect(demo.networkDiscover).toBe(false);
+    expect(demo.opportunitiesBrowse).toBe(false);
+    expect(demo.investmentsBrowse).toBe(false);
+    expect(demo.connect).toBe("no");
   });
 });

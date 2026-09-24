@@ -219,3 +219,39 @@ stehen, sind aber unten ausdrücklich als ersetzt markiert – der **Code** und
 - **Konsequenz:** ADR-012 ist erledigt. Weitere Bildtauschen oder -regenerations-
   schritte brauchen erneut einen ausdrücklichen Gründungsauftrag; Alt-Texte
   (`imageAlt*` in `src/lib/i18n/dictionaries.ts`) müssen mitziehen.
+
+## ADR-014: Die 48-Stunden-Discovery-Phase ist eine Demo, kein eingeschränkter Echtzugang (2026-09-24, Sprint 11)
+
+- **Kontext:** Bis Sprint 10 gab der Trial begrenzte Leserechte auf echte
+  Mitglieder, Deals, Jobs und Investments (12/6/3 Positionen) und erlaubte
+  drei echte Kontaktanfragen. Der Gründerauftrag für Sprint 11 verlangt, dass
+  echte Kontakte und geschützte Inhalte ausschließlich mit serverseitig
+  bestätigter Mitgliedschaft erreichbar sind, ohne Registrierung,
+  Verifizierung, Login, Profilbearbeitung, Datenbank oder die bestehende
+  Membership-Logik zu verändern.
+- **Entscheidung:**
+  - Das Level `trial` bleibt bestehen (Datenmodell `Trial`, `startTrial()`,
+    einmaliger Start im Onboarding, lazy Ablauf unverändert), erhält aber die
+    Rechte von `free` plus ein neues Entitlement `demoAccess`. `TRIAL_VISIBLE`
+    entfällt.
+  - Seiten mit Demo-Zweig gaten mit `demoAccess && !<echtes Entitlement>`;
+    Mitglieder/Admins (`demoAccess=false`) sehen nie Demo. Demo-Inhalte kommen
+    ausschließlich aus `src/lib/demo` (keine DB-Zeilen, IDs `demo:…`), echte
+    Abfragen werden im Demo-Zweig nicht ausgeführt.
+  - Demo-Discover nutzt die **bestehenden** Filter und das bestehende
+    regelbasierte Ranking (`src/lib/demo/discover.ts`) – kein zweites
+    Matching, keine neue Engine. Demo-Profile tragen dafür Slugs der echten
+    Taxonomie.
+  - Die simulierte Kontaktanfrage ist ein reiner Client-Dialog mit dem
+    vorgegebenen Abschlusstext; sie ruft keine Server Action auf.
+  - Echte veröffentlichte Events bleiben für verifizierte Konten lesbar
+    (Datum · Uhrzeit, Ort, Programm, freie Plätze nur aus realer Kapazität);
+    die Anmeldung ist an `eventsApply` gebunden.
+  - Migration ohne Schema-Change: aktive Trials laufen bis `expiresAt` unter
+    Demo-Semantik weiter, abgelaufene bleiben abgelaufen, kein Reset.
+  - Zahlung bleibt ehrlich: keine Mitgliedschaft ohne bestätigte Zahlung;
+    `.env.example` setzt `ALLOW_DEV_MEMBERSHIP_ACTIVATION=false`.
+- **Konsequenz:** `registerTrialConnectionRequest()` wird von keiner Action
+  mehr verwendet (Service/Tests bleiben, K-21). Tests, die früher Trial-Konten
+  für echte Anfragen nutzten, verwenden Mitglieds-Fixtures. Dokumentation:
+  `00` §1c/§1d/§1e, `04` §3, `06` §3b, `08`, `11` K-21.

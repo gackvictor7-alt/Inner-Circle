@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { LocalizedEmptyState, LocalizedPageHeader, Tr } from "@/components/app/localized";
 import { LockedArea } from "@/components/app/LockedArea";
+import { DemoAreaNotice } from "@/components/app/DemoAreaNotice";
 import { JobsDemoSection } from "@/components/app/DemoSections";
 
 export const dynamic = "force-dynamic";
@@ -17,6 +18,16 @@ export default async function JobsPage() {
 
   // Jobs & projects are opportunities (docs/06-permissions.md: browse = trial/member).
   if (!access.entitlements.opportunitiesBrowse) {
+    // Discovery demo (Sprint 11): fictional examples only, no member query.
+    if (access.entitlements.demoAccess) {
+      return (
+        <div className="space-y-8">
+          <LocalizedPageHeader titleKey="app.jobs.title" leadKey="app.jobs.lead" />
+          <DemoAreaNotice leadKey="app.demo.jobsDemoOnlyLead" />
+          <JobsDemoSection />
+        </div>
+      );
+    }
     return <LockedArea access={access} icon="grid" />;
   }
 

@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { LocalizedEmptyState, LocalizedPageHeader, Tr } from "@/components/app/localized";
 import { LockedArea } from "@/components/app/LockedArea";
+import { DemoAreaNotice } from "@/components/app/DemoAreaNotice";
 import { DealsDemoSection } from "@/components/app/DemoSections";
 
 export const dynamic = "force-dynamic";
@@ -22,6 +23,17 @@ export default async function OpportunitiesPage({
   const params = await searchParams;
 
   if (!access.entitlements.opportunitiesBrowse) {
+    // Discovery demo (Sprint 11): fictional sample deals only – the real
+    // opportunity query is never executed for a demo account.
+    if (access.entitlements.demoAccess) {
+      return (
+        <div className="space-y-8">
+          <LocalizedPageHeader titleKey="app.opportunities.title" leadKey="app.opportunities.lead" />
+          <DemoAreaNotice leadKey="app.demo.dealsDemoOnlyLead" />
+          <DealsDemoSection />
+        </div>
+      );
+    }
     return <LockedArea access={access} icon="briefcase" />;
   }
 
@@ -138,7 +150,7 @@ export default async function OpportunitiesPage({
             textKey="app.opportunities.emptyText"
             action={access.entitlements.opportunitiesManage ? { labelKey: "app.create.opportunity", href: "/app/opportunities/new" } : undefined}
           />
-          <DealsDemoSection />
+          <DealsDemoSection canCreate={access.entitlements.opportunitiesManage} />
         </>
       ) : (
         // Mobile (Sprint 8, TEIL W): list-based cards – type, title,

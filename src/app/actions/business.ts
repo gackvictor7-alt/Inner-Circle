@@ -139,7 +139,7 @@ export async function applyToOpportunityAction(
   const access = await getAccessContext();
   if (!access.user) return fail("unauthorized");
   if (!access.verified) return fail("verificationRequired");
-  if (!access.entitlements.opportunitiesApply) return fail("trialRequired");
+  if (!access.entitlements.opportunitiesApply) return fail("membershipRequired");
 
   const opportunityId = text(formData, "opportunityId", 64);
   const reason = text(formData, "reason", 1500);
