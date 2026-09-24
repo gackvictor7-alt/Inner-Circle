@@ -92,6 +92,7 @@ export async function listDirectoryMembers(options: {
       and(
         ne(users.id, options.viewerId),
         eq(users.status, "active"),
+        eq(users.isDemo, false),
         options.search
           ? or(
               sql`lower(${users.firstName}) like ${`%${options.search.toLowerCase()}%`}`,

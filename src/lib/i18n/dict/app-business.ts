@@ -824,6 +824,8 @@ export const appBusinessDe = {
       "Dies war eine Demo – es wurde keine Nachricht an eine echte Person gesendet. Als Mitglied erreicht deine Anfrage echte Mitglieder, die sie annehmen oder ablehnen können.",
     dealsDemoOnlyLead:
       "In der Discovery-Demo siehst du fiktive Beispiel-Deals. Echte Geschäftschancen von Mitgliedern sind Teil der Mitgliedschaft.",
+    marketplaceDemoOnlyLead:
+      "Ohne aktive Mitgliedschaft siehst du ausschließlich klar gekennzeichnete Demo-Angebote. Echte Anbieterprofile und Angebote von Mitgliedern sind Teil der Mitgliedschaft. Echte Events bleiben sichtbar.",
     jobsDemoOnlyLead:
       "In der Discovery-Demo siehst du fiktive Beispiele. Echte Jobs und Projekte von Mitgliedern sind Teil der Mitgliedschaft.",
     investmentsKicker: "Beispiel-Investments",
@@ -1654,6 +1656,8 @@ export const appBusinessEn: AppBusinessDict = {
       "This was a demo – no message was sent to a real person. As a member, your request reaches real members who can accept or decline it.",
     dealsDemoOnlyLead:
       "During the discovery demo you see fictional sample deals. Real business opportunities from members are part of the membership.",
+    marketplaceDemoOnlyLead:
+      "Without an active membership you only see clearly labelled demo offers. Real provider profiles and member offers are part of the membership. Real events remain visible.",
     jobsDemoOnlyLead:
       "During the discovery demo you see fictional examples. Real jobs and projects from members are part of the membership.",
     investmentsKicker: "Sample investments",

@@ -142,6 +142,9 @@ export const appSocialDe = {
     filtersLocation: "Standort",
     filtersLocationPlaceholder: "z. B. Berlin, Wien, remote…",
     demoSupplement: "· {count} Demo-Profile (Beispiele – keine echten Mitglieder)",
+    demoSupplementTitle: "Beispielprofile – so wächst dein Netzwerk",
+    demoSupplementLead:
+      "Diese Profile sind klar als DEMO gekennzeichnete Beispiele. Sie erzeugen keine echten Verbindungen und können keine echten Anfragen empfangen. Echte Kontaktanfragen gehen nur an verifizierte Mitglieder.",
     backToNetwork: "Zurück zum Netzwerk",
     segmentLabel: "Ansicht",
     segmentAll: "Alle",
@@ -622,6 +625,9 @@ export const appSocialEn: AppSocialDict = {
     filtersLocation: "Location",
     filtersLocationPlaceholder: "e.g. Berlin, Vienna, remote…",
     demoSupplement: "· {count} demo profiles (examples – not real members)",
+    demoSupplementTitle: "Example profiles – how your network grows",
+    demoSupplementLead:
+      "These profiles are clearly labelled DEMO examples. They never create real connections and cannot receive real requests. Real contact requests only go to verified members.",
     backToNetwork: "Back to network",
     segmentLabel: "View",
     segmentAll: "All",

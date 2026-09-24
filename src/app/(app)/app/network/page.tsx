@@ -33,6 +33,10 @@ export const dynamic = "force-dynamic";
  * Discovery demo (Sprint 11): a trial account has no directory entitlement.
  * Instead of the locked screen it gets the same page over the fictional demo
  * profiles only – the real member query is never executed for it.
+ *
+ * Sprint 11 follow-up: for paying members demo profiles are never mixed
+ * with real members. They appear in a separate, clearly labelled section
+ * with an explanatory lead and can only trigger the simulated demo dialog.
  */
 export default async function NetworkPage({
   searchParams,
@@ -283,23 +287,61 @@ export default async function NetworkPage({
               </Badge>
             )}
           </div>
+
+          {/* Real members – always first, never mixed with demo for members */}
           <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {filteredMembers.map((member) => (
               <li key={member.id}>
                 <MemberCard member={member} canFollow={canFollow} canConnect={canConnect} />
               </li>
             ))}
-            {view === "all" &&
-              demoProfiles.map((profile) => (
-              <li key={profile.key}>
-                <MemberCard
-                  member={demoCardData(profile, locale)}
-                  canFollow={canFollow}
-                  canConnect={canConnect}
-                />
-              </li>
-            ))}
           </ul>
+
+          {/* Demo supplement for paying members – clearly separated section */}
+          {view === "all" && !isDemo && demoProfiles.length > 0 && (
+            <section className="space-y-4 rounded-2xl border border-sand-400/30 bg-sand-50/50 p-5 dark:bg-sand-400/5">
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-base font-bold tracking-tight">
+                  <Tr k="app.network.demoSupplementTitle" />
+                </h2>
+                <Badge variant="sand">
+                  <Tr k="app.demo.profileBadge" />
+                </Badge>
+              </div>
+              <p className="max-w-3xl text-sm leading-6 text-foreground-muted">
+                <Tr k="app.network.demoSupplementLead" />
+              </p>
+              <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                {demoProfiles.map((profile) => (
+                  <li key={profile.key}>
+                    <MemberCard
+                      member={demoCardData(profile, locale)}
+                      canFollow={false}
+                      canConnect={true}
+                    />
+                  </li>
+                ))}
+              </ul>
+              <p className="rounded-xl border border-sand-400/40 bg-sand-200/40 px-4 py-3 text-xs leading-5 text-sand-800 dark:bg-sand-400/10 dark:text-sand-100">
+                <Tr k="app.demo.notice" />
+              </p>
+            </section>
+          )}
+
+          {/* Demo profiles for trial – own page, no real members */}
+          {isDemo && (
+            <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {demoProfiles.map((profile) => (
+                <li key={profile.key}>
+                  <MemberCard
+                    member={demoCardData(profile, locale)}
+                    canFollow={canFollow}
+                    canConnect={canConnect}
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
         </>
       )}
     </div>

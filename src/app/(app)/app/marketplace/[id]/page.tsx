@@ -4,6 +4,7 @@ import { and, asc, eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import { courseModules, courses, enrollments, lessons, marketplaceListings, profiles, users } from "@/db/schema";
 import { requireUser } from "@/lib/access/server";
+import { hasMemberAccess } from "@/lib/access/levels";
 import { integrationStatus } from "@/lib/env";
 import { formatMoney } from "@/lib/utils";
 import { enrollInCourseAction } from "@/app/actions/business";
@@ -12,6 +13,7 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { LocalizedPageHeader, Tr } from "@/components/app/localized";
+import { LockedArea } from "@/components/app/LockedArea";
 
 export const dynamic = "force-dynamic";
 
@@ -35,6 +37,12 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
   if (!row) notFound();
 
   const listing = row.listing;
+
+  // Non-members may only see demo listings – real listings are locked.
+  if (!listing.isDemo && !hasMemberAccess(access.level)) {
+    return <LockedArea access={access} icon="store" />;
+  }
+
   const [course] = await db.select().from(courses).where(eq(courses.listingId, id)).limit(1);
 
   const modules = course

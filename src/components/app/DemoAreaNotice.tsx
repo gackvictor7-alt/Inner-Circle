@@ -13,6 +13,7 @@ export function DemoAreaNotice({
   leadKey:
     | "app.demo.networkDemoLead"
     | "app.demo.dealsDemoOnlyLead"
+    | "app.demo.marketplaceDemoOnlyLead"
     | "app.demo.jobsDemoOnlyLead"
     | "app.demo.investmentsLead";
 }) {
