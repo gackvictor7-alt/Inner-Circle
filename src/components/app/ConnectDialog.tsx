@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
 import { Textarea } from "@/components/ui/Input";
+import { toast } from "@/components/ui/Toaster";
 import { useI18n } from "@/lib/i18n/context";
 import { sendConnectionRequestAction } from "@/app/actions/network";
 import { initialActionState } from "@/app/actions/state";
@@ -38,12 +39,22 @@ export function ConnectDialog({
   const [touched, setTouched] = useState(false);
 
   useEffect(() => {
-    if (state.status === "success") {
-      onSent?.();
-      onClose();
-      router.refresh();
+    if (state.status !== "success") return;
+    onSent?.();
+    onClose();
+    if (state.messageCode === "connectedMutual") {
+      // The other side had already asked – you are connected now.
+      toast(tf(t.app.beta.connectedMutualToast, { name: target.firstName }), "success");
+      if (state.entityId) {
+        router.push(`/app/inbox?tab=messages&c=${state.entityId}`);
+        return;
+      }
+    } else {
+      toast(tf(t.app.beta.requestSentToast, { name: target.firstName }), "success");
     }
-  }, [state.status, onSent, onClose, router]);
+    router.refresh();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.status]);
 
   const trimmed = message.trim();
   const tooShort = trimmed.length < CONNECTION_MESSAGE_MIN_LENGTH;
@@ -84,8 +95,12 @@ export function ConnectDialog({
         </div>
 
         {state.status === "error" && (
-          <p className="rounded-xl bg-danger-500/10 px-3.5 py-2.5 text-sm text-danger-700 dark:text-danger-200">
-            {t.app.errors[(state.errorCode ?? "generic") as keyof typeof t.app.errors] ?? t.app.errors.generic}
+          <p role="alert" className="rounded-xl bg-danger-500/10 px-3.5 py-2.5 text-sm text-danger-700 dark:text-danger-200">
+            {tf(
+              (t.app.errors[(state.errorCode ?? "generic") as keyof typeof t.app.errors] as string | undefined) ??
+                t.app.errors.generic,
+              state.errorParams ?? {},
+            )}
           </p>
         )}
 

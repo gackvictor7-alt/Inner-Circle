@@ -1,6 +1,6 @@
 # 13 – Entscheidungen (ADR-Log)
 
-**Stand:** 2026-09-21 · Format: **Kontext → Entscheidung → Konsequenz.**
+**Stand:** 2026-09-24 (Sprint 12: ADR-015/ADR-016) · Format: **Kontext → Entscheidung → Konsequenz.**
 Annahmen sind als solche markiert; geänderte Geschäftsregeln nur mit
 Gründer-Freigabe.
 
@@ -23,6 +23,10 @@ stehen, sind aber unten ausdrücklich als ersetzt markiert – der **Code** und
 | ADR-010 | Design Freeze | **gültig** (neu, 2026-09-21) |
 | ADR-011 | Dokumentationsstruktur als Source of Truth | **gültig** (neu, 2026-09-21) |
 | ADR-012 | Öffentliche Bild-Assets nicht ungesehen ersetzen | **gültig** (neu, 2026-09-21) |
+| ADR-013 | Bildrichtung regeneriert, Demo-Content im Member-Bereich | **gültig** (Demo-Content seit ADR-014 nur noch in der Discovery-Demo) |
+| ADR-014 | 48-h-Discovery-Phase ist eine Demo | **gültig** (Sprint 11) |
+| ADR-015 | Private Beta als separater, zeitlich begrenzter Networking-Grant | **gültig** (Sprint 12) |
+| ADR-016 | Echtes Networking: ein Direktchat je Paar, Polling statt Realtime, keine Mitteilung je Nachricht | **gültig** (Sprint 12) |
 
 ## ADR-001: Next.js-Monolith statt Microservices (2026-09-20, Schritt 01)
 
@@ -255,3 +259,65 @@ stehen, sind aber unten ausdrücklich als ersetzt markiert – der **Code** und
   mehr verwendet (Service/Tests bleiben, K-21). Tests, die früher Trial-Konten
   für echte Anfragen nutzten, verwenden Mitglieds-Fixtures. Dokumentation:
   `00` §1c/§1d/§1e, `04` §3, `06` §3b, `08`, `11` K-21.
+
+## ADR-015: Private Beta als separater, zeitlich begrenzter Networking-Grant (2026-09-24, Sprint 12)
+
+- **Kontext:** 10–30 eingeladene Tester sollen das echte Networking
+  (entdecken → anfragen → annehmen → chatten) nutzen, bevor Stripe produktiv
+  ist. Vorgaben des Gründers: kein Bezahlstatus, keine fiktiven
+  Stripe-Transaktionen, keine zweite Mitgliederverwaltung, kein zweites
+  Auth-System, serverseitige Durchsetzung, andere kostenpflichtige Bereiche
+  bleiben gesperrt, Registrierung + E-Mail-Verifizierung unverändert.
+- **Entscheidung:**
+  - Neue Tabellen `BetaInvite` (Schlüssel, nur als HMAC-SHA-256 mit
+    `AUTH_SECRET` gespeichert) und `BetaAccess` (ein Zugang je Konto,
+    `startsAt`/`endsAt`/`status`). **Keine** Änderung an `Membership`,
+    `User.role` oder `Trial`.
+  - `getAccessContext()` liest den Zugang bei jedem Request (mit dem
+    Nutzerkontext in derselben Abfrage) und ergänzt für `free`/`trial` über
+    `withBetaGrant()` genau fünf Entitlements: `networkDirectory`,
+    `networkDiscover`, `connect`, `messaging`, `profileFull`. Die Stufe bleibt
+    `free`/`trial` → Beta-Tester zählen nirgends als Mitglied und erreichen
+    keine anderen Bezahlbereiche. `networkAccess`/`networkAccessSource`
+    beschreiben die Herkunft (`admin`/`member`/`beta`).
+  - Wer zum echten Netzwerk gehört, entscheidet eine einzige SQL-Regel
+    (`src/lib/network/eligibility.ts`), die Listen **und** Aktionen nutzen.
+  - Einlösung: an das eingeloggte, verifizierte Konto gebunden, race-sicher
+    über bedingte Updates, Rate-Limit je Konto und Herkunft, Audit ohne
+    Klartext. Standarddauer 30 Tage ab Einlösung; der Admin kann verlängern
+    oder vorzeitig beenden.
+  - Einstieg für Tester über die bestehende Navigation (Profil/Mitgliedschaft
+    → „Beta-Zugang aktivieren“, `/app/beta`) – keine eigene Registrierung.
+- **Konsequenz:** Die Discovery-Demo bleibt für alle ohne Schlüssel
+  unverändert (plus ein ruhiger Hinweis auf die geschlossene Beta). Nach
+  Ablauf/Widerruf bleiben Konto, Profil, Kontakte und Chatverläufe erhalten,
+  geschützte Aktionen liefern `betaExpired`. Doku: `00`, `05`, `06` §3c,
+  `03`, `04` §4b, `08`, `11` K-22.
+
+## ADR-016: Echtes Networking – ein Direktchat je Paar, Polling statt Realtime, keine Mitteilung je Nachricht (2026-09-24, Sprint 12)
+
+- **Kontext:** Der Kern-Flow muss für echte Tester zuverlässig sein:
+  keine doppelten Chats, keine doppelten oder widersprüchlichen
+  Mitteilungen, korrekte Zähler, gleichzeitige Aktionen ohne Fehlzustand,
+  und das Ganze auf Cloudflare Workers/D1 (keine Transaktionen, keine
+  dauerhaften Verbindungen im Worker).
+- **Entscheidung:**
+  - `Conversation.directKey` (`<userId klein>:<userId groß>`, unique) – ein
+    Direktchat je Paar; gleichzeitiges Anlegen endet über
+    `ON CONFLICT DO NOTHING` beim selben Datensatz. Ältere Chats werden
+    beim nächsten Zugriff übernommen.
+  - Annahme öffnet den Chat sofort und übernimmt die Anfrage-Nachricht als
+    erste Nachricht; gegenseitige Anfragen werden automatisch zur
+    Verbindung. Nach einer Ablehnung gilt eine Wartezeit von 14 Tagen für
+    neue Anfragen (`CONNECTION_REQUEST_COOLDOWN_DAYS`); der Absender erhält
+    keine Ablehnungs-Mitteilung.
+  - Neue Nachrichten erzeugen **keine** Mitteilung mehr: ungelesen =
+    `Message.createdAt > ConversationParticipant.lastReadAt`. Der Inbox-Badge
+    = ungelesene Nachrichten + ungelesene Mitteilungen; der Anfragen-Zähler
+    = offene eingehende Anfragen.
+  - Neue Nachrichten im offenen Chat kommen per Polling
+    (`CHAT_POLL_INTERVAL_MS` = 10 s, nur bei sichtbarem Tab) – bewusst
+    **kein** WebSocket/Durable Object.
+- **Konsequenz:** Migration `0002` markiert alte ungelesene
+  `message`-Mitteilungen als gelesen. Echtzeit-Zustellung und E-Mail-
+  Benachrichtigungen bleiben offen (K-22).

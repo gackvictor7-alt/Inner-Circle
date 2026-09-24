@@ -14,6 +14,7 @@ import { loadUserContext } from "@/db/queries";
 import { activateMembership } from "@/lib/membership/service";
 import {
   connectionRequestState,
+  sentRequestsFor,
   forYouItems,
   interestLabelsFor,
 } from "@/lib/platform/queries";
@@ -136,9 +137,10 @@ describe("core connection loop (Sprint 8)", () => {
       .where(and(isNull(connections.endedAt), or(eq(connections.userAId, a), eq(connections.userBId, b))));
     expect(conn).toBeTruthy();
 
+    // Sprint 12: the acceptance notice opens the chat that was created for the pair.
     const forA = await notificationsFor(a);
     expect(
-      forA.some((row) => row.type === "connection_accepted" && row.url === "/app/inbox?tab=requests&sub=connections"),
+      forA.some((row) => row.type === "connection_accepted" && (row.url ?? "").startsWith("/app/inbox?tab=messages&c=")),
     ).toBe(true);
 
     // A Business Connection must NOT create a follow (separate concepts).
@@ -180,8 +182,12 @@ describe("core connection loop (Sprint 8)", () => {
     const followRows = await db.select({ id: follows.id }).from(follows);
     expect(followRows).toHaveLength(0);
 
+    // Sprint 12: no push notice on a decline (privacy) – the sender sees the
+    // neutral "not accepted" state in the sent list instead.
     const forA = await notificationsFor(a);
-    expect(forA.some((row) => row.url === "/app/inbox?tab=requests&sub=sent")).toBe(true);
+    expect(forA.some((row) => row.type === "system" || row.type === "connection_accepted")).toBe(false);
+    const sentList = await sentRequestsFor(a);
+    expect(sentList.find((row) => row.toUserId === b)?.status).toBe("declined");
 
     // A declined trial request frees the slot again.
     const usedAfter = (await trialFor(a))?.connectionRequestsUsed ?? 0;

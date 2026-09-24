@@ -1,7 +1,8 @@
 # 05 – Datenbank (Cloudflare D1 / Drizzle)
 
-**Stand:** 2026-09-21 (Sprint 3) · Basis: `src/db/schema.ts` und
-`drizzle/0000_init.sql` + **`drizzle/0001_sprint3_discover_profile.sql`**.
+**Stand:** 2026-09-24 (Sprint 12: Private Beta) · Basis: `src/db/schema.ts` und
+`drizzle/0000_init.sql` + `drizzle/0001_sprint3_discover_profile.sql` +
+**`drizzle/0002_sprint12_private_beta.sql`**.
 
 - **Dialekt:** SQLite. In Produktion **Cloudflare D1** über das Binding `DB`
   (`database_name: inner-circle-db`), lokal/testweise **libSQL**
@@ -10,7 +11,10 @@
   85 Indizes, 58 Fremdschlüssel, 135 Statements** – und
   `drizzle/0001_sprint3_discover_profile.sql` (Sprint 3, **rein additiv**:
   zwei neue Textspalten, keine Löschungen oder Umbenennungen; lokal per
-  `npm run db:push`, remote per `npm run cf:d1:migrate:remote`).
+  `npm run db:push`, remote per `npm run cf:d1:migrate:remote`) und
+  `drizzle/0002_sprint12_private_beta.sql` (Sprint 12, **additiv**: Tabellen
+  `BetaInvite` + `BetaAccess`, Spalte `Conversation.directKey` mit
+  Unique-Index, ein Daten-UPDATE – Details unten). Damit **52 Tabellen**.
 - **Keine Transaktionen:** D1 bietet kein Transaktions-API; mehrstufige
   Schreibvorgänge sind sequenziell und idempotent gehalten.
 
@@ -27,7 +31,7 @@
 | Demo-Daten | `isDemo` (Boolean) bzw. `User.seedTag`, damit Demos nie als echt gelten |
 | Namensgebung | Tabellen in PascalCase (`User`, `Membership`), Spalten camelCase |
 
-## Gruppierung der 50 Tabellen
+## Gruppierung der 52 Tabellen (50 aus `0000` + 2 aus `0002`)
 
 ### 1. Auth & Identity (4)
 
@@ -49,7 +53,7 @@
 | `NotificationPreference` | `emailMessages`, `emailConnectionRequests`, `emailProductUpdates`, `inAppAll` | gespeichert; E-Mail-Zustellung hängt am Provider |
 | `SellerProfile` | Verkäuferstatus (`none`\|`pending`\|`approved`\|`rejected`) + Antragsnotizen | vorbereitet (keine Antrags-UI) |
 
-### 3. Membership & Trial (5)
+### 3. Membership, Trial & Private Beta (5 + 2)
 
 | Tabelle | Zweck | Status |
 | ------- | ----- | ------ |
@@ -58,6 +62,8 @@
 | `MembershipEvent` | Ereignisprotokoll je Nutzer, `providerEventId` (unique → Idempotenz) | **aktiv** |
 | `Invoice` | Provider-Rechnungen (`providerInvoiceId` unique, Betrag, Status, Zeitraum, `hostedUrl`) | vorbereitet (nur aus Provider-Events) |
 | `MembershipCard` | `cardNumber` (unique, `IC-<Jahr>-<Nr>`), `publicId` (unique, öffentlich prüfbar), `status`, `issuedAt`, `revokedAt` | **aktiv** |
+| `BetaInvite` *(Sprint 12)* | Persönlicher Beta-Schlüssel: `codeHash` (unique, HMAC-SHA-256 mit `AUTH_SECRET` – **nie Klartext**), `codeHint` (letzte 4 Zeichen, nur zur Wiedererkennung), `label` (Admin-Notiz), `restrictedEmail` (optionale Kontobindung), `durationDays` (Standard 30, 1–365), `status` (`active`\|`redeemed`\|`disabled`), `expiresAt` (optionales Einlöse-Enddatum), `createdById`, `redeemedById`, `redeemedAt`, `disabledAt` | **aktiv** |
+| `BetaAccess` *(Sprint 12)* | Zeitlich begrenzte Networking-Freigabe, **keine Mitgliedschaft**: `userId` (unique – höchstens ein Zugang je Konto), `inviteId`, `status` (`active`\|`revoked`), `startsAt`, `endsAt`, `revokedAt`, `revokedById`. Aktiv = `status = 'active'` **und** `endsAt > jetzt` (Serverzeit, bei jedem Request geprüft) | **aktiv** |
 
 ### 4. Networking (4)
 
@@ -72,7 +78,7 @@
 
 | Tabelle | Zweck | Status |
 | ------- | ----- | ------ |
-| `Conversation` | `kind` (`direct`\|`opportunity`), `subject`, `opportunityId`, `lastMessageAt` | **aktiv** (`opportunity`-Kind vorbereitet) |
+| `Conversation` | `kind` (`direct`\|`opportunity`), `subject`, `opportunityId`, `lastMessageAt`, **`directKey`** (Sprint 12: `<kleinere userId>:<größere userId>` für Direktchats, **unique** → genau ein Direktchat je Paar, auch bei gleichzeitigem Annehmen) | **aktiv** (`opportunity`-Kind vorbereitet) |
 | `ConversationParticipant` | Teilnehmer + `lastReadAt`, eindeutig je Paar | **aktiv** |
 | `Message` | `body`, `attachmentUrl`, `attachmentName`, `deletedAt` | **aktiv** (Anhänge nur als URL, kein Upload) |
 
@@ -135,7 +141,7 @@
 | `DevOutbox` | nur Entwicklung: aufgezeichnete E-Mails/SMS (`channel`, `to`, `subject`, `body`, `template`) | **aktiv** (admin-only, nur mit `ENABLE_DEV_OUTBOX=true`) |
 | `PlatformMetric` | öffentliche Kennzahlen mit `kind` (`verified`\|`self_reported`\|`demo`\|`zero_state`), DE/EN-Labels | **aktiv** (Startseite) |
 
-*(`Badge`/`UserBadge` sind oben mitgezählt; die Gesamtzahl bleibt 50.)*
+*(`Badge`/`UserBadge` sind oben mitgezählt; Gesamtzahl 52 = 50 aus `0000` + `BetaInvite`/`BetaAccess` aus `0002`.)*
 
 ## Sprint 3 – neue Spalten (Migration `0001`)
 
@@ -146,6 +152,24 @@
 
 Beide Spalten sind **rein additiv** (SQLite `ALTER TABLE … ADD`), haben einen
 Default und erfordern kein Backfill. Alte Zeilen verhalten sich wie zuvor.
+
+## Sprint 12 – Private Beta (Migration `0002`)
+
+| Änderung | Details |
+| -------- | ------- |
+| `CREATE TABLE BetaInvite` | siehe Gruppe 3; Indizes `BetaInvite_codeHash_unique`, `beta_invite_status_idx`, `beta_invite_redeemed_idx`; FKs `createdById`/`redeemedById` → `User` (`ON DELETE SET NULL`) |
+| `CREATE TABLE BetaAccess` | siehe Gruppe 3; Indizes `BetaAccess_userId_unique`, `beta_access_status_idx (status, endsAt)`; FK `userId` → `User` (`ON DELETE CASCADE`), `inviteId` → `BetaInvite` und `revokedById` → `User` (`SET NULL`) |
+| `ALTER TABLE Conversation ADD directKey` + `conversation_direct_key_unique` | nullable, kein Backfill nötig: bestehende Direktchats werden beim nächsten Öffnen/Annehmen übernommen (`ensureDirectConversation` sucht zuerst den bestehenden Chat des Paares und setzt dann den Schlüssel). Mehrere `NULL`-Werte sind in SQLite erlaubt |
+| `UPDATE Notification SET readAt = createdAt WHERE type = 'message' AND readAt IS NULL` | Datenbereinigung: Seit Sprint 12 erzeugt nicht mehr jede einzelne Nachricht eine Mitteilung (ungelesene Nachrichten zählen über `ConversationParticipant.lastReadAt`). Alte ungelesene `message`-Mitteilungen würden sonst doppelt zählen. Nur `readAt` wird gesetzt, nichts gelöscht |
+
+**Rückwärtskompatibel:** keine Löschungen, keine Umbenennungen, keine
+NOT-NULL-Spalte ohne Default in bestehenden Tabellen. Alte Worker-Versionen
+ignorieren die neuen Tabellen/Spalte. Anwendung: lokal
+`npm run cf:d1:migrate:local` (Tests: `tests/d1-helpers.ts` wendet alle
+Migrationen aus `drizzle/meta/_journal.json` an), remote
+`npm run cf:d1:migrate:remote`. **Rollback** wäre nur manuell möglich
+(`DROP TABLE BetaAccess; DROP TABLE BetaInvite; DROP INDEX
+conversation_direct_key_unique;` – die Spalte `directKey` kann bleiben).
 
 ## Wichtige Beziehungen
 

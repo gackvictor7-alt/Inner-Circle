@@ -1,5 +1,4 @@
 import { asc } from "drizzle-orm";
-import { redirect } from "next/navigation";
 import { db } from "@/db/client";
 import { goals, interests } from "@/db/schema";
 import { requireUser } from "@/lib/access/server";
@@ -14,14 +13,14 @@ import {
   isDiscoverFilterKind,
   isInvestmentInterest,
   radiusFromValue,
-  matchPercentFromScore,
   rankCandidates,
   type DiscoverFilters,
   type ProfileSignals,
 } from "@/lib/discover/matching";
 import { DiscoverDeck, type DiscoverCardData } from "@/components/app/DiscoverDeck";
-import { DiscoverDemoSection } from "@/components/app/DemoSections";
+import { ClosedBetaNote, betaEndedState } from "@/components/app/ClosedBetaNote";
 import { LocalizedEmptyState, LocalizedPageHeader } from "@/components/app/localized";
+import { NetworkLocked } from "@/components/app/NetworkLocked";
 import { demoDiscoverResults } from "@/lib/demo/discover";
 
 export const dynamic = "force-dynamic";
@@ -47,6 +46,10 @@ function parseList(json: string | null | undefined): string[] {
  * It gets the same deck, filters and ranking over the fictional demo profiles
  * only – the member query is never executed, cards link to demo profiles and
  * "Kontakt anfragen" runs the simulated, client-only flow.
+ *
+ * Sprint 12: real-network users (members, admins, active beta testers) only
+ * ever see real, network-visible participants – never demo content, never a
+ * match percentage. An empty network says so honestly.
  */
 export default async function DiscoverPage({
   searchParams,
@@ -56,6 +59,7 @@ export default async function DiscoverPage({
     location?: string;
     industry?: string;
     interest?: string;
+    goal?: string;
     kind?: string;
     lookingFor?: string;
     offering?: string;
@@ -66,7 +70,7 @@ export default async function DiscoverPage({
 }) {
   const access = await requireUser("/app/discover");
   const isDemo = access.entitlements.demoAccess && !access.entitlements.networkDiscover;
-  if (!access.entitlements.networkDiscover && !isDemo) redirect("/app/billing?paywall=trial");
+  if (!access.entitlements.networkDiscover && !isDemo) return <NetworkLocked access={access} />;
 
   const params = await searchParams;
   const locale = access.user.locale === "en" ? "en" : "de";
@@ -104,6 +108,8 @@ export default async function DiscoverPage({
     location: params.location?.trim() || undefined,
     industry: params.industry?.trim() || undefined,
     interest: params.interest?.trim() || undefined,
+    // Only known goal slugs – an unknown value must not silently empty the deck.
+    goal: goalTaxonomy.some((row) => row.slug === params.goal?.trim()) ? params.goal?.trim() : undefined,
     lookingFor: params.lookingFor?.trim() || undefined,
     offering: params.offering?.trim() || undefined,
     investInterest: isInvestmentInterest(params.invest) ? params.invest : undefined,
@@ -127,6 +133,7 @@ export default async function DiscoverPage({
     location: filters.location,
     industry: filters.industry,
     interest: filters.interest,
+    goal: filters.goal,
     lookingFor: filters.lookingFor,
     offering: filters.offering,
     investInterest: filters.investInterest,
@@ -136,6 +143,7 @@ export default async function DiscoverPage({
   const filterOptions = {
     industries: [...industryLabelBySlug.entries()].map(([value, label]) => ({ value, label })),
     interests: viewerInterests,
+    goals: goalTaxonomy.map((row) => ({ value: row.slug, label: locale === "de" ? row.labelDe : row.labelEn })),
     investmentInterests: investmentInterestOptions(interestTaxonomy, locale),
     radiusKm: [...RADIUS_OPTIONS_KM],
   };
@@ -145,7 +153,7 @@ export default async function DiscoverPage({
       locale,
       industryByInterestSlug: groupByInterestSlug,
     });
-    const demoCards: DiscoverCardData[] = demoRanked.map(({ candidate, score, signals }) => ({
+    const demoCards: DiscoverCardData[] = demoRanked.map(({ candidate, signals }) => ({
       id: candidate.id,
       firstName: candidate.firstName,
       lastName: candidate.lastName,
@@ -164,8 +172,6 @@ export default async function DiscoverPage({
       interests: candidate.interestLabels,
       lookingFor: candidate.lookingFor,
       offering: candidate.offering,
-      trustScore10: null,
-      metrics: { connections: 0, opportunities: 0, listings: 0, verifiedRecords: 0 },
       sharedConnectionCount: 0,
       sharedInterests: signals.sharedInterests
         .map((slug) => interestLabelBySlug.get(slug) ?? slug)
@@ -173,7 +179,6 @@ export default async function DiscoverPage({
       sharedGoals: signals.sharedGoals.map((slug) => goalLabelBySlug.get(slug) ?? slug).slice(0, 4),
       supplyDemand: signals.supplyDemand > 0,
       sameLocation: signals.sameLocation,
-      matchPercent: matchPercentFromScore(score),
       isFollowing: false,
       isConnected: false,
       requestPending: false,
@@ -190,19 +195,21 @@ export default async function DiscoverPage({
         moreOpen={moreOpen}
         locationGeocodable={geocodeLocation(filters.location) !== null}
         filterOptions={filterOptions}
+        notice={<ClosedBetaNote ended={betaEndedState(access)} />}
       />
     );
   }
 
   const candidates = await listDiscoverCandidates({
     viewerId: access.user.id,
-    limit: 120,
+    limit: 150,
+    locale,
   });
 
   const filtered = applyDiscoverFilters(candidates, filters);
   const ranked = rankCandidates(viewer, filtered);
 
-  const cards: DiscoverCardData[] = ranked.map(({ candidate, score, signals }) => ({
+  const cards: DiscoverCardData[] = ranked.map(({ candidate, signals }) => ({
     id: candidate.id,
     firstName: candidate.firstName,
     lastName: candidate.lastName,
@@ -220,8 +227,6 @@ export default async function DiscoverPage({
     interests: candidate.interestLabels,
     lookingFor: candidate.lookingFor,
     offering: candidate.offering,
-    trustScore10: candidate.trustScore10,
-    metrics: candidate.metrics,
     sharedConnectionCount: candidate.sharedConnectionCount,
     sharedInterests: signals.sharedInterests
       .map((slug) => interestLabelBySlug.get(slug) ?? slug)
@@ -229,10 +234,10 @@ export default async function DiscoverPage({
     sharedGoals: signals.sharedGoals.map((slug) => goalLabelBySlug.get(slug) ?? slug).slice(0, 4),
     supplyDemand: signals.supplyDemand > 0,
     sameLocation: signals.sameLocation,
-    matchPercent: matchPercentFromScore(score),
     isFollowing: candidate.isFollowing,
     isConnected: candidate.isConnected,
     requestPending: candidate.requestPending,
+    requestCooldown: candidate.requestCooldown,
   }));
 
   if (cards.length === 0) {
@@ -247,15 +252,12 @@ export default async function DiscoverPage({
             action={{ labelKey: "app.discover.filtersClear", href: "/app/discover" }}
           />
         ) : (
-          <>
-            <LocalizedEmptyState
-              icon="compass"
-              titleKey="app.discover.emptyTitle"
-              textKey="app.discover.emptyText"
-              action={{ labelKey: "app.network.title", href: "/app/network" }}
-            />
-            <DiscoverDemoSection />
-          </>
+          <LocalizedEmptyState
+            icon="compass"
+            titleKey="app.beta.networkGrowingTitle"
+            textKey="app.beta.networkGrowingText"
+            action={{ labelKey: "app.beta.completeProfileCta", href: "/app/profile/edit" }}
+          />
         )}
       </div>
     );

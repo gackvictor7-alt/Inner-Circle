@@ -3,7 +3,21 @@
 **Diese Datei ist der verbindliche Einstiegspunkt für jeden Menschen und jeden
 KI-Agenten, der an diesem Repository arbeitet.**
 
-- **Stand:** 2026-09-24 (Sprint 11 – **Discovery-Demo statt Discovery-Trial**:
+- **Stand:** 2026-09-24 (Sprint 12 – **Private Beta & echtes Networking**:
+  persönliche, einmalige Beta-Schlüssel (`/admin/beta`, gespeichert nur als
+  HMAC) schalten nach normaler Registrierung + Verifizierung einen
+  **separaten, zeitlich begrenzten Beta-Zugang** frei (Standard 30 Tage,
+  verlängerbar/widerrufbar) – **keine** Mitgliedschaft, keine Zahlung, nur
+  Networking (Mitglieder finden, Anfragen mit Nachricht, Annehmen, Chat mit
+  bestätigten Kontakten). Serverseitig in der bestehenden Rechte-Matrix
+  (`06-permissions.md` §3c, ADR-015/016), Datenschutz-Einstellungen im
+  Networking erzwungen (§3d, K-06 behoben), keine Match-%/Kennzahlen/Trust in
+  Discover, keine Demo-Ergänzung im echten Netzwerk, ein Chat pro Paar,
+  Stripe-Webhook geprüft und korrigiert (`04-auth-membership.md` §4a),
+  Migration `0002` (52 Tabellen). **Zweite Prüfrunde:** fehlender
+  Businessziel-Filter in Discover ergänzt, Browser-E2E mit sechs Testkonten
+  65/65 (Skript `tests/e2e/sprint12-browser.mjs`), CPU-Zeit lokal gemessen →
+  Workers Paid Voraussetzung (K-24). Details §1c, §1i, K-22. Davor: Sprint 11 – **Discovery-Demo statt Discovery-Trial**:
   die 48-Stunden-Phase nach der Verifizierung ist jetzt eine klar
   gekennzeichnete Demo mit fiktiven Beispielprofilen/-angeboten und zeigt
   **keine** echten Mitglieder, Deals, Jobs oder Investments mehr; echte
@@ -40,9 +54,12 @@ finalisiert, Details `10-design-freeze.md` 1.14; davor: Incident-Fix post-Sprint
   Bildern, Profile humanisiert, Demo-Beiträge, Inbox-Empty-States, kleine
   Visualisierungen, AI-Look-Reduktion; Sprint 5 – Mobile-UX der Startseite,
   Login-UX, Demo-Detail-Dialoge, Event-Bilder)
-- **Technische Basis:** Branch `arena/01a0d03a-inner-circle`, Basis `main` @
-  `87a244a` (Stand nach PR #23/Sprint 10). Vorheriger dokumentierter Stand:
-  `5fb915b` (Sprint 10)
+- **Technische Basis:** Abschlussbranch `arena/01a0d501-inner-circle`, auf dem
+  gesicherten Sprint-12-Commit `6eebc3d` des Branches
+  `arena/01a0d435-inner-circle`; ursprüngliche Basis `main` @
+  `8a1b5ea` (Stand nach PR #25/Sprint 11) – Sprint 12 ist **noch nicht
+  gemergt** (Review durch den Gründer ausstehend). Vorheriger dokumentierter
+  Stand: Branch `arena/01a0d03a-inner-circle` auf `87a244a` (Sprint 11)
 - **Sprint-6-Auftrag:** ausdrücklicher Gründerauftrag: bestehendes Projekt
   stabilisieren, strukturieren, funktional machen, humanisieren. Kein Rewrite.
   Keine funktionierende Logik löschen. Domain/Resend-Custom-Domain bewusst
@@ -51,6 +68,33 @@ finalisiert, Details `10-design-freeze.md` 1.14; davor: Incident-Fix post-Sprint
   Dokumentation beschreibt, was dort tatsächlich steht – nicht, was geplant war.
 - **Design-Status:** siehe [`10-design-freeze.md`](10-design-freeze.md) –
   **APPROVED / DO NOT REDESIGN WITHOUT EXPLICIT FOUNDER REQUEST**
+
+## Sprint 12 – Abschlussprüfung (2026-09-24, kein neuer Sprint)
+
+**WORKING, Review ausstehend; nicht gemergt.** Fortsetzung auf
+`arena/01a0d501-inner-circle`, nachgewiesener Vorfahr
+`6eebc3d5b8ec9619959ff5515ccf3f0d36171b68` (gesicherter Sprint-12-Stand).
+Kein Neustart von main; keine Änderung an Anwendung, Schema, Homepage oder Design.
+
+- Worker-Browser-E2E **82/82** mit sechs isolierten Testkonten; kompletter
+  Zwei-Konten-Loop inkl. Registrierung, Verifizierung, Onboarding, Beta-Key,
+  Discover/Profil, Anfrage mit Nachricht, Annahme und Nachrichtenaustausch.
+- Session nach Onboarding bleibt erhalten (6/6 Konten, Secure/HttpOnly-Cookie
+  unverändert, Hard-Reload). Kein reproduzierter Anwendungsfehler.
+  **Testfehler korrigiert:** authentifizierter Browser-Linkcheck statt
+  cookie-losem APIRequestContext über lokales HTTP; Login-Redirects gelten
+  nicht länger als erfolgreicher Seitencheck. Details im Abschlussbericht.
+- Tests **35 Dateien / 246 grün**, Typecheck, i18n-Keycheck, Cloudflare-Build,
+  Wrangler-Dry-Run und frische lokale D1-Migration grün. **Lint nicht grün:**
+  unverändert 5 Fehler / 7 Warnungen (Ausgabe identisch zur Ausgangsbasis, K-15).
+- Echte Screenshots aktualisiert; Mobile-Beta-Key, -Profil und -Anfrage ergänzt.
+- **Grenzen:** externer E-Mail-Versand/Stripe/Produktionsmigration/Edge-Last nicht
+  geprüft; eigene bestehende Chats bleiben nach Beta-Ende lesbar (K-22),
+  fremde Chats sind gesperrt. Keine Produktionsdaten verändert.
+
+**Abschlussbericht:** [SPRINT-12-FINAL-REPORT.md](SPRINT-12-FINAL-REPORT.md) ·
+**Screenshots:** [Galerie](../preview/sprint12/README.md) ·
+**Einzelergebnisse:** [82 Prüfungen](../preview/sprint12/e2e-results-final.json).
 
 ---
 
@@ -150,12 +194,13 @@ Details: [`01-product.md`](01-product.md)
 
 ### 1c. Membership (aktueller Stand – verbindlich)
 
-- **Preise:** 24,99 € / Monat (2499 ct) und 249,90 € / Jahr (24990 ct) – „2 Monate geschenkt" = 16% Vorteil. Quelle der Wahrheit: `src/lib/membership/plans.ts` (doppelt in `src/lib/env.ts` als `membershipPricing` – Risiko K-17).
+- **Preise:** 24,99 € / Monat (2499 ct) und 249,90 € / Jahr (24990 ct) – „2 Monate geschenkt" ≈ 17 % Vorteil (16,67 %, `annualSaving()` rundet auf 17 – so zeigt es die App). Quelle der Wahrheit: `src/lib/membership/plans.ts` (doppelt in `src/lib/env.ts` als `membershipPricing` – Risiko K-17).
 - **48-h-Discovery-Demo (Sprint 11, ersetzt den „Discovery-Trial“ mit Leserechten):** serverseitig, genau einmal pro Konto (`startTrial()`, `Trial`-Tabelle unverändert), Start im Onboarding nach der Verifizierung, Ablauf lazy in `getAccessContext()`. Während der Demo gibt es **keine echten Mitgliederprofile, Kontaktvorschläge, Deals, Jobs oder Investments** – die Bereiche zeigen die zentral gepflegten, als „DEMO · Beispielprofil“/„DEMO · Beispiel“ gekennzeichneten Beispiele (`src/lib/demo`). Das Level `trial` hat dieselben Rechte wie `free` plus `demoAccess` (`src/lib/access/levels.ts`); Kontaktanfragen, Follows, Bewerbungen, Interessensbekundungen und Event-Anmeldungen werden serverseitig mit `membershipRequired` abgewiesen. Die simulierte Kontaktanfrage auf Demo-Profilen läuft rein clientseitig (`DemoConnectDialog`) und schreibt nichts. Echte veröffentlichte Events (Titel, Datum/Uhrzeit, Ort, Programm, freie Plätze aus realer Kapazität − Buchungen) bleiben lesbar; die Anmeldung ist Teil der Mitgliedschaft (Sperrkarte statt Formular, `applyToEventAction` → `membershipRequired`). Nach Ablauf: Konto/Profil bleiben, Level `free`, Demo nicht neu startbar (`already_used`), Mitgliedschafts-Screen (`LockedArea`/Billing).
 - **Sieben Kontozustände (verbindlich):** 1 anonym (`visitor`) · 2 registriert, unverifiziert (kein `/app`) · 3 verifiziert, Discovery nicht gestartet (`free`, kein `Trial`-Datensatz; landet im Onboarding) · 4 aktive 48-h-Demo (`trial`, `demoAccess`) · 5 abgelaufene Demo ohne Mitgliedschaft (`free`, `Trial.status = expired`) · 6 aktive bestätigte Mitgliedschaft (`member`) · 7 Admin. Nachweis: `tests/integration/access-matrix.test.ts`, `tests/integration/discovery-demo.test.ts`.
 - **Migrations-/Übergangsregel (Sprint 11, kein Schema-Change):** bestehende **aktive** Trials laufen bis zu ihrem ursprünglichen `expiresAt` weiter – ab dem Deploy unter Demo-Semantik (keine echten Daten mehr); bestehende **abgelaufene** Trials bleiben abgelaufen und werden **nie** zurückgesetzt; aktive Mitgliedschaften sind unberührt; Konten ohne `Trial`-Datensatz starten ihre Demo weiterhin genau einmal im Onboarding. Es gibt keine Datenmigration und keinen Reset-Pfad.
-- **Keine zusätzlichen Membership-Tiers.** Nur `free`, `trial`, `member`, `admin` (Level). Keine künstlichen Pakete.
-- **Bezahlung:** Stripe Checkout + signierte Webhooks implementiert, aber BLOCKED (keine Schlüssel). Dev-Aktivierung nur ohne Stripe und außerhalb Produktion (`ALLOW_DEV_MEMBERSHIP_ACTIVATION`), klar gekennzeichnet. **Auf dem Live-Worker (`NODE_ENV=production`, keine Stripe-Variablen in `wrangler.jsonc`) sind daher aktuell keine echten Zahlungen möglich und keine Mitgliedschaft aktivierbar**; `/app/billing` zeigt deshalb deaktivierte Plan-Buttons mit „Zahlung noch nicht freigeschaltet“ statt eines Checkout-Formulars ins Leere.
+- **Private Beta (Sprint 12, verbindlich):** dritte, unabhängige Achse neben Level und Rolle – **kein** neues Level, **keine** Mitgliedschaft. Ein aktiver `BetaAccess` (`status = active` und `endsAt` in der Zukunft, `betaIsActive()` in `src/lib/access/server.ts`, bei jedem Request aus der DB) ergänzt für `free`/`trial` ausschließlich `networkDirectory`, `networkDiscover`, `connect`, `messaging`, `profileFull` (`withBetaGrant()` in `src/lib/access/levels.ts`); Deals, Jobs, Investments, Marketplace-Verkauf, Academy und Event-Anmeldung bleiben gesperrt. Tester zählen nie als zahlend (keine `Membership`-/`Invoice`-Zeile, kein Stripe). Schlüssel: `ICB-XXXX-XXXX-XXXX-XXXX` (80 Bit), einmalig, an das einlösende Konto gebunden, optional an eine E-Mail, Einlösen nur verifiziert, Rate-Limit 8/h pro Konto und 30/h pro IP, race-sicher. Ablauf/Widerruf: Konto, Profil, Kontakte und Verläufe bleiben; echte Mitgliedersuche, neue Anfragen und Nachrichten gesperrt (Chat nur lesbar); Re-Login verlängert nichts. Läuft die 48-h-Demo noch, sieht der Nutzer die Demo plus Ende-Hinweis. Lebenszyklus: `04-auth-membership.md` §4b; Rechte: `06-permissions.md` §3c; Tabellen: `05-database.md`.
+- **Keine zusätzlichen Membership-Tiers.** Nur `free`, `trial`, `member`, `admin` (Level). Keine künstlichen Pakete. Der Beta-Zugang ist ein befristetes Entitlement, kein Tier.
+- **Bezahlung:** Stripe Checkout + signierte Webhooks implementiert, aber BLOCKED (keine Schlüssel). **Sprint-12-Audit:** Signaturprüfung im Worker auf `constructEventAsync` umgestellt (die synchrone Variante hätte jeden Produktions-Webhook abgelehnt), Aktivierung nur bei `payment_status = paid`/`no_payment_required` bzw. `checkout.session.async_payment_succeeded`, unbezahlte/fehlgeschlagene Checkouts werden nur protokolliert, `subscription.deleted` ohne 500 (`04-auth-membership.md` §4a, `stripe-webhook-route.test.ts`). Dev-Aktivierung nur ohne Stripe und außerhalb Produktion (`ALLOW_DEV_MEMBERSHIP_ACTIVATION`), klar gekennzeichnet. **Auf dem Live-Worker (`NODE_ENV=production`, keine Stripe-Variablen in `wrangler.jsonc`) sind daher aktuell keine echten Zahlungen möglich und keine Mitgliedschaft aktivierbar**; `/app/billing` zeigt deshalb deaktivierte Plan-Buttons mit „Zahlung noch nicht freigeschaltet“ statt eines Checkout-Formulars ins Leere.
 - **Free/abgelaufene Demo im `/app`-Bereich (Sprint 10/11):** Verzeichnis, Discover, Chancen, Jobs, Investments, Deal-/Investment-Details, fremde Profile und Demo-Profilseiten sind seitenweise gesperrt (`LockedArea`), das Dashboard zeigt statt Vollansicht ein Mitgliedschafts-Panel; erlaubt bleiben eigenes Profil/Einstellungen, Marketplace- und Event-Liste inkl. Event-Details (ohne Anmeldung), Inbox (Anfragen annehmen/ablehnen, Mitteilungen), Billing. Matrix und Nachweis: `06-permissions.md` §3/3a/3b.
 - **Zahlungsstatus ehrlich:** `/app/billing` nennt den echten Stand („Keine Zahlung hinterlegt – es besteht keine aktive Mitgliedschaft. Eine Mitgliedschaft wird ausschließlich nach bestätigter Zahlung aktiviert – nie durch einen Klick, eine Demo-Aktion oder eine fehlgeschlagene Zahlung.“). Ohne Stripe-Schlüssel und mit `ALLOW_DEV_MEMBERSHIP_ACTIVATION=false` (Standard in `.env.example`) antwortet `/api/billing/checkout` mit `?error=stripeNotConfigured` und legt **keine** Mitgliedschaft an (`discovery-demo.test.ts`).
 - **Mitgliedskarte:** Format `IC-<Jahr>-<5-stellige Nummer>`, öffentliche `publicId`, Status `active`/`expired`.
@@ -163,7 +208,7 @@ Details: [`01-product.md`](01-product.md)
 ### 1d. Demo-Daten (verbindliche Regeln – Sprint 6 verschärft)
 
 - **Quelle:** zentral `src/lib/demo/index.ts` (`DEMO_CONTENT_ENABLED` als Notausschalter) + `src/components/app/DemoSections.tsx`.
-- **Gating (Sprint 7, für Mitglieder unverändert):** echte Daten verdrängen Demo. `/app/network` zeigt **echte Mitglieder zuerst** und ergänzt bei weniger als 8 echten (gefilterten) Mitgliedern mit den klar als `DEMO · Beispielprofil` markierten Beispielprofilen, bis 8 Karten sichtbar sind. Ab 8 echten Mitgliedern treten Demo-Profile automatisch zurück. Dieselben Filter (Suche/Rolle/Standort/Interesse) gelten für beide. `/app/profile` zeigt Demo-Beiträge UNTER echten Beiträgen.
+- **Gating (Sprint 12, ersetzt die Sprint-7-Ergänzung):** das **echte** Netzwerk (Mitglieder, Admins, aktive Beta-Tester) zeigt in `/app/network` und `/app/discover` **nur echte, sichtbare Mitglieder** – keine Demo-Profile als Auffüllung. Ist niemand passend, erscheint der ehrliche Leerzustand („Dein Netzwerk wächst. …“). `networkDemoSupplement()` ist DEPRECATED. `/app/profile` zeigt Demo-Beiträge weiterhin UNTER echten Beiträgen.
 - **Discovery-Demo (Sprint 11, Level `trial`):** `/app/network`, `/app/discover`, `/app/opportunities`, `/app/jobs` und `/app/investments` rendern für die 48-h-Demo **ausschließlich** Demo-Inhalte – die Mitglieder-/Deal-/Investment-Abfragen werden gar nicht ausgeführt (kein Count, kein Teaser, nichts im RSC-Payload). Discover nutzt die **echten** Filter und das **echte** regelbasierte Ranking (`src/lib/demo/discover.ts` → `applyDiscoverFilters`/`rankCandidates`), sortiert nach den im Onboarding gewählten Interessen/Zielen; Demo-Profile tragen dafür Slugs der echten Taxonomie (`interestSlugs`/`goalSlugs`). Jede Demo-Seite trägt den Hinweis `DemoAreaNotice` („Discovery-Demo · …“), Mitglieder/Admins (`demoAccess=false`) sehen die Demo-Zweige nie (Gate: `demoAccess && !<echtes Entitlement>`).
 - **Demo-Investments (Sprint 11):** drei fiktive, offene Beispiele (`DEMO_INVESTMENTS`) ohne Renditeversprechen, Ticket als „Beispiel-Ticket“, keine abgeschlossenen/„funded“ Zustände; Deals/Jobs analog ohne erfundene Erfolge.
 - **Sichtbarkeit:** Badge „Demo"/„Beispiel"/„DEMO · Beispielprofil"/„DEMO · Beispiel"/„Beispiel-Event", Hinweistext `app.demo.notice`, Demo-Posts „Demo · keine echten Reaktionen"; keine technischen Begriffe („Mock“, „Seed“, „Placeholder“) in der Oberfläche.
@@ -219,6 +264,23 @@ Details: [`01-product.md`](01-product.md)
 - Kein neues Logo, kein neuer Name in diesem Sprint.
 
 ### 1i. Core Connection Loop (Sprint 8, vollständig funktionsfähig)
+
+**Sprint 12 (verbindliche Ergänzungen):** Der Loop steht jetzt auch aktiven
+Beta-Testern offen (serverseitig über `networkAccess`). Discover zeigt **keine**
+Match-Prozente, Kennzahlen oder Trust-Werte mehr, nur nachprüfbare
+Gemeinsamkeiten. Filter (kombinierbar, zurücksetzbar, deterministisch):
+Rolle, Standort, Umkreis, Branche, Interesse, **Businessziel**, Ich suche,
+Ich biete, Investmentinteresse, Typ. Geeignet sind nur aktive, verifizierte, onboardete,
+sichtbare Nicht-Demo-Konten mit Netzwerkzugang (`src/lib/network/eligibility.ts`).
+Gegenseitige Anfragen werden automatisch zu einer Verbindung, Selbst-/Doppel-/
+gelöschte/blockierte Ziele werden abgewiesen, nach einer Ablehnung gilt eine
+Wartezeit von 14 Tagen ohne Ablehnungs-Benachrichtigung. **Annehmen öffnet
+sofort den Chat** mit der Anfragenachricht als erster Nachricht
+(`/app/inbox?tab=messages&c=…`), **genau ein Chat pro Paar**
+(`Conversation.directKey`, unique). Der Chat pollt alle 10 s, Ungelesen-Zähler
+in der Inbox, keine Benachrichtigung pro Nachricht. Nicht-Teilnehmer können
+keinen Chat lesen. Nachweis: `beta-networking.test.ts`,
+`beta-network-d1.test.ts`, Browser-E2E (`08-testing.md` §3b).
 
 Der zentrale Produkt-Loop ist Ende-zu-Ende implementiert und getestet:
 
@@ -389,7 +451,9 @@ existiert. Backend + Daten + Berechtigungen + Nachweis gehören dazu.
 | Demo-Semantik der Discovery-Phase (keine echten Mitglieder/Deals/Jobs/Investments, simulierte Anfrage ohne Datenbankschreibung, echte Events lesbar/Anmeldung gesperrt) | WORKING | `entitlementsFor("trial")` = free + `demoAccess`, `src/lib/demo/discover.ts`, `DemoConnectDialog`, `access-matrix.test.ts`, `discovery-demo.test.ts` |
 | Trial-Kontaktanfragen-Zähler (`TRIAL_CONNECTION_LIMIT`) | PREPARED | Service + Test bleiben, wird seit Sprint 11 von keiner Action mehr verbraucht (Trial darf keine echten Anfragen senden) |
 | Paid Membership (Monat/Jahr) über Service | WORKING | `src/lib/membership/service.ts`, `tests/integration/membership.test.ts` |
-| Stripe-Checkout + signierte Webhooks | BLOCKED | Code vollständig (`/api/billing/checkout`, `/api/webhooks/stripe`, `webhook.test.ts`), aber kein Stripe-Konto/Schlüssel |
+| Stripe-Checkout + signierte Webhooks | BLOCKED | Code vollständig (`/api/billing/checkout`, `/api/webhooks/stripe`, `webhook.test.ts`), aber kein Stripe-Konto/Schlüssel; Sprint 12: Worker-Signaturprüfung + Aktivierungsregeln korrigiert (`stripe-webhook-route.test.ts`, `stripe-worker-signature.test.ts`) |
+| **Private Beta: Schlüssel einlösen → befristeter Beta-Zugang (Sprint 12)** | WORKING (lokal verifiziert) | `src/lib/beta/*`, `src/app/actions/beta.ts`, `/app/beta`, `beta-access.test.ts` (18), `beta-network-d1.test.ts`, Browser-E2E; Produktions-D1 braucht Migration `0002` (K-22) |
+| Kundenportal (Kündigung/Zahlungsmittel) | PREPARED | `createBillingPortalSession()` vorhanden, keine Route/UI |
 | Dev-Mitgliedschaftsaktivierung (klar gekennzeichnet) | WORKING | nur ohne Stripe und außerhalb Produktion (`ALLOW_DEV_MEMBERSHIP_ACTIVATION`) |
 | Mitgliedskarte (Nummer + öffentliche Verifizierung) | WORKING | `issueCardIfNeeded`, `/member/[publicId]` |
 | Paywall/Weiterleitung unterhalb des Levels | WORKING | `requireAccess()`, `/app/billing?paywall=…`; Sprint 10/11: Seiten-Locked-State `LockedArea` für Free/abgelaufene Demo, `tests/integration/access-matrix.test.ts` (26 Fälle, 7 Kontozustände) |
@@ -409,14 +473,15 @@ existiert. Backend + Daten + Berechtigungen + Nachweis gehören dazu.
 | Trust & Performance (eigene Sicht) | PARTIAL | `/app/profile?tab=performance` (+ `/app/trust` als Detailseite); Bewertungen können **nicht** abgegeben werden (Verifikations-Pipeline fehlt) |
 | Öffentliche Mitgliedskarte verifizieren | WORKING | `/member/[publicId]` |
 | Activity Feed (Posts) | WORKING | `Post`, `createPostAction`, Feed auf Dashboard; Sprint 6: 3-6 hochwertige Demo-Beiträge (Founder Update, neues Projekt, Suche Partner, Event-Erfahrung, neuer Service, Meilenstein) klar als Demo markiert, keine Metrik-Veränderung |
-| Profilsichtbarkeit / Datenschutz-Einstellungen | PARTIAL | Werte werden gespeichert (`PrivacySettings`), aber nicht überall in Queries erzwungen |
+| Profilsichtbarkeit / Datenschutz-Einstellungen | WORKING (Networking) · PARTIAL (übrige Bereiche) | Sprint 12: im Networking erzwungen – unsichtbar = nicht gelistet/404, reduzierte Karte, Kontaktlinks nur für Kontakte, Standort verborgen, Kennzahlen nach Schalter (`src/lib/network/privacy.ts`, `06-permissions.md` §3d, `beta-networking.test.ts`); außerhalb des Networkings nicht ausgewertet (K-06) |
+| Profil speichern (alle Felder, geführtes Beta-Onboarding mit Fortschritt) | WORKING | Sprint 12: falsche Formularschlüssel behoben (Website/X/Instagram wurden nicht gespeichert bzw. nicht geleert), nur http(s)-Links, `profile-save.test.ts` |
 | Avatar-/Cover-Upload | NOT IMPLEMENTED | nur URL-Feld; kein Storage-Anbieter (S3/R2) angebunden (Upload folgt in separatem Sprint) |
 
 ### E. Network
 
 | Funktion | Status | Nachweis |
 | -------- | ------ | -------- |
-| Member Discovery (Verzeichnis mit Suche/Filter) | WORKING | `/app/network`, `listDirectoryMembers()`; Sprint 6 humanisiert: 20-35, Mix Founder/Unternehmer/Investor/Creator/Consultant/Operator/Freelancer, uneven Bios/Skills, Städte variabel; **Sprint 7: Filterleiste Suche + Rolle + Standort + Interesse** (Rolle via `jobTitle`/`rolesJson`), Demo-Ergänzung laut §4a |
+| Member Discovery (Verzeichnis mit Suche/Filter) | WORKING | `/app/network`, `listDirectoryMembers()`; Sprint 6 humanisiert: 20-35, Mix Founder/Unternehmer/Investor/Creator/Consultant/Operator/Freelancer, uneven Bios/Skills, Städte variabel; **Sprint 7: Filterleiste Suche + Rolle + Standort + Interesse** (Rolle via `jobTitle`/`rolesJson`); **Sprint 12:** nur echte, geeignete Mitglieder (keine Demo-Ergänzung mehr), Privatsphäre erzwungen, auch für aktive Beta-Tester |
 | **Verbindungsstatus richtungsabhängig (Sprint 7)** | WORKING | eigene gesendete Anfrage → „Anfrage gesendet" + **Zurückziehen**; erhaltene Anfrage → **Annehmen / Ablehnen** direkt auf der Mitgliedskarte (`outgoingRequestId`/`incomingRequestId` aus `listDirectoryMembers()`); Follow-Button heißt „Nicht mehr folgen" (kein „Ablehnen" mehr, der nur für erhaltene Anfragen steht); `network-directory.test.ts` |
 | **Demo-Profilansicht (Sprint 7, Sprint 11 erweitert)** | WORKING | „Profil ansehen" auf Demo-Karten → `/app/people/demo/[key]`: vollständige, eindeutig als „DEMO · Beispielprofil" gekennzeichnete Ansicht (Interessen, Businessziele aus der echten Taxonomie, Suche/Biete, Skills) ohne Mitglieder-DB-Zugriff; „Kontakt anfragen“ öffnet den simulierten Anfrage-Flow mit Pflichtnachricht und Abschluss „So funktioniert eine Kontaktanfrage bei INNER CIRCLE. Dies war eine Demo – es wurde keine Nachricht an eine echte Person gesendet.“ (`DemoConnectDialog`, keine Server-Action, keine DB-Zeile); nur für `demoAccess` oder Verzeichnis-Berechtigte, sonst `LockedArea` |
 | **Discovery-Demo in Network/Discover (Sprint 11)** | WORKING | Level `trial` sieht in `/app/network` und `/app/discover` ausschließlich die acht Demo-Profile (echte Abfragen werden nicht ausgeführt), mit den echten Filtern (Rolle, Standort, Umkreis, Branche, Interesse, Investmentinteresse, Suche/Biete), aktiven Filtern + Zurücksetzen und ehrlichem Leerzustand; Sortierung nach eigenen Interessen/Zielen (`demoDiscoverResults`); `demo-discover.test.ts`, `discovery-demo.test.ts` |
@@ -424,8 +489,8 @@ existiert. Backend + Daten + Berechtigungen + Nachweis gehören dazu.
 | Connection Requests (senden/annehmen/ablehnen/zurückziehen) | WORKING | `network.ts`, `connection-request.test.ts`, `messaging-authorization.test.ts` |
 | **Core Connection Loop (Sprint 8)** | WORKING | Discover → Profil (zustandsabhängige Aktionen) → Connect mit Pflichtnachricht → Anfrage in Inbox → Annehmen/Ablehnen → Chat (nur Mitglieder) + Business Connection → Network (`Alle/Verbindungen/Anfragen`). Details §1i; `core-loop.test.ts` (accept/decline/withdraw, Notification-Deep-Links, kein implizites Follow), `connection-request.test.ts`, `messaging-authorization.test.ts` |
 | **Verbindungsanfrage nur mit Pflichtnachricht** (min. 10 Zeichen, max. 600) | WORKING | serverseitig in `sendConnectionRequestAction` (`CONNECTION_MESSAGE_MIN_LENGTH`/`CONNECTION_MESSAGE_MAX_LENGTH`), UI `ConnectDialog` (Zähler + Fehler), `connection-request.test.ts` |
-| **Discover** (Business-Karten, Relevanz-Ranking, Filter) | WORKING | `/app/discover`, `DiscoverDeck`, `src/lib/discover/matching.ts`, `discover-matching.test.ts`; Sprint 6 humanisiert, keine 3-Skills-Zwang |
-| Messaging (nur zwischen verbundenen Konten) | WORKING | `message-delivery`, `messaging-authorization` Tests |
+| **Discover** (Business-Karten, Relevanz-Ranking, Filter) | WORKING | `/app/discover`, `DiscoverDeck`, `src/lib/discover/matching.ts`, `discover-matching.test.ts`; Sprint 6 humanisiert, keine 3-Skills-Zwang; **Sprint 12:** keine Match-%/Kennzahlen/Trust, Desktop-Zweispalter wiederhergestellt, ruhiger Platzhalter ohne Foto, **Businessziel-Filter** (`10-design-freeze.md` §1.17, `discover-matching.test.ts`) |
+| Messaging (nur zwischen verbundenen Konten) | WORKING | `message-delivery`, `messaging-authorization` Tests; Sprint 12: für Mitglieder **und** aktive Beta-Tester, ein Chat pro Paar, Polling 10 s, Ungelesen-Zähler, nach Beta-Ende nur lesbar (`beta-networking.test.ts`, Browser-E2E) |
 | Blockieren | WORKING | `Block`, `blockMemberAction` |
 | Notifications (in-App, i18n, Dedupe) | WORKING | `Notification`, `notify()` |
 | E-Mail-Benachrichtigungen | BLOCKED | hängt am E-Mail-Provider |
@@ -498,18 +563,21 @@ existiert. Backend + Daten + Berechtigungen + Nachweis gehören dazu.
 | Moderations-Queue (`Report`) | PREPARED | Tabelle vorhanden, keine UI/Aktion |
 | Rollenstufen (Support/Moderation/Finanzen) | NOT IMPLEMENTED | nur `user` \| `admin` |
 | Dev-Postausgang (`/dev/outbox`) | WORKING | nur mit `ENABLE_DEV_OUTBOX=true` und Rolle `admin` |
+| **Beta-Verwaltung (Sprint 12)** | WORKING (lokal verifiziert) | `/admin/beta`: Schlüssel erstellen (Klartext einmal), Status/Nutzer/Start/Ende, verlängern (+7/14/30/60 Tage), widerrufen, unbenutzte deaktivieren, Anzahl aktiver Tester; serverseitig `requireAdmin`, Audit ohne Schlüssel; `beta-access.test.ts` |
 
 ### L. Infrastructure
 
 | Funktion | Status | Nachweis |
 | -------- | ------ | -------- |
 | Cloudflare-Worker-Konfiguration (OpenNext) | WORKING | `wrangler.jsonc`, `open-next.config.ts`; `npm run cf:build` läuft in dieser Session grün |
-| D1-Anbindung + Migrationen (50 Tabellen) | WORKING | `drizzle/0000_init.sql`, `cf:release` |
+| D1-Anbindung + Migrationen (52 Tabellen) | WORKING (lokal) · Produktion ausstehend | `drizzle/0000_init.sql` … `0002_sprint12_private_beta.sql`, `cf:release`; `0002` bisher **nur lokal** angewendet (K-22) |
 | Laufzeit-Treiberwechsel D1 ↔ libSQL | WORKING | `src/db/client.ts` |
 | Deployment über Workers Builds (main → Produktion) | PARTIAL | dokumentierter Weg; letzter Merge nach `main` durch den Gründer zu prüfen (Dashboard) |
-| Automatisierte Tests | WORKING | **134 Tests grün (24 Testdateien)**, inkl. echtem D1-Lauf (`tests/integration/for-you-d1.test.ts`, workerd/Miniflare) |
+| Automatisierte Tests | WORKING | **246 Tests grün (35 Testdateien)** (Sprint 12), inkl. echter D1-Läufe (`for-you-d1`, `beta-network-d1`, workerd/Miniflare); Browser-E2E `tests/e2e/sprint12-browser.mjs` gegen den Worker-Preview **65/65** (nicht Teil von `npm test`, `08-testing.md` §3b) |
+| Worker-Build + Dry-Run | WORKING | Sprint 12: `npm run cf:build` grün, `wrangler deploy --dry-run` grün – Upload 9287,12 KiB / gzip 1859,17 KiB, Bindings `DB`, `ASSETS`, `NEXTJS_ENV` |
+| CPU-Zeit / Worker-Limits | PARTIAL (lokal gemessen) | Startphase 50 ms (Limit 1 s); Seiten 43–68 ms, Login ~0,6 s im lokalen workerd → über Free (10 ms), weit unter Paid (30 s) → **Workers Paid Voraussetzung** (K-24, `08-testing.md` §3c); auf Cloudflare nicht gemessen |
 | CI (GitHub Actions) | NOT IMPLEMENTED | keine Workflows im Repo |
-| Lint | PARTIAL | **13 bestehende Hinweise (5 Fehler, 8 Warnungen)** – vorbestehend, keine neuen Befunde |
+| Lint | PARTIAL | **12 bestehende Hinweise (5 Fehler, 7 Warnungen)** – vorbestehend, keine neuen Befunde (Sprint 12: 14 → 12, K-15) |
 | Monitoring/Alerting | PREPARED | Observability im Worker aktiv, keine Alarme |
 
 ## 4a. Demo-Content (verbindliche Regeln)
@@ -517,11 +585,10 @@ existiert. Backend + Daten + Berechtigungen + Nachweis gehören dazu.
 - **Quelle:** alles Fiktive lebt zentral in `src/lib/demo/index.ts`
   (`DEMO_CONTENT_ENABLED` als Notausschalter) und wird über
   `src/components/app/DemoSections.tsx` gerendert.
-- **Gating (Sprint 7, Mitglieder):** echte Daten verdrängen Demo-Daten. `/app/network` zeigt
-  die echten Mitglieder **zuerst** und ergänzt die klar als `DEMO · Beispielprofil`
-  markierten Beispielprofile, solange die echte (gefilterte) Liste kleiner als 8
-  ist – bis 8 Karten insgesamt; ab 8 echten
-  Mitgliedern treten die Demo-Profile automatisch zurück.
+- **Gating (Sprint 12):** das echte Netzwerk (Mitglieder, Admins, aktive
+  Beta-Tester) zeigt **nie** Demo-Profile – auch nicht als Auffüllung kleiner
+  Listen (die Sprint-7-Ergänzung ist entfernt, `networkDemoSupplement()`
+  DEPRECATED). Demo-Konten erscheinen nie im echten Netzwerk.
 - **Discovery-Demo (Sprint 11, Level `trial`):** Network, Discover, Chancen,
   Jobs und Investments zeigen **nur** Demo-Inhalte, echte Abfragen laufen nicht;
   Demo-Profile (8, `DEMO_PROFILES`) nutzen Slugs der echten Taxonomie, damit die
@@ -683,6 +750,23 @@ lässt auf 2560 px symmetrische Ränder statt einer toten rechten Fläche.
    darstellen – Badge + Hinweis Pflicht.
 
 ## 8. Nächster empfohlener Schritt
+
+**Sprint 12 (Private Beta) ist implementiert und lokal geprüft, aber noch nicht
+gemergt.** Reihenfolge für den Gründer:
+1. Review des Branches `arena/01a0d435-inner-circle` (Screenshots unter
+   `preview/sprint12/`), danach PR gegen `main`.
+2. Deploy mit `npm run cf:deploy` bzw. `cf:release` – **wendet Migration
+   `0002` auf die Produktions-D1 an**; ohne Migration fehlen die Beta-Tabellen.
+3. Admin-Konto prüfen (`npm run cf:admin`), unter `/admin/beta` die ersten
+   Schlüssel erzeugen, persönlich weitergeben.
+4. Stripe im Testmodus anbinden (`04-auth-membership.md` §4a,
+   `07-integrations.md` §3.2) – erst danach echte Mitgliedschaften.
+5. **Workers Paid** im Cloudflare-Dashboard bestätigen – Seitenaufbau und
+   Login liegen über dem Free-Limit von 10 ms CPU (K-24).
+6. Offene Punkte: K-22 (u. a. E-Mail-Benachrichtigungen, Foto-Upload,
+   Schreiben an abgelaufene Tester – Gründerentscheidung), K-23.
+
+Vorheriger Stand (Sprint 8):
 
 **Sprint 8 ist abgeschlossen** (Mobile Public Homepage radikal verkürzt,
 Mobile Member App (Bottom Nav / Mobile-Chat / Mobile-Menü), Core Connection

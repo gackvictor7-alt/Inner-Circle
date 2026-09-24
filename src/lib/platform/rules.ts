@@ -27,3 +27,13 @@ export type ProfileMetricKey = (typeof PROFILE_METRIC_KEYS)[number];
 
 /** Visibility levels used across the privacy settings. */
 export const VISIBILITY_LEVELS = ["public", "members", "connections", "private"] as const;
+
+/**
+ * After a declined connection request the sender may ask the same person
+ * again only after this many days (Sprint 12: protects members from repeated
+ * requests; the recipient can additionally block).
+ */
+export const CONNECTION_REQUEST_COOLDOWN_DAYS = 14;
+
+/** Chat refresh interval while a conversation is open (polling, no websockets). */
+export const CHAT_POLL_INTERVAL_MS = 10_000;

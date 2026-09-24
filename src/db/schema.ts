@@ -367,10 +367,21 @@ export const conversations = sqliteTable(
     kind: text("kind").notNull().default("direct"), // direct | opportunity
     subject: text("subject"),
     opportunityId: text("opportunityId"),
+    /**
+     * Sprint 12: stable key of a 1:1 conversation – the sorted user pair
+     * (`<userA>:<userB>`). The unique index makes the lookup-or-create race
+     * safe (two concurrent "open chat" calls can never create two chats).
+     * NULL for opportunity conversations and for direct chats created before
+     * Sprint 12 (those are still found through the participant join).
+     */
+    directKey: text("directKey"),
     createdAt: integer("createdAt", { mode: "timestamp_ms" }).notNull(),
     lastMessageAt: integer("lastMessageAt", { mode: "timestamp_ms" }).notNull(),
   },
-  (t) => [index("conversation_last_idx").on(t.lastMessageAt)],
+  (t) => [
+    index("conversation_last_idx").on(t.lastMessageAt),
+    uniqueIndex("conversation_direct_key_unique").on(t.directKey),
+  ],
 );
 
 export const conversationParticipants = sqliteTable(
@@ -898,4 +909,64 @@ export const accountDeletionRequests = sqliteTable(
     note: text("note"),
   },
   (t) => [index("account_deletion_status_idx").on(t.status)],
+);
+
+/* ------------------------------------------------ private beta (Sprint 12) */
+
+/**
+ * Personal beta invitation keys. Only an HMAC of the key is stored – the
+ * plain key is shown to the admin exactly once at creation time. A key is
+ * single-use: redeeming it binds it to exactly one account (`redeemedById`).
+ *
+ * status: active (redeemable) | redeemed | disabled (admin, never redeemable)
+ */
+export const betaInvites = sqliteTable(
+  "BetaInvite",
+  {
+    id: id(),
+    codeHash: text("codeHash").notNull().unique(),
+    /** Last characters of the key – lets the admin identify a key without storing it. */
+    codeHint: text("codeHint").notNull(),
+    /** Admin note, e.g. the intended tester's name. Never shown to other users. */
+    label: text("label"),
+    /** Optional binding: only an account with this (lower-case) e-mail may redeem. */
+    restrictedEmail: text("restrictedEmail"),
+    /** Length of the beta access granted on redemption (days from redemption). */
+    durationDays: integer("durationDays").notNull().default(30),
+    status: text("status").notNull().default("active"),
+    /** Optional last day the key can be redeemed (independent of the access length). */
+    expiresAt: ts("expiresAt"),
+    createdById: text("createdById").references(() => users.id, { onDelete: "set null" }),
+    redeemedById: text("redeemedById").references(() => users.id, { onDelete: "set null" }),
+    redeemedAt: ts("redeemedAt"),
+    disabledAt: ts("disabledAt"),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index("beta_invite_status_idx").on(t.status), index("beta_invite_redeemed_idx").on(t.redeemedById)],
+);
+
+/**
+ * Time-limited beta entitlement (one row per account). It is NOT a paid
+ * membership: it only unlocks the networking capabilities (see
+ * src/lib/access/levels.ts → BETA_NETWORK_GRANTS). Expiry is derived from
+ * `endsAt`; an admin can extend it (new `endsAt`) or revoke it early.
+ *
+ * status: active | revoked
+ */
+export const betaAccess = sqliteTable(
+  "BetaAccess",
+  {
+    id: id(),
+    userId: text("userId").notNull().unique().references(() => users.id, { onDelete: "cascade" }),
+    inviteId: text("inviteId").references(() => betaInvites.id, { onDelete: "set null" }),
+    status: text("status").notNull().default("active"),
+    startsAt: integer("startsAt", { mode: "timestamp_ms" }).notNull(),
+    endsAt: integer("endsAt", { mode: "timestamp_ms" }).notNull(),
+    revokedAt: ts("revokedAt"),
+    revokedById: text("revokedById").references(() => users.id, { onDelete: "set null" }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index("beta_access_status_idx").on(t.status, t.endsAt)],
 );

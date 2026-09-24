@@ -152,6 +152,23 @@ describe("discover filters", () => {
     expect(hasActiveFilters({ role: "  " })).toBe(false);
     expect(hasActiveFilters({ kind: "founder" })).toBe(true);
   });
+
+  it("filters by business goal (taxonomy slug), combinable and deterministic (Sprint 12)", () => {
+    const partner = { ...founder, id: "3", goalSlugs: ["find-partners", "grow-network"] };
+    const funding = { ...investor, id: "4", goalSlugs: ["invest"] };
+    const pool = [partner, funding];
+    expect(applyDiscoverFilters(pool, { goal: "find-partners" }).map((c) => c.id)).toEqual(["3"]);
+    expect(applyDiscoverFilters(pool, { goal: "INVEST " }).map((c) => c.id)).toEqual(["4"]);
+    expect(applyDiscoverFilters(pool, { goal: "hire-talent" })).toHaveLength(0);
+    // Combined with other filters (AND) and independent of the input order.
+    expect(applyDiscoverFilters(pool, { goal: "find-partners", location: "berlin" })).toHaveLength(1);
+    expect(applyDiscoverFilters(pool, { goal: "find-partners", location: "münchen" })).toHaveLength(0);
+    expect(applyDiscoverFilters([funding, partner], { goal: "grow-network" })).toEqual(
+      applyDiscoverFilters([partner, funding], { goal: "grow-network" }),
+    );
+    expect(hasActiveFilters({ goal: " " })).toBe(false);
+    expect(hasActiveFilters({ goal: "invest" })).toBe(true);
+  });
 });
 
 describe("discover supply/demand and investment filters", () => {

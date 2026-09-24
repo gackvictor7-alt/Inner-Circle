@@ -64,7 +64,7 @@ export function StatTile({
   hint,
   tone = "default",
 }: {
-  label: string;
+  label: ReactNode;
   value: ReactNode;
   hint?: string;
   tone?: "default" | "electric" | "forest" | "muted";

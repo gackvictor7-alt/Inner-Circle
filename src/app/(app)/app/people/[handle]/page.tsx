@@ -1,22 +1,32 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
+import { and, eq, or } from "drizzle-orm";
+import { db } from "@/db/client";
+import { blocks } from "@/db/schema";
 import { requireUser } from "@/lib/access/server";
-import { isBlocked, isConnected } from "@/db/queries";
+import { isConnected } from "@/db/queries";
 import {
   connectionRequestState,
+  goalLabelsFor,
   interestLabelsFor,
   memberProfileByHandle,
-  profileStats,
   trustProfile,
   userPosts,
 } from "@/lib/platform/queries";
+import {
+  contactsVisible,
+  locationVisible,
+  performanceVisible,
+  profileDepth,
+  type ViewerRelation,
+} from "@/lib/network/privacy";
 import { ProfileActions } from "@/components/app/ProfileActions";
 import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { RatingStars } from "@/components/ui/RatingStars";
-import { GlobeIcon, InstagramIcon, XSocialIcon } from "@/components/ui/icons";
-import { LocalizedPageHeader, Tr } from "@/components/app/localized";
-import { LockedArea } from "@/components/app/LockedArea";
+import { GlobeIcon, InstagramIcon, LockIcon, MapPinIcon, XSocialIcon } from "@/components/ui/icons";
+import { Tr } from "@/components/app/localized";
+import { NetworkLocked } from "@/components/app/NetworkLocked";
 
 export const dynamic = "force-dynamic";
 
@@ -24,299 +34,352 @@ function parseList(json: string | null | undefined): string[] {
   if (!json) return [];
   try {
     const value = JSON.parse(json);
-    return Array.isArray(value) ? value.map(String) : [];
+    return Array.isArray(value) ? value.map(String).filter(Boolean) : [];
   } catch {
     return [];
   }
 }
 
+function externalHref(value: string, base?: string) {
+  if (value.startsWith("http://") || value.startsWith("https://")) return value;
+  return base ? `${base}${value.replace(/^@/, "")}` : `https://${value}`;
+}
+
+/**
+ * Real member profile (Sprint 12).
+ *
+ * Access (server-side, before any data is rendered):
+ *   * own profile – always
+ *   * everyone else needs real-network access (member / admin / active beta)
+ *   * the person must be a real, active account – demo accounts and blocked
+ *     relations answer "not found"
+ *   * unlisted people (not discoverable, or without current network access,
+ *     e.g. an expired beta tester) are only visible to their connections and
+ *     to people they sent a request to
+ * Privacy settings decide the depth: reduced card for "connections only",
+ * contact links only per contact visibility, location only if shown, trust
+ * block only for members and only if the owner shares it.
+ */
 export default async function MemberProfilePage({ params }: { params: Promise<{ handle: string }> }) {
   const { handle } = await params;
   const access = await requireUser(`/app/people/${handle}`);
   const profile = await memberProfileByHandle(handle);
   if (!profile) notFound();
 
-  const isSelf = profile.id === access.user.id;
+  const viewerId = access.user.id;
+  const isSelf = profile.id === viewerId;
+  if (!isSelf && !access.entitlements.networkDirectory) return <NetworkLocked access={access} />;
+  if (!isSelf && (profile.isDemo || profile.status !== "active")) notFound();
 
-  // Member profiles are part of the directory (docs/06-permissions.md:
-  // Free ➖, Trial ⚠️ limited, Member ✅). Own profile stays visible.
-  if (!access.entitlements.networkDirectory && !isSelf) {
-    return <LockedArea access={access} icon="users" />;
-  }
-
-  const [stats, trust, posts, connected, blocked, requestState, interestLabels] = await Promise.all([
-    profileStats(profile.id),
-    trustProfile(profile.id),
-    userPosts(profile.id, 10),
-    isConnected(access.user.id, profile.id),
-    isBlocked(access.user.id, profile.id),
+  const [connected, blockRows, requestState] = await Promise.all([
+    isSelf ? false : isConnected(viewerId, profile.id),
     isSelf
-      ? { outgoingRequestId: null, incomingRequestId: null }
-      : connectionRequestState(access.user.id, profile.id),
-    interestLabelsFor(profile.id, access.user.locale === "en" ? "en" : "de"),
+      ? []
+      : db
+          .select({ blockerId: blocks.blockerId })
+          .from(blocks)
+          .where(
+            or(
+              and(eq(blocks.blockerId, viewerId), eq(blocks.blockedId, profile.id)),
+              and(eq(blocks.blockerId, profile.id), eq(blocks.blockedId, viewerId)),
+            ),
+          ),
+    isSelf
+      ? { outgoingRequestId: null, incomingRequestId: null, cooldownUntil: null }
+      : connectionRequestState(viewerId, profile.id),
   ]);
-  const offering = parseList(profile.offeringJson);
+  const blockedMe = blockRows.some((row) => row.blockerId === profile.id);
+  const blockedByMe = blockRows.some((row) => row.blockerId === viewerId);
+  if (blockedMe) notFound();
 
-  const limited = !access.entitlements.profileFull && !isSelf;
-  const score = trust.summary?.score10 ? trust.summary.score10 / 10 : null;
+  const relation: ViewerRelation = isSelf
+    ? "self"
+    : connected
+      ? "connected"
+      : requestState.incomingRequestId
+        ? "requester"
+        : "network";
+  const listed = profile.participant && profile.discoverable !== false;
+  // Blocked-by-me profiles stay reachable (only to unblock them from here).
+  if (!isSelf && relation === "network" && !listed && !blockedByMe && !requestState.outgoingRequestId) notFound();
+
+  const depth = blockedByMe ? "limited" : profileDepth(profile.privacyVisibility ?? profile.profileVisibility, relation);
+  const showContacts = !blockedByMe && contactsVisible(profile.contactVisibility, relation);
+  const showLocation = locationVisible(profile.showLocation, relation);
+  const locale = access.user.locale === "en" ? "en" : "de";
+  const showTrust =
+    depth === "full" && (isSelf || access.entitlements.trustView) && performanceVisible(profile.privacyPerformance, relation);
+  const showPosts = depth === "full" && (isSelf || access.entitlements.feedRead);
+
+  const [interestLabels, goalLabels, trust, posts] = await Promise.all([
+    depth === "full" ? interestLabelsFor(profile.id, locale) : Promise.resolve([] as string[]),
+    depth === "full" ? goalLabelsFor(profile.id, locale) : Promise.resolve([] as string[]),
+    showTrust ? trustProfile(profile.id) : Promise.resolve(null),
+    showPosts ? userPosts(profile.id, 10) : Promise.resolve([]),
+  ]);
+  const score = trust?.summary?.score10 ? trust.summary.score10 / 10 : null;
+
+  const roles = parseList(profile.rolesJson);
+  const skills = parseList(profile.skillsJson);
+  const lookingFor = parseList(profile.lookingForJson);
+  const offering = parseList(profile.offeringJson);
+  const memberSince = profile.createdAt.toLocaleDateString(locale === "en" ? "en-GB" : "de-DE", {
+    month: "long",
+    year: "numeric",
+  });
+  const requestsOpen = profile.participant && profile.allowConnectionRequests !== false;
 
   return (
-    <div className="space-y-8">
-      <LocalizedPageHeader
-        titleKey="app.profile.publicProfile"
-        actions={
-          isSelf ? (
-            <Link
-              href="/app/profile/edit"
-              className="rounded-full border border-border px-4 py-2 text-sm font-semibold"
-            >
-              <Tr k="app.common.edit" />
-            </Link>
-          ) : (
-            <ProfileActions
-              userId={profile.id}
-              handle={profile.handle}
-              firstName={profile.firstName}
-              isConnected={connected}
-              isBlocked={blocked}
-              canFollow={access.entitlements.follow}
-              canConnect={access.entitlements.connect !== "no" && !blocked}
-              canMessage={access.entitlements.messaging}
-              outgoingRequestId={requestState.outgoingRequestId}
-              incomingRequestId={requestState.incomingRequestId}
-            />
-          )
-        }
-      />
-
-      <Card className="p-6">
-        <div className="flex flex-wrap items-start gap-5">
+    <div className="mx-auto w-full max-w-4xl space-y-5">
+      <Card className="p-5 sm:p-7">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
           {profile.avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={profile.avatarUrl} alt="" className="h-20 w-20 rounded-2xl object-cover" />
+            <img src={profile.avatarUrl} alt="" className="h-24 w-24 shrink-0 rounded-2xl object-cover" />
           ) : (
-            <span className="inline-flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-electric-500 to-electric-700 text-xl font-bold text-white">
+            <span className="inline-flex h-24 w-24 shrink-0 items-center justify-center rounded-2xl bg-surface-muted text-2xl font-bold text-foreground-muted">
               {profile.firstName.charAt(0)}
               {profile.lastName.charAt(0)}
             </span>
           )}
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-2xl font-bold tracking-tight">
+              <h1 className="text-2xl font-bold tracking-tight">
                 {profile.firstName} {profile.lastName}
-              </h2>
-              {profile.foundingMember && <Badge variant="sand"><Tr k="app.card.founding" /></Badge>}
-              {profile.role === "admin" && <Badge variant="electric"><Tr k="app.access.levelAdmin" /></Badge>}
-              {profile.isDemo && <Badge variant="outline"><Tr k="app.common.demo" /></Badge>}
+              </h1>
+              {profile.foundingMember && (
+                <Badge variant="sand">
+                  <Tr k="app.card.founding" />
+                </Badge>
+              )}
+              {profile.role === "admin" && (
+                <Badge variant="outline">
+                  <Tr k="app.beta.teamBadge" />
+                </Badge>
+              )}
             </div>
-            <p className="text-sm text-foreground-subtle">@{profile.handle}</p>
-            {profile.headline && <p className="mt-2 text-base">{profile.headline}</p>}
-            <p className="mt-1 text-sm text-foreground-subtle">
-              {[
-                profile.company,
-                profile.jobTitle,
-                profile.showLocation === false ? null : profile.location,
-              ]
-                .filter(Boolean)
-                .join(" · ")}
+            {profile.headline && <p className="mt-1.5 text-base leading-7">{profile.headline}</p>}
+            <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-foreground-muted">
+              {[profile.jobTitle, profile.company].filter(Boolean).length > 0 && (
+                <span>{[profile.jobTitle, profile.company].filter(Boolean).join(" · ")}</span>
+              )}
+              {showLocation && profile.location && (
+                <span className="inline-flex items-center gap-1">
+                  <MapPinIcon size={13} />
+                  {profile.location}
+                </span>
+              )}
+            </p>
+            <p className="mt-1 text-xs text-foreground-subtle">
+              <Tr k="app.beta.memberSince" params={{ date: memberSince }} />
             </p>
 
-            {(profile.websiteUrl || profile.xUrl || profile.instagramUrl) && (
+            {showContacts && (profile.websiteUrl || profile.xUrl || profile.instagramUrl) && (
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 {profile.websiteUrl && (
-                  <a
-                    href={profile.websiteUrl.startsWith("http") ? profile.websiteUrl : `https://${profile.websiteUrl}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-2.5 py-1 text-xs text-foreground-muted hover:text-foreground transition-colors"
-                  >
-                    <GlobeIcon size={13} />
-                    <span>Website</span>
-                  </a>
+                  <ContactLink href={externalHref(profile.websiteUrl)} icon={<GlobeIcon size={13} />} label="Website" />
                 )}
                 {profile.xUrl && (
-                  <a
-                    href={profile.xUrl.startsWith("http") ? profile.xUrl : `https://x.com/${profile.xUrl.replace(/^@/, "")}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-2.5 py-1 text-xs text-foreground-muted hover:text-foreground transition-colors"
-                  >
-                    <XSocialIcon size={12} />
-                    <span>{profile.xUrl.startsWith("@") ? profile.xUrl : `@${profile.xUrl}`}</span>
-                  </a>
+                  <ContactLink
+                    href={externalHref(profile.xUrl, "https://x.com/")}
+                    icon={<XSocialIcon size={12} />}
+                    label={profile.xUrl.startsWith("http") ? "X" : `@${profile.xUrl.replace(/^@/, "")}`}
+                  />
                 )}
                 {profile.instagramUrl && (
-                  <a
-                    href={profile.instagramUrl.startsWith("http") ? profile.instagramUrl : `https://instagram.com/${profile.instagramUrl.replace(/^@/, "")}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-2.5 py-1 text-xs text-foreground-muted hover:text-foreground transition-colors"
-                  >
-                    <InstagramIcon size={13} />
-                    <span>{profile.instagramUrl.startsWith("@") ? profile.instagramUrl : `@${profile.instagramUrl}`}</span>
-                  </a>
+                  <ContactLink
+                    href={externalHref(profile.instagramUrl, "https://instagram.com/")}
+                    icon={<InstagramIcon size={13} />}
+                    label={profile.instagramUrl.startsWith("http") ? "Instagram" : `@${profile.instagramUrl.replace(/^@/, "")}`}
+                  />
                 )}
               </div>
             )}
-
-            <dl className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-              {[
-                { key: "app.profile.statsConnections", value: stats.connections },
-                { key: "app.profile.statsFollowers", value: stats.followers },
-                { key: "app.profile.statsFollowing", value: stats.following },
-                { key: "app.profile.statsPosts", value: stats.posts },
-              ].map((item) => (
-                <div key={item.key} className="rounded-xl bg-surface-muted px-3 py-2">
-                  <dt className="text-xs text-foreground-muted"><Tr k={item.key} /></dt>
-                  <dd className="text-lg font-bold">{item.value}</dd>
-                </div>
-              ))}
-            </dl>
           </div>
+        </div>
+
+        <div className="mt-5 border-t border-border pt-4">
+          {isSelf ? (
+            <div className="flex flex-wrap gap-2">
+              <Button href="/app/profile/edit" size="sm">
+                <Tr k="app.profile.editTitle" />
+              </Button>
+              <Button href="/app/settings" size="sm" variant="secondary">
+                <Tr k="app.beta.privacyCta" />
+              </Button>
+            </div>
+          ) : (
+            <ProfileActions
+              userId={profile.id}
+              handle={profile.handle}
+              firstName={profile.firstName}
+              isConnected={connected}
+              isBlocked={blockedByMe}
+              canFollow={access.entitlements.follow && !blockedByMe}
+              canConnect={access.entitlements.connect !== "no" && !blockedByMe && requestsOpen}
+              canMessage={access.entitlements.messaging}
+              outgoingRequestId={requestState.outgoingRequestId}
+              incomingRequestId={requestState.incomingRequestId}
+              cooldownUntil={requestState.cooldownUntil ? requestState.cooldownUntil.toISOString() : null}
+              requestsClosed={!requestsOpen && !connected}
+            />
+          )}
         </div>
       </Card>
 
-      {limited && (
-        <Card className="p-5">
-          <p className="text-sm font-semibold"><Tr k="app.profile.limitedTitle" /></p>
-          <p className="mt-1 text-sm text-foreground-muted"><Tr k="app.profile.limitedText" /></p>
-        </Card>
-      )}
-
-      <div className="grid gap-5 lg:grid-cols-2">
-        <Card className="p-5">
-          <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-foreground-subtle">
-            <Tr k="app.trust.scoreTitle" />
-          </h3>
-          <div className="mt-4">
-            {score === null ? (
-              <p className="text-sm text-foreground-muted"><Tr k="app.trust.noRatings" /></p>
-            ) : (
-              <>
-                <RatingStars value={score} />
-                <p className="mt-2 text-sm text-foreground-muted">{score.toFixed(1)} / 5</p>
-              </>
-            )}
+      {depth === "limited" ? (
+        <Card className="flex items-start gap-3 p-5">
+          <LockIcon size={18} className="mt-0.5 shrink-0 text-foreground-subtle" />
+          <div>
+            <p className="text-sm font-semibold">
+              <Tr k="app.beta.limitedProfileTitle" />
+            </p>
+            <p className="mt-1 text-sm leading-6 text-foreground-muted">
+              <Tr k="app.beta.limitedProfileText" />
+            </p>
           </div>
-          {trust.reviews.length > 0 && (
-            <ul className="mt-4 space-y-3">
-              {trust.reviews.slice(0, 3).map((review) => (
-                <li key={review.id} className="rounded-xl bg-surface-muted p-3">
-                  <p className="text-sm">{review.comment}</p>
-                  <p className="mt-1 text-xs text-foreground-subtle">
-                    {review.authorFirstName} {review.authorLastName}
-                    {review.isDemo ? ` · Demo` : ""}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          )}
-          <p className="mt-4 text-xs text-foreground-subtle"><Tr k="app.trust.eligibilityText" /></p>
         </Card>
+      ) : (
+        <>
+          {profile.bio && (
+            <Card className="p-5 sm:p-6">
+              <SectionTitle k="app.beta.aboutTitle" />
+              <p className="ic-measure mt-3 whitespace-pre-wrap text-sm leading-7 text-foreground-muted">{profile.bio}</p>
+            </Card>
+          )}
 
-        {(() => {
-          const roles = parseList(profile.rolesJson);
-          const skills = parseList(profile.skillsJson);
-          const lookingFor = parseList(profile.lookingForJson);
-          return (
-            <Card className="p-5">
-              {roles.length > 0 && (
-                <>
-                  <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-foreground-subtle">
-                    <Tr k="app.profile.roles" />
-                  </h3>
-                  <ul className="mt-3 flex flex-wrap gap-2">
-                    {roles.map((item) => (
-                      <li key={item}>
-                        <span className="rounded-full bg-surface-muted px-3 py-1 text-xs font-medium">{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </>
-              )}
-              {skills.length > 0 && (
-                <>
-                  <h3 className="mt-5 text-sm font-bold uppercase tracking-[0.18em] text-foreground-subtle">
-                    <Tr k="app.profile.skills" />
-                  </h3>
-                  <ul className="mt-3 flex flex-wrap gap-2">
-                    {skills.map((item) => (
-                      <li key={item}>
-                        <span className="rounded-full bg-surface-muted px-3 py-1 text-xs font-medium">{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </>
-              )}
-              {interestLabels.length > 0 && (
-                <>
-                  <h3 className="mt-5 text-sm font-bold uppercase tracking-[0.18em] text-foreground-subtle">
-                    <Tr k="app.discover.interests" />
-                  </h3>
-                  <ul className="mt-3 flex flex-wrap gap-2">
-                    {interestLabels.map((item) => (
-                      <li key={item}>
-                        <span className="rounded-full bg-electric-500/10 px-3 py-1 text-xs font-medium text-electric-600 dark:text-electric-300">
-                          {item}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </>
-              )}
+          {(lookingFor.length > 0 || offering.length > 0) && (
+            <div className="grid gap-5 md:grid-cols-2">
               {lookingFor.length > 0 && (
-                <>
-                  <h3 className="mt-5 text-sm font-bold uppercase tracking-[0.18em] text-foreground-subtle">
-                    <Tr k="app.profile.lookingFor" />
-                  </h3>
-                  <ul className="mt-3 flex flex-wrap gap-2">
-                    {lookingFor.map((item) => (
-                      <li key={item}>
-                        <Badge variant="electric">{item}</Badge>
-                      </li>
-                    ))}
-                  </ul>
-                </>
+                <Card className="p-5">
+                  <SectionTitle k="app.profile.lookingFor" />
+                  <TagRow items={lookingFor} />
+                </Card>
               )}
               {offering.length > 0 && (
-                <>
-                  <h3 className="mt-5 text-sm font-bold uppercase tracking-[0.18em] text-foreground-subtle">
-                    <Tr k="app.discover.offering" />
-                  </h3>
-                  <ul className="mt-3 flex flex-wrap gap-2">
-                    {offering.map((item) => (
-                      <li key={item}>
-                        <Badge variant="forest">{item}</Badge>
-                      </li>
-                    ))}
-                  </ul>
-                </>
+                <Card className="p-5">
+                  <SectionTitle k="app.profile.offering" />
+                  <TagRow items={offering} />
+                </Card>
               )}
-              {profile.bio && (
-                <p className="mt-5 whitespace-pre-wrap text-sm leading-6 text-foreground-muted">{profile.bio}</p>
+            </div>
+          )}
+
+          {(interestLabels.length > 0 || goalLabels.length > 0 || roles.length > 0 || skills.length > 0) && (
+            <Card className="space-y-5 p-5 sm:p-6">
+              {interestLabels.length > 0 && (
+                <div>
+                  <SectionTitle k="app.discover.interests" />
+                  <TagRow items={interestLabels} />
+                </div>
+              )}
+              {goalLabels.length > 0 && (
+                <div>
+                  <SectionTitle k="app.profile.goalsTitle" />
+                  <TagRow items={goalLabels} />
+                </div>
+              )}
+              {roles.length > 0 && (
+                <div>
+                  <SectionTitle k="app.profile.roles" />
+                  <TagRow items={roles} />
+                </div>
+              )}
+              {skills.length > 0 && (
+                <div>
+                  <SectionTitle k="app.profile.skills" />
+                  <TagRow items={skills} />
+                </div>
               )}
             </Card>
-          );
-        })()}
-      </div>
+          )}
 
-      <section>
-        <h2 className="mb-4 text-lg font-bold tracking-tight"><Tr k="app.posts.feedTitle" /></h2>
-        {posts.length === 0 ? (
-          <Card className="p-5 text-sm text-foreground-muted"><Tr k="app.profile.noPosts" /></Card>
-        ) : (
-          <ul className="space-y-3">
-            {posts.map((post) => (
-              <li key={post.id}>
-                <Card className="p-4">
-                  <p className="whitespace-pre-wrap text-sm leading-6">{post.body}</p>
-                  <p className="mt-2 text-xs text-foreground-subtle">{post.createdAt.toLocaleDateString("de-DE")}</p>
-                </Card>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+          {!profile.bio && lookingFor.length === 0 && offering.length === 0 && interestLabels.length === 0 && (
+            <Card className="p-5 text-sm text-foreground-muted">
+              <Tr k="app.beta.profileSparse" />
+            </Card>
+          )}
+
+          {showTrust && trust && (score !== null || trust.reviews.length > 0) && (
+            <Card className="p-5">
+              <SectionTitle k="app.trust.scoreTitle" />
+              {score !== null && (
+                <p className="mt-3 flex items-center gap-2 text-sm font-semibold">
+                  {score.toFixed(1)} / 5 <RatingStars value={score} size={14} />
+                </p>
+              )}
+              {trust.reviews.length > 0 && (
+                <ul className="mt-4 space-y-3">
+                  {trust.reviews.slice(0, 3).map((review) => (
+                    <li key={review.id} className="rounded-xl bg-surface-muted p-3">
+                      <p className="text-sm">{review.comment}</p>
+                      <p className="mt-1 text-xs text-foreground-subtle">
+                        {review.authorFirstName} {review.authorLastName}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Card>
+          )}
+
+          {showPosts && posts.length > 0 && (
+            <section>
+              <h2 className="mb-3 text-base font-bold tracking-tight">
+                <Tr k="app.posts.feedTitle" />
+              </h2>
+              <ul className="space-y-3">
+                {posts.map((post) => (
+                  <li key={post.id}>
+                    <Card className="p-4">
+                      <p className="whitespace-pre-wrap text-sm leading-6">{post.body}</p>
+                      <p className="mt-2 text-xs text-foreground-subtle">
+                        {post.createdAt.toLocaleDateString(locale === "en" ? "en-GB" : "de-DE")}
+                      </p>
+                    </Card>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+        </>
+      )}
     </div>
+  );
+}
+
+function SectionTitle({ k }: { k: string }) {
+  return (
+    <h2 className="text-[11px] font-bold uppercase tracking-[0.14em] text-foreground-subtle">
+      <Tr k={k} />
+    </h2>
+  );
+}
+
+function TagRow({ items }: { items: string[] }) {
+  return (
+    <ul className="mt-2.5 flex flex-wrap gap-1.5">
+      {items.map((item) => (
+        <li key={item}>
+          <span className="inline-flex rounded-full bg-surface-muted px-2.5 py-1 text-xs font-medium text-foreground">
+            {item}
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function ContactLink({ href, icon, label }: { href: string; icon: React.ReactNode; label: string }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer nofollow"
+      className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-2.5 py-1 text-xs text-foreground-muted transition-colors hover:text-foreground"
+    >
+      {icon}
+      <span>{label}</span>
+    </a>
   );
 }

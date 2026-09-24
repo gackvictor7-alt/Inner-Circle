@@ -12,6 +12,7 @@ import { CheckIcon, InfoIcon } from "@/components/ui/icons";
 import { LocalizedPageHeader, Tr } from "@/components/app/localized";
 import { InfoRow } from "@/components/app/ui";
 import { lockedCopyFor } from "@/components/app/LockedArea";
+import { formatDate } from "@/lib/datetime";
 
 export const dynamic = "force-dynamic";
 
@@ -173,6 +174,37 @@ export default async function BillingPage({
           </p>
         </Card>
       </div>
+
+      {/* Private beta (Sprint 12): a separate, free entitlement – never a
+          membership, never a payment. The key is redeemed on /app/beta. */}
+      {!membership?.active && access.level !== "admin" && (
+        <Card className="flex flex-col gap-3 p-6 sm:flex-row sm:items-center sm:justify-between">
+          <div className="max-w-2xl">
+            <h2 className="text-lg font-bold tracking-tight">
+              <Tr k="app.beta.billingCardTitle" />
+            </h2>
+            <p className="mt-1 text-sm leading-6 text-foreground-muted">
+              {access.beta?.active ? (
+                <Tr
+                  k="app.beta.billingCardActive"
+                  params={{
+                    date: formatDate(access.beta.endsAt, access.user.locale === "en" ? "en" : "de", {
+                      day: "2-digit",
+                      month: "long",
+                      year: "numeric",
+                    }),
+                  }}
+                />
+              ) : (
+                <Tr k="app.beta.billingCardText" />
+              )}
+            </p>
+          </div>
+          <Button href="/app/beta" size="sm" variant="secondary" className="shrink-0">
+            <Tr k={access.beta?.active ? "app.beta.statusCta" : "app.beta.activateCta"} />
+          </Button>
+        </Card>
+      )}
 
       {!membership?.active && (
         <section>

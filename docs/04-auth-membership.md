@@ -1,7 +1,9 @@
 # 04 – Authentifizierung, Verifizierung, Trial & Membership
 
-**Stand:** 2026-09-21 (Sprint 5: Login-/Registrierungs-UX gehärtet,
-Passwortregeln aus einer Quelle) · Basis: `main` @ `c211e20`.
+**Stand:** 2026-09-24 (Sprint 12: Private Beta §4b, Stripe-Audit §4a) · davor
+2026-09-21 (Sprint 5: Login-/Registrierungs-UX gehärtet, Passwortregeln aus
+einer Quelle). Registrierung, Verifizierung, Login und Onboarding wurden in
+Sprint 12 **nicht** verändert.
 Dieses Dokument beschreibt den **tatsächlich implementierten** Ablauf
 (eigene Auth-Implementierung – **kein** Auth.js; siehe ADR-008/ADR-009 in
 [`13-decisions.md`](13-decisions.md)).
@@ -192,6 +194,78 @@ der UI als Entwicklungsmodus gekennzeichnet und über
 (`src/lib/membership/plans.ts`; doppelt in `src/lib/env.ts` als
 `membershipPricing` – Quelle der Wahrheit im Code ist `plans.ts`).
 
+### 4a. Stripe-Webhook – Aktivierungsregeln (Sprint-12-Audit)
+
+Geprüft in `src/app/api/webhooks/stripe/route.ts`, `src/lib/payments/stripe.ts`
+und `src/lib/membership/service.ts`; abgesichert durch
+`tests/integration/stripe-webhook-route.test.ts` und
+`tests/unit/stripe-worker-signature.test.ts`.
+
+| Regel | Umsetzung |
+| ----- | --------- |
+| Signatur | `stripe.webhooks.constructEventAsync` (Web-Crypto; die synchrone Variante wirft im Worker, **vor Sprint 12 wäre jeder Produktions-Webhook mit 400 abgelehnt worden**) |
+| Idempotenz | jede Event-ID genau einmal in `MembershipEvent.providerEventId` (unique); Wiederholung → `200 {duplicate:true}` ohne Verarbeitung |
+| Checkout abgeschlossen ≠ bezahlt | `checkout.session.completed` aktiviert **nur** bei `payment_status = paid` bzw. `no_payment_required`; sonst nur Protokoll (`checkout_unpaid`) |
+| Verzögerte Zahlarten (z. B. SEPA) | Aktivierung erst mit `checkout.session.async_payment_succeeded`; `…async_payment_failed` wird protokolliert, **keine** Aktivierung |
+| Abo-Status | `customer.subscription.created/updated`: `active`/`trialing` → aktiv, `past_due`/`unpaid` → `past_due`, `canceled` → gekündigt; `customer.subscription.deleted` → beendet (Sprint-12-Fix: vorher 500 wegen doppelt verwendeter Event-ID) |
+| Rechnungen | `invoice.paid`/`invoice.payment_succeeded` → `Invoice`; `invoice.payment_failed` → `past_due` + Rechnung `failed` |
+| Kein Klick aktiviert | `/api/billing/checkout` legt ohne Stripe **keine** Mitgliedschaft an; Dev-Aktivierung nur außerhalb Produktion und nur mit `ALLOW_DEV_MEMBERSHIP_ACTIVATION` ≠ `false` |
+| Preise | 24,99 €/Monat (2499 ct) und 249,90 €/Jahr (24990 ct ≈ 20,83 €/Monat, 17 % günstiger) – `plans.ts`, Billing-Seite und Checkout identisch |
+
+**Hinweis:** Im Stripe-Dashboard **keine** Probezeit (Trial) am Preis/Abo
+konfigurieren – der Status `trialing` würde laut obiger Regel aktivieren.
+Die 48-h-Discovery-Demo ist davon unabhängig.
+
+**Preise im Checkout:** inline über `price_data` aus `src/lib/membership/plans.ts`
+(keine Stripe-Preisobjekte/Preis-IDs nötig). `allow_promotion_codes` ist aktiv –
+ein im Stripe-Dashboard angelegter 100-%-Gutschein führt zu
+`no_payment_required` und aktiviert bewusst (nur vom Admin in Stripe steuerbar).
+
+**Offen / BLOCKED:** echte Schlüssel (`STRIPE_SECRET_KEY`,
+`STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`; für Live zusätzlich
+`ALLOW_STRIPE_LIVE=true`), das Webhook-Endpoint im Stripe-Dashboard mit genau
+diesen Events:
+`checkout.session.completed`, `checkout.session.async_payment_succeeded`,
+`checkout.session.async_payment_failed`, `customer.subscription.created`,
+`customer.subscription.updated`, `customer.subscription.deleted`,
+`invoice.paid`, `invoice.payment_succeeded`, `invoice.payment_failed`;
+Kundenportal (Kündigung/Zahlungsmittel): Funktion
+`createBillingPortalSession` vorhanden, aber **keine Route/UI** (PREPARED);
+ein Testlauf im Stripe-Testmodus gegen die Worker-URL steht aus.
+
+### 4b. Private Beta (Sprint 12) – Lebenszyklus eines Beta-Testers
+
+Kein eigener Registrierungsweg, keine Änderung an Mitgliedschaft oder Rolle:
+
+1. **Admin** erstellt unter `/admin/beta` einen persönlichen Schlüssel
+   (`ICB-XXXX-XXXX-XXXX-XXXX`, Klartext genau einmal sichtbar, gespeichert nur
+   als HMAC-SHA-256) – optional mit Notiz, E-Mail-Bindung, Dauer (Standard
+   30 Tage) und Einlöse-Enddatum.
+2. **Tester** registriert sich normal (`/register`), bestätigt die E-Mail,
+   durchläuft das bestehende Onboarding (die 48-h-Demo startet wie bisher).
+3. **Einlösen** unter Profil › Beta-Zugang (`/app/beta`): Prüfung
+   serverseitig (Konto eingeloggt + verifiziert, Rate-Limit, Schlüssel gültig/
+   unbenutzt/nicht deaktiviert/nicht abgelaufen/passende E-Mail), dann
+   `BetaInvite.status = redeemed` und `BetaAccess` (`startsAt = jetzt`,
+   `endsAt = jetzt + Dauer`). Anschließend Weiterleitung zu
+   `/app/profile/edit?welcome=beta` (Profilfelder mit Fortschritt, danach
+   Discover).
+4. **Während des Zugangs:** `getAccessContext()` ergänzt die Networking-
+   Entitlements (`06-permissions.md` §3c). Läuft die 48-h-Demo noch, bleiben
+   die übrigen Bereiche (Deals/Jobs/Investments) bis zu deren Ende im
+   Demo-Modus; danach gesperrt wie bei `free`.
+5. **Ende:** automatisch bei `endsAt` (Serverzeit, bei jedem Request geprüft)
+   oder vorzeitig durch den Admin (`status = revoked`). Konto, Profil,
+   Kontakte und Chatverläufe bleiben; neue Anfragen/Nachrichten und die
+   Mitgliedersuche sind gesperrt (`betaExpired`). Neuer Login, neue Session
+   oder erneutes Einlösen desselben Schlüssels verlängern nichts; nur der
+   Admin kann verlängern (auch nach Ablauf/Widerruf – dann ab heute) oder
+   einen neuen Schlüssel ausgeben.
+6. **Mitgliedschaft später:** wird ein Tester zahlendes Mitglied, gilt
+   `member` (Quelle `networkAccessSource = "member"`); der Beta-Datensatz
+   bleibt nur als Historie. Mitglieder/Admins können keinen Schlüssel
+   verbrauchen (`betaNotNeeded`).
+
 ## 5. Profile & Social Links
 
 - **LinkedIn entfernt & deprecated:** LinkedIn wurde vollständig aus der
@@ -216,5 +290,7 @@ der UI als Entwicklungsmodus gekennzeichnet und über
 | Google-/Apple-Login | NOT IMPLEMENTED | Route `/api/auth/oauth/*` existiert nicht; Buttons sind seit Sprint 5 echte `disabled`-Elemente mit Badge „Einrichtung erforderlich" (K-04 behoben – kein toter Link, kein 404) |
 | Bezahlung | BLOCKED | Stripe-Schlüssel fehlen; Dev-Aktivierung nur lokal und nur mit `ALLOW_DEV_MEMBERSHIP_ACTIVATION` ≠ `false` (Standard in `.env.example`: `false`). Ohne beides: `/api/billing/checkout` → `?error=stripeNotConfigured`, keine Mitgliedschaft; `/app/billing` zeigt den Zahlungsstatus ehrlich (`app.billing.paymentStatusNone/paymentStatusHonest`), Plan-Buttons deaktiviert |
 | 2FA | PREPARED | `VerificationCode.purpose = login_2fa` bzw. Schema vorhanden, keine UI |
+| Profilfoto hochladen | NOT IMPLEMENTED | nur Bild-URL im Profil (K-10); Discover/Profil zeigen ohne Foto ruhige Initialen |
+| E-Mail bei neuer Kontaktanfrage/Nachricht | BLOCKED | Benachrichtigung nur in der App (Inbox-Badge); E-Mail-Benachrichtigungen brauchen den produktiven Mail-Versand (K-01, K-22) |
 
 Details und Status: [`11-known-issues.md`](11-known-issues.md).

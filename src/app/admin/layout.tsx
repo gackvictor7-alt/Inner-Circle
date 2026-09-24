@@ -6,7 +6,14 @@ import { Tr } from "@/components/app/localized";
 
 export const dynamic = "force-dynamic";
 
-/** Admin console shell. Protected server-side (spec §43). */
+/**
+ * Admin console shell. Protected server-side (spec §43); every admin page and
+ * admin action re-checks the role itself as well.
+ *
+ * Sprint 12: moved from `src/app/(app)/admin/layout.tsx`, where – outside the
+ * route tree of `src/app/admin/*` – it never applied (the admin pages had no
+ * navigation). Adds the private-beta management.
+ */
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   await requireAdmin();
   const access = await getAccessContext();
@@ -27,7 +34,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <Link href="/admin/users"><Tr k="app.admin.users.title" /></Link>
             <Link href="/admin/investments"><Tr k="app.admin.investments.title" /></Link>
             <Link href="/admin/applications"><Tr k="app.admin.applications.title" /></Link>
-            <Link href="/app" className="text-electric-600 dark:text-electric-300"><Tr k="app.nav.toWebsite" /></Link>
+            <Link href="/admin/beta"><Tr k="app.betaAdmin.navLabel" /></Link>
+            <Link href="/app" className="text-electric-600 dark:text-electric-300"><Tr k="app.nav.appHome" /></Link>
           </nav>
         </div>
       </header>

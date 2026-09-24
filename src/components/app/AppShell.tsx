@@ -7,6 +7,7 @@ import { useI18n } from "@/lib/i18n/context";
 import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
 import { LocaleSwitch } from "@/components/app/LocaleSwitch";
+import { formatDate } from "@/lib/datetime";
 import {
   BriefcaseIcon,
   CalendarIcon,
@@ -22,6 +23,7 @@ import {
   MessageIcon,
   PlusIcon,
   SettingsIcon,
+  ShieldCheckIcon,
   SparkleIcon,
   StoreIcon,
   TicketIcon,
@@ -39,12 +41,20 @@ export type ShellUser = {
   isAdmin: boolean;
   isDemo: boolean;
   trialMsRemaining: number | null;
+  /** ISO end date while a private-beta grant is the source of network access. */
+  betaActiveUntil?: string | null;
+  /** The account had beta access that has expired or was ended. */
+  betaEnded?: boolean;
+  /** Real-network access (member / admin / active beta). */
+  networkAccess?: boolean;
 };
 
 export type ShellCounts = {
   notifications: number;
   messages: number;
   requests: number;
+  /** Navigation badge: unread messages + unread notifications (no double counting). */
+  badge?: number;
 };
 
 type NavKey =
@@ -109,13 +119,18 @@ export function AppShell({
   counts: ShellCounts;
   children: ReactNode;
 }) {
-  const { t } = useI18n();
+  const { t, tf, locale } = useI18n();
   const pathname = usePathname();
   const [createOpen, setCreateOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
-  const countdown = useCountdown(user.trialMsRemaining);
+  // Beta testers see their beta status instead of the demo countdown.
+  const countdown = useCountdown(user.betaActiveUntil ? null : user.trialMsRemaining);
+  const betaUntil = user.betaActiveUntil
+    ? formatDate(user.betaActiveUntil, locale, { day: "2-digit", month: "2-digit" })
+    : null;
 
-  const inboxBadge = counts.messages + counts.notifications + counts.requests;
+  // One source of truth (server): unread messages + unread notifications.
+  const inboxBadge = counts.badge ?? counts.messages + counts.notifications;
 
   // ---- the six primary areas -------------------------------------------
   const primary: NavItem[] = [
@@ -297,6 +312,20 @@ export function AppShell({
             )}
           </nav>
 
+          {/* Compact beta status (Sprint 12) – links to the beta page */}
+          {betaUntil && (
+            <Link
+              href="/app/beta"
+              className="mt-4 flex items-center justify-between gap-2 rounded-lg border border-border px-2.5 py-1.5 transition-colors hover:bg-surface-muted"
+            >
+              <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-foreground-muted">
+                <span className="h-1.5 w-1.5 rounded-full bg-forest-500" />
+                {t.app.beta.levelBeta}
+              </span>
+              <span className="text-[11px] font-semibold text-foreground">{tf(t.app.beta.sidebarUntil, { date: betaUntil })}</span>
+            </Link>
+          )}
+
           {/* Compact trial status – no large container (spec §33) */}
           {countdown && (
             <div className="mt-4 flex items-center justify-between gap-2 rounded-lg border border-electric-500/25 bg-electric-500/5 px-2.5 py-1.5">
@@ -459,6 +488,14 @@ export function AppShell({
             { href: "/app/profile/edit", label: t.app.profile.editTitle, icon: SparkleIcon },
             { href: "/app/card", label: t.app.nav.card, icon: TicketIcon },
             { href: "/app/billing", label: t.app.nav.billing, icon: WalletIcon },
+            {
+              href: "/app/beta",
+              label:
+                user.betaActiveUntil || user.betaEnded || user.level === "member" || user.level === "admin"
+                  ? t.app.beta.accountBeta
+                  : t.app.beta.accountBetaActivate,
+              icon: ShieldCheckIcon,
+            },
             { href: "/app/trust", label: t.app.nav.trust, icon: ChartIcon },
             { href: "/app/settings", label: t.app.nav.settings, icon: SettingsIcon },
           ].map((entry) => (

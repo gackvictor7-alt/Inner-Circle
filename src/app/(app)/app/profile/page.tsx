@@ -26,6 +26,7 @@ import {
   GraduationIcon,
   InstagramIcon,
   SettingsIcon,
+  ShieldCheckIcon,
   SparkleIcon,
   StoreIcon,
   TicketIcon,
@@ -317,6 +318,7 @@ export default async function OwnProfilePage({
             <ul className="-mx-2 space-y-0.5">
               <AccountLink href="/app/card" icon={<TicketIcon size={15} />} labelKey="app.profile.accountCard" />
               <AccountLink href="/app/billing" icon={<WalletIcon size={15} />} labelKey="app.profile.accountMembership" />
+              <AccountLink href="/app/beta" icon={<ShieldCheckIcon size={15} />} labelKey="app.beta.accountBeta" />
               <AccountLink href="/app/trust" icon={<ChartIcon size={15} />} labelKey="app.profile.accountTrust" />
               <AccountLink href="/app/settings" icon={<SettingsIcon size={15} />} labelKey="app.profile.accountSettings" />
             </ul>

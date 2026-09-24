@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { InfoRow } from "@/components/app/ui";
 import { canOpenDevOutbox } from "@/lib/env";
+import { levelLabelKey } from "@/lib/access/levels";
 
 export const dynamic = "force-dynamic";
 
@@ -55,6 +56,8 @@ export default async function SettingsPage() {
   const privacyFields: FormField[] = [
     { name: "profileVisibility", kind: "select", labelKey: "app.settings.privacyProfile", options: visibilityOptions, defaultValue: privacy?.profileVisibility ?? "members" },
     { name: "performanceVisibility", kind: "select", labelKey: "app.settings.privacyPerformance", options: visibilityOptions, defaultValue: privacy?.performanceVisibility ?? "members" },
+    // Sprint 12: who sees website / X / Instagram (default: confirmed contacts only).
+    { name: "contactVisibility", kind: "select", labelKey: "app.settings.privacyContacts", options: visibilityOptions, defaultValue: privacy?.contactVisibility ?? "connections" },
     { name: "showLocation", kind: "checkbox", labelKey: "app.settings.showLocation", defaultValue: privacy?.showLocation ?? true },
     { name: "discoverable", kind: "checkbox", labelKey: "app.settings.discoverable", defaultValue: privacy?.discoverable ?? true },
     { name: "allowConnectionRequests", kind: "checkbox", labelKey: "app.settings.allowRequests", defaultValue: privacy?.allowConnectionRequests ?? true },
@@ -83,8 +86,14 @@ export default async function SettingsPage() {
         <dl className="mt-4 divide-y divide-border">
           <InfoRow label={<Tr k="app.auth.email" />} value={user.email ?? "–"} />
           <InfoRow label={<Tr k="app.auth.phone" />} value={user.phone ?? "–"} />
-          <InfoRow label={<Tr k="app.dev.level" />} value={<Badge variant="electric">{access.level}</Badge>} />
-          <InfoRow label={<Tr k="app.dev.role" />} value={user.role} />
+          <InfoRow
+            label={<Tr k="app.dev.level" />}
+            value={
+              <Badge variant="electric">
+                <Tr k={access.networkAccessSource === "beta" ? "app.beta.levelBeta" : levelLabelKey(access.level)} />
+              </Badge>
+            }
+          />
         </dl>
       </Card>
 

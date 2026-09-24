@@ -1,10 +1,9 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
 import { Miniflare, convertV4MiniflareOptions } from "miniflare";
 import { drizzle as drizzleD1 } from "drizzle-orm/d1";
 import * as schema from "@/db/schema";
 import type { Database } from "@/db/client";
+import { applyAllMigrations } from "../d1-helpers";
 
 /**
  * Regression test for the production incident of 2026-09-22:
@@ -39,23 +38,9 @@ let forYouItems: ForYouItems;
 let mf: Miniflare;
 
 const T0 = 1_790_000_000_000; // fixed base time (ms)
-const FUTURE = T0 + 30 * 86_400_000;
+// Far in the future on purpose: the queries compare against the real clock.
+const FUTURE = T0 + 3650 * 86_400_000;
 const PAST = T0 - 10 * 86_400_000;
-
-async function applyMigrations(d1: {
-  exec(sql: string): Promise<unknown>;
-}) {
-  const dir = resolve(__dirname, "..", "..", "drizzle");
-  for (const file of ["0000_init.sql", "0001_sprint3_discover_profile.sql"]) {
-    const sql = readFileSync(resolve(dir, file), "utf8");
-    for (const statement of sql.split("--> statement-breakpoint")) {
-      // The workerd exec binding rejects multi-line statements ("incomplete
-      // input"); wrangler normalises them on apply, so we do the same here.
-      const singleLine = statement.replace(/\s+/g, " ").trim();
-      if (singleLine) await d1.exec(singleLine);
-    }
-  }
-}
 
 async function seed(d1: { exec(sql: string): Promise<unknown> }) {
   const user = (id: string, handle: string, firstName: string, lastName: string) =>
@@ -80,6 +65,11 @@ async function seed(d1: { exec(sql: string): Promise<unknown> }) {
       // Owner of the newest public deal.
       user("usr_d1_owner", "d1-owner", "Otto", "Owner"),
 
+      // Sprint 12: only REAL network participants are suggested – the match
+      // candidate is verified, onboarded and has an active beta grant.
+      `UPDATE User SET emailVerifiedAt = ${T0} WHERE id = 'usr_d1_match'`,
+      `INSERT INTO Profile (id, userId, onboardingCompletedAt, createdAt, updatedAt) VALUES ('prf_match', 'usr_d1_match', ${T0}, ${T0}, ${T0})`,
+      `INSERT INTO BetaAccess (id, userId, status, startsAt, endsAt, createdAt, updatedAt) VALUES ('bta_match', 'usr_d1_match', 'active', ${T0}, ${FUTURE}, ${T0}, ${T0})`,
       `INSERT INTO Interest (id, slug, labelDe, labelEn, groupDe, groupEn) VALUES ('int_fintech', 'fintech', 'FinTech', 'FinTech', 'Finanzen', 'Finance')`,
       `INSERT INTO UserInterest (id, userId, interestId, createdAt) VALUES ('uin_viewer', 'usr_d1_viewer', 'int_fintech', ${T0}), ('uin_match', 'usr_d1_match', 'int_fintech', ${T0})`,
 
@@ -117,7 +107,7 @@ beforeAll(async () => {
     }),
   );
   const d1 = await mf.getD1Database("DB");
-  await applyMigrations(d1);
+  await applyAllMigrations(d1);
   await seed(d1);
   d1Ref.db = drizzleD1(d1, { schema }) as unknown as Database;
 

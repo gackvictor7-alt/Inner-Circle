@@ -1,22 +1,14 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { and, desc, eq, ne } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { db } from "@/db/client";
-import {
-  conversationParticipants,
-  conversations,
-  messages,
-  users,
-} from "@/db/schema";
+import { conversationParticipants, conversations, messages, notifications } from "@/db/schema";
 import { idFor } from "@/db/ids";
-import { getAccessContext } from "@/lib/access/server";
+import { getAccessContext, type AccessContext } from "@/lib/access/server";
 import { isBlocked, isConnected } from "@/db/queries";
-import { notify } from "@/lib/notifications/service";
 import { consumeRateLimit } from "@/lib/rate-limit";
 import { fail, done, text, type ActionState } from "./state";
-
-type ActingUser = { id: string; firstName: string; lastName: string; role: string };
 
 async function participantIds(conversationId: string): Promise<string[]> {
   const rows = await db
@@ -26,17 +18,32 @@ async function participantIds(conversationId: string): Promise<string[]> {
   return rows.map((row) => row.userId);
 }
 
+function messagingError(access: AccessContext): ActionState {
+  if (access.beta && !access.beta.active) return fail("betaExpired");
+  return fail("networkAccessRequired");
+}
+
+function refreshInbox() {
+  revalidatePath("/app/inbox");
+  revalidatePath("/app/messages");
+  revalidatePath("/app");
+}
+
 /**
  * Sends a message. Messaging is restricted to confirmed connections on the
- * server (never in the UI only) – see spec §33.
+ * server (never in the UI only) – see spec §33. Only participants of the
+ * conversation can write into it.
+ *
+ * Sprint 12: no notification row per message any more – unread messages are
+ * counted from the conversation itself (read marker per participant), which
+ * keeps the inbox badge exact and free of duplicates.
  */
 export async function sendMessageAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const access = await getAccessContext();
-  const me: ActingUser | null = access.user
-    ? { id: access.user.id, firstName: access.user.firstName, lastName: access.user.lastName, role: access.user.role }
-    : null;
+  const me = access.user;
   if (!me) return fail("unauthorized");
-  if (!access.entitlements.messaging) return fail("membershipRequired");
+  if (!access.verified) return fail("verificationRequired");
+  if (!access.entitlements.messaging) return messagingError(access);
 
   const conversationId = text(formData, "conversationId", 64);
   const body = text(formData, "body", 4000);
@@ -62,28 +69,22 @@ export async function sendMessageAction(_prev: ActionState, formData: FormData):
     createdAt: now,
   });
   await db.update(conversations).set({ lastMessageAt: now }).where(eq(conversations.id, conversationId));
+  // Own message = everything before it has been seen.
+  await db
+    .update(conversationParticipants)
+    .set({ lastReadAt: now })
+    .where(
+      and(eq(conversationParticipants.conversationId, conversationId), eq(conversationParticipants.userId, me.id)),
+    );
 
-  await notify({
-    userId: recipientId,
-    actorId: me.id,
-    type: "message",
-    titleKey: "app.notifications.types.message",
-    params: { name: `${me.firstName} ${me.lastName}`.trim() },
-    url: `/app/messages?c=${conversationId}`,
-    entityType: "conversation",
-    entityId: conversationId,
-    dedupeKey: `message:${conversationId}:${now.getTime()}`,
-  });
-
-  revalidatePath("/app/messages");
-  revalidatePath("/app");
+  refreshInbox();
   return done({ messageCode: "sent" });
 }
 
 /**
  * Opens (or creates) the direct conversation with a confirmed connection.
  * Delegates to ensureDirectConversation (single source of truth for the
- * conversation lookup/creation).
+ * conversation lookup/creation, race-safe through Conversation.directKey).
  */
 export async function startConversationAction(
   _prev: ActionState,
@@ -91,7 +92,7 @@ export async function startConversationAction(
 ): Promise<ActionState> {
   const access = await getAccessContext();
   if (!access.user) return fail("unauthorized");
-  if (!access.entitlements.messaging) return fail("membershipRequired");
+  if (!access.entitlements.messaging) return messagingError(access);
 
   const targetId = text(formData, "userId", 64);
   if (!targetId || targetId === access.user.id) return fail("selfAction");
@@ -101,29 +102,44 @@ export async function startConversationAction(
   const conversationId = await ensureDirectConversation(access.user.id, targetId);
   if (!conversationId) return fail("validation");
 
-  revalidatePath("/app/messages");
-  revalidatePath("/app/inbox");
-  return done({ redirectTo: `/app/messages?c=${conversationId}` });
+  refreshInbox();
+  return done({ redirectTo: `/app/inbox?tab=messages&c=${conversationId}` });
 }
 
+/** Marks an open conversation as read (participants only). */
 export async function markConversationReadAction(formData: FormData): Promise<void> {
   const access = await getAccessContext();
   if (!access.user) return;
   const conversationId = String(formData.get("conversationId") ?? "");
   if (!conversationId) return;
 
-  await db
+  const now = new Date();
+  const updated = await db
     .update(conversationParticipants)
-    .set({ lastReadAt: new Date() })
+    .set({ lastReadAt: now })
     .where(
       and(
         eq(conversationParticipants.conversationId, conversationId),
         eq(conversationParticipants.userId, access.user.id),
       ),
+    )
+    .returning({ id: conversationParticipants.id });
+  if (updated.length === 0) return;
+
+  // Legacy per-message notifications of this chat are resolved as well.
+  await db
+    .update(notifications)
+    .set({ readAt: now })
+    .where(
+      and(
+        eq(notifications.userId, access.user.id),
+        eq(notifications.type, "message"),
+        eq(notifications.entityId, conversationId),
+        isNull(notifications.readAt),
+      ),
     );
 
-  revalidatePath("/app/messages");
-  revalidatePath("/app");
+  refreshInbox();
 }
 
 export async function deleteMessageAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
@@ -140,27 +156,6 @@ export async function deleteMessageAction(_prev: ActionState, formData: FormData
     .set({ body: "", deletedAt: new Date() })
     .where(eq(messages.id, messageId));
 
-  revalidatePath("/app/messages");
+  refreshInbox();
   return done({ messageCode: "deleted" });
-}
-
-/** Candidate list for the "new message" picker: confirmed connections only. */
-export async function listMessageableContacts(userId: string) {
-  const rows = await db
-    .select({
-      id: users.id,
-      firstName: users.firstName,
-      lastName: users.lastName,
-      handle: users.handle,
-    })
-    .from(users)
-    .where(ne(users.id, userId))
-    .orderBy(desc(users.lastLoginAt))
-    .limit(200);
-
-  const result: typeof rows = [];
-  for (const row of rows) {
-    if (await isConnected(userId, row.id)) result.push(row);
-  }
-  return result;
 }

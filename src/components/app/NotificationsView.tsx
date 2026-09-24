@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useEffect } from "react";
+import { useActionState, useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -17,6 +17,7 @@ import {
 } from "@/app/actions/notifications";
 import { initialActionState } from "@/app/actions/state";
 import { BellIcon, CheckCheckIcon, XIcon } from "@/components/ui/icons";
+import { formatDateTime } from "@/lib/datetime";
 
 export type NotificationItem = {
   id: string;
@@ -31,13 +32,26 @@ export type NotificationItem = {
 export function NotificationsView({
   notifications,
   embedded = false,
+  showDemoPreview = false,
 }: {
   notifications: NotificationItem[];
   /** Rendered inside `/app/inbox` – no own page header. */
   embedded?: boolean;
+  /** Discovery demo only: the clearly labelled example preview. */
+  showDemoPreview?: boolean;
 }) {
-  const { t, tf } = useI18n();
+  const { t, tf, locale } = useI18n();
   const router = useRouter();
+  const [, startTransition] = useTransition();
+  /** Opening a notification counts as reading it (Sprint 12). */
+  const openNotification = (notification: NotificationItem) => {
+    if (notification.readAt) return;
+    const formData = new FormData();
+    formData.set("notificationId", notification.id);
+    startTransition(() => {
+      void markRead(formData);
+    });
+  };
   const [readState, markRead] = useActionState(markNotificationReadAction, initialActionState);
   const [allState, markAll] = useActionState(markAllNotificationsReadAction, initialActionState);
   const [dismissState, dismiss] = useActionState(deleteNotificationAction, initialActionState);
@@ -90,7 +104,7 @@ export function NotificationsView({
             text={t.app.notifications.emptyText}
             action={<Button href="/app" size="sm" variant="secondary">{t.app.nav.appHome}</Button>}
           />
-          <InboxDemoPreview />
+          {showDemoPreview && <InboxDemoPreview />}
         </>
       ) : (
         <ul className="space-y-3">
@@ -104,7 +118,7 @@ export function NotificationsView({
                     <div className="min-w-0">
                       <p className="text-sm font-medium leading-6">
                         {notification.url ? (
-                          <Link href={notification.url} className="hover:underline">
+                          <Link href={notification.url} onClick={() => openNotification(notification)} className="hover:underline">
                             {text}
                           </Link>
                         ) : (
@@ -112,15 +126,19 @@ export function NotificationsView({
                         )}
                       </p>
                       <p className="mt-1 text-xs text-foreground-subtle">
-                        {new Date(notification.createdAt).toLocaleString("de-DE")}
+                        {formatDateTime(notification.createdAt, locale)}
                       </p>
                     </div>
                     <div className="flex items-center gap-1.5">
                       {!isRead && <Badge variant="electric">{t.app.common.new}</Badge>}
                       {notification.url && (
-                        <Button href={notification.url} size="sm" variant="ghost">
+                        <Link
+                          href={notification.url}
+                          onClick={() => openNotification(notification)}
+                          className="inline-flex h-8 items-center rounded-full px-3 text-sm font-semibold text-foreground-muted transition-colors hover:bg-surface-muted hover:text-foreground"
+                        >
                           {t.app.notifications.open}
-                        </Button>
+                        </Link>
                       )}
                       {!isRead && (
                         <form action={markRead}>

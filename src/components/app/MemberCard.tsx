@@ -37,6 +37,8 @@ export type MemberCardData = {
   outgoingRequestId?: string | null;
   /** Id of the pending request this member sent to the VIEWER (null if none). */
   incomingRequestId?: string | null;
+  /** The member declined the viewer's last request recently (Sprint 12). */
+  requestCooldown?: boolean;
   /** Set for demo profiles: no database rows, no follow, no real requests. */
   demoKey?: string;
 };
@@ -93,10 +95,15 @@ export function MemberCard({
   const receivedPending = !isDemoCard && !sentPending && Boolean(member.incomingRequestId);
 
   useEffect(() => {
+    if (respondState.status === "success" && respondState.messageCode === "accepted" && respondState.entityId) {
+      // Accepted → straight into the chat that was just opened (Sprint 12).
+      router.push(`/app/inbox?tab=messages&c=${respondState.entityId}`);
+      return;
+    }
     if (respondState.status === "success" || withdrawState.status === "success") {
       router.refresh();
     }
-  }, [respondState.status, withdrawState.status, router]);
+  }, [respondState.status, respondState.messageCode, respondState.entityId, withdrawState.status, router]);
 
   const actionError =
     (followState.status === "error" ? followState.errorCode : null) ??
@@ -221,23 +228,25 @@ export function MemberCard({
               <CheckIcon size={15} />
               {t.app.profile.actions.pending}
             </Button>
-            <form action={withdraw} className="w-full sm:w-auto">
-              <input type="hidden" name="requestId" value={member.outgoingRequestId ?? ""} />
-              <Button type="submit" size="sm" variant="secondary" loading={withdrawPending} className="w-full">
-                {t.app.connections.withdraw}
-              </Button>
-            </form>
+            {member.outgoingRequestId && (
+              <form action={withdraw} className="w-full sm:w-auto">
+                <input type="hidden" name="requestId" value={member.outgoingRequestId} />
+                <Button type="submit" size="sm" variant="secondary" loading={withdrawPending} className="w-full">
+                  {t.app.connections.withdraw}
+                </Button>
+              </form>
+            )}
           </>
+        ) : member.requestCooldown ? (
+          <span className="inline-flex w-full items-center justify-center rounded-full border border-border px-3 py-1.5 text-xs font-medium text-foreground-muted sm:w-auto">
+            {t.app.beta.requestNotAccepted}
+          </span>
         ) : canConnect ? (
           <Button size="sm" onClick={() => setConnectOpen(true)} className="w-full sm:w-auto">
             <UserPlusIcon size={15} />
             {t.app.network.connectCta}
           </Button>
-        ) : (
-          <Button size="sm" variant="ghost" disabled className="w-full sm:w-auto">
-            {t.app.access.memberOnly}
-          </Button>
-        )}
+        ) : null}
 
         {canFollow && !isDemoCard && (
           <form action={follow} className="w-full sm:w-auto">
@@ -282,9 +291,9 @@ export function MemberCard({
 
       {/* Every connection request goes through the mandatory-message dialog.
           Demo profiles never do – the dialog explains why instead. */}
-      {!isDemoCard && (
+      {!isDemoCard && connectOpen && (
         <ConnectDialog
-          open={connectOpen}
+          open
           onClose={() => setConnectOpen(false)}
           target={{ id: member.id, handle: member.handle, firstName: member.firstName }}
           onSent={() => setRequestSent(true)}
