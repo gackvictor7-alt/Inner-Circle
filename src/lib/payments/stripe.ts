@@ -101,7 +101,11 @@ export async function constructWebhookEvent(payload: string, signature: string):
   if (!stripe) return { ok: false, error: "stripe_not_configured" };
   if (!stripeEnv.webhookSecret) return { ok: false, error: "stripe_webhook_secret_missing" };
   try {
-    const event = stripe.webhooks.constructEvent(payload, signature, stripeEnv.webhookSecret);
+    // Sprint 12: the ASYNC verification is required on Cloudflare Workers.
+    // The Worker build resolves Stripe's "workerd" entry, whose Web-Crypto
+    // provider cannot verify synchronously – `constructEvent` would reject
+    // every webhook there. `constructEventAsync` works in Node.js and Workers.
+    const event = await stripe.webhooks.constructEventAsync(payload, signature, stripeEnv.webhookSecret);
     return { ok: true, event };
   } catch (error) {
     return { ok: false, error: `signature_verification_failed: ${(error as Error).message}` };

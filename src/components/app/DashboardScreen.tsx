@@ -4,20 +4,10 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import {
-  BellIcon,
-  BriefcaseIcon,
-  CalendarIcon,
-  ChartIcon,
-  CompassIcon,
-  GridIcon,
-  InboxIcon,
-  StoreIcon,
-  UserPlusIcon,
-  UsersIcon,
-} from "@/components/ui/icons";
+import { BellIcon, BriefcaseIcon, CalendarIcon, ChartIcon, CompassIcon, GridIcon, InboxIcon, StoreIcon, UserPlusIcon, UsersIcon, ArrowRightIcon } from "@/components/ui/icons";
 import { useI18n } from "@/lib/i18n/context";
 import type { ForYouItem } from "@/lib/platform/queries";
+import { formatDate } from "@/lib/datetime";
 
 export type DashboardData = {
   firstName: string;
@@ -26,6 +16,12 @@ export type DashboardData = {
   trialExpired: boolean;
   trialMsRemaining: number | null;
   unreadInbox: number;
+  /** ISO end date while the private-beta grant is the source of network access (Sprint 12). */
+  betaActiveUntil?: string | null;
+  /** Beta access ended and no other network access. */
+  betaEnded?: boolean;
+  /** Real-network access (member / admin / active beta). */
+  networkAccess?: boolean;
   membershipDevelopment: boolean;
   /** Real, currently relevant entries (Sprint 8, TEIL E) – may be empty. */
   forYou: ForYouItem[];
@@ -60,11 +56,19 @@ function useCountdown(ms: number | null) {
  * Trust & Performance in Profile → Performance.
  */
 export function DashboardScreen({ data }: { data: DashboardData }) {
-  const { t, tf } = useI18n();
-  const countdown = useCountdown(data.trialMsRemaining);
-  const isTrial = data.level === "trial";
+  const { t, tf, locale } = useI18n();
+  const isBeta = Boolean(data.betaActiveUntil);
+  const countdown = useCountdown(isBeta ? null : data.trialMsRemaining);
+  const isTrial = data.level === "trial" && !isBeta;
+  // The 48 h demo keeps running for a beta tester who redeemed a key during it:
+  // business areas still show their labelled demo until the demo ends.
+  const demoActive = data.level === "trial";
   const isMember = data.level === "member" || data.level === "admin";
-  const isFree = !isTrial && !isMember;
+  const isFree = !isTrial && !isMember && !isBeta;
+  const networkOpen = Boolean(data.networkAccess);
+  const betaUntil = data.betaActiveUntil
+    ? formatDate(data.betaActiveUntil, locale, { day: "2-digit", month: "long", year: "numeric" })
+    : null;
 
   const areas = [
     {
@@ -74,8 +78,8 @@ export function DashboardScreen({ data }: { data: DashboardData }) {
       desc: t.app.dashboard.areaNetworkDesc,
       short: t.app.dashboard.areaNetworkShort,
       accent: "electric" as const,
-      locked: !isTrial && !isMember,
-      demo: isTrial,
+      locked: !demoActive && !networkOpen,
+      demo: demoActive && !networkOpen,
     },
     {
       href: "/app/opportunities",
@@ -84,8 +88,8 @@ export function DashboardScreen({ data }: { data: DashboardData }) {
       desc: t.app.dashboard.areaDealsDesc,
       short: t.app.dashboard.areaDealsShort,
       accent: "forest" as const,
-      locked: !isTrial && !isMember,
-      demo: isTrial,
+      locked: !demoActive && !isMember,
+      demo: demoActive && !isMember,
     },
     {
       href: "/app/jobs",
@@ -94,8 +98,8 @@ export function DashboardScreen({ data }: { data: DashboardData }) {
       desc: t.app.dashboard.areaJobsDesc,
       short: t.app.dashboard.areaJobsShort,
       accent: "sand" as const,
-      locked: !isTrial && !isMember,
-      demo: isTrial,
+      locked: !demoActive && !isMember,
+      demo: demoActive && !isMember,
     },
     {
       href: "/app/investments",
@@ -104,8 +108,8 @@ export function DashboardScreen({ data }: { data: DashboardData }) {
       desc: t.app.dashboard.areaInvestmentsDesc,
       short: t.app.dashboard.areaInvestmentsShort,
       accent: "navy" as const,
-      locked: !isTrial && !isMember,
-      demo: isTrial,
+      locked: !demoActive && !isMember,
+      demo: demoActive && !isMember,
     },
     {
       href: "/app/marketplace",
@@ -144,8 +148,14 @@ export function DashboardScreen({ data }: { data: DashboardData }) {
           <h1 className="truncate text-xl font-bold tracking-tight sm:text-2xl">
             {tf(t.app.dashboard.greetingName, { name: data.firstName })}
           </h1>
-          <Badge variant={isMember ? "forest" : isTrial ? "electric" : "neutral"}>
-            {isMember ? t.app.access.levelMember : isTrial ? t.app.access.levelTrial : t.app.access.levelFree}
+          <Badge variant={isMember ? "forest" : isBeta ? "forest" : isTrial ? "electric" : "neutral"}>
+            {isMember
+              ? t.app.access.levelMember
+              : isBeta
+                ? t.app.beta.levelBeta
+                : isTrial
+                  ? t.app.access.levelTrial
+                  : t.app.access.levelFree}
           </Badge>
           {data.membershipDevelopment && <Badge variant="warning">{t.app.billing.devBadge}</Badge>}
         </div>
@@ -166,10 +176,10 @@ export function DashboardScreen({ data }: { data: DashboardData }) {
               </span>
             )}
           </Button>
-          <Button href="/app/notifications" size="sm" variant="ghost" aria-label={t.app.nav.notifications}>
+          <Button href="/app/inbox?tab=notifications" size="sm" variant="ghost" aria-label={t.app.nav.notifications}>
             <BellIcon size={16} />
           </Button>
-          {!isFree && (
+          {(networkOpen || isTrial) && (
             <Button href="/app/discover" size="sm">
               <CompassIcon size={16} />
               {t.app.nav.discover}
@@ -195,6 +205,20 @@ export function DashboardScreen({ data }: { data: DashboardData }) {
             </h2>
             <p className="mt-1 text-sm leading-6 text-foreground-muted">{t.app.dashboard.trialLead}</p>
             <p className="mt-2 text-xs leading-5 text-foreground-subtle">{t.app.dashboard.trialNotice}</p>
+            {data.betaEnded ? (
+              <p role="status" className="mt-2 text-xs leading-5 text-foreground-muted">
+                <span className="font-semibold text-foreground">{t.app.beta.panelExpiredTitle}</span> ·{" "}
+                {t.app.beta.endedDemoText}
+              </p>
+            ) : (
+              <p className="mt-2 text-xs leading-5 text-foreground-muted">
+                <span className="font-semibold text-foreground">{t.app.beta.closedBetaKicker}</span> ·{" "}
+                {t.app.beta.closedBetaText}{" "}
+                <Link href="/app/beta" className="font-semibold text-electric-600 hover:underline dark:text-electric-300">
+                  {t.app.beta.activateCta}
+                </Link>
+              </p>
+            )}
           </div>
           <div className="flex shrink-0 flex-wrap gap-2">
             <Button href="/app/discover" size="md">
@@ -208,11 +232,59 @@ export function DashboardScreen({ data }: { data: DashboardData }) {
         </section>
       )}
 
+      {/* Private beta (Sprint 12): one calm status panel – no countdown, no badge overload. */}
+      {isBeta && (
+        <section
+          aria-labelledby="private-beta"
+          className="flex flex-col gap-4 rounded-2xl border border-border bg-surface px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6"
+        >
+          <div className="max-w-2xl">
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-foreground-subtle">{t.app.beta.panelKicker}</p>
+            <h2 id="private-beta" className="mt-1 text-lg font-bold tracking-tight">
+              {t.app.beta.panelTitle}
+            </h2>
+            <p className="mt-1 text-sm leading-6 text-foreground-muted">{tf(t.app.beta.panelText, { date: betaUntil ?? "" })}</p>
+          </div>
+          <div className="flex shrink-0 flex-wrap gap-2">
+            <Button href="/app/discover" size="md">
+              <CompassIcon size={16} />
+              {t.app.nav.discover}
+            </Button>
+            <Button href="/app/profile/edit" size="md" variant="secondary">
+              {t.app.beta.completeProfileCta}
+            </Button>
+          </div>
+        </section>
+      )}
+
+      {isFree && data.betaEnded && (
+        <section
+          aria-labelledby="beta-ended"
+          className="flex flex-col gap-4 rounded-2xl border border-border bg-surface px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6"
+        >
+          <div className="max-w-2xl">
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-foreground-subtle">{t.app.beta.panelKicker}</p>
+            <h2 id="beta-ended" className="mt-1 text-lg font-bold tracking-tight">
+              {t.app.beta.panelExpiredTitle}
+            </h2>
+            <p className="mt-1 text-sm leading-6 text-foreground-muted">{t.app.beta.panelExpiredText}</p>
+          </div>
+          <div className="flex shrink-0 flex-wrap gap-2">
+            <Button href="/app/billing" size="md">
+              {t.app.access.upgradeCta}
+            </Button>
+            <Button href="/app/inbox" size="md" variant="secondary">
+              {t.app.beta.toInboxCta}
+            </Button>
+          </div>
+        </section>
+      )}
+
       {/* Free accounts (no trial / trial ended / membership lapsed): a clear,
           restricted membership panel first – not a seemingly full dashboard.
           What remains usable without membership is listed in
           docs/06-permissions.md (own profile, inbox, events & marketplace lists). */}
-      {isFree && (
+      {isFree && !data.betaEnded && (
         <section
           aria-labelledby="membership-required"
           className="flex flex-col gap-4 rounded-2xl border border-sand-400/50 bg-sand-200/30 px-5 py-5 dark:bg-sand-400/5 sm:flex-row sm:items-center sm:justify-between sm:px-6"
@@ -226,6 +298,12 @@ export function DashboardScreen({ data }: { data: DashboardData }) {
             </h2>
             <p className="mt-1 text-sm leading-6 text-foreground-muted">
               {data.trialExpired ? t.app.dashboard.trialEndedText : t.app.dashboard.membershipRequiredText}
+            </p>
+            <p className="mt-2 text-xs leading-5 text-foreground-muted">
+              {t.app.beta.haveKey}{" "}
+              <Link href="/app/beta" className="font-semibold text-electric-600 hover:underline dark:text-electric-300">
+                {t.app.beta.activateCta}
+              </Link>
             </p>
           </div>
           <Button href="/app/billing" size="md" className="shrink-0">
@@ -256,7 +334,7 @@ export function DashboardScreen({ data }: { data: DashboardData }) {
           <>
             <p className="mt-2 text-sm leading-6 text-foreground-muted">{t.app.dashboard.forYouEmpty}</p>
             <ul className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-              {!isFree && (
+              {(networkOpen || isTrial) && (
                 <li>
                   <Link href="/app/discover" className="block rounded-xl px-3 py-2 text-sm hover:bg-surface-muted">
                     {t.app.dashboard.forYouDiscover}
@@ -396,7 +474,7 @@ function ForYouEntry({ item }: { item: ForYouItem }) {
           <span className="block truncate text-sm font-semibold leading-tight">{title}</span>
           <span className="mt-0.5 block truncate text-xs text-foreground-muted">{meta}</span>
         </span>
-        {hrefToProfile && <span aria-hidden="true" className="text-foreground-subtle">→</span>}
+        {hrefToProfile && <ArrowRightIcon size={14} aria-hidden="true" className="shrink-0 text-foreground-subtle" />}
       </Link>
     </li>
   );

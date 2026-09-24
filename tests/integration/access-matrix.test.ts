@@ -58,6 +58,7 @@ import { submitMembershipApplicationAction } from "@/app/actions/membership";
 import { setUserSuspendedAction } from "@/app/actions/admin";
 import { initialActionState, type ActionState } from "@/app/actions/state";
 import { LockedArea } from "@/components/app/LockedArea";
+import { NetworkLocked } from "@/components/app/NetworkLocked";
 import { DemoAreaNotice } from "@/components/app/DemoAreaNotice";
 import NetworkPage from "@/app/(app)/app/network/page";
 import JobsPage from "@/app/(app)/app/jobs/page";
@@ -117,6 +118,9 @@ beforeAll(async () => {
     .where(eq(trials.userId, accounts.expired));
 
   await activateMembership({ userId: accounts.member, plan: "monthly", provider: "dev" });
+  // Sprint 12: only real network participants can be viewed/contacted – the
+  // target is a verified, onboarded member.
+  await activateMembership({ userId: target, plan: "monthly", provider: "dev" });
 });
 
 afterEach(() => {
@@ -244,7 +248,10 @@ describe("write actions: accounts without valid access are refused server-side",
       for (const [name, run, values] of paidOnly) {
         const result = await run(form(values));
         expect(result.status, name).toBe("error");
-        const allowed = state === "unverified" ? ["membershipRequired", "verificationRequired"] : ["membershipRequired"];
+        // Sprint 12: messaging is a networking capability (member / admin /
+        // active beta) and answers "networkAccessRequired".
+        const allowed = ["membershipRequired", "networkAccessRequired"];
+        if (state === "unverified") allowed.push("verificationRequired");
         expect(allowed, name).toContain(errorCode(result));
       }
     });
@@ -261,7 +268,7 @@ describe("write actions: accounts without valid access are refused server-side",
         initialActionState,
         form({ userId: target, message: "Ich möchte mich gerne mit dir zu B2B-Vertrieb austauschen." }),
       );
-      expect(errorCode(connect)).toBe("membershipRequired");
+      expect(errorCode(connect)).toBe(state === "unverified" ? "verificationRequired" : "networkAccessRequired");
 
       const apply = await applyToOpportunityAction(
         initialActionState,
@@ -294,7 +301,7 @@ describe("write actions: accounts without valid access are refused server-side",
       initialActionState,
       form({ userId: target, message: "Ich möchte mich gerne mit dir zu B2B-Vertrieb austauschen." }),
     );
-    expect(errorCode(connect)).toBe("membershipRequired");
+    expect(errorCode(connect)).toBe("networkAccessRequired");
     expect((await trialFor(accounts.trial))?.connectionRequestsUsed).toBe(0);
   });
 
@@ -327,7 +334,10 @@ describe("write actions: accounts without valid access are refused server-side",
  */
 describe("page-level read access of the gated member areas", () => {
   type PageElement = { type: unknown } | null;
-  const isLocked = (element: PageElement) => element !== null && element.type === LockedArea;
+  // Networking areas render NetworkLocked (Sprint 12, closed-beta copy), the
+  // business areas the generic LockedArea.
+  const isLocked = (element: PageElement) =>
+    element !== null && (element.type === LockedArea || element.type === NetworkLocked);
 
   async function renderGatedPages() {
     const [opportunity] = await db.select({ id: businessOpportunities.id }).from(businessOpportunities).limit(1);

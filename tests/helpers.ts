@@ -23,6 +23,8 @@ export async function createTestUser(options: {
   role?: "user" | "admin";
   verified?: boolean;
   handle?: string;
+  /** Finished onboarding (default true – the realistic state for network tests). */
+  onboarded?: boolean;
 } = {}) {
   const now = new Date();
   const id = idFor.user();
@@ -45,7 +47,13 @@ export async function createTestUser(options: {
     updatedAt: now,
   });
   await Promise.all([
-    db.insert(profiles).values({ id: idFor.profile(), userId: id, createdAt: now, updatedAt: now }),
+    db.insert(profiles).values({
+      id: idFor.profile(),
+      userId: id,
+      onboardingCompletedAt: options.onboarded === false ? null : now,
+      createdAt: now,
+      updatedAt: now,
+    }),
     db.insert(privacySettings).values({ userId: id, updatedAt: now }),
     db.insert(notificationPreferences).values({ userId: id, updatedAt: now }),
   ]);

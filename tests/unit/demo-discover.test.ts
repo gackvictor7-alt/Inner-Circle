@@ -109,6 +109,15 @@ describe("demoDiscoverResults", () => {
     expect(demoDiscoverResults(emptyViewer, { location: "Hamburg" }, options)).toHaveLength(0);
   });
 
+  it("applies the business-goal filter with the same function as the real network (Sprint 12)", () => {
+    for (const goal of new Set(DEMO_PROFILES.flatMap((profile) => profile.goalSlugs))) {
+      const expected = DEMO_PROFILES.filter((profile) => profile.goalSlugs.includes(goal)).map((p) => p.key).sort();
+      const actual = demoDiscoverResults(emptyViewer, { goal }, options).map((r) => r.candidate.key).sort();
+      expect(actual, goal).toEqual(expected);
+    }
+    expect(demoDiscoverResults(emptyViewer, { goal: "not-a-goal" }, options)).toHaveLength(0);
+  });
+
   it("supports the radius filter around a geocodable city", () => {
     const near = demoDiscoverResults(emptyViewer, { location: "Stuttgart", radius: 100 }, options);
     expect(near.map((r) => r.candidate.key)).toContain("demo-founder-julian");

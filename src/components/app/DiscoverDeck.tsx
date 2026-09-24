@@ -1,10 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
-import { RatingStars } from "@/components/ui/RatingStars";
 import { EmptyState } from "@/components/app/ui";
 import { ConnectDialog } from "@/components/app/ConnectDialog";
 import { DemoConnectDialog } from "@/components/app/DemoConnectDialog";
@@ -44,22 +43,22 @@ export type DiscoverCardData = {
   interests: string[];
   lookingFor: string[];
   offering: string[];
-  trustScore10: number | null;
-  metrics: { connections: number; opportunities: number; listings: number; verifiedRecords: number };
   sharedConnectionCount: number;
   sharedInterests: string[];
   sharedGoals: string[];
   supplyDemand: boolean;
   sameLocation: boolean;
-  matchPercent: number;
   isFollowing: boolean;
   isConnected: boolean;
   requestPending: boolean;
+  /** The member declined the viewer's last request recently (Sprint 12). */
+  requestCooldown?: boolean;
 };
 
 export type DiscoverFilterOptions = {
   industries: { value: string; label: string }[];
   interests: { value: string; label: string }[];
+  goals: { value: string; label: string }[];
   investmentInterests: { value: string; label: string }[];
   radiusKm: number[];
 };
@@ -69,6 +68,7 @@ export type DiscoverFiltersState = {
   location?: string;
   industry?: string;
   interest?: string;
+  goal?: string;
   lookingFor?: string;
   offering?: string;
   investInterest?: string;
@@ -94,6 +94,7 @@ export function DiscoverDeck({
   locationGeocodable = true,
   filterOptions,
   mode = "live",
+  notice = null,
 }: {
   members: DiscoverCardData[];
   canFollow: boolean;
@@ -109,6 +110,8 @@ export function DiscoverDeck({
    * client-only flow instead of the real connect dialog.
    */
   mode?: "live" | "demo";
+  /** Optional one-line notice under the header (e.g. closed beta / beta ended). */
+  notice?: ReactNode;
 }) {
   const { t, tf } = useI18n();
   const isDemo = mode === "demo";
@@ -144,7 +147,7 @@ export function DiscoverDeck({
     const onKeyDown = (event: KeyboardEvent) => {
       if (connectTarget) return;
       if (event.key === "ArrowLeft") skip();
-      if (event.key === "ArrowRight" && current && canConnect && !current.isConnected && !current.requestPending) {
+      if (event.key === "ArrowRight" && current && canConnect && !current.isConnected && !current.requestPending && !current.requestCooldown) {
         setConnectTarget(current);
       }
     };
@@ -158,6 +161,7 @@ export function DiscoverDeck({
       filters.location ||
       filters.industry ||
       filters.interest ||
+      filters.goal ||
       filters.lookingFor ||
       filters.offering ||
       filters.investInterest ||
@@ -180,6 +184,7 @@ export function DiscoverDeck({
     if (filters.location && omit !== "location") params.set("location", filters.location);
     if (filters.industry && omit !== "industry") params.set("industry", filters.industry);
     if (filters.interest && omit !== "interest") params.set("interest", filters.interest);
+    if (filters.goal && omit !== "goal") params.set("goal", filters.goal);
     if (filters.lookingFor && omit !== "lookingFor") params.set("lookingFor", filters.lookingFor);
     if (filters.offering && omit !== "offering") params.set("offering", filters.offering);
     if (filters.investInterest && omit !== "invest") params.set("invest", filters.investInterest);
@@ -215,6 +220,11 @@ export function DiscoverDeck({
       label: `${t.app.discover.filtersInterest}: ${optionLabel(filterOptions.interests, filters.interest)}`,
       href: hrefWithout("interest"),
     },
+    filters.goal && {
+      key: "goal",
+      label: `${t.app.discover.filtersGoal}: ${optionLabel(filterOptions.goals, filters.goal)}`,
+      href: hrefWithout("goal"),
+    },
     filters.lookingFor && {
       key: "lookingFor",
       label: `${t.app.discover.filtersLookingFor}: ${filters.lookingFor}`,
@@ -248,6 +258,9 @@ export function DiscoverDeck({
     "h-9 w-full min-w-0 rounded-lg border border-border bg-background px-3 text-sm font-normal text-foreground sm:w-44";
   const selectClass =
     "h-9 w-full min-w-0 rounded-lg border border-border bg-background px-2.5 text-sm font-normal text-foreground sm:w-auto";
+  // Inside the "more filters" grid the text fields fill their cell like the selects.
+  const panelInputClass =
+    "h-9 w-full min-w-0 rounded-lg border border-border bg-background px-3 text-sm font-normal text-foreground";
 
   return (
     <div className="space-y-6">
@@ -269,6 +282,7 @@ export function DiscoverDeck({
           </span>
         ) : null}
       </header>
+      {notice}
 
       {/* ----------------------------------------------------------- filters */}
       <form
@@ -325,6 +339,7 @@ export function DiscoverDeck({
           {!moreOpen && (
             <>
               <input type="hidden" name="interest" value={filters.interest ?? ""} />
+              <input type="hidden" name="goal" value={filters.goal ?? ""} />
               <input type="hidden" name="kind" value={filters.kind ?? ""} />
               <input type="hidden" name="lookingFor" value={filters.lookingFor ?? ""} />
               <input type="hidden" name="offering" value={filters.offering ?? ""} />
@@ -363,9 +378,9 @@ export function DiscoverDeck({
           </span>
         </div>
 
-        {/* More filters: interest, type, "Ich suche", "Ich biete", investments. */}
+        {/* More filters: interest, goal, type, "Ich suche", "Ich biete", investments. */}
         {moreOpen && (
-          <div className="mt-3 grid gap-2 border-t border-border pt-3 sm:grid-cols-2 lg:grid-cols-5">
+          <div className="mt-3 grid gap-2 border-t border-border pt-3 sm:grid-cols-2 lg:grid-cols-3">
             <select
               name="interest"
               defaultValue={filters.interest ?? ""}
@@ -374,6 +389,19 @@ export function DiscoverDeck({
             >
               <option value="">{t.app.discover.filtersInterest}</option>
               {filterOptions.interests.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <select
+              name="goal"
+              defaultValue={filters.goal ?? ""}
+              aria-label={t.app.discover.filtersGoal}
+              className={selectClass}
+            >
+              <option value="">{t.app.discover.filtersGoal}</option>
+              {filterOptions.goals.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
                 </option>
@@ -397,7 +425,7 @@ export function DiscoverDeck({
               defaultValue={filters.lookingFor ?? ""}
               placeholder={t.app.discover.filtersLookingForPlaceholder}
               aria-label={t.app.discover.filtersLookingFor}
-              className={inputClass}
+              className={panelInputClass}
             />
             <input
               type="text"
@@ -405,7 +433,7 @@ export function DiscoverDeck({
               defaultValue={filters.offering ?? ""}
               placeholder={t.app.discover.filtersOfferingPlaceholder}
               aria-label={t.app.discover.filtersOffering}
-              className={inputClass}
+              className={panelInputClass}
             />
             <select
               name="invest"
@@ -499,7 +527,7 @@ export function DiscoverDeck({
             if (touchStart === null) return;
             const delta = (event.changedTouches[0]?.clientX ?? touchStart) - touchStart;
             if (delta < -60) skip();
-            if (delta > 60 && canConnect && !current.isConnected && !current.requestPending) {
+            if (delta > 60 && canConnect && !current.isConnected && !current.requestPending && !current.requestCooldown) {
               setConnectTarget(current);
             }
             setTouchStart(null);
@@ -507,7 +535,10 @@ export function DiscoverDeck({
         >
           <div className="ic-grid gap-0 p-5 sm:p-6">
             {/* left: portrait + identity */}
-            <div className="ic-span-12 lg:col-span-5">
+            {/* col-span-* (not ic-span-12): the unlayered ic-span-12 rule
+                would override lg:col-span-5 and stretch the portrait across
+                the whole card on desktop. */}
+            <div className="col-span-12 lg:col-span-5">
               <div className="relative">
                 {current.avatarUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -517,13 +548,12 @@ export function DiscoverDeck({
                     className="aspect-[4/5] w-full rounded-2xl object-cover"
                   />
                 ) : (
-                  <span className="flex aspect-[4/5] w-full items-center justify-center rounded-2xl bg-gradient-to-br from-electric-500 to-electric-700 text-5xl font-bold text-white">
+                  // No photo yet: a calm, compact placeholder (same style as the
+                  // profile header) instead of a large colour block.
+                  <span className="flex aspect-[16/9] w-full items-center justify-center rounded-2xl border border-border bg-surface-muted text-4xl font-bold tracking-tight text-foreground-muted lg:aspect-[4/3]">
                     {initials(current.firstName, current.lastName)}
                   </span>
                 )}
-                <span className="absolute left-3 top-3 rounded-full bg-midnight-950/75 px-2.5 py-1 text-[11px] font-bold text-paper-50 backdrop-blur">
-                  {tf(t.app.discover.matchScore, { percent: current.matchPercent })}
-                </span>
                 {current.isDemo && (
                   <span className="absolute right-3 top-3 rounded-full bg-sand-400/90 px-2.5 py-1 text-[11px] font-bold text-midnight-950">
                     {isDemo ? t.app.demo.profileBadge : t.app.discover.demoBadge}
@@ -558,9 +588,9 @@ export function DiscoverDeck({
 
             {/* right: business identity
                 Mobile (Sprint 8, TEIL U): compact card – 1–2 tags + at most
-                two match reasons. Bio, metrics, trust and full tag lists stay
+                two match reasons. Bio and the full tag lists stay
                 on desktop; everything is available in the profile view. */}
-            <div className="ic-span-12 mt-4 space-y-4 lg:col-span-7 lg:mt-0 lg:space-y-5 lg:pl-6">
+            <div className="col-span-12 mt-4 space-y-4 lg:col-span-7 lg:mt-0 lg:space-y-5 lg:pl-6">
               {current.bio && (
                 <p className="ic-measure hidden text-sm leading-6 text-foreground-muted lg:block">{current.bio}</p>
               )}
@@ -633,31 +663,6 @@ export function DiscoverDeck({
                 );
               })()}
 
-              {/* Platform activity counters exist for real members only –
-                  fictional demo profiles show none instead of zeros. */}
-              {!isDemo && (
-                <div className="ic-grid hidden gap-3 lg:grid">
-                  <MetricTile label={t.app.discover.metricConnections} value={current.metrics.connections} />
-                  <MetricTile label={t.app.discover.metricOpportunities} value={current.metrics.opportunities} />
-                  <MetricTile label={t.app.discover.metricListings} value={current.metrics.listings} />
-                  <MetricTile label={t.app.discover.metricVerified} value={current.metrics.verifiedRecords} />
-                </div>
-              )}
-
-              <div className="hidden lg:block">
-                <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-foreground-subtle">
-                  {t.app.discover.trust}
-                </p>
-                {current.trustScore10 === null ? (
-                  <p className="mt-1.5 text-sm text-foreground-muted">{t.app.discover.trustEmpty}</p>
-                ) : (
-                  <p className="mt-1.5 flex items-center gap-2 text-sm font-semibold">
-                    {(current.trustScore10 / 10).toFixed(1)}
-                    <RatingStars value={current.trustScore10 / 10} size={14} />
-                  </p>
-                )}
-              </div>
-
               <div className="hidden lg:block">
                 <TagList label={t.app.discover.roles} items={current.roles} />
                 <TagList label={t.app.discover.interests} items={current.interests} limit={8} />
@@ -692,7 +697,12 @@ export function DiscoverDeck({
                   </Button>
                 </form>
               )}
-              {canConnect && !current.isConnected && !current.requestPending && (
+              {current.requestCooldown && !current.isConnected && !current.requestPending && (
+                <span className="col-span-2 inline-flex items-center justify-center rounded-full border border-border bg-surface px-4 py-3 text-sm font-medium text-foreground-muted">
+                  {t.app.beta.requestNotAccepted}
+                </span>
+              )}
+              {canConnect && !current.isConnected && !current.requestPending && !current.requestCooldown && (
                 <Button className="col-span-2 w-full" size="lg" onClick={() => setConnectTarget(current)}>
                   <UserPlusIcon size={18} />
                   {isDemo ? t.app.demo.connectTitle : t.app.discover.actionConnect}
@@ -735,7 +745,10 @@ export function DiscoverDeck({
                   </Button>
                 </form>
               )}
-              {canConnect && !current.isConnected && !current.requestPending && (
+              {current.requestCooldown && !current.isConnected && !current.requestPending && (
+                <span className="ml-auto text-sm font-medium text-foreground-muted">{t.app.beta.requestNotAccepted}</span>
+              )}
+              {canConnect && !current.isConnected && !current.requestPending && !current.requestCooldown && (
                 <Button className="ml-auto" onClick={() => setConnectTarget(current)}>
                   <UserPlusIcon size={16} />
                   {isDemo ? t.app.demo.connectTitle : t.app.discover.actionConnect}
@@ -797,15 +810,6 @@ function MatchChip({ label, muted = false }: { label: string; muted?: boolean })
         {label}
       </span>
     </li>
-  );
-}
-
-function MetricTile({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="ic-span-6 rounded-xl border border-border bg-surface px-3 py-2.5 lg:col-span-3">
-      <p className="text-[10px] font-bold uppercase tracking-wide text-foreground-subtle">{label}</p>
-      <p className="mt-0.5 text-lg font-bold tracking-tight">{value}</p>
-    </div>
   );
 }
 

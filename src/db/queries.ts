@@ -2,6 +2,7 @@ import { and, count, desc, eq, inArray, isNull, or, sql } from "drizzle-orm";
 import { db } from "./client";
 import {
   badges,
+  betaAccess,
   connections,
   courseModules,
   courses,
@@ -30,12 +31,15 @@ export type DbTrial = typeof trials.$inferSelect;
 export type DbCard = typeof membershipCards.$inferSelect;
 export type DbPrivacy = typeof privacySettings.$inferSelect;
 export type DbSeller = typeof sellerProfiles.$inferSelect;
+export type DbBetaAccess = typeof betaAccess.$inferSelect;
 
 export type UserContext = DbUser & {
   profile: DbProfile | null;
   privacy: DbPrivacy | null;
   membership: DbMembership | null;
   trial: DbTrial | null;
+  /** Private-beta entitlement (Sprint 12) – separate from any membership. */
+  betaAccess: DbBetaAccess | null;
   card: DbCard | null;
   seller: DbSeller | null;
   badges: { slug: string; kind: string; titleDe: string; titleEn: string; grantedAt: Date }[];
@@ -48,11 +52,12 @@ export async function loadUserContext(userId: string): Promise<UserContext | nul
   const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
   if (!user) return null;
 
-  const [profile, privacy, membership, trial, card, seller, badgeRows, interestRows, goalRows] = await Promise.all([
+  const [profile, privacy, membership, trial, beta, card, seller, badgeRows, interestRows, goalRows] = await Promise.all([
     db.select().from(profiles).where(eq(profiles.userId, userId)).limit(1),
     db.select().from(privacySettings).where(eq(privacySettings.userId, userId)).limit(1),
     db.select().from(memberships).where(eq(memberships.userId, userId)).limit(1),
     db.select().from(trials).where(eq(trials.userId, userId)).limit(1),
+    db.select().from(betaAccess).where(eq(betaAccess.userId, userId)).limit(1),
     db.select().from(membershipCards).where(eq(membershipCards.userId, userId)).limit(1),
     db.select().from(sellerProfiles).where(eq(sellerProfiles.userId, userId)).limit(1),
     db
@@ -84,6 +89,7 @@ export async function loadUserContext(userId: string): Promise<UserContext | nul
     privacy: privacy[0] ?? null,
     membership: membership[0] ?? null,
     trial: trial[0] ?? null,
+    betaAccess: beta[0] ?? null,
     card: card[0] ?? null,
     seller: seller[0] ?? null,
     badges: badgeRows,

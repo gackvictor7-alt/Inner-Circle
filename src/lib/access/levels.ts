@@ -10,6 +10,9 @@
  *   member     – active paid membership (monthly or annual)
  *   admin      – administrative access (always on top of a level)
  *
+ * Private beta (Sprint 12) is NOT a level: it is a separate, time-limited
+ * networking grant layered on top of free/trial (see BETA_NETWORK_GRANTS).
+ *
  * The matrix is used by the server for authorization and by the UI to hide or
  * label actions. The server never trusts the UI: every server action and route
  * re-checks the access level (src/lib/access/server.ts).
@@ -154,6 +157,42 @@ const MEMBER: Entitlements = {
 const ADMIN: Entitlements = {
   ...MEMBER,
 };
+
+/**
+ * Private beta (Sprint 12) – a separate, time-limited GRANT, not a level.
+ *
+ * An invited beta tester keeps their account level (free or trial – never
+ * "member", never counted as paying) and receives exactly the networking
+ * capabilities below on top of it. Everything else stays as for the base
+ * level: no follow, no feed/posts, no deals, jobs, investments, marketplace
+ * selling, courses, event registration, trust details or member card, and no
+ * admin rights. The grant is resolved server-side from the BetaAccess table
+ * (src/lib/access/server.ts); it can never be activated from the client.
+ */
+export const BETA_NETWORK_GRANTS = {
+  /** Browse and search real, network-visible members. */
+  networkDirectory: true,
+  /** Discover deck over real members. */
+  networkDiscover: true,
+  /** Send / accept real connection requests. */
+  connect: "unlimited",
+  /** Chat with confirmed connections. */
+  messaging: true,
+  /** Open real member profiles in full (their privacy settings still apply). */
+  profileFull: true,
+} as const satisfies Partial<Entitlements>;
+
+/** The entitlement keys a beta grant may change – used by tests and docs. */
+export const BETA_GRANT_KEYS = Object.keys(BETA_NETWORK_GRANTS) as (keyof typeof BETA_NETWORK_GRANTS)[];
+
+/**
+ * Applies the beta networking grant to a base entitlement set. Members and
+ * admins already have every networking capability, so the grant never changes
+ * them (and never reduces anything).
+ */
+export function withBetaGrant(base: Entitlements): Entitlements {
+  return { ...base, ...BETA_NETWORK_GRANTS };
+}
 
 export function entitlementsFor(level: AccessLevel): Entitlements {
   switch (level) {

@@ -2,7 +2,7 @@
 
 ## DESIGN STATUS: APPROVED / DO NOT REDESIGN WITHOUT EXPLICIT FOUNDER REQUEST
 
-**Stand:** 2026-09-21 · Der aktuelle visuelle Stand des Projekts ist vom
+**Stand:** 2026-09-24 (zuletzt ergänzt: 1.17 Sprint 12) · Der aktuelle visuelle Stand des Projekts ist vom
 Gründer freigegeben und **eingefroren**. Diese Datei schützt ihn.
 
 Ein KI-Agent, eine Entwicklerin oder ein Dienstleister darf die unten
@@ -316,6 +316,31 @@ pixelidentisch geprüft). Werte (`src/app/(site)/HomeContent.tsx`):
 Kein horizontaler Überlauf zwischen 390 und 1920 px. Dieser Zustand ist ab
 jetzt Teil des Freeze.
 
+### 1.17 Sprint 12: Private Beta – Professionalisierung des eingeloggten Bereichs (2026-09-24)
+
+**Ausdrücklicher Gründerauftrag** (Sprint 12): nur der eingeloggte Bereich
+wird ruhiger und ehrlicher, **kein** Redesign. Öffentliche Seiten, Hero,
+Bilder, Header, Navigation, Palette, Typografie und Tokens sind
+**unverändert** (keine neuen Design-Tokens, keine neuen Farben).
+
+| Bereich | Änderung | Grund |
+| ------- | -------- | ----- |
+| Discover-Karte (`DiscoverDeck.tsx`) | Match-%-Plakette, Kennzahlen-Kacheln (Kontakte/Chancen/Angebote/Nachweise) und Trust-Sterne entfernt; „Warum diese Empfehlung?“ zeigt nur nachprüfbare Gemeinsamkeiten | Auftrag: keine erfundenen Match-Wahrscheinlichkeiten, Kennzahlen oder Trust-Werte |
+| Discover-Karte, Layout | Die in 1.11 beschriebene Aufteilung (Bild links `lg:col-span-5`, Inhalt rechts `lg:col-span-7`) greift jetzt wirklich: vorher überschrieb die ungeschichtete Klasse `.ic-span-12` (`globals.css`) die `lg:`-Klassen, das Porträt lief über die volle Kartenbreite und der Inhalt lag unter der Falz. Jetzt `col-span-12 lg:col-span-*` | Wiederherstellung des beabsichtigten Designs, kein neues |
+| Discover-Filter „Mehr Filter“ | neues Auswahlfeld **Businessziel** (Auftrag: Filter nach Zielen); Raster jetzt `sm:grid-cols-2 lg:grid-cols-3` (zwei ruhige Reihen à drei Felder), die Textfelder „Ich suche“/„Ich biete“ füllen ihre Zelle wie die Auswahlfelder | Funktionslücke geschlossen, gleiche Bausteine, keine neuen Tokens |
+| Discover-Karte ohne Foto | statt großem Blauverlauf mit weißen Initialen ein ruhiger neutraler Platzhalter (`border-border bg-surface-muted`, Initialen `text-foreground-muted`), `16:9` mobil / `4:3` Desktop. Karten **mit** Foto unverändert `4:5` | ruhige Karten, keine dekorativen Verläufe; Name und Aktionen bleiben ohne Foto über der Falz |
+| Netzwerk-Karte (`MemberCard.tsx`) | toter, deaktivierter „Nur für Mitglieder“-Button entfernt; neutraler Zustand „Nicht angenommen“ nach Ablehnung | keine toten Buttons |
+| Inbox/Chat (`MessagesView.tsx`, `ConnectionsView.tsx`, `NotificationsView.tsx`) | Chat-Liste mit Partner + Vorschau + Ungelesen, ruhiger Leerzustand, schreibgeschützter Verlauf nach Beta-Ende mit Hinweis statt Eingabefeld | Networking-Kernflow |
+| Sperr- und Beta-Hinweise (`NetworkLocked.tsx`, `ClosedBetaNote.tsx`) | neue, ruhige Karten im bestehenden Kartenstil (Rahmen, `bg-surface`, keine Verläufe) | Closed-Beta-Erklärung, Beta-Ende |
+| Dashboard (`DashboardScreen.tsx`) | Beta-Status statt Demo-Countdown für Tester; Pfeil in „Für dich“ als SVG-Icon (`ArrowRightIcon`) statt Textzeichen | Konsistenz; das Zeichen „→“ fehlt im Inter-Latin-Subset |
+| Admin (`/admin/beta`) | neue Verwaltungsseite im bestehenden Admin-Layout | Schlüsselverwaltung |
+
+**Bewusst nicht geändert:** Das gleiche `.ic-span-12`-Muster verhindert auch
+auf `/app/profile` und `/app/settings` die `lg:`-Spaltenaufteilung (K-23). Diese
+Seiten wurden in Sprint 12 nicht umgebaut, weil sie außerhalb des
+Networking-Kernflows liegen; die Korrektur ist ein eigener, kleiner Auftrag.
+
+## 2. Ausdrücklich erlaubt (kein Designbruch)
 ## 2. Ausdrücklich erlaubt (kein Designbruch)
 
 - Technische Responsive-Bugfixes (z. B. Überlauf, abgeschnittene Inhalte,

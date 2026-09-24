@@ -7,13 +7,13 @@ import {
   DEMO_PROFILES,
   demoProfileHandle,
   filterDemoProfiles,
-  networkDemoSupplement,
   type DemoProfile,
 } from "@/lib/demo";
 import { dictionaries } from "@/lib/i18n/dictionaries";
 import { LocalizedEmptyState, LocalizedPageHeader, Tr } from "@/components/app/localized";
-import { LockedArea } from "@/components/app/LockedArea";
+import { NetworkLocked } from "@/components/app/NetworkLocked";
 import { DemoAreaNotice } from "@/components/app/DemoAreaNotice";
+import { ClosedBetaNote, betaEndedState } from "@/components/app/ClosedBetaNote";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -34,9 +34,10 @@ export const dynamic = "force-dynamic";
  * Instead of the locked screen it gets the same page over the fictional demo
  * profiles only – the real member query is never executed for it.
  *
- * Sprint 11 follow-up: for paying members demo profiles are never mixed
- * with real members. They appear in a separate, clearly labelled section
- * with an explanatory lead and can only trigger the simulated demo dialog.
+ * Sprint 12 (private beta): real-network users (members, admins, active
+ * beta testers) see ONLY real, network-visible participants – the former
+ * demo supplement for a small community is gone. A small network is shown
+ * as it is, with an honest "Dein Netzwerk wächst" state.
  */
 export default async function NetworkPage({
   searchParams,
@@ -49,7 +50,7 @@ export default async function NetworkPage({
   // Own connections and requests remain reachable via /app/inbox for every level.
   const isDemo = access.entitlements.demoAccess && !access.entitlements.networkDirectory;
   if (!access.entitlements.networkDirectory && !isDemo) {
-    return <LockedArea access={access} icon="users" />;
+    return <NetworkLocked access={access} />;
   }
 
   const params = await searchParams;
@@ -92,16 +93,15 @@ export default async function NetworkPage({
           interestSlug: params.interest || undefined,
           location,
           role,
+          locale,
         }),
     listInterests(),
   ]);
 
-  // Demo profiles: the whole curated set for the discovery demo, otherwise the
-  // supplement for a still-small community – same filters as the real list.
+  // Demo profiles exist only in the discovery demo – never next to real members.
   const selectedInterest = interests.find((interest) => interest.slug === params.interest);
-  const demoPool = isDemo ? DEMO_PROFILES : networkDemoSupplement(members.length, limit);
-  const demoProfiles = DEMO_CONTENT_ENABLED
-    ? filterDemoProfiles(demoPool, {
+  const demoProfiles = isDemo && DEMO_CONTENT_ENABLED
+    ? filterDemoProfiles(DEMO_PROFILES, {
         search,
         role,
         location,
@@ -137,6 +137,7 @@ export default async function NetworkPage({
       />
 
       {isDemo && <DemoAreaNotice leadKey="app.demo.networkDemoLead" />}
+      {isDemo && <ClosedBetaNote ended={betaEndedState(access)} />}
 
       <Card className="p-4">
         <form
@@ -243,16 +244,21 @@ export default async function NetworkPage({
       )}
 
       {view === "all" && members.length + demoProfiles.length === 0 ? (
-        <LocalizedEmptyState
-          icon="users"
-          titleKey="app.network.noResults"
-          textKey="app.network.noResultsCta"
-          action={
-            hasFilters
-              ? { labelKey: "app.common.clearFilters", href: membersHref({}) }
-              : { labelKey: "app.discover.title", href: "/app/discover" }
-          }
-        />
+        hasFilters ? (
+          <LocalizedEmptyState
+            icon="users"
+            titleKey="app.network.noResults"
+            textKey="app.network.noResultsCta"
+            action={{ labelKey: "app.common.clearFilters", href: membersHref({}) }}
+          />
+        ) : (
+          <LocalizedEmptyState
+            icon="users"
+            titleKey="app.beta.networkGrowingTitle"
+            textKey="app.beta.networkGrowingText"
+            action={{ labelKey: "app.beta.completeProfileCta", href: "/app/profile/edit" }}
+          />
+        )
       ) : view !== "all" && filteredMembers.length === 0 ? (
         <LocalizedEmptyState
           icon="users"
@@ -272,12 +278,6 @@ export default async function NetworkPage({
               ) : (
                 <>
                   {filteredMembers.length} <Tr k="app.common.results" />
-                  {view === "all" && demoProfiles.length > 0 && (
-                    <span className="text-foreground-subtle">
-                      {" "}
-                      {dict.app.network.demoSupplement.replace("{count}", String(demoProfiles.length))}
-                    </span>
-                  )}
                 </>
               )}
             </p>
@@ -296,37 +296,6 @@ export default async function NetworkPage({
               </li>
             ))}
           </ul>
-
-          {/* Demo supplement for paying members – clearly separated section */}
-          {view === "all" && !isDemo && demoProfiles.length > 0 && (
-            <section className="space-y-4 rounded-2xl border border-sand-400/30 bg-sand-50/50 p-5 dark:bg-sand-400/5">
-              <div className="flex flex-wrap items-center gap-2">
-                <h2 className="text-base font-bold tracking-tight">
-                  <Tr k="app.network.demoSupplementTitle" />
-                </h2>
-                <Badge variant="sand">
-                  <Tr k="app.demo.profileBadge" />
-                </Badge>
-              </div>
-              <p className="max-w-3xl text-sm leading-6 text-foreground-muted">
-                <Tr k="app.network.demoSupplementLead" />
-              </p>
-              <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                {demoProfiles.map((profile) => (
-                  <li key={profile.key}>
-                    <MemberCard
-                      member={demoCardData(profile, locale)}
-                      canFollow={false}
-                      canConnect={true}
-                    />
-                  </li>
-                ))}
-              </ul>
-              <p className="rounded-xl border border-sand-400/40 bg-sand-200/40 px-4 py-3 text-xs leading-5 text-sand-800 dark:bg-sand-400/10 dark:text-sand-100">
-                <Tr k="app.demo.notice" />
-              </p>
-            </section>
-          )}
 
           {/* Demo profiles for trial – own page, no real members */}
           {isDemo && (

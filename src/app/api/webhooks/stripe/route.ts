@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { eq } from "drizzle-orm";
 import { db } from "@/db/client";
-import { memberships, membershipEvents } from "@/db/schema";
+import { membershipEvents } from "@/db/schema";
 import { constructWebhookEvent, mapSubscriptionStatus } from "@/lib/payments/stripe";
 import {
   activateMembership,
@@ -48,11 +48,16 @@ export async function POST(request: Request) {
 
   try {
     switch (event.type) {
-      case "checkout.session.completed": {
+      case "checkout.session.completed":
+      case "checkout.session.async_payment_succeeded": {
         const session = event.data.object as Stripe.Checkout.Session;
         const userId = session.client_reference_id ?? session.metadata?.userId ?? null;
         const plan = (session.metadata?.plan === "annual" ? "annual" : "monthly") as PlanId;
-        if (userId) {
+        // Sprint 12: a completed checkout is NOT a payment. Delayed methods
+        // (e.g. SEPA debit) complete with payment_status "unpaid" and are only
+        // activated by `checkout.session.async_payment_succeeded`.
+        const paid = session.payment_status === "paid" || session.payment_status === "no_payment_required";
+        if (userId && paid) {
           await activateMembership({
             userId,
             plan,
@@ -61,10 +66,19 @@ export async function POST(request: Request) {
             providerSubscriptionId: typeof session.subscription === "string" ? session.subscription : null,
             providerCheckoutSessionId: session.id,
             providerEventId: event.id,
-            eventType: "checkout_completed",
+            eventType: event.type === "checkout.session.completed" ? "checkout_completed" : "checkout_async_paid",
             meta: { amountTotal: session.amount_total, currency: session.currency },
           });
+        } else if (userId) {
+          await recordPendingEvent(userId, event.id, "checkout_unpaid", { paymentStatus: session.payment_status });
         }
+        break;
+      }
+
+      case "checkout.session.async_payment_failed": {
+        const session = event.data.object as Stripe.Checkout.Session;
+        const userId = session.client_reference_id ?? session.metadata?.userId ?? null;
+        if (userId) await recordPendingEvent(userId, event.id, "checkout_payment_failed", {});
         break;
       }
 
@@ -95,6 +109,7 @@ export async function POST(request: Request) {
             await markMembershipCanceled({
               userId,
               cancelAtPeriodEnd: false,
+              providerEventId: event.id,
             });
           }
         }
@@ -105,7 +120,10 @@ export async function POST(request: Request) {
         const subscription = event.data.object as Stripe.Subscription;
         const userId = subscription.metadata?.userId;
         if (userId) {
-          await markMembershipCanceled({ userId, cancelAtPeriodEnd: false, providerEventId: event.id });
+          // The event id is unique per MembershipEvent row – it is stored
+          // once, on the final state (expired). Passing it to both calls made
+          // the second insert fail and the webhook answer 500 (Sprint 12 fix).
+          await markMembershipCanceled({ userId, cancelAtPeriodEnd: false });
           await expireMembership(userId, event.id);
         }
         break;
@@ -169,6 +187,22 @@ export async function POST(request: Request) {
   });
 
   return NextResponse.json({ received: true });
+}
+
+/** Records a checkout event that must NOT activate anything (idempotency + audit trail). */
+async function recordPendingEvent(userId: string, providerEventId: string, type: string, meta: Record<string, unknown>) {
+  await db
+    .insert(membershipEvents)
+    .values({
+      id: idFor.event(),
+      userId,
+      type,
+      provider: "stripe",
+      providerEventId,
+      metaJson: JSON.stringify(meta),
+      createdAt: new Date(),
+    })
+    .onConflictDoNothing();
 }
 
 export async function GET() {

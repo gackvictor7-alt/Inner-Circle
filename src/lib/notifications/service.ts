@@ -33,23 +33,48 @@ export type NotificationInput = {
   entityType?: string;
   entityId?: string;
   dedupeKey?: string;
+  /**
+   * With a dedupe key: when the notification already exists, bring it back
+   * as NEW (unread, current time, fresh text) instead of silently dropping it
+   * – e.g. a request that is sent again after it was withdrawn.
+   */
+  resurface?: boolean;
 };
 
 export async function notify(input: NotificationInput): Promise<void> {
+  const now = new Date();
+  const values = {
+    id: idFor.notification(),
+    userId: input.userId,
+    type: input.type,
+    titleKey: input.titleKey,
+    paramsJson: JSON.stringify(input.params ?? {}),
+    url: input.url ?? null,
+    actorId: input.actorId ?? null,
+    entityType: input.entityType ?? null,
+    entityId: input.entityId ?? null,
+    dedupeKey: input.dedupeKey ?? null,
+    createdAt: now,
+  };
   try {
-    await db.insert(notifications).values({
-      id: idFor.notification(),
-      userId: input.userId,
-      type: input.type,
-      titleKey: input.titleKey,
-      paramsJson: JSON.stringify(input.params ?? {}),
-      url: input.url ?? null,
-      actorId: input.actorId ?? null,
-      entityType: input.entityType ?? null,
-      entityId: input.entityId ?? null,
-      dedupeKey: input.dedupeKey ?? null,
-      createdAt: new Date(),
-    });
+    if (input.resurface && input.dedupeKey) {
+      await db
+        .insert(notifications)
+        .values(values)
+        .onConflictDoUpdate({
+          target: [notifications.userId, notifications.dedupeKey],
+          set: {
+            readAt: null,
+            createdAt: now,
+            titleKey: values.titleKey,
+            paramsJson: values.paramsJson,
+            url: values.url,
+            actorId: values.actorId,
+          },
+        });
+      return;
+    }
+    await db.insert(notifications).values(values);
   } catch {
     // A unique-constraint violation means the notification already exists.
   }

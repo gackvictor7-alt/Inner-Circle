@@ -100,6 +100,11 @@ export const NETWORK_DEMO_MIN_REAL = 8;
 export const NETWORK_DEMO_TARGET = 8;
 
 /**
+ * @deprecated Since Sprint 12 the directory never mixes demo profiles into the
+ * real network (members and beta testers see real participants only). The
+ * helper and its unit test remain for reference; no page uses it.
+ */
+/**
  * Which demo profiles fill a directory list of `realCount` real members.
  * Pure function – the same rules apply to trial (capped) and member views,
  * because the caller passes the effective `limit` (trial 12, member 60).

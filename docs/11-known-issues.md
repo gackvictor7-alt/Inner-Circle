@@ -1,8 +1,10 @@
 # 11 – Known Issues
 
-**Stand:** 2026-09-24 · Basis: Branch `arena/01a0d03a-inner-circle`
-(Basis `main` @ `87a244a`, Sprint 11). Sprint 11 ergänzt K-21 (Discovery-Demo:
-bekannte Grenzen) und aktualisiert K-19 (Browserprüfung). Hinweis: Sprint 8 hat einen
+**Stand:** 2026-09-24 · Basis: Branch `arena/01a0d435-inner-circle`
+(Basis `main` @ `8a1b5ea`, Sprint 12 – Private Beta). Sprint 12 schließt K-06
+(Datenschutz-Einstellungen), ergänzt K-22 (Private Beta: bekannte Grenzen) und
+K-23 (Layout-Klassen auf Profil/Einstellungen) und K-24 (CPU-Zeit der
+Login-Aktion), aktualisiert K-15, K-19 und K-21. Davor: Sprint 11 ergänzte K-21 (Discovery-Demo: bekannte Grenzen). Hinweis: Sprint 8 hat einen
 Render-500-Fehler im neuen-Paar-Chat behoben (`?to=` ohne bestehende
 Konversation rief eine Server Action während des Renders auf –
 `revalidatePath during render is unsupported`); `ensureDirectConversation()`
@@ -110,15 +112,25 @@ P2 mittelfristig · P3 Aufräumen.
   (Schema erlaubt `email = null`) oder den Umschalter deaktivieren, bis die
   Funktion existiert.
 
-### K-06 · Datenschutz-Einstellungen werden nicht überall erzwungen
+### K-06 · Datenschutz-Einstellungen werden nicht überall erzwungen — **BEHOBEN für das Networking (Sprint 12)**
 
-- **Symptom:** `PrivacySettings.profileVisibility`, `contactVisibility`,
-  `performanceVisibility` werden gespeichert, aber nicht in allen Queries
-  ausgewertet (Directory respektiert nur `discoverable`; Profil- und
-  Trust-Daten werden im Mitgliederbereich weitgehend unabhängig davon gezeigt).
-- **Risiko:** Sichtbarkeitsversprechen wird nicht eingehalten.
-- **Lösung:** Zentrale Query-Erweiterung + Tests, danach
-  [`06-permissions.md`](06-permissions.md) aktualisieren.
+- **War:** `profileVisibility`, `contactVisibility`, `performanceVisibility`
+  wurden gespeichert, aber kaum ausgewertet.
+- **Jetzt** (zentral in `src/lib/network/privacy.ts` +
+  `src/lib/network/eligibility.ts`, Regeln in
+  [`06-permissions.md`](06-permissions.md) §3d): `discoverable = false` →
+  weder in Discover/Netzwerk noch als Profil für Fremde (404; sichtbar nur für
+  Kontakte und bei offener Anfrage); `profileVisibility = connections/private`
+  → Fremde sehen eine reduzierte Karte; Kontaktlinks (`contactVisibility`,
+  Standard „nur Kontakte“) nur für Kontakte; `showLocation = false` → Standort
+  verborgen und aus dem Standortfilter ausgenommen; Kennzahlen nur mit
+  `performanceVisibility` + Recht `trustView`; `allowConnectionRequests =
+  false` → keine Anfragen (neutraler Hinweis). Tests:
+  `beta-grant.test.ts`, `beta-networking.test.ts`.
+- **Rest (nicht Teil von Sprint 12, nicht geprüft):** Bereiche außerhalb des
+  Networkings (z. B. Marketplace-Anbieter, Deals) werten die
+  Profil-Sichtbarkeit nicht aus; Anbieternamen sind dort bestehendes,
+  dokumentiertes Verhalten (K-21).
 
 ### K-07 · Marketplace: keine Bezahlung, Verkäuferfreigabe nicht erzwungen
 
@@ -187,8 +199,12 @@ P2 mittelfristig · P3 Aufräumen.
   in `SiteHeader`, `StatsSection` und `lib/auth/presence.ts`; „impure function
   during render" (`Date.now()`) in `app/events/page.tsx`; `module`-Zuweisung in
   `scripts/seed.ts`) und 8 Warnungen (ungenutzte Importe/Variablen).
+- **Sprint 12:** vor dem Sprint gemessen **14 (5 / 9)** (die Doku zählte
+  zuletzt 13), nach dem Sprint **12 (5 / 7)** – zwei ungenutzte Variablen in
+  `actions/network.ts` und `api/webhooks/stripe/route.ts` entfernt, **kein**
+  neuer Befund (Abgleich pro Datei/Regel gegen die Baseline).
 - Verlauf: 21 (7 Fehler / 14 Warnungen) → 15 (5 / 10) → 14 (4 / 10) →
-  **13 (5 / 8)**. Sprint 5 hat **keine** neuen Befunde eingeführt; die
+  13 (5 / 8) → 14 (5 / 9) → **12 (5 / 7)**. Sprint 5 hat **keine** neuen Befunde eingeführt; die
   Mount-Prüfung der Auth-Formulare nutzt `useSyncExternalStore` statt eines
   Effekts, und zwei Warnungen wurden nebenbei beseitigt. Der `presence.ts`-
   Fehler war bereits vorher vorhanden (Dokumentation zählte ihn bislang nicht).
@@ -223,6 +239,104 @@ P2 mittelfristig · P3 Aufräumen.
   Flows, Light/Dark, DE/EN); die Werkzeuge sind **nicht** Teil des Repos und
   laufen nicht in `npm test`. Gesten (Swipe) und Fokus-Fallen bleiben manuelle
   Prüfung. QA-Liste: [`08-testing.md`](08-testing.md) → Testmatrix.
+- **Sprint 12:** vollständiger Browser-Durchlauf mit sechs Testkonten gegen den
+  echten Worker-Preview (workerd + lokale D1), Details in `08-testing.md` §3b.
+  Das Skript liegt seit der zweiten Prüfrunde **im Repo**
+  (`tests/e2e/sprint12-browser.mjs`, dazu `tests/e2e/cpu-profile.mjs`), weil
+  eine Umgebungs-Rücksetzung die Werkzeuge in `/tmp` gelöscht hatte; nur die
+  Browser-Pakete bleiben außerhalb des Projekts. **Sandbox-Artefakt:** Der headless Chromium hat keine
+  Symbol-Ersatzschrift; Zeichen außerhalb des Inter-Latin-Subsets (z. B. „←“
+  „→“ im Tastatur-Hinweis unter der Discover-Karte) erscheinen in den
+  Screenshots als Kästchen. Echte Browser greifen auf Systemschriften zurück.
+  Sichtbare Pfeile in Sprint-12-Oberflächen sind deshalb SVG-Icons bzw. „›“.
+  Native Datumsfelder zeigen das Format der Browsersprache (Sandbox:
+  `mm/dd/yyyy`).
+
+### K-22 · Private Beta & Networking: bekannte Grenzen (Sprint 12)
+
+- **Produktions-D1 noch ohne Migration `0002`:** nur lokal angewendet. Vor bzw.
+  mit dem Deploy `npm run cf:release` (enthält
+  `wrangler d1 migrations apply DB --remote`) ausführen – der neue Code
+  erwartet `BetaInvite`, `BetaAccess` und `Conversation.directKey`.
+- **CPU-Zeit nur lokal gemessen** (`08-testing.md` §3c): Sprint-12-Seiten
+  43–68 ms im lokalen workerd, gleiche Größenordnung wie das vorbestehende
+  Dashboard; Startphase 50 ms (Limit 1 s). Über dem Free-Limit von 10 ms →
+  Workers Paid nötig (K-24). Auf Cloudflare-Hardware und unter Last nicht
+  gemessen.
+- **Aktive Kontakte können einem Tester nach Ablauf weiter schreiben:** der
+  abgelaufene Tester liest die Nachricht, kann aber nicht antworten (Hinweis
+  statt Eingabefeld). Gleiches, vorbestehendes Verhalten wie zwischen
+  Mitgliedern und Free-Kontakten; eine Sperre würde auch zahlende Mitglieder
+  einschränken und wurde deshalb **nicht** eingebaut. **Gründerentscheidung
+  offen:** so lassen, dem Absender einen neutralen Hinweis zeigen oder das
+  Schreiben an Konten ohne Netzwerkzugang sperren.
+- **Kontaktliste nach Ablauf:** liegt in der Inbox (Anfragen → Kontakte);
+  `/app/network` ist dann gesperrt (bzw. zeigt während der 48-h-Demo die Demo
+  mit Ende-Hinweis). Die Sperrseite verlinkt „Zum Posteingang“.
+- **E-Mail-Benachrichtigungen** bei neuer Anfrage/Nachricht: **BLOCKED** –
+  nur In-App (Inbox-Badge, Anfrage-Hinweis); braucht produktiven Mailversand
+  (K-01) und eine Opt-in-Einstellung.
+- **Profilfoto-Upload: NOT IMPLEMENTED** (K-10) – nur Bild-URL; ohne Foto
+  zeigen Discover/Profil ruhige Initialen.
+- **Kein Echtzeit-Transport:** Chat pollt alle 10 s, Badges aktualisieren
+  sich bei Navigation. Bewusst (Auftrag: kein fragiles Realtime).
+- **`AUTH_SECRET` rotieren entwertet alle noch nicht eingelösten
+  Beta-Schlüssel** (gespeichert als HMAC mit diesem Secret). Laufende
+  Beta-Zugänge sind nicht betroffen; offene Schlüssel neu ausstellen.
+- **Rate-Limiter nicht atomar** (Lesen-dann-Schreiben): bei sehr vielen
+  parallelen Versuchen sind einzelne Versuche über dem Limit möglich; bei
+  80 Bit Schlüsselentropie praktisch ohne Wirkung. Das Einlösen selbst ist
+  race-sicher (bedingtes `UPDATE … RETURNING`).
+- **Alt-Chats** (vor Sprint 12) erhalten `directKey` erst beim ersten Öffnen;
+  vorhandene Duplikate eines Paares werden nicht zusammengeführt (neue
+  Duplikate sind ausgeschlossen, Unique-Index).
+- **Skalierung:** Discover bewertet die 150 neuesten geeigneten Kandidaten,
+  das Verzeichnis zeigt bis zu 60 – ausreichend für 10–30 Tester, für größere
+  Communities ist Paginierung nötig.
+- **Beta endet während der 48-h-Demo:** der Nutzer sieht wieder die
+  Discovery-Demo **plus** Ende-Hinweis (gewollt; echte Mitglieder bleiben
+  gesperrt).
+- **Vorbestehend, nicht Teil von Sprint 12:** feste deutsche Kennzahl-Labels auf
+  `/admin` (`src/app/admin/page.tsx`), `toLocale…("de-DE")` in älteren Seiten
+  (Billing, Karte, Events – in EN deutsches Datumsformat, möglicher
+  Hydration-Unterschied), gemischter Text `forYouDiscover` („Passende
+  Connections in Discover“), Demo-Status dreifach im Demo-Dashboard (K-21).
+- **Stripe:** siehe [`04-auth-membership.md`](04-auth-membership.md) §4a –
+  Code geprüft und korrigiert, produktiv **BLOCKED** bis Schlüssel, Webhook
+  und Testkauf vorliegen; Kundenportal PREPARED.
+
+### K-23 · `lg:`-Spalten auf Profil und Einstellungen greifen nicht (vorbestehend)
+
+- **Ursache:** `.ic-grid`/`.ic-span-*` stehen in `src/app/globals.css`
+  außerhalb der Tailwind-Layer und überschreiben daher responsive Klassen wie
+  `lg:col-span-5` (gleiche Spezifität, spätere Kaskade).
+- **Wirkung:** `/app/profile` und `/app/settings` stapeln ihre Spalten auch
+  auf dem Desktop (funktional korrekt, nur breiter als beabsichtigt). Für die
+  Discover-Karte in Sprint 12 behoben (`col-span-12 lg:col-span-*`, siehe
+  `10-design-freeze.md` §1.17).
+- **Lösung:** dieselbe Umstellung auf den beiden Seiten oder die `.ic-*`-Regeln
+  in `@layer components` verschieben (wirkt global → eigener, geprüfter
+  Auftrag).
+
+### K-24 · Login: hohe CPU-Zeit pro Anmeldung (vorbestehend)
+
+- **Befund (Sprint 12 gemessen):** Ein Login inkl. Aufbau von `/app` kostet im
+  lokalen workerd **~620–660 ms CPU** (vier Messungen); ein Seitenaufruf von
+  `/app` allein ~53 ms. Im Profil sind **~47–56 ms eindeutig scrypt**
+  zugeordnet (`src/lib/auth/crypto.ts`, N=16384, r=8, p=1). Ein wiederkehrender
+  Block von **~195 ms** wird je Lauf einer anderen Funktion zugeschrieben
+  (`getCwd`, `OpenNextNodeResponse`) – typisch für native Ausführung, die der
+  Sampling-Profiler nicht exakt zuordnet; wahrscheinlich ebenfalls das native
+  scrypt, **nicht bewiesen**. Registrierung und Passwort-Reset hashen ebenso
+  (nicht einzeln gemessen).
+- **Wirkung:** weit über dem **Free-Limit (10 ms CPU pro Request)**, deutlich
+  unter dem **Paid-Standard (30 s)**. Mit Workers Paid unkritisch; auf dem
+  Free-Plan drohen `Error 1102 – Worker exceeded resource limits` bei Login
+  und Registrierung.
+- **Lösung:** Workers Paid bestätigen (Gründer, Dashboard). Optional später:
+  genaue Zuordnung mit einem Profil auf Cloudflare (DevTools/Workers Logs),
+  danach ggf. Hash-Parameter prüfen (Hashes sind selbstbeschreibend
+  `scrypt$N$r$p$…` und damit migrierbar) – nicht Teil von Sprint 12.
 
 ### K-21 · Discovery-Demo: bekannte Grenzen (Sprint 11)
 
@@ -234,9 +348,11 @@ P2 mittelfristig · P3 Aufräumen.
   nennt Anbieter (Firma/Name) der Listings; das ist bestehendes, dokumentiertes
   Verhalten (`06-permissions.md`), keine geschützte Geschäftsinformation.
   Falls die Gründer das ändern wollen: eigener Auftrag.
-- **Netzwerk-Ergänzung für Mitglieder (Sprint 7)** bleibt: Mitglieder sehen bei
-  weniger als 8 echten Mitgliedern zusätzlich gekennzeichnete Demo-Profile
-  (nie statt echter Daten).
+- **Netzwerk-Ergänzung für Mitglieder (Sprint 7)** ist seit **Sprint 12
+  entfernt**: das echte Netzwerk zeigt nur echte, sichtbare Mitglieder und
+  sonst den ehrlichen Leerzustand. `networkDemoSupplement()` und
+  `matchPercentFromScore()` sind als DEPRECATED markiert (nicht mehr
+  aufgerufen, Tests bleiben bis zum Aufräumen).
 - **Trial-Kontaktanfragen-Zähler** (`registerTrialConnectionRequest`,
   `TRIAL_CONNECTION_LIMIT`) wird von keiner Action mehr verwendet; Service und
   Tests bleiben bewusst erhalten (Datenmodell unverändert). Aufräumen erst mit

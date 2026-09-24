@@ -1,6 +1,18 @@
 # 08 – Test- und Qualitätssicherung
 
-**Stand:** 2026-09-24 (Sprint 11 – Discovery-Demo + Homepage-Sektion) · Lauf
+**Stand:** 2026-09-24 (Sprint 12 – Private Beta & echtes Networking, zweite
+Prüfrunde) · Branch `arena/01a0d435-inner-circle` (Basis `main` @ `8a1b5ea`,
+**nicht gemergt**): `npx vitest run` = **35 Dateien / 246 Tests grün** (62 neu,
+siehe §3a), `npm run typecheck` grün, `npm run test:keys` grün (616 Schlüssel,
+DE+EN), `npx eslint .` = **12 Befunde (5 Fehler, 7 Warnungen)** – Abgleich pro
+Datei/Regel gegen `main` @ `8a1b5ea` (14 = 5/9, in einem separaten Worktree
+gemessen): **0 neu, 2 behoben**; `npm run cf:build` grün; `wrangler deploy
+--dry-run` grün (Upload 9287,12 KiB / gzip 1859,17 KiB, Bindings `DB`, `ASSETS`, `NEXTJS_ENV`); D1-Migrationskette `0000`→`0001`→`0002` auf einer
+**frischen** lokalen D1 mit `wrangler d1 migrations apply --local` angewendet
+(52 Tabellen). **Browser-E2E** gegen den echten Worker-Preview: **65/65 Prüfungen bestanden (Lauf 827861, Build #8; Ergebnisliste `preview/sprint12/e2e-results-827861.json`)**
+(§3b). **CPU-Zeit** im lokalen workerd gemessen (§3c).
+
+Vorheriger Stand (Sprint 11 – Discovery-Demo + Homepage-Sektion) · Lauf
 auf Branch `arena/01a0d03a-inner-circle` (Basis `main` @ `87a244a`):
 `npm test` = **27 Dateien / 184 Tests grün** (neu: `tests/unit/demo-discover.test.ts`
 8 Tests, `tests/integration/discovery-demo.test.ts` 15 Tests; erweitert:
@@ -87,6 +99,144 @@ vorbestehend, siehe K-15; **keine** neuen Befunde aus diesem Sprint.
 | `tests/integration/network-directory.test.ts` | **Sprint 7**: `listDirectoryMembers` zeigt echte Mitglieder (nie sich selbst), **richtungsabhängige Anfrage-Zustände** (`outgoingRequestId` beim Sender, `incomingRequestId` beim Empfänger), Zurückziehen nur vom Sender (freit den Zustand), Ablehnen → keine Connection, Annehmen → Connection, Rolle-Filter via `jobTitle`/`rolesJson`, Standort-Filter | Integration (DB) |
 | `tests/integration/core-loop.test.ts` | **Sprint 8**: vollständiger Core Loop – Annehmen → Connection + Notification-Deep-Link `/app/inbox?tab=requests&sub=connections` + **kein implizites Follow**; Ablehnen → keine Connection/Follow + neutraler Hinweis + Trial-Slot frei; Zurückziehen nur vom Sender + Trial-Slot frei; `connectionRequestState()` richtungsabhängig; `forYouItems()` zeigt nur echte Daten (Anfrage, passendes Mitglied ohne offene Anfrage, neueste Chance), max. 5 Einträge; `interestLabelsFor()` je Locale | Integration (DB) |
 
+### 3a. Neue Tests (Sprint 12)
+
+| Datei | Umfang | Art |
+| ----- | ------ | --- |
+| `tests/unit/beta-keys.test.ts` (7) | Format `ICB-XXXX-XXXX-XXXX-XXXX` aus dem eindeutigen Alphabet, 2 000 Schlüssel ohne Kollision, alle 80 Zufallsbits genutzt, Normalisierung (Groß-/Kleinschreibung, Leerzeichen, Präfix, Crockford-Verwechsler), Ablehnung unmöglicher Eingaben, Hinweis zeigt max. 4 Zeichen, Dauer 1…365 (Standard 30) | Unit |
+| `tests/unit/beta-grant.test.ts` (7) | Beta-Grant enthält **genau** die Networking-Rechte; für `free`/`trial` bleiben alle bezahlten Geschäftsrechte aus; Mitglieder/Admins unverändert, nie „bezahlt“; Privatsphäre-Regeln (reduzierte Karte, Kontaktlinks nur für Kontakte, Standort/Kennzahlen nach Schalter) | Unit |
+| `tests/unit/stripe-worker-signature.test.ts` (3) | asynchrone Signaturprüfung funktioniert, synchrone Variante scheitert im Worker-Build (Begründung für `constructEventAsync`), gefälschte Signatur abgelehnt | Unit |
+| `tests/integration/beta-access.test.ts` (18) | Schlüssel nur als Hash; Einlösen → sofort Networking, keine Mitgliedschaft/kein Admin/nicht bezahlt; Dauer pro Schlüssel; ungültig/unbekannt/benutzt/deaktiviert/abgelaufen/falsche E-Mail; unverifiziert + Mitglieder lösen nicht ein (Schlüssel bleibt frei); Brute-Force-Limit; kein Stapeln; **Race:** zwei Konten, ein Schlüssel → genau einer gewinnt; ein Konto, zwei Schlüssel → ein Grant, anderer Schlüssel zurückgerollt; Ablauf entzieht sofort, neue Session bringt nichts zurück; Admin widerruft/verlängert; Mitglied unberührt; alle Admin-Actions für Nicht-Admins (inkl. Tester/Mitglieder) abgewiesen; Admin-Seite ohne Klartextschlüssel | Integration (DB) |
+| `tests/integration/beta-networking.test.ts` (15) | kompletter Flow Discover → Profil → Anfrage mit Nachricht → Annehmen → Chat (persistiert, ungelesen, privat); gegenseitige Anfrage → eine Verbindung; gleichzeitige Anfragen/Annahmen/„Chat öffnen“ → eine Verbindung, ein Chat; Selbst/verbunden/unbekannt/gelöscht/Demo/blockiert/geschlossen abgewiesen; abgelaufene Beta (kein Senden, nicht kontaktierbar, Kontakte + Verlauf bleiben, Ablehnen möglich); Ablehnen ohne Push + Cooldown; Zurückziehen entfernt Hinweis; Trennen/Wiederverbinden; unsichtbare Profile/verborgener Standort; Kontaktlinks nur für Kontakte; Demo/Echt strikt getrennt; ehrlicher Leerzustand ohne Demo-Füller/Match-%; keine Benachrichtigung pro Nachricht | Integration (DB) |
+| `tests/integration/beta-network-d1.test.ts` (4) | dieselben kritischen Pfade gegen **echte D1 in workerd** (Miniflare): Einlösen race-sicher (`UPDATE … RETURNING`, `UPSERT … WHERE`), Widerruf/Verlängerung/Admin-Übersicht, Verzeichnis nur echte Teilnehmer, ein Chat bei parallelen Aufrufen + Ungelesen-Zähler | Integration (D1) |
+| `tests/integration/profile-save.test.ts` (4) | alle Profilfelder inkl. Website/X/Instagram werden gespeichert und wirklich geleert (Sprint-12-Fix: falsche Formularschlüssel), nur der Name ist Pflicht, unsichere Link-Schemata abgewiesen, geführtes Beta-Onboarding führt weiter zu Discover | Integration (DB) |
+| `tests/integration/stripe-webhook-route.test.ts` (2) | signierte Events gegen die echte Route: abgeschlossener, aber unbezahlter Checkout aktiviert **nicht**, `async_payment_succeeded` aktiviert; bezahlter Checkout aktiviert, `subscription.deleted` beendet ohne 500 | Integration (DB) |
+
+Erweitert (zweite Prüfrunde): `discover-matching` (+1, **Businessziel-Filter**:
+Slug, kombinierbar, deterministisch, `hasActiveFilters`) und `demo-discover`
+(+1, derselbe Filter auf den Demo-Profilen).
+
+Angepasst: `access-matrix` (Beta-Zeilen), `core-loop`, `discovery-demo`,
+`for-you-d1` (gemeinsame D1-Hilfen in `tests/d1-helpers.ts` statt fest
+kodierter Migrationsliste), `tests/helpers.ts` (Beta-Fixtures).
+
+### 3b. Browser-E2E gegen den Worker-Preview (Sprint 12)
+
+**Skript im Repo:** `tests/e2e/sprint12-browser.mjs` (nicht Teil von
+`npm test`, **keine** neue Projektabhängigkeit – `playwright-core` und
+`@sparticuz/chromium` werden außerhalb des Repos installiert; Aufruf und
+Voraussetzungen stehen im Kopf der Datei). Es läuft gegen `npm run cf:build` +
+`opennextjs-cloudflare preview` (workerd, lokale D1, `NEXTJS_ENV=production`,
+Dev-Postausgang nur für `@innercircle.test`) und verweigert jede andere
+Adresse als localhost.
+
+**Testkonten:** sechs klar gekennzeichnete Konten pro Lauf
+(`<rolle>-<lauf>@innercircle.test`, Namen mit „(Testkonto)“, Firmen
+„(fiktiv)“): Admin, drei Beta-Tester (Anna, Ben, Carla), eine Free-/Demo-
+Nutzerin (Dora) und ein zahlendes Mitglied (Mia). Registrierung und
+E-Mail-Verifizierung laufen über die echte UI; der Code kommt aus dem
+Dev-Postausgang (Tabelle `DevOutbox`, derselbe Inhalt wie `/dev/outbox`).
+
+**Datenbank-Eingriffe (bewusst, dokumentiert):** Admin-Rolle über das
+vorhandene `scripts/admin-bootstrap.ts --local`; Einlöse-Frist eines Schlüssels,
+`BetaAccess.endsAt` und danach `Trial.expiresAt` eines Testers in die
+Vergangenheit (Tage abwarten ist nicht möglich); **eine** Test-Mitgliedschaft
+(Provider `dev`) für die Mitglieds-Prüfung, weil Stripe nicht konfiguriert ist
+– es wird nirgends eine Zahlung simuliert. Alle übrigen SQL-Zugriffe sind nur
+lesend.
+
+**Letzter Lauf: 65/65 Prüfungen bestanden (Lauf 827861, Build #8; Ergebnisliste `preview/sprint12/e2e-results-827861.json`)** (Desktop 1440×900, Mobil 390×844, DE + EN, hell +
+dunkel). Geprüft:
+
+- **Admin & Schlüssel:** `/admin/beta` nur für Admins; 5 persönliche
+  Schlüssel im Format `ICB-XXXX-XXXX-XXXX-XXXX`; DB enthält nur 64-stelligen
+  Hash + 4-stelligen Hinweis, nie den Schlüssel; unbenutzten Schlüssel in der
+  UI deaktivieren.
+- **Einlösen:** unbekannter Schlüssel → klare Meldung; alte Meldung
+  verschwindet beim Tippen; Einlösen mit Kleinbuchstaben/Leerzeichen → sofort
+  Zugang, geführter Profilschritt; separater 30-Tage-Zugang ohne
+  `Membership`-Zeile, Rolle bleibt `user`.
+- **Abweisungen:** bereits benutzter, deaktivierter und abgelaufener Schlüssel
+  (je eigene Meldung); **Brute-Force-Sperre** beim 9. Versuch in einer Stunde;
+  kein Fehlversuch erzeugt einen Zugang.
+- **Free-/Demo-Nutzer:** Discover und Verzeichnis nur mit gekennzeichneten
+  Beispielprofilen + Closed-Beta-Hinweis, kein echtes Mitglied; direkte URL
+  eines echten Profils bleibt gesperrt; mobil ohne horizontales Scrollen.
+- **Discover (echt):** bester Treffer ist das passende echte Mitglied, ohne
+  Prozentwerte/Demo, zweispaltige Karte; **Businessziel-Filter** über das
+  echte Formular mit Chip; Filter kombinierbar (Ziel UND Standort → ehrlicher
+  Leerzustand); Zurücksetzen stellt die Reihenfolge wieder her; Verzeichnis
+  nur echte Tester; mobil ohne horizontales Scrollen.
+- **Kernablauf mit zwei echten Testkonten:** Profil (eigene Angaben) →
+  Kontaktanfrage mit Nachricht → „Anfrage gesendet“ nach Reload, genau eine
+  gespeicherte Anfrage → Badge 1 beim Empfänger → Anfrage mit Nachricht in der
+  Inbox → **Annehmen öffnet den Chat** mit der Anfragenachricht → genau eine
+  aufgelöste Anfrage-Mitteilung, keine Mitteilung pro Nachricht, Badge wieder
+  0 → Antwort erscheint per Polling ohne Reload → Inbox mit Partner + Vorschau
+  → „Nachricht“ vom Profil öffnet denselben Chat (eine Konversation pro Paar).
+- **Sicherheit:** HTML in Nachrichten wird als Text angezeigt, nie ausgeführt
+  (XSS); Drittkonto kann den Chat nicht öffnen; alle fünf `/admin`-Routen
+  leiten Tester **und** Mitglieder um (10/10); `/dev/outbox` zeigt
+  Nicht-Admins weder Codes noch Empfänger; ohne Session leiten App- und
+  Admin-Routen zum Login.
+- **Zahlendes Mitglied:** sieht das echte Netzwerk ohne Schlüssel,
+  `/app/beta` erklärt „kein Schlüssel nötig“ (kein Formular), echte
+  Geschäftsbereiche statt Demo, nie eine Beta-Zeile.
+- **Widerruf (Admin):** Admin sieht die drei Tester (nicht das Mitglied) und
+  beendet einen Zugang; danach Ende-Hinweis, keine echten Mitglieder in
+  Discover/Verzeichnis, Profile gesperrt; neue Session (Cookies gelöscht, neu
+  eingeloggt) stellt nichts wieder her.
+- **Ablauf:** Verlauf lesbar, kein Eingabefeld, Discover mit Ablaufhinweis,
+  Kontakte bleiben (Inbox → Kontakte), Tester wird anderen nicht mehr
+  vorgeschlagen; **nach Ende der 48-h-Demo** (realistischer Zustand nach
+  30 Tagen) Sperrseite mit Ende-Hinweis und Link zum Posteingang – weder Demo
+  noch Mitglieder.
+- **Tote Links:** alle internen Links auf 17 App-Seiten für einen Tester und
+  eine Demo-Nutzerin per GET geprüft – keiner liefert ≥ 400.
+- **Protokolliert, kein Prüfkriterium:** Ein aktiver Kontakt kann einem
+  abgelaufenen Tester weiterhin schreiben (siehe K-22).
+
+**Screenshots** (`preview/sprint12/`, alle aus dem letzten Lauf): 01/01b/01c
+Discover, Verzeichnis, Businessziel-Filter (Desktop) · 02/02b mobil · 03/03b/03c
+Einlösen, Willkommens-Profil, deaktivierter Schlüssel · 04/04b echtes Profil
+(hell DE, dunkel EN) · 05 eingehende Anfrage · 06/06b/06c Chat nach Annahme
+(Desktop, mobil, dunkel EN) · 07/07b/07c Discovery-Demo (Desktop, Dashboard,
+mobil) · 08/08b Admin (Schlüssel erstellt, Verwaltung) · 09/09b/09c beendet,
+abgelaufen mit lesbarem Chat, abgelaufen nach der Demo · 10 Dashboard Tester ·
+11 Mitglied ohne Schlüssel.
+
+### 3c. CPU-Zeit und Worker-Limits (Sprint 12, lokal gemessen)
+
+**Methode:** V8-Sampling-Profiler (50 µs) über den Inspector des lokalen
+Worker-Previews (`ws://127.0.0.1:9229/ws`, Origin-Header nötig); CPU = alle
+Samples außer „(idle)“. Kalibrierung: 1 s ohne Request = **0,0 ms** CPU.
+Seitenaufrufe: je 1 Aufwärmen + 5 Messungen, Median (Maximum in Klammern).
+Startphase: `wrangler check startup`. Messskript: `tests/e2e/cpu-profile.mjs`
+(Aufruf im Dateikopf).
+
+| Messung (lokal, Sandbox-CPU) | CPU-Zeit |
+| ---------------------------- | -------- |
+| Worker-Startphase (`wrangler check startup`) | 50,0 ms aktiv (inkl. 1,4 ms GC) |
+| `GET /` (öffentliche Startseite) | 9,1 ms (10,1) |
+| `GET /app` (Dashboard, Tester) – vorbestehend | 52,8 ms (67,1) |
+| `GET /app/discover` (echtes Netzwerk) | 67,5 ms (68,8) |
+| `GET /app/discover?goal=…&location=…` | 44,8 ms (62,5) |
+| `GET /app/network` (Verzeichnis) | 61,5 ms (68,9) |
+| `GET /app/people/<handle>` (Profil) | 47,8 ms (51,9) |
+| `GET /app/inbox?tab=messages&c=…` (Chat) | 56,7 ms (61,3) |
+| `GET /app/beta` | 44,2 ms (48,3) |
+| `GET /admin/beta` | 42,6 ms (53,5) |
+| `POST` Login inkl. Aufbau von `/app` – vorbestehend (davon eindeutig scrypt: ~47–56 ms, Rest siehe K-24) | 620–660 ms |
+
+**Einordnung** (Cloudflare-Limits, Stand der Doku 05.09.2026,
+<https://developers.cloudflare.com/workers/platform/limits/>): CPU pro
+HTTP-Request **Free 10 ms**, **Paid 30 s Standard (bis 5 min)**; Startzeit
+**1 s**; Speicher 128 MB pro Isolate. Die Sprint-12-Seiten liegen in derselben
+Größenordnung wie das vorbestehende Dashboard, die Startphase weit unter 1 s.
+Seitenaufbau und vor allem die Login-Aktion überschreiten das Free-Limit
+bereits **vor** Sprint 12 → **Workers Paid ist Voraussetzung** (K-24). Nicht gemessen: Cloudflare-Hardware (die Sandbox-CPU ist vermutlich
+langsamer), Kaltstarts im Edge-Betrieb, Last.
+
 **Testinfrastruktur:** `tests/global-setup.ts` löscht `.test.db`, erzeugt das
 Schema per `drizzle-kit push`; `tests/setup.ts` setzt `AUTH_SECRET`, Test-DB,
 Dev-Flags, löscht `STRIPE_*`/`RESEND_*` und vergibt pro Testdatei eine eigene
@@ -160,6 +310,13 @@ Legende: **AUT** = automatisiert vorhanden · **MAN** = manuell verifiziert
   manuell gegen `npm run cf:preview` geprüft.
 - **Externe Provider** (Resend, Twilio, Stripe live): erst nach Schlüsseln
   testbar; bis dahin gilt die Regel „ehrlicher Zustand statt Fake-Erfolg".
+  Stripe ist über signierte Test-Events gegen die echte Route abgedeckt
+  (§3a), **nicht** gegen Stripe selbst.
+- **Sprint 12:** CPU-Zeit nur **lokal** gemessen (§3c), nicht auf
+  Cloudflare-Hardware und nicht unter Last; die D1-Migration `0002` ist nur
+  **lokal** angewendet (frische Kette geprüft), nicht auf der Produktions-D1;
+  Swipe-Gesten und echte Mobilgeräte (iOS/Android) nicht geprüft – nur
+  Chromium mit mobilem Viewport; Stripe nur mit signierten Test-Events.
 
 ## 6. Testdaten-Regel
 

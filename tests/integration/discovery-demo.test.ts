@@ -73,6 +73,7 @@ import { applyToEventAction, applyToOpportunityAction, expressInvestmentInterest
 import { initialActionState, type ActionState } from "@/app/actions/state";
 import { POST as checkoutRoute } from "@/app/api/billing/checkout/route";
 import { LockedArea } from "@/components/app/LockedArea";
+import { NetworkLocked } from "@/components/app/NetworkLocked";
 import { DemoAreaNotice } from "@/components/app/DemoAreaNotice";
 import { DiscoverDeck } from "@/components/app/DiscoverDeck";
 import { MemberCard } from "@/components/app/MemberCard";
@@ -344,8 +345,9 @@ describe("2 · during the demo: labelled demo content instead of member data", (
     expect(has(demo, LockedArea)).toBe(false);
     expect(text(demo)).toContain("Leonie");
 
+    // Sprint 12: networking areas render the closed-beta lock (NetworkLocked).
     const real = await MemberProfilePage({ params: Promise.resolve({ handle: "rita-realmember" }) });
-    expect(has(real, LockedArea)).toBe(true);
+    expect(has(real, NetworkLocked)).toBe(true);
     expect(text(real)).not.toContain("Rita");
   });
 });
@@ -364,7 +366,7 @@ describe("3 · simulated contact request: nothing is written, real actions are r
       initialActionState,
       form({ userId: realMember, message: "Ich würde mich gern zu Nachfolge-Themen austauschen." }),
     );
-    expect(errorCode(connect)).toBe("membershipRequired");
+    expect(errorCode(connect)).toBe("networkAccessRequired");
     const demoTarget = await sendConnectionRequestAction(
       initialActionState,
       form({ userId: "demo:demo-founder-leonie", message: "Ich würde mich gern zu Nachfolge-Themen austauschen." }),
@@ -463,8 +465,9 @@ describe("5 · after 48 hours: demo ends, account persists, no restart", () => {
 
   it("the demo areas are replaced by the membership screen; own profile and events stay reachable", async () => {
     currentUserId = discoveryUser;
-    await expect(DiscoverPage({ searchParams: Promise.resolve({}) })).rejects.toThrow("redirect:/app/billing?paywall=trial");
-    expect(has(await NetworkPage({ searchParams: Promise.resolve({}) }), LockedArea)).toBe(true);
+    // Sprint 12: Discover/Network show the closed-beta lock instead of a paywall redirect.
+    expect(has(await DiscoverPage({ searchParams: Promise.resolve({}) }), NetworkLocked)).toBe(true);
+    expect(has(await NetworkPage({ searchParams: Promise.resolve({}) }), NetworkLocked)).toBe(true);
     expect(has(await OpportunitiesPage({ searchParams: Promise.resolve({}) }), LockedArea)).toBe(true);
     expect(has(await JobsPage(), LockedArea)).toBe(true);
     expect(has(await InvestmentsPage({ searchParams: Promise.resolve({}) }), LockedArea)).toBe(true);

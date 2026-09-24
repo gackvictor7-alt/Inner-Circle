@@ -1,6 +1,7 @@
 # 12 – Roadmap ab dem aktuellen Stand
 
-**Stand:** 2026-09-21 · Basis: `main` @ `f22c19e`.
+**Stand:** 2026-09-24 (Sprint 12: Private Beta – S-1 präzisiert, S-5 für das
+Networking erledigt, neue Punkte S-10/S-11) · davor 2026-09-21, Basis `main` @ `f22c19e`.
 Diese Roadmap ersetzt die frühere 20-Schritte-Planung
 (`03-roadmap.md` – die Schritte 01–08 sind gebaut, siehe
 [`00-SOURCE-OF-TRUTH.md`](00-SOURCE-OF-TRUTH.md)). Sie beginnt **beim heutigen
@@ -34,15 +35,17 @@ machen.
 
 | Thema | Inhalt | Abhängigkeit |
 | ----- | ------ | ------------ |
-| **S-1 Stripe scharf schalten** | Produkt + Preise (24,99 €/Monat, 249,90 €/Jahr), Webhook registrieren, Testkauf, Billing-Portal | Stripe-Konto (Test zuerst) |
+| **S-1 Stripe scharf schalten** | Schlüssel setzen, Webhook mit den neun Events aus `04-auth-membership.md` §4a registrieren (Preise kommen inline aus `plans.ts`), Testkauf inkl. abgebrochener/fehlgeschlagener Zahlung, Billing-Portal-Route/UI bauen (Funktion vorhanden). Webhook-Code in Sprint 12 geprüft und korrigiert | Stripe-Konto (Test zuerst) |
 | **S-2 Jahrespreis kommunizieren** | 249,90 €/Jahr ist textlich übernommen (K-03 gelöst); Stripe-Produkt mit diesem Preis anlegen | S-1 |
 | **S-3 Telefon-Registrierung** | Entweder vollständig implementieren (SMS + Schema `email = null`) oder Umschalter deaktivieren (K-05) | Twilio (optional) |
 | **S-4 OAuth oder ehrlicher Zustand** | Buttons deaktivieren (Dead-Link-Regel) **oder** Google-Login implementieren (K-04) | Google-Client |
-| **S-5 Datenschutz wirksam machen** | `PrivacySettings` in allen Queries erzwingen + Tests (K-06) | – |
+| **S-5 Datenschutz wirksam machen** | **Networking erledigt (Sprint 12, §3d)**; offen: übrige Bereiche (Marketplace, Deals) (K-06) | – |
 | **S-6 Moderations-Queue** | Melden von Inhalten/Nutzern + `/admin/reports` (K-11) | – |
 | **S-7 Uploads** | S3-kompatibler Bucket für Avatar/Cover, Typ-/Größenprüfung (K-10) | Storage-Konto |
 | **S-8 CI** | GitHub-Actions-Workflow mit `typecheck`, `test`, `cf:dry-run` (K-16) | – |
-| **S-9 Lint aufräumen** | 21 vorbestehende Hinweise beheben, Verhalten prüfen (K-15) | – |
+| **S-9 Lint aufräumen** | 12 vorbestehende Hinweise beheben, Verhalten prüfen (K-15) | – |
+| **S-10 Private Beta ausrollen** | Workers Paid bestätigen (K-24), Migration `0002` auf der Produktions-D1 (`cf:release`), erste Schlüssel über `/admin/beta`, Feedback der 10–30 Tester sammeln; danach E-Mail-Benachrichtigung bei neuer Anfrage/Nachricht mit Opt-in und Entscheidung „Schreiben an abgelaufene Tester“ (K-22) | N-1 (Mail-Domain) für E-Mails |
+| **S-11 Layout-Klassen bereinigen** | `.ic-span-*` in `@layer components` verschieben oder Profil/Einstellungen auf `col-span-12 lg:col-span-*` umstellen (K-23) | Design-Freeze beachten |
 
 ## LATER – größere Funktionen
 

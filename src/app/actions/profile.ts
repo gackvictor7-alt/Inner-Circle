@@ -61,6 +61,9 @@ export async function updateProfileAction(_prev: ActionState, formData: FormData
 
   if (!firstName || !lastName) return fail("validation");
   if (bio.length > 1200) return fail("validation");
+  // Links are rendered as href/src – only plain web addresses are accepted
+  // (no javascript:, data: or other schemes).
+  if (!isSafeWebUrl(avatarUrl) || !isSafeWebUrl(website, { allowBareDomain: true })) return fail("invalidUrl");
 
   const listFrom = (key: string, max: number): string[] =>
     text(formData, key, 600)
@@ -77,17 +80,21 @@ export async function updateProfileAction(_prev: ActionState, formData: FormData
   const complete = Boolean(headline && bio && location);
 
   const existing = access.user.profile;
+  // Sprint 12 fix: the column names are websiteUrl / xUrl. The previous keys
+  // (`website`, `xHandle`) were silently dropped by Drizzle, so website and X
+  // were never saved. Every field is written as submitted – an emptied field
+  // (including the photo URL) is really cleared.
   const values = {
     headline: headline || null,
     bio: bio || null,
     location: location || null,
     company: company || null,
     jobTitle: jobTitle || null,
-    website: website || null,
+    websiteUrl: website || null,
     linkedinUrl: existing?.linkedinUrl ?? null,
-    xHandle: xHandle || null,
+    xUrl: xHandle || null,
     instagramUrl: instagram || null,
-    avatarUrl: avatarUrl || existing?.avatarUrl || null,
+    avatarUrl: avatarUrl || null,
     rolesJson: JSON.stringify(roles),
     skillsJson: JSON.stringify(skills),
     lookingForJson: JSON.stringify(lookingFor),
@@ -109,7 +116,22 @@ export async function updateProfileAction(_prev: ActionState, formData: FormData
   revalidatePath("/app/discover");
   revalidatePath("/app");
   revalidatePath(`/app/people/${access.user.handle}`);
-  return done({ messageCode: "saved", redirectTo: "/app/profile?saved=1" });
+  revalidatePath("/app/profile/edit");
+  // Guided beta onboarding continues into the network; otherwise back to the profile.
+  const next = text(formData, "next", 40);
+  return done({ messageCode: "saved", redirectTo: next === "/app/discover" ? "/app/discover" : "/app/profile?saved=1" });
+}
+
+/** http(s) URL or – for websites – a bare domain like "example.com". Empty is fine. */
+function isSafeWebUrl(value: string, options: { allowBareDomain?: boolean } = {}): boolean {
+  if (!value) return true;
+  const candidate = options.allowBareDomain && !/^[a-z][a-z0-9+.-]*:/i.test(value) ? `https://${value}` : value;
+  try {
+    const url = new URL(candidate);
+    return (url.protocol === "https:" || url.protocol === "http:") && Boolean(url.hostname) && !/\s/.test(value);
+  } catch {
+    return false;
+  }
 }
 
 export async function updatePrivacyAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
@@ -121,7 +143,7 @@ export async function updatePrivacyAction(_prev: ActionState, formData: FormData
   const performanceVisibilityRaw = text(formData, "performanceVisibility", 24);
   const performanceVisibility = (VISIBILITY as readonly string[]).includes(performanceVisibilityRaw)
     ? performanceVisibilityRaw
-    : "connections";
+    : "members";
 
   const metricsVisibility = parseMetricsVisibility(formData);
 

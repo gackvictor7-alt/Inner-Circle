@@ -1,6 +1,6 @@
 # 14 – Umgebungsvariablen und Secrets (die eine Wahrheit)
 
-**Stand:** 2026-09-21 · Abgeglichen mit `.env.example`, `.dev.vars.example`,
+**Stand:** 2026-09-24 (Sprint 12: `AUTH_SECRET` sichert auch die Beta-Schlüssel) · davor 2026-09-21 · Abgeglichen mit `.env.example`, `.dev.vars.example`,
 `src/lib/env.ts`, `wrangler.jsonc`, `vitest.config.ts` und `tests/setup.ts`.
 **Keine echten Secrets in diesem Dokument – nur Variablennamen.**
 
@@ -25,7 +25,7 @@
 
 | Variable | Build/Runtime | Secret | erforderlich | Zweck | Entwicklungswert erlaubt | Produktionsanforderung |
 | -------- | ------------- | ------ | ------------ | ----- | ------------------------ | ---------------------- |
-| `AUTH_SECRET` | Runtime | **ja** | **Pflicht** | Pepper/Signatur für Session-Token und OTP-Hashes | lokal Fallback erlaubt (`authSecretIsFallback`) | **zwingend** setzen, ≥ 32 Zufallszeichen (`openssl rand -base64 48`); Fallback ist in Produktion unzulässig |
+| `AUTH_SECRET` | Runtime | **ja** | **Pflicht** | Pepper/Signatur für Session-Token, OTP-Hashes und (seit Sprint 12) die HMAC-Hashes der Beta-Schlüssel | lokal Fallback erlaubt (`authSecretIsFallback`) | **zwingend** setzen, ≥ 32 Zufallszeichen (`openssl rand -base64 48`); Fallback ist in Produktion unzulässig. **Rotation** beendet alle Sessions und entwertet alle noch nicht eingelösten Beta-Schlüssel (laufende Beta-Zugänge bleiben) |
 | `NEXT_PUBLIC_SITE_URL` | Build **und** Runtime | nein | **Pflicht** | öffentliche Origin: Links in E-Mails, Stripe-Rückleitungen, Logout-Redirect | `http://localhost:3000` | echte Worker-/Domain-URL |
 | `NODE_VERSION` | Build (Dashboard) | nein | empfohlen | Node-Version im Cloudflare-Build | – | `22` (≥ 20 nötig) |
 | `NEXTJS_ENV` | Runtime | nein | ja (Worker) | unterscheidet Produktions-/Entwicklungsverhalten in OpenNext | `production` (in `.dev.vars`) | `production` (in `wrangler.jsonc` gesetzt) |

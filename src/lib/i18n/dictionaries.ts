@@ -12,15 +12,17 @@
  *     app.nav … app.dev          (core: dict/app-core.ts)
  *     app.profile … app.trust    (social: dict/app-social.ts)
  *     app.opportunities … app.admin (business: dict/app-business.ts)
+ *     app.beta, app.betaAdmin    (private beta, Sprint 12: dict/app-beta.ts)
  */
 
 import { appCoreDe, appCoreEn } from "./dict/app-core";
 import { appSocialDe, appSocialEn } from "./dict/app-social";
 import { appBusinessDe, appBusinessEn } from "./dict/app-business";
 import { siteV2De, siteV2En } from "./dict/site-v2";
+import { appBetaDe, appBetaEn } from "./dict/app-beta";
 
-const appDe = { ...appCoreDe, ...appSocialDe, ...appBusinessDe };
-const appEn = { ...appCoreEn, ...appSocialEn, ...appBusinessEn };
+const appDe = { ...appCoreDe, ...appSocialDe, ...appBusinessDe, ...appBetaDe };
+const appEn = { ...appCoreEn, ...appSocialEn, ...appBusinessEn, ...appBetaEn };
 
 const publicV2De = siteV2De;
 const publicV2En = siteV2En;

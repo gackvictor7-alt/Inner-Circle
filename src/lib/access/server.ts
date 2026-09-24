@@ -7,7 +7,7 @@ import { db } from "@/db/client";
 import { trials } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth/session";
 import type { UserContext } from "@/db/queries";
-import { entitlementsFor, isPaid, type AccessLevel, type Entitlements } from "./levels";
+import { entitlementsFor, hasMemberAccess, isPaid, withBetaGrant, type AccessLevel, type Entitlements } from "./levels";
 import { trialConfig } from "@/lib/env";
 
 export type TrialState = {
@@ -30,12 +30,38 @@ export type MembershipState = {
   isDevelopment: boolean;
 };
 
+/**
+ * Private-beta entitlement (Sprint 12). Separate from membership: a beta
+ * tester is never "member", never paying, and only gains the networking
+ * grant while `active` is true.
+ */
+export type BetaState = {
+  /** active = usable now · expired = end date passed · revoked = ended by an admin */
+  status: "active" | "expired" | "revoked";
+  active: boolean;
+  startsAt: Date;
+  endsAt: Date;
+  msRemaining: number;
+  revokedAt: Date | null;
+};
+
+/** Where the real-network capabilities come from (null = none). */
+export type NetworkAccessSource = "admin" | "member" | "beta" | null;
+
 export type AccessContext = {
   user: UserContext | null;
   level: AccessLevel;
   isAuthenticated: boolean;
   trial: TrialState | null;
   membership: MembershipState | null;
+  /** Private-beta state (null = the account never had beta access). */
+  beta: BetaState | null;
+  /**
+   * True when the account may use the REAL network (directory, discover,
+   * requests, chat): admin, active membership or active beta grant.
+   */
+  networkAccess: boolean;
+  networkAccessSource: NetworkAccessSource;
   entitlements: Entitlements;
   profileComplete: boolean;
   onboardingComplete: boolean;
@@ -57,6 +83,12 @@ function membershipIsActive(membership: {
   return true;
 }
 
+/** Beta access is active while not revoked and before its end date (server clock). */
+export function betaIsActive(beta: { status: string; endsAt: Date } | null | undefined, now = Date.now()): boolean {
+  if (!beta) return false;
+  return beta.status === "active" && beta.endsAt.getTime() > now;
+}
+
 function profileIsComplete(profile: { headline: string | null; bio: string | null; location: string | null } | null) {
   if (!profile) return false;
   return Boolean(profile.headline && profile.bio && profile.location);
@@ -76,6 +108,9 @@ export const getAccessContext = cache(async (): Promise<AccessContext> => {
       isAuthenticated: false,
       trial: null,
       membership: null,
+      beta: null,
+      networkAccess: false,
+      networkAccessSource: null,
       entitlements: entitlementsFor("visitor"),
       profileComplete: false,
       onboardingComplete: false,
@@ -135,13 +170,39 @@ export const getAccessContext = cache(async (): Promise<AccessContext> => {
       }
     : null;
 
+  // Private beta (Sprint 12): resolved from the database on every request –
+  // expiry and revocation take effect immediately, a new login or session
+  // never extends it. The grant only adds networking capabilities.
+  const now = Date.now();
+  const betaRecord = user.betaAccess;
+  const betaActive = betaIsActive(betaRecord, now);
+  const beta: BetaState | null = betaRecord
+    ? {
+        status: betaActive ? "active" : betaRecord.status === "revoked" ? "revoked" : "expired",
+        active: betaActive,
+        startsAt: betaRecord.startsAt,
+        endsAt: betaRecord.endsAt,
+        msRemaining: Math.max(0, betaRecord.endsAt.getTime() - now),
+        revokedAt: betaRecord.revokedAt,
+      }
+    : null;
+
+  const baseEntitlements = entitlementsFor(level);
+  const betaApplies = betaActive && !hasMemberAccess(level);
+  const entitlements = betaApplies ? withBetaGrant(baseEntitlements) : baseEntitlements;
+  const networkAccessSource: NetworkAccessSource =
+    level === "admin" ? "admin" : level === "member" ? "member" : betaApplies ? "beta" : null;
+
   return {
     user,
     level,
     isAuthenticated: true,
     trial,
     membership,
-    entitlements: entitlementsFor(level),
+    beta,
+    networkAccess: networkAccessSource !== null,
+    networkAccessSource,
+    entitlements,
     profileComplete: profileIsComplete(user.profile),
     onboardingComplete: Boolean(user.profile?.onboardingCompletedAt),
     emailVerified: Boolean(user.emailVerifiedAt),

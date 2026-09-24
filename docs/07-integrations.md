@@ -1,6 +1,6 @@
 # 07 – Externe Dienste & Integrationen
 
-**Stand:** 2026-09-21 · Übernommen und aktualisiert aus
+**Stand:** 2026-09-24 (Sprint 12: Stripe-Audit, D1 52 Tabellen) · Übernommen und aktualisiert aus
 `07-external-services.md`. **Niemals Zugangsdaten im Chat oder im Repository** –
 der Gründer legt Konten selbst an; der Agent liefert Anleitungen und bindet nur
 Variablennamen ein. Die vollständige Variablenliste steht in
@@ -10,13 +10,13 @@ Variablennamen ein. Die vollständige Variablenliste steht in
 
 | Dienst | Zweck | Status | Production ready? | Variablen (nur Namen) |
 | ------ | ----- | ------ | ----------------- | --------------------- |
-| **Cloudflare Workers** | Hosting der Next.js-App über OpenNext | eingerichtet, Build verifiziert (`npm run cf:build` grün) | ✅ sobald Secrets gesetzt sind | `NODE_VERSION` (Build-Variable) |
-| **Cloudflare D1** | Produktionsdatenbank, Binding `DB`, DB-Name `inner-circle-db` | Migrationen vorhanden (50 Tabellen), Anwendung im Deploy-Befehl | ✅ vorbereitet | keine (Binding in `wrangler.jsonc`) |
+| **Cloudflare Workers** | Hosting der Next.js-App über OpenNext | eingerichtet, Build verifiziert (`npm run cf:build` grün); **Workers Paid erforderlich** – lokal gemessen 43–68 ms CPU pro Seite, ~0,6 s pro Login (Free-Limit 10 ms, K-24) | ✅ sobald Secrets gesetzt sind und der Paid-Plan bestätigt ist | `NODE_VERSION` (Build-Variable) |
+| **Cloudflare D1** | Produktionsdatenbank, Binding `DB`, DB-Name `inner-circle-db` | Migrationen `0000`–`0002` vorhanden (52 Tabellen, Sprint 12: `BetaInvite`, `BetaAccess`, `Conversation.directKey`), Anwendung im Deploy-Befehl | ✅ vorbereitet | keine (Binding in `wrangler.jsonc`) |
 | **GitHub** | Repository, Versionierung, PRs, Workers-Builds-Auslöser | aktiv (`gackvictor7-alt/Inner-Circle`) | ✅ | keine |
 | **OpenNext-Adapter** (`@opennextjs/cloudflare`) | Brücke Next.js → Worker | aktiv (Build erzeugt `.open-next/worker.js`) | ✅ | keine |
 | **Resend** (E-Mail) | Verifizierungscodes, Passwort-Reset, Benachrichtigungen | Code aktiv, Key vorhanden; HTML+Text Multipart-Templates; offene Produktionsabhängigkeit: eigene Domain | ⚠️ Testversand aktiv, Domain verifizieren | `RESEND_API_KEY` (Secret), `EMAIL_FROM` (Text), `EMAIL_REPLY_TO` (Text) |
 | **Twilio** (SMS) | Telefon-Verifizierung | Code fertig, keine Zugangsdaten | ❌ optional | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM_NUMBER`, `TWILIO_TEST_MODE` |
-| **Stripe** (Abos) | Monats-/Jahresmitgliedschaft, Rechnungen, Billing-Portal | Integration vollständig inkl. Webhook-Prüfung, keine Schlüssel | ❌ nicht produktiv aktiv | `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PORTAL_RETURN_URL`, `ALLOW_STRIPE_LIVE` |
+| **Stripe** (Abos) | Monats-/Jahresmitgliedschaft, Rechnungen, Billing-Portal | Checkout + Webhook vollständig; **Sprint-12-Audit:** Signaturprüfung im Worker auf `constructEventAsync` umgestellt (die synchrone Prüfung scheitert im Worker), Aktivierung nur bei bestätigter Zahlung, SEPA über `async_payment_*`, `subscription.deleted`-500 behoben; Billing-Portal nur als Funktion (keine Route/UI); **keine Schlüssel** | ❌ nicht produktiv aktiv | `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PORTAL_RETURN_URL`, `ALLOW_STRIPE_LIVE` |
 | **Google OAuth** | Social Login | **nicht implementiert** (nur UI-Hinweis „Einrichtung erforderlich") | ❌ | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` (Variablen bereits ausgewertet, aber ohne Route) |
 | **Apple OAuth** | Social Login | **nicht implementiert** | ❌ | `APPLE_CLIENT_ID`, `APPLE_TEAM_ID`, `APPLE_KEY_ID`, `APPLE_PRIVATE_KEY` |
 | **S3-kompatibler Storage** (z. B. Cloudflare R2) | Avatare, Cover, Kursvideos, Dokumente | **nicht angebunden** (`storage.configured` wird nur angezeigt) | ❌ | `S3_BUCKET`, `S3_REGION`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_PUBLIC_BASE_URL` |
@@ -68,16 +68,29 @@ zu verhindern, ist der Domain-Schritt im DNS zwingend erforderlich:
 6. Stripe-Konto (zuerst **Testmodus**), Produkt „INNER CIRCLE Membership"
    mit 24,99 €/Monat und 249,90 €/Jahr.
 7. `STRIPE_SECRET_KEY` (Secret), `STRIPE_PUBLISHABLE_KEY` (Text).
-8. Webhook-Endpoint `https://<worker-url>/api/webhooks/stripe` mit den
-   Ereignissen `checkout.session.completed`, `customer.subscription.*`,
-   `invoice.*` → `STRIPE_WEBHOOK_SECRET` (Secret).
-9. Testkauf durchführen und prüfen, dass die Mitgliedschaft **nur** über den
-   Webhook entsteht. Live-Keys erst mit `ALLOW_STRIPE_LIVE=true`.
+8. Webhook-Endpoint `https://<worker-url>/api/webhooks/stripe` mit genau
+   diesen Ereignissen → `STRIPE_WEBHOOK_SECRET` (Secret):
+   `checkout.session.completed`, `checkout.session.async_payment_succeeded`,
+   `checkout.session.async_payment_failed`, `customer.subscription.created`,
+   `customer.subscription.updated`, `customer.subscription.deleted`,
+   `invoice.paid`, `invoice.payment_succeeded`, `invoice.payment_failed`.
+   Preise werden inline aus `src/lib/membership/plans.ts` übergeben – im
+   Dashboard muss **kein** Preisobjekt angelegt werden; **keine** Probezeit
+   konfigurieren (`trialing` würde aktivieren).
+9. Testkauf im **Testmodus** durchführen und prüfen: (a) Mitgliedschaft
+   entsteht **nur** über den Webhook, (b) abgebrochener Checkout und
+   fehlgeschlagene Zahlung aktivieren nichts, (c) Kündigung/Löschung im
+   Dashboard beendet die Mitgliedschaft. Live-Keys erst mit
+   `ALLOW_STRIPE_LIVE=true`.
+10. Offen im Code: Kundenportal-Route/UI (Funktion
+    `createBillingPortalSession` existiert), Rechnungsansicht mit echten
+    Provider-Daten.
 
 ### 3.3 Optional / später
 
-10. Twilio-Konto (SMS) – nur nötig, wenn Telefon-Verifizierung gewünscht ist.
-11. Storage-Bucket (R2/S3) – nötig für echte Uploads.
+11. Twilio-Konto (SMS) – nur nötig, wenn Telefon-Verifizierung gewünscht ist.
+12. Storage-Bucket (R2/S3) – nötig für echte Uploads (u. a. Profilfotos für
+    Beta-Tester, K-10).
 12. Google-/Apple-OAuth-Apps – **erst nachdem** die jeweilige Route
     implementiert wurde (heute nicht vorhanden).
 13. Domain + DNS auf den Worker zeigen lassen.

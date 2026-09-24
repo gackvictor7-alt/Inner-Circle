@@ -1,9 +1,9 @@
 import "server-only";
 
-import { and, desc, eq, gt, gte, isNull, ne, or, sql, count } from "drizzle-orm";
+import { cache } from "react";
+import { and, desc, eq, gt, gte, inArray, isNull, ne, or, sql, count } from "drizzle-orm";
 import { db } from "@/db/client";
 import {
-  blocks,
   businessOpportunities,
   connectionRequests,
   connections,
@@ -34,6 +34,8 @@ import {
 } from "@/db/schema";
 import { idFor } from "@/db/ids";
 import { connectionPair } from "@/db/queries";
+import { listedMemberSql, realParticipantSql } from "@/lib/network/eligibility";
+import { CONNECTION_REQUEST_COOLDOWN_DAYS } from "@/lib/platform/rules";
 
 export type DirectoryMember = {
   id: string;
@@ -41,6 +43,7 @@ export type DirectoryMember = {
   lastName: string;
   handle: string;
   headline: string | null;
+  /** Null when the member hides the location (PrivacySettings.showLocation). */
   location: string | null;
   company: string | null;
   avatarUrl: string | null;
@@ -56,6 +59,8 @@ export type DirectoryMember = {
   outgoingRequestId: string | null;
   /** Id of the pending request this member sent to the VIEWER (null if none). */
   incomingRequestId: string | null;
+  /** The member declined the viewer's last request recently – no new request yet. */
+  requestCooldown: boolean;
 };
 
 const memberColumns = {
@@ -70,11 +75,74 @@ const memberColumns = {
   location: profiles.location,
   company: profiles.company,
   avatarUrl: profiles.avatarUrl,
+  showLocation: privacySettings.showLocation,
 };
 
+/** D1 allows at most 100 bound parameters per statement – keep IN lists below. */
+const IN_CHUNK = 90;
+
+export function chunkIds<T>(values: T[], size = IN_CHUNK): T[][] {
+  const chunks: T[][] = [];
+  for (let index = 0; index < values.length; index += size) chunks.push(values.slice(index, index + size));
+  return chunks;
+}
+
 /**
- * Member directory. Public profile fields only; the caller decides which
- * access level may see the full dataset (trial accounts get a capped list).
+ * Relationship of the viewer to other members: follows, pending requests
+ * (direction-aware), confirmed connections and recently declined requests.
+ * Four small indexed queries, independent of the community size.
+ */
+export async function viewerRelations(viewerId: string, now = new Date()) {
+  const cooldownStart = new Date(now.getTime() - CONNECTION_REQUEST_COOLDOWN_DAYS * 86_400_000);
+  const [followRows, pendingRows, connectionRows, declinedRows] = await Promise.all([
+    db.select({ followingId: follows.followingId }).from(follows).where(eq(follows.followerId, viewerId)),
+    db
+      .select({ id: connectionRequests.id, fromUserId: connectionRequests.fromUserId, toUserId: connectionRequests.toUserId })
+      .from(connectionRequests)
+      .where(
+        and(
+          eq(connectionRequests.status, "pending"),
+          or(eq(connectionRequests.fromUserId, viewerId), eq(connectionRequests.toUserId, viewerId)),
+        ),
+      ),
+    db
+      .select({ userAId: connections.userAId, userBId: connections.userBId })
+      .from(connections)
+      .where(and(isNull(connections.endedAt), or(eq(connections.userAId, viewerId), eq(connections.userBId, viewerId)))),
+    db
+      .select({ toUserId: connectionRequests.toUserId })
+      .from(connectionRequests)
+      .where(
+        and(
+          eq(connectionRequests.fromUserId, viewerId),
+          eq(connectionRequests.status, "declined"),
+          gte(connectionRequests.respondedAt, cooldownStart),
+        ),
+      ),
+  ]);
+
+  const outgoing = new Map<string, string>();
+  const incoming = new Map<string, string>();
+  for (const row of pendingRows) {
+    if (row.fromUserId === viewerId) outgoing.set(row.toUserId, row.id);
+    else incoming.set(row.fromUserId, row.id);
+  }
+  return {
+    following: new Set(followRows.map((row) => row.followingId)),
+    outgoing,
+    incoming,
+    connected: new Set(connectionRows.map((row) => (row.userAId === viewerId ? row.userBId : row.userAId))),
+    cooldown: new Set(declinedRows.map((row) => row.toUserId)),
+  };
+}
+
+/**
+ * Member directory (Sprint 12): only REAL, network-visible participants –
+ * active, verified, onboarded, not a demo account, current network access
+ * (admin / membership / beta), listed (`discoverable`) and not blocked in
+ * either direction. Filters run in SQL, so an interest filter never misses
+ * members beyond the first page. Hidden locations are neither shown nor
+ * matched by the location filter.
  */
 export async function listDirectoryMembers(options: {
   viewerId: string;
@@ -83,122 +151,91 @@ export async function listDirectoryMembers(options: {
   interestSlug?: string;
   location?: string;
   role?: string;
+  locale?: "de" | "en";
 }): Promise<DirectoryMember[]> {
+  const now = new Date();
+  const like = (value: string) => `%${value.toLowerCase()}%`;
   const rows = await db
     .select(memberColumns)
     .from(users)
     .leftJoin(profiles, eq(profiles.userId, users.id))
+    .leftJoin(privacySettings, eq(privacySettings.userId, users.id))
     .where(
       and(
-        ne(users.id, options.viewerId),
-        eq(users.status, "active"),
-        eq(users.isDemo, false),
+        listedMemberSql(options.viewerId, now.getTime()),
         options.search
           ? or(
-              sql`lower(${users.firstName}) like ${`%${options.search.toLowerCase()}%`}`,
-              sql`lower(${users.lastName}) like ${`%${options.search.toLowerCase()}%`}`,
-              sql`lower(${users.handle}) like ${`%${options.search.toLowerCase()}%`}`,
-              sql`lower(coalesce(${profiles.headline}, '')) like ${`%${options.search.toLowerCase()}%`}`,
-              sql`lower(coalesce(${profiles.company}, '')) like ${`%${options.search.toLowerCase()}%`}`,
+              sql`lower(${users.firstName}) like ${like(options.search)}`,
+              sql`lower(${users.lastName}) like ${like(options.search)}`,
+              sql`lower(${users.firstName} || ' ' || ${users.lastName}) like ${like(options.search)}`,
+              sql`lower(${users.handle}) like ${like(options.search)}`,
+              sql`lower(coalesce(${profiles.headline}, '')) like ${like(options.search)}`,
+              sql`lower(coalesce(${profiles.company}, '')) like ${like(options.search)}`,
             )
           : undefined,
         options.location
-          ? sql`lower(coalesce(${profiles.location}, '')) like ${`%${options.location.toLowerCase()}%`}`
+          ? sql`coalesce(${privacySettings.showLocation}, 1) = 1 and lower(coalesce(${profiles.location}, '')) like ${like(options.location)}`
           : undefined,
         // Free-text role filter: job title plus the stored role list (JSON text).
         options.role
           ? or(
-              sql`lower(coalesce(${profiles.jobTitle}, '')) like ${`%${options.role.toLowerCase()}%`}`,
-              sql`lower(coalesce(${profiles.rolesJson}, '[]')) like ${`%${options.role.toLowerCase()}%`}`,
+              sql`lower(coalesce(${profiles.jobTitle}, '')) like ${like(options.role)}`,
+              sql`lower(coalesce(${profiles.headline}, '')) like ${like(options.role)}`,
+              sql`lower(coalesce(${profiles.rolesJson}, '[]')) like ${like(options.role)}`,
             )
+          : undefined,
+        options.interestSlug
+          ? sql`exists (select 1 from ${userInterests} inner join ${interests} on ${interests.id} = ${userInterests.interestId} where ${userInterests.userId} = ${users.id} and ${interests.slug} = ${options.interestSlug})`
           : undefined,
       ),
     )
     .orderBy(desc(users.lastLoginAt), desc(users.createdAt))
-    .limit(options.limit * 2);
+    .limit(options.limit);
 
-  const viewerFollows = await db
-    .select({ followingId: follows.followingId })
-    .from(follows)
-    .where(eq(follows.followerId, options.viewerId));
-  const following = new Set(viewerFollows.map((row) => row.followingId));
+  if (rows.length === 0) return [];
 
-  // Pending connection requests – direction matters for the card actions
-  // (sent: withdraw / received: accept + decline), so both ids are exposed.
-  const pending = await db
-    .select({
-      id: connectionRequests.id,
-      fromUserId: connectionRequests.fromUserId,
-      toUserId: connectionRequests.toUserId,
-    })
-    .from(connectionRequests)
-    .where(
-      and(
-        eq(connectionRequests.status, "pending"),
-        or(eq(connectionRequests.fromUserId, options.viewerId), eq(connectionRequests.toUserId, options.viewerId)),
+  const ids = rows.map((row) => row.id);
+  const [relations, interestRows] = await Promise.all([
+    viewerRelations(options.viewerId, now),
+    Promise.all(
+      chunkIds(ids).map((chunk) =>
+        db
+          .select({ userId: userInterests.userId, labelDe: interests.labelDe, labelEn: interests.labelEn })
+          .from(userInterests)
+          .innerJoin(interests, eq(interests.id, userInterests.interestId))
+          .where(inArray(userInterests.userId, chunk))
+          .orderBy(interests.position),
       ),
-    );
-  const pendingSet = new Set(pending.flatMap((row) => [row.fromUserId, row.toUserId]));
-  const outgoingRequestByTarget = new Map<string, string>();
-  const incomingRequestBySource = new Map<string, string>();
-  for (const row of pending) {
-    if (row.fromUserId === options.viewerId) outgoingRequestByTarget.set(row.toUserId, row.id);
-    if (row.toUserId === options.viewerId) incomingRequestBySource.set(row.fromUserId, row.id);
-  }
-
-  const myConnections = await db
-    .select({ userAId: connections.userAId, userBId: connections.userBId })
-    .from(connections)
-    .where(
-      and(
-        isNull(connections.endedAt),
-        or(eq(connections.userAId, options.viewerId), eq(connections.userBId, options.viewerId)),
-      ),
-    );
-  const connected = new Set(
-    myConnections.map((row) => (row.userAId === options.viewerId ? row.userBId : row.userAId)),
-  );
-
-  const interestRows = await db
-    .select({ userId: userInterests.userId, label: interests.labelEn, slug: interests.slug })
-    .from(userInterests)
-    .innerJoin(interests, eq(interests.id, userInterests.interestId));
+    ).then((parts) => parts.flat()),
+  ]);
 
   const interestsByUser = new Map<string, string[]>();
   for (const row of interestRows) {
     const list = interestsByUser.get(row.userId) ?? [];
-    list.push(row.label);
+    list.push(options.locale === "en" ? row.labelEn : row.labelDe);
     interestsByUser.set(row.userId, list);
   }
 
-  let members: DirectoryMember[] = rows.map((row) => ({
+  return rows.map((row) => ({
     id: row.id,
     firstName: row.firstName,
     lastName: row.lastName,
     handle: row.handle,
     headline: row.headline,
-    location: row.location,
+    location: row.showLocation === false ? null : row.location,
     company: row.company,
     avatarUrl: row.avatarUrl,
     isDemo: row.isDemo,
     foundingMember: row.foundingMember,
     lastLoginAt: row.lastLoginAt,
     interests: interestsByUser.get(row.id) ?? [],
-    isFollowing: following.has(row.id),
-    isConnected: connected.has(row.id),
-    requestPending: pendingSet.has(row.id),
-    outgoingRequestId: outgoingRequestByTarget.get(row.id) ?? null,
-    incomingRequestId: incomingRequestBySource.get(row.id) ?? null,
+    isFollowing: relations.following.has(row.id),
+    isConnected: relations.connected.has(row.id),
+    requestPending: relations.outgoing.has(row.id) || relations.incoming.has(row.id),
+    outgoingRequestId: relations.outgoing.get(row.id) ?? null,
+    incomingRequestId: relations.incoming.get(row.id) ?? null,
+    requestCooldown: relations.cooldown.has(row.id),
   }));
-
-  if (options.interestSlug) {
-    const wanted = new Set(
-      interestRows.filter((row) => row.slug === options.interestSlug).map((row) => row.userId),
-    );
-    members = members.filter((member) => wanted.has(member.id));
-  }
-
-  return members.slice(0, options.limit);
 }
 
 export async function listInterests() {
@@ -217,82 +254,106 @@ export type OwnedConversation = {
 };
 
 export async function listConversations(userId: string): Promise<OwnedConversation[]> {
-  const myParticipations = await db
+  // Two queries in total (Sprint 12) instead of four per conversation: the
+  // conversation rows with last message + unread count as correlated
+  // sub-queries, then all chat partners at once.
+  const rows = await db
     .select({
-      conversationId: conversationParticipants.conversationId,
-      lastReadAt: conversationParticipants.lastReadAt,
+      id: conversations.id,
+      subject: conversations.subject,
+      kind: conversations.kind,
+      lastMessageAt: conversations.lastMessageAt,
+      lastBody: sql<string | null>`(select ${messages.body} from ${messages} where ${messages.conversationId} = ${conversations.id} and ${messages.deletedAt} is null order by ${messages.createdAt} desc limit 1)`,
+      lastAt: sql<number | null>`(select ${messages.createdAt} from ${messages} where ${messages.conversationId} = ${conversations.id} and ${messages.deletedAt} is null order by ${messages.createdAt} desc limit 1)`,
+      unread: sql<number>`(select count(*) from ${messages} where ${messages.conversationId} = ${conversations.id} and ${messages.senderId} <> ${userId} and ${messages.deletedAt} is null and ${messages.createdAt} > coalesce(${conversationParticipants.lastReadAt}, 0))`,
     })
     .from(conversationParticipants)
-    .where(eq(conversationParticipants.userId, userId));
+    .innerJoin(conversations, eq(conversations.id, conversationParticipants.conversationId))
+    .where(eq(conversationParticipants.userId, userId))
+    .orderBy(desc(conversations.lastMessageAt))
+    .limit(100);
 
-  const result: OwnedConversation[] = [];
+  if (rows.length === 0) return [];
 
-  for (const participation of myParticipations) {
-    const [conversation] = await db
-      .select()
-      .from(conversations)
-      .where(eq(conversations.id, participation.conversationId))
-      .limit(1);
-    if (!conversation) continue;
-
-    const peers = await db
-      .select({
-        id: users.id,
-        firstName: users.firstName,
-        lastName: users.lastName,
-        handle: users.handle,
-        avatarUrl: profiles.avatarUrl,
-      })
-      .from(conversationParticipants)
-      .innerJoin(users, eq(users.id, conversationParticipants.userId))
-      .leftJoin(profiles, eq(profiles.userId, users.id))
-      .where(
-        and(
-          eq(conversationParticipants.conversationId, conversation.id),
-          ne(conversationParticipants.userId, userId),
-        ),
-      );
-
-    const [lastMessage] = await db
-      .select({ body: messages.body, createdAt: messages.createdAt })
-      .from(messages)
-      .where(and(eq(messages.conversationId, conversation.id), isNull(messages.deletedAt)))
-      .orderBy(desc(messages.createdAt))
-      .limit(1);
-
-    const [{ value: unread } = { value: 0 }] = await db
-      .select({ value: count() })
-      .from(messages)
-      .where(
-        and(
-          eq(messages.conversationId, conversation.id),
-          ne(messages.senderId, userId),
-          isNull(messages.deletedAt),
-          participation.lastReadAt ? gt(messages.createdAt, participation.lastReadAt) : undefined,
-        ),
-      );
-
-    result.push({
-      id: conversation.id,
-      subject: conversation.subject,
-      kind: conversation.kind,
-      lastMessageAt: conversation.lastMessageAt,
-      unread,
-      partner: peers[0]
-        ? {
-            id: peers[0].id,
-            firstName: peers[0].firstName,
-            lastName: peers[0].lastName,
-            handle: peers[0].handle,
-            avatarUrl: peers[0].avatarUrl,
-          }
-        : null,
-      lastMessageBody: lastMessage?.body ?? null,
-      lastMessageAt2: lastMessage?.createdAt ?? null,
-    });
+  const peers = await db
+    .select({
+      conversationId: conversationParticipants.conversationId,
+      id: users.id,
+      firstName: users.firstName,
+      lastName: users.lastName,
+      handle: users.handle,
+      avatarUrl: profiles.avatarUrl,
+    })
+    .from(conversationParticipants)
+    .innerJoin(users, eq(users.id, conversationParticipants.userId))
+    .leftJoin(profiles, eq(profiles.userId, users.id))
+    .where(
+      and(
+        ne(conversationParticipants.userId, userId),
+        sql`${conversationParticipants.conversationId} in (select cp.conversationId from ConversationParticipant cp where cp.userId = ${userId})`,
+      ),
+    );
+  const peerByConversation = new Map<string, (typeof peers)[number]>();
+  for (const peer of peers) {
+    if (!peerByConversation.has(peer.conversationId)) peerByConversation.set(peer.conversationId, peer);
   }
 
-  return result.sort((a, b) => b.lastMessageAt.getTime() - a.lastMessageAt.getTime());
+  return rows.map((row) => {
+    const peer = peerByConversation.get(row.id);
+    return {
+      id: row.id,
+      subject: row.subject,
+      kind: row.kind,
+      lastMessageAt: row.lastMessageAt,
+      unread: Number(row.unread ?? 0),
+      partner: peer
+        ? { id: peer.id, firstName: peer.firstName, lastName: peer.lastName, handle: peer.handle, avatarUrl: peer.avatarUrl }
+        : null,
+      lastMessageBody: row.lastBody ?? null,
+      lastMessageAt2: row.lastAt === null || row.lastAt === undefined ? null : new Date(Number(row.lastAt)),
+    };
+  });
+}
+
+export type InboxCounts = {
+  /** Unread messages from others in all of the user's conversations. */
+  unreadMessages: number;
+  /** Open connection requests addressed to the user (actionable). */
+  pendingRequests: number;
+  /** Unread notifications (legacy per-message notifications excluded). */
+  unreadNotifications: number;
+  /** Unread "new request" notifications – cleared when the requests tab is opened. */
+  unseenRequestNotifications: number;
+};
+
+/**
+ * One source of truth for every inbox counter (sidebar/mobile badge, start
+ * screen, inbox tabs) – ONE query, cached per request so layout and page
+ * share it. Badge = unread messages + unread notifications; a new request
+ * counts once (through its notification), never twice.
+ */
+export const inboxCounts = cache(async (userId: string): Promise<InboxCounts> => {
+  // Explicit aliases on purpose: in a select without a real FROM table Drizzle
+  // renders column references unqualified, which is ambiguous inside a join.
+  const [row] = await db
+    .select({
+      unreadMessages: sql<number>`(select count(*) from "Message" m inner join "ConversationParticipant" p on p."conversationId" = m."conversationId" and p."userId" = ${userId} where m."senderId" <> ${userId} and m."deletedAt" is null and m."createdAt" > coalesce(p."lastReadAt", 0))`,
+      pendingRequests: sql<number>`(select count(*) from "ConnectionRequest" r where r."toUserId" = ${userId} and r."status" = 'pending')`,
+      unreadNotifications: sql<number>`(select count(*) from "Notification" n where n."userId" = ${userId} and n."readAt" is null and n."type" <> 'message')`,
+      unseenRequestNotifications: sql<number>`(select count(*) from "Notification" n where n."userId" = ${userId} and n."readAt" is null and n."type" = 'connection_request')`,
+    })
+    .from(sql`(select 1) as t`);
+  return {
+    unreadMessages: Number(row?.unreadMessages ?? 0),
+    pendingRequests: Number(row?.pendingRequests ?? 0),
+    unreadNotifications: Number(row?.unreadNotifications ?? 0),
+    unseenRequestNotifications: Number(row?.unseenRequestNotifications ?? 0),
+  };
+});
+
+/** Total for the inbox badge – see {@link inboxCounts}. */
+export function inboxBadgeTotal(counts: InboxCounts): number {
+  return counts.unreadMessages + counts.unreadNotifications;
 }
 
 export async function conversationMessages(conversationId: string, viewerId: string) {
@@ -346,10 +407,12 @@ export async function conversationMessages(conversationId: string, viewerId: str
 }
 
 export async function listNotifications(userId: string, limit = 60) {
+  // Messages have their own unread state in the chat list (Sprint 12) – the
+  // legacy one-notification-per-message rows are not listed any more.
   return db
     .select()
     .from(notifications)
-    .where(eq(notifications.userId, userId))
+    .where(and(eq(notifications.userId, userId), ne(notifications.type, "message")))
     .orderBy(desc(notifications.createdAt))
     .limit(limit);
 }
@@ -401,6 +464,11 @@ export async function pendingRequestsFor(userId: string) {
     .limit(50);
 }
 
+/**
+ * Requests the user sent: open ones (withdrawable) and declined ones, so the
+ * sender sees an honest state. Accepted requests live on as connections,
+ * withdrawn ones disappear.
+ */
 export async function sentRequestsFor(userId: string) {
   return db
     .select({
@@ -408,6 +476,7 @@ export async function sentRequestsFor(userId: string) {
       status: connectionRequests.status,
       message: connectionRequests.message,
       createdAt: connectionRequests.createdAt,
+      respondedAt: connectionRequests.respondedAt,
       toUserId: users.id,
       firstName: users.firstName,
       lastName: users.lastName,
@@ -418,23 +487,19 @@ export async function sentRequestsFor(userId: string) {
     .from(connectionRequests)
     .innerJoin(users, eq(users.id, connectionRequests.toUserId))
     .leftJoin(profiles, eq(profiles.userId, users.id))
-    .where(eq(connectionRequests.fromUserId, userId))
+    .where(
+      and(
+        eq(connectionRequests.fromUserId, userId),
+        or(eq(connectionRequests.status, "pending"), eq(connectionRequests.status, "declined")),
+      ),
+    )
     .orderBy(desc(connectionRequests.createdAt))
     .limit(50);
 }
 
+/** Confirmed connections with partner data – one join, no IN list. */
 export async function connectionsFor(userId: string) {
   const rows = await db
-    .select({ userAId: connections.userAId, userBId: connections.userBId, source: connections.source, createdAt: connections.createdAt })
-    .from(connections)
-    .where(
-      and(isNull(connections.endedAt), or(eq(connections.userAId, userId), eq(connections.userBId, userId))),
-    );
-
-  const partnerIds = rows.map((row) => (row.userAId === userId ? row.userBId : row.userAId));
-  if (partnerIds.length === 0) return [];
-
-  const partners = await db
     .select({
       id: users.id,
       firstName: users.firstName,
@@ -443,15 +508,21 @@ export async function connectionsFor(userId: string) {
       avatarUrl: profiles.avatarUrl,
       headline: profiles.headline,
       isDemo: users.isDemo,
+      connectedSince: connections.createdAt,
     })
-    .from(users)
+    .from(connections)
+    .innerJoin(
+      users,
+      or(
+        and(eq(connections.userAId, userId), eq(users.id, connections.userBId)),
+        and(eq(connections.userBId, userId), eq(users.id, connections.userAId)),
+      ),
+    )
     .leftJoin(profiles, eq(profiles.userId, users.id))
-    .where(sql`${users.id} in (${sql.join(partnerIds.map((id) => sql`${id}`), sql`, `)})`);
-
-  return partners.map((partner) => ({
-    ...partner,
-    connectedSince: rows.find((row) => row.userAId === partner.id || row.userBId === partner.id)?.createdAt ?? null,
-  }));
+    .where(and(isNull(connections.endedAt), or(eq(connections.userAId, userId), eq(connections.userBId, userId))))
+    .orderBy(desc(connections.createdAt))
+    .limit(500);
+  return rows;
 }
 
 /**
@@ -463,35 +534,68 @@ export async function connectionsFor(userId: string) {
  * (startConversationAction) wraps this for form-based flows.
  */
 export async function ensureDirectConversation(userId: string, targetId: string): Promise<string | null> {
-  const myRows = await db
-    .select({ conversationId: conversationParticipants.conversationId })
-    .from(conversationParticipants)
-    .where(eq(conversationParticipants.userId, userId));
-  const theirRows = await db
-    .select({ conversationId: conversationParticipants.conversationId })
-    .from(conversationParticipants)
-    .where(eq(conversationParticipants.userId, targetId));
-  const myIds = new Set(myRows.map((row) => row.conversationId));
-  const theirIds = new Set(theirRows.map((row) => row.conversationId));
+  if (!userId || !targetId || userId === targetId) return null;
+  const [a, b] = connectionPair(userId, targetId);
+  const directKey = `${a}:${b}`;
 
-  const shared = [...myIds].filter((id) => theirIds.has(id));
-  if (shared.length > 0) {
-    const [existing] = await db
-      .select({ id: conversations.id })
-      .from(conversations)
-      .where(and(eq(conversations.kind, "direct"), sql`${conversations.id} in (${sql.join(shared.map((id) => sql`${id}`), sql`, `)})`))
-      .limit(1);
-    if (existing) return existing.id;
+  // 1) Existing chat – by its Sprint-12 key or (older chats) by participants.
+  const [byKey] = await db
+    .select({ id: conversations.id })
+    .from(conversations)
+    .where(eq(conversations.directKey, directKey))
+    .limit(1);
+  if (byKey) {
+    await ensureParticipants(byKey.id, userId, targetId);
+    return byKey.id;
+  }
+  const [legacy] = await db
+    .select({ id: conversations.id })
+    .from(conversations)
+    .where(
+      and(
+        eq(conversations.kind, "direct"),
+        sql`exists (select 1 from ConversationParticipant p1 where p1.conversationId = ${conversations.id} and p1.userId = ${userId})`,
+        sql`exists (select 1 from ConversationParticipant p2 where p2.conversationId = ${conversations.id} and p2.userId = ${targetId})`,
+      ),
+    )
+    .orderBy(conversations.createdAt)
+    .limit(1);
+  if (legacy) {
+    // Adopt the key (ignored if another request adopted it concurrently).
+    await db
+      .update(conversations)
+      .set({ directKey })
+      .where(and(eq(conversations.id, legacy.id), isNull(conversations.directKey)))
+      .catch(() => undefined);
+    return legacy.id;
   }
 
+  // 2) Create – the unique directKey makes concurrent creation impossible:
+  //    the loser's insert is ignored and both read the same row.
   const now = new Date();
-  const conversationId = idFor.conversation();
-  await db.insert(conversations).values({ id: conversationId, kind: "direct", createdAt: now, lastMessageAt: now });
-  await db.insert(conversationParticipants).values([
-    { id: idFor.participant(), conversationId, userId, lastReadAt: now, createdAt: now },
-    { id: idFor.participant(), conversationId, userId: targetId, lastReadAt: null, createdAt: now },
-  ]);
-  return conversationId;
+  await db
+    .insert(conversations)
+    .values({ id: idFor.conversation(), kind: "direct", directKey, createdAt: now, lastMessageAt: now })
+    .onConflictDoNothing({ target: conversations.directKey });
+  const [created] = await db
+    .select({ id: conversations.id })
+    .from(conversations)
+    .where(eq(conversations.directKey, directKey))
+    .limit(1);
+  if (!created) return null;
+  await ensureParticipants(created.id, userId, targetId);
+  return created.id;
+}
+
+async function ensureParticipants(conversationId: string, userId: string, targetId: string) {
+  const now = new Date();
+  await db
+    .insert(conversationParticipants)
+    .values([
+      { id: idFor.participant(), conversationId, userId, lastReadAt: now, createdAt: now },
+      { id: idFor.participant(), conversationId, userId: targetId, lastReadAt: null, createdAt: now },
+    ])
+    .onConflictDoNothing({ target: [conversationParticipants.conversationId, conversationParticipants.userId] });
 }
 
 /**
@@ -500,26 +604,32 @@ export async function ensureDirectConversation(userId: string, targetId: string)
  * outgoing → "Anfrage gesendet" + withdraw, incoming → accept/decline.
  */
 export async function connectionRequestState(viewerId: string, targetId: string) {
-  const [row] = await db
+  const cooldownStart = new Date(Date.now() - CONNECTION_REQUEST_COOLDOWN_DAYS * 86_400_000);
+  const rows = await db
     .select({
       id: connectionRequests.id,
       fromUserId: connectionRequests.fromUserId,
+      status: connectionRequests.status,
+      respondedAt: connectionRequests.respondedAt,
     })
     .from(connectionRequests)
     .where(
-      and(
-        eq(connectionRequests.status, "pending"),
-        or(
-          and(eq(connectionRequests.fromUserId, viewerId), eq(connectionRequests.toUserId, targetId)),
-          and(eq(connectionRequests.fromUserId, targetId), eq(connectionRequests.toUserId, viewerId)),
-        ),
+      or(
+        and(eq(connectionRequests.fromUserId, viewerId), eq(connectionRequests.toUserId, targetId)),
+        and(eq(connectionRequests.fromUserId, targetId), eq(connectionRequests.toUserId, viewerId)),
       ),
     )
-    .limit(1);
-  if (!row) return { outgoingRequestId: null, incomingRequestId: null };
-  return row.fromUserId === viewerId
-    ? { outgoingRequestId: row.id, incomingRequestId: null }
-    : { outgoingRequestId: null, incomingRequestId: row.id };
+    .limit(2);
+  const outgoing = rows.find((row) => row.fromUserId === viewerId);
+  const incoming = rows.find((row) => row.fromUserId === targetId);
+  // An incoming request wins: the viewer can simply accept it.
+  const incomingRequestId = incoming?.status === "pending" ? incoming.id : null;
+  const outgoingRequestId = !incomingRequestId && outgoing?.status === "pending" ? outgoing.id : null;
+  const cooldownUntil =
+    outgoing?.status === "declined" && outgoing.respondedAt && outgoing.respondedAt >= cooldownStart
+      ? new Date(outgoing.respondedAt.getTime() + CONNECTION_REQUEST_COOLDOWN_DAYS * 86_400_000)
+      : null;
+  return { outgoingRequestId, incomingRequestId, cooldownUntil };
 }
 
 /**
@@ -536,7 +646,19 @@ export async function interestLabelsFor(userId: string, locale: "de" | "en") {
   return rows.map((row) => (locale === "en" ? row.labelEn : row.labelDe));
 }
 
+/** Goal labels for one member (locale-aware, taxonomy order). */
+export async function goalLabelsFor(userId: string, locale: "de" | "en") {
+  const rows = await db
+    .select({ labelDe: goals.labelDe, labelEn: goals.labelEn, position: goals.position })
+    .from(userGoals)
+    .innerJoin(goals, eq(goals.id, userGoals.goalId))
+    .where(eq(userGoals.userId, userId))
+    .orderBy(goals.position);
+  return rows.map((row) => (locale === "en" ? row.labelEn : row.labelDe));
+}
+
 export async function memberProfileByHandle(handle: string) {
+  const nowMs = Date.now();
   const [row] = await db
     .select({
       id: users.id,
@@ -544,6 +666,7 @@ export async function memberProfileByHandle(handle: string) {
       lastName: users.lastName,
       handle: users.handle,
       role: users.role,
+      status: users.status,
       isDemo: users.isDemo,
       foundingMember: users.foundingMember,
       createdAt: users.createdAt,
@@ -564,15 +687,20 @@ export async function memberProfileByHandle(handle: string) {
       profileVisibility: profiles.profileVisibility,
       privacyVisibility: privacySettings.profileVisibility,
       privacyPerformance: privacySettings.performanceVisibility,
+      contactVisibility: privacySettings.contactVisibility,
       showLocation: privacySettings.showLocation,
       discoverable: privacySettings.discoverable,
+      allowConnectionRequests: privacySettings.allowConnectionRequests,
+      /** Real, active, verified, onboarded account with current network access. */
+      participant: sql<number>`case when ${realParticipantSql(nowMs)} then 1 else 0 end`,
     })
     .from(users)
     .leftJoin(profiles, eq(profiles.userId, users.id))
     .leftJoin(privacySettings, eq(privacySettings.userId, users.id))
     .where(eq(users.handle, handle))
     .limit(1);
-  return row ?? null;
+  if (!row) return null;
+  return { ...row, participant: Number(row.participant) === 1 };
 }
 
 export async function profileStats(userId: string) {
@@ -745,6 +873,7 @@ export type DiscoverCandidate = {
   headline: string | null;
   jobTitle: string | null;
   company: string | null;
+  /** Null when the member hides the location. */
   location: string | null;
   bio: string | null;
   isDemo: boolean;
@@ -759,18 +888,12 @@ export type DiscoverCandidate = {
   skills: string[];
   lookingFor: string[];
   offering: string[];
-  trustScore10: number | null;
-  metrics: {
-    connections: number;
-    opportunities: number;
-    listings: number;
-    verifiedRecords: number;
-  };
   sharedConnectionCount: number;
   sharedConnectionNames: string[];
   isFollowing: boolean;
   isConnected: boolean;
   requestPending: boolean;
+  requestCooldown: boolean;
 };
 
 function parseJsonList(json: string | null | undefined): string[] {
@@ -783,26 +906,21 @@ function parseJsonList(json: string | null | undefined): string[] {
   }
 }
 
-type CountRow = { ownerId?: string; sellerId?: string; userId?: string; userAId?: string; userBId?: string; value: number };
-
-function toCountMap(rows: CountRow[], key: "ownerId" | "sellerId" | "userId"): Map<string, number> {
-  const map = new Map<string, number>();
-  for (const row of rows) {
-    const id = row[key];
-    if (id) map.set(id, Number(row.value));
-  }
-  return map;
-}
-
 /**
- * Loads every member that may appear in Discover together with the raw signals
- * the ranking needs. Ranking itself is pure (`src/lib/discover/matching.ts`).
+ * Discover candidates (Sprint 12): the same listing rule as the directory –
+ * only real, network-visible participants, never demo accounts – plus the raw
+ * signals the rule-based ranking needs (src/lib/discover/matching.ts). Every
+ * follow-up query is scoped to the candidates or the viewer; nothing loads
+ * the whole platform.
  */
 export async function listDiscoverCandidates(options: {
   viewerId: string;
   limit: number;
+  locale?: "de" | "en";
 }): Promise<DiscoverCandidate[]> {
   const viewerId = options.viewerId;
+  const now = new Date();
+  const en = options.locale === "en";
 
   const rows = await db
     .select({
@@ -812,8 +930,6 @@ export async function listDiscoverCandidates(options: {
       handle: users.handle,
       isDemo: users.isDemo,
       foundingMember: users.foundingMember,
-      lastLoginAt: users.lastLoginAt,
-      createdAt: users.createdAt,
       avatarUrl: profiles.avatarUrl,
       headline: profiles.headline,
       jobTitle: profiles.jobTitle,
@@ -824,61 +940,60 @@ export async function listDiscoverCandidates(options: {
       skillsJson: profiles.skillsJson,
       lookingForJson: profiles.lookingForJson,
       offeringJson: profiles.offeringJson,
-      discoverable: privacySettings.discoverable,
+      showLocation: privacySettings.showLocation,
     })
     .from(users)
     .leftJoin(profiles, eq(profiles.userId, users.id))
     .leftJoin(privacySettings, eq(privacySettings.userId, users.id))
-    .where(and(ne(users.id, viewerId), eq(users.status, "active")))
-    .orderBy(desc(users.lastLoginAt), desc(users.createdAt));
+    .where(listedMemberSql(viewerId, now.getTime()))
+    .orderBy(desc(users.lastLoginAt), desc(users.createdAt))
+    .limit(options.limit);
 
-  const discoverable = rows.filter((row) => row.discoverable !== false);
-  const ids = discoverable.map((row) => row.id);
-  if (ids.length === 0) return [];
+  if (rows.length === 0) return [];
+  const ids = rows.map((row) => row.id);
+  const chunks = chunkIds(ids);
 
-  const [interestRows, goalRows, trustRows, connectionRows, followRows, pendingRows, opportunityRows, listingRows, verifiedRows] =
-    await Promise.all([
-      db
-        .select({
-          userId: userInterests.userId,
-          slug: interests.slug,
-          labelDe: interests.labelDe,
-          labelEn: interests.labelEn,
-          groupDe: interests.groupDe,
-          groupEn: interests.groupEn,
-        })
-        .from(userInterests)
-        .innerJoin(interests, eq(interests.id, userInterests.interestId)),
-      db
-        .select({ userId: userGoals.userId, slug: goals.slug, labelDe: goals.labelDe, labelEn: goals.labelEn })
-        .from(userGoals)
-        .innerJoin(goals, eq(goals.id, userGoals.goalId)),
-      db.select({ userId: trustScoreSummaries.userId, score10: trustScoreSummaries.score10 }).from(trustScoreSummaries),
-      db
-        .select({ userAId: connections.userAId, userBId: connections.userBId })
-        .from(connections)
-        .where(isNull(connections.endedAt)),
-      db.select({ followingId: follows.followingId }).from(follows).where(eq(follows.followerId, viewerId)),
-      db
-        .select({ fromUserId: connectionRequests.fromUserId, toUserId: connectionRequests.toUserId })
-        .from(connectionRequests)
-        .where(eq(connectionRequests.status, "pending")),
-      db
-        .select({ ownerId: businessOpportunities.ownerId, value: count() })
-        .from(businessOpportunities)
-        .where(and(isNull(businessOpportunities.deletedAt), eq(businessOpportunities.status, "published")))
-        .groupBy(businessOpportunities.ownerId),
-      db
-        .select({ sellerId: marketplaceListings.sellerId, value: count() })
-        .from(marketplaceListings)
-        .where(eq(marketplaceListings.status, "published"))
-        .groupBy(marketplaceListings.sellerId),
-      db
-        .select({ userId: performanceRecords.userId, value: count() })
-        .from(performanceRecords)
-        .where(eq(performanceRecords.verification, "verified"))
-        .groupBy(performanceRecords.userId),
-    ]);
+  const [interestRows, goalRows, relations, secondDegree] = await Promise.all([
+    Promise.all(
+      chunks.map((chunk) =>
+        db
+          .select({
+            userId: userInterests.userId,
+            slug: interests.slug,
+            labelDe: interests.labelDe,
+            labelEn: interests.labelEn,
+            groupDe: interests.groupDe,
+            groupEn: interests.groupEn,
+          })
+          .from(userInterests)
+          .innerJoin(interests, eq(interests.id, userInterests.interestId))
+          .where(inArray(userInterests.userId, chunk))
+          .orderBy(interests.position),
+      ),
+    ).then((parts) => parts.flat()),
+    Promise.all(
+      chunks.map((chunk) =>
+        db
+          .select({ userId: userGoals.userId, slug: goals.slug, labelDe: goals.labelDe, labelEn: goals.labelEn })
+          .from(userGoals)
+          .innerJoin(goals, eq(goals.id, userGoals.goalId))
+          .where(inArray(userGoals.userId, chunk)),
+      ),
+    ).then((parts) => parts.flat()),
+    viewerRelations(viewerId, now),
+    // Connections of the viewer's connections (for "shared connections").
+    db
+      .select({ userAId: connections.userAId, userBId: connections.userBId })
+      .from(connections)
+      .where(
+        and(
+          isNull(connections.endedAt),
+          sql`(${connections.userAId} in (select case when c.userAId = ${viewerId} then c.userBId else c.userAId end from Connection c where c.endedAt is null and (c.userAId = ${viewerId} or c.userBId = ${viewerId}))
+            or ${connections.userBId} in (select case when c.userAId = ${viewerId} then c.userBId else c.userAId end from Connection c where c.endedAt is null and (c.userAId = ${viewerId} or c.userBId = ${viewerId})))`,
+        ),
+      )
+      .limit(5000),
+  ]);
 
   const interestsByUser = new Map<string, typeof interestRows>();
   for (const row of interestRows) {
@@ -886,27 +1001,19 @@ export async function listDiscoverCandidates(options: {
     list.push(row);
     interestsByUser.set(row.userId, list);
   }
-  // The seed (and some older profiles) store goal *slugs* in the free-text
-  // "looking for"/"offering" lists – map them back to readable labels.
-  const goalLabelBySlug = new Map(goalRows.map((row) => [row.slug, row.labelDe]));
-  const humanise = (values: string[]) => values.map((value) => goalLabelBySlug.get(value) ?? value);
-
   const goalsByUser = new Map<string, typeof goalRows>();
   for (const row of goalRows) {
     const list = goalsByUser.get(row.userId) ?? [];
     list.push(row);
     goalsByUser.set(row.userId, list);
   }
-  const trustByUser = new Map(trustRows.map((row) => [row.userId, row.score10]));
-  const opportunityCounts = toCountMap(opportunityRows, "ownerId");
-  const listingCounts = toCountMap(listingRows, "sellerId");
-  const verifiedCounts = toCountMap(verifiedRows, "userId");
-
-  const following = new Set(followRows.map((row) => row.followingId));
-  const pendingSet = new Set(pendingRows.flatMap((row) => [row.fromUserId, row.toUserId]));
+  // The seed (and some older profiles) store goal *slugs* in the free-text
+  // "looking for"/"offering" lists – map them back to readable labels.
+  const goalLabelBySlug = new Map(goalRows.map((row) => [row.slug, en ? row.labelEn : row.labelDe]));
+  const humanise = (values: string[]) => values.map((value) => goalLabelBySlug.get(value) ?? value);
 
   const neighboursOf = new Map<string, Set<string>>();
-  for (const row of connectionRows) {
+  for (const row of secondDegree) {
     const a = neighboursOf.get(row.userAId) ?? new Set<string>();
     a.add(row.userBId);
     neighboursOf.set(row.userAId, a);
@@ -914,10 +1021,9 @@ export async function listDiscoverCandidates(options: {
     b.add(row.userAId);
     neighboursOf.set(row.userBId, b);
   }
-  const myNeighbours = neighboursOf.get(viewerId) ?? new Set<string>();
-  const nameById = new Map(rows.map((row) => [row.id, `${row.firstName} ${row.lastName}`.trim()]));
+  const myNeighbours = relations.connected;
 
-  return discoverable.slice(0, options.limit).map((row) => {
+  return rows.map((row) => {
     const myInterests = interestsByUser.get(row.id) ?? [];
     const myGoals = goalsByUser.get(row.id) ?? [];
     const neighbours = neighboursOf.get(row.id) ?? new Set<string>();
@@ -932,32 +1038,26 @@ export async function listDiscoverCandidates(options: {
       headline: row.headline,
       jobTitle: row.jobTitle,
       company: row.company,
-      location: row.location,
+      location: row.showLocation === false ? null : row.location,
       bio: row.bio,
       isDemo: row.isDemo,
       foundingMember: row.foundingMember,
       interestSlugs: myInterests.map((interest) => interest.slug),
-      interestLabels: myInterests.map((interest) => interest.labelDe),
+      interestLabels: myInterests.map((interest) => (en ? interest.labelEn : interest.labelDe)),
       goalSlugs: myGoals.map((goal) => goal.slug),
-      goalLabels: myGoals.map((goal) => goal.labelDe),
+      goalLabels: myGoals.map((goal) => (en ? goal.labelEn : goal.labelDe)),
       industrySlugs: [...new Set(myInterests.map((interest) => industrySlug(interest.groupEn)))],
-      industryLabels: [...new Set(myInterests.map((interest) => interest.groupDe))],
+      industryLabels: [...new Set(myInterests.map((interest) => (en ? interest.groupEn : interest.groupDe)))],
       roles: parseJsonList(row.rolesJson),
       skills: parseJsonList(row.skillsJson),
       lookingFor: humanise(parseJsonList(row.lookingForJson)),
       offering: humanise(parseJsonList(row.offeringJson)),
-      trustScore10: trustByUser.get(row.id) ?? null,
-      metrics: {
-        connections: neighbours.size,
-        opportunities: opportunityCounts.get(row.id) ?? 0,
-        listings: listingCounts.get(row.id) ?? 0,
-        verifiedRecords: verifiedCounts.get(row.id) ?? 0,
-      },
       sharedConnectionCount: shared.length,
-      sharedConnectionNames: shared.slice(0, 3).map((id) => nameById.get(id) ?? ""),
-      isFollowing: following.has(row.id),
+      sharedConnectionNames: [],
+      isFollowing: relations.following.has(row.id),
       isConnected: myNeighbours.has(row.id),
-      requestPending: pendingSet.has(row.id),
+      requestPending: relations.outgoing.has(row.id) || relations.incoming.has(row.id),
+      requestCooldown: relations.cooldown.has(row.id),
     };
   });
 }
@@ -1039,8 +1139,9 @@ export async function forYouItems(userId: string, interestSlugs: string[], local
     });
   }
 
-  // 3) A member who shares at least one of the viewer's interests – not
-  // connected, no open request, not blocked. (Rule-based, like Discover.)
+  // 3) A member who shares at least one of the viewer's interests – a real,
+  // network-visible participant (Sprint 12 listing rule), not connected, no
+  // open request, not blocked. (Rule-based, like Discover.)
   if (interestSlugs.length > 0) {
     const candidates = await db
       .select({
@@ -1057,42 +1158,24 @@ export async function forYouItems(userId: string, interestSlugs: string[], local
       .innerJoin(users, eq(users.id, userInterests.userId))
       .where(
         and(
-          sql`${interests.slug} in (${sql.join(interestSlugs.map((slug) => sql`${slug}`), sql`, `)})`,
-          ne(users.id, userId),
-          eq(users.status, "active"),
-          eq(users.isDemo, false),
+          inArray(interests.slug, interestSlugs.slice(0, 40)),
+          listedMemberSql(userId, now.getTime()),
+          sql`not exists (select 1 from Connection c where c.endedAt is null and ((c.userAId = ${userId} and c.userBId = ${users.id}) or (c.userBId = ${userId} and c.userAId = ${users.id})))`,
+          sql`not exists (select 1 from ConnectionRequest r where r.status = 'pending' and ((r.fromUserId = ${userId} and r.toUserId = ${users.id}) or (r.toUserId = ${userId} and r.fromUserId = ${users.id})))`,
         ),
       )
       .orderBy(desc(users.lastLoginAt))
-      .limit(8);
+      .limit(1);
 
-    if (candidates.length > 0) {
-      const [myConnections, pendingPairs, blockedRows] = await Promise.all([
-        db
-          .select({ partnerId: sql`case when ${connections.userAId} = ${userId} then ${connections.userBId} else ${connections.userAId} end` })
-          .from(connections)
-          .where(and(isNull(connections.endedAt), or(eq(connections.userAId, userId), eq(connections.userBId, userId)))),
-        db
-          .select({ otherId: sql`case when ${connectionRequests.fromUserId} = ${userId} then ${connectionRequests.toUserId} else ${connectionRequests.fromUserId} end` })
-          .from(connectionRequests)
-          .where(and(eq(connectionRequests.status, "pending"), or(eq(connectionRequests.fromUserId, userId), eq(connectionRequests.toUserId, userId)))),
-        db.select({ blockedId: blocks.blockedId }).from(blocks).where(eq(blocks.blockerId, userId)),
-      ]);
-      const excluded = new Set([
-        ...myConnections.map((row) => row.partnerId),
-        ...pendingPairs.map((row) => row.otherId),
-        ...blockedRows.map((row) => row.blockedId),
-      ]);
-      const candidate = candidates.find((row) => !excluded.has(row.id));
-      if (candidate) {
-        items.push({
-          kind: "person",
-          name: `${candidate.firstName} ${candidate.lastName}`.trim(),
-          handle: candidate.handle,
-          sharedInterestSlug: candidate.sharedSlug,
-          sharedInterest: locale === "en" ? candidate.sharedLabelEn : candidate.sharedLabelDe,
-        });
-      }
+    const candidate = candidates[0];
+    if (candidate) {
+      items.push({
+        kind: "person",
+        name: `${candidate.firstName} ${candidate.lastName}`.trim(),
+        handle: candidate.handle,
+        sharedInterestSlug: candidate.sharedSlug,
+        sharedInterest: locale === "en" ? candidate.sharedLabelEn : candidate.sharedLabelDe,
+      });
     }
   }
 

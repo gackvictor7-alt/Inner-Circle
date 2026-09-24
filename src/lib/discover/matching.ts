@@ -183,6 +183,8 @@ export type DiscoverFilters = {
   industry?: string;
   location?: string;
   interest?: string;
+  /** Business goal = goal taxonomy slug (Sprint 12). */
+  goal?: string;
   /** "Ich suche" free text (case-insensitive substring). */
   lookingFor?: string;
   /** "Ich biete" free text (case-insensitive substring). */
@@ -224,6 +226,10 @@ export function applyDiscoverFilters<T extends ProfileSignals>(
       const needle = filters.interest.trim().toLowerCase();
       if (needle.length > 0 && !normalizeList(candidate.interestSlugs).includes(needle)) return false;
     }
+    if (filters.goal) {
+      const needle = filters.goal.trim().toLowerCase();
+      if (needle.length > 0 && !normalizeList(candidate.goalSlugs).includes(needle)) return false;
+    }
     if (filters.lookingFor) {
       const needle = filters.lookingFor.trim().toLowerCase();
       if (needle.length > 0 && !normalizeList(candidate.lookingFor).join(" ").includes(needle)) {
@@ -260,6 +266,7 @@ export function hasActiveFilters(filters: DiscoverFilters): boolean {
       filters.industry?.trim() ||
       filters.location?.trim() ||
       filters.interest?.trim() ||
+      filters.goal?.trim() ||
       filters.lookingFor?.trim() ||
       filters.offering?.trim() ||
       filters.investInterest?.trim() ||
@@ -428,6 +435,10 @@ export function isInvestmentInterest(value: string | undefined): value is (typeo
 /* ---------------------------------------------------------------- display */
 
 /**
+ * @deprecated Not displayed any more (Sprint 12: no invented match
+ * probabilities – the Discover card names the concrete, rule-based reasons
+ * instead). Kept for the unit test of the scale and possible admin analytics.
+ *
  * Turns a raw score into a 0–99 "relevance" percentage for the card badge.
  * The scale is absolute (not relative to the current queue) so the number does
  * not jump around when the deck shrinks. `STRONG_SCORE` is roughly "four shared
