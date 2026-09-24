@@ -1,0 +1,116 @@
+{
+  "run": "1790281164922",
+  "engine": "Chromium / OpenNext Worker / local D1",
+  "desktop": "1440x900 CSS px",
+  "mobile": "390x844 CSS px; DPR 1 (key/request), DPR 2 (mobile contexts)",
+  "files": [
+    {
+      "file": "01-network-discover-desktop.png",
+      "sha256": "75136728fcdcc31bbf205da10e5e03c8300c82ce9f4294017f1a77bc177e480b"
+    },
+    {
+      "file": "01b-network-directory-desktop.png",
+      "sha256": "400d235d171bde7474fb7c100dc415f9e1b1d073198f051f49751d517e498860"
+    },
+    {
+      "file": "01c-discover-filter-goal-desktop.png",
+      "sha256": "8de3c6e405016e1714a699fb57b185178c97466621f0402798d61a98f0c048be"
+    },
+    {
+      "file": "02-network-discover-mobile.png",
+      "sha256": "0cce7f5b515d62df2f31797b12c76fbd25a6abd9e0346d4a4f9875884fb9c0ca"
+    },
+    {
+      "file": "02b-network-directory-mobile.png",
+      "sha256": "9ab198ec9a7fffcc1d44796fc5893ee19bd1d90ac708ee3d82fc9099e5113c0f"
+    },
+    {
+      "file": "03-beta-key-redemption.png",
+      "sha256": "3c3fdc4fce80ecf481bd103968bd79c63a4dc3c9bd1c6051a79f32199fd0f1a5"
+    },
+    {
+      "file": "03b-beta-welcome-profile-onboarding.png",
+      "sha256": "ed17eb966b6cdce0f7f58ce17cb330d422dd579111fdf47ecc893604306d2852"
+    },
+    {
+      "file": "03c-beta-key-disabled-error.png",
+      "sha256": "dc9c10dbb4c056f29581598eeee1807dda8cce10b35bf085d37c8c1bf3efd0c5"
+    },
+    {
+      "file": "03d-beta-key-mobile.png",
+      "sha256": "5296398f7ae2bfe0a083ee3afee8fe83033420fdfeb2c6f24258f80979245a96"
+    },
+    {
+      "file": "04-real-member-profile.png",
+      "sha256": "aa55b5f97db4473bf94a1b334a6abf62bc7470155851f7f35031bf60d750095c"
+    },
+    {
+      "file": "04b-real-member-profile-dark-en.png",
+      "sha256": "9a3059df2e0a33696127db5e4b2902011ed200d2ca91fafc948b31bb020a6795"
+    },
+    {
+      "file": "04c-real-member-profile-mobile.png",
+      "sha256": "115cf7e0d32bf9a4f380a1c909153004fdb381266c2bfae70979292b4686cc15"
+    },
+    {
+      "file": "05-incoming-request.png",
+      "sha256": "29daae8416a824183c2d0a338d31ce54dc1a0e47c7583645a77fef8cea65a726"
+    },
+    {
+      "file": "05b-incoming-request-mobile.png",
+      "sha256": "33452302a840c1726cf228d59128488dc741d8516da2d2ccc58676f5e9c6963f"
+    },
+    {
+      "file": "06-chat-after-accept.png",
+      "sha256": "b9b9b8124ac8f67882d407e6162b60dcad2aa592b579c845f3516f465eb3eb37"
+    },
+    {
+      "file": "06b-chat-mobile.png",
+      "sha256": "0607d0fa426dbf7d49438c180de9097d94a4d2a3f0669ce4f56095b411a28f90"
+    },
+    {
+      "file": "06c-chat-dark-en.png",
+      "sha256": "2a99163ae76f0fa5594bf87da94cf82a1413c9bdc6d23005b11cc58a68e7d45f"
+    },
+    {
+      "file": "07-discovery-demo-desktop.png",
+      "sha256": "898f048ffd04155127b4eeff42ff34c3f97a8211bacc458db040745dd3d2493f"
+    },
+    {
+      "file": "07b-dashboard-discovery-demo.png",
+      "sha256": "86d8f69bdda13651dcc422da913c6a94c8d45aa5117d4116b6d2f302c59a80dc"
+    },
+    {
+      "file": "07c-discovery-demo-mobile.png",
+      "sha256": "9e78aaffd064e8d04b01e206e94944a38edab2831341e88312bc13008dc15728"
+    },
+    {
+      "file": "08-admin-beta-key-created.png",
+      "sha256": "91840766d63fe3bd5d5f230bdee49eb6bb7c6b4731afcbd461d0d53ce11b21be"
+    },
+    {
+      "file": "08b-admin-beta-management.png",
+      "sha256": "b9f5cf5418119915da5cc244c94d600d096df864328d0c082928f95145350b4a"
+    },
+    {
+      "file": "09-beta-ended-locked.png",
+      "sha256": "2161985d738e8737d03db48424c4afad0f6da9ca5b8f538bc53f855049078276"
+    },
+    {
+      "file": "09b-beta-expired-chat-readonly.png",
+      "sha256": "20e4a70442ffd31e2c1a9c6ff358f81f88d4ef760d6d48610cbb576c3b226973"
+    },
+    {
+      "file": "09c-beta-expired-after-demo.png",
+      "sha256": "d995780a3a5eb5ca34f305a91bc26d1bae86cfb314b10a9988053ef184fab97c"
+    },
+    {
+      "file": "10-dashboard-beta-desktop.png",
+      "sha256": "48f885926ce24f00876e7fda641ed617863455a2b0cc70771c3c7ade7d64942a"
+    },
+    {
+      "file": "11-member-no-key-needed.png",
+      "sha256": "49bde136e37abc36d6fdaa52b4bffcde39eedd5d756f19ed08bfaca4f8d26b04"
+    }
+  ]
+}

@@ -44,6 +44,53 @@ vorbestehend, siehe K-15; **keine** neuen Befunde aus diesem Sprint.
 
 ---
 
+## Sprint-12-Abschlussprüfung auf dem gesicherten Stand
+
+Fortsetzung auf `arena/01a0d501-inner-circle` ab `6eebc3d` (2026-09-24).
+Aktueller vollständiger Worker-Lauf **82/82**, Run `1790281164922`, Ergebnis
+`preview/sprint12/e2e-results-final.json`. Der oben dokumentierte Lauf 827861
+ist die historische zweite Prüfrunde, nicht der aktuelle Abschlusslauf.
+35 Testdateien / 246 Tests erneut grün; Typecheck und 616 i18n-Schlüssel grün.
+`npm run cf:build` und `npm run cf:dry-run` grün (9287,12 KiB / gzip
+1859,11 KiB im letzten Dry-Run). Lint **Exit 1**, 5 Fehler / 7 Warnungen,
+byte-identische Ausgabe vor/nach dieser Fortsetzung. Kein neuer Lint-Befund.
+
+Erweiterungen am vorhandenen E2E-Skript:
+- Pro Konto Session-Cookie vor/nach Onboarding identisch, Secure + HttpOnly,
+  Hard-Reload weiterhin authentifiziert (12 zusätzliche Assertions).
+- Drei mobile Ansichten ergänzt, inkl. Overflow-Checks (3 Assertions).
+- Free-Demo-Drittkonto: fremden Chat direkt öffnen + RSC-Payloads von vier
+  geschützten Routen enthalten keine geprüften privaten Daten (2 Assertions).
+- Link-Crawl nutzt Browser-Navigation statt `context.request.get`: der separate
+  HTTP-Client sendet Secure-Cookies hier nicht über HTTP-Loopback; ein
+  Redirect auf Login darf nicht als erfolgreicher App-Link gezählt werden.
+  33 Tester- und 36 Demo-Links authentifiziert geprüft. Testpfad `/app/academy`
+  auf die tatsächliche Route `/app/learn` berichtigt.
+- Vollständige Run-ID und exakte Key-Labels begrenzen SQL-Änderungen auf den
+  aktuellen Lauf. Screenshots/Selektoren benötigen weiterhin eine frische,
+  ausschließlich synthetische lokale D1 (keine produktive DB zurücksetzen).
+
+**Reproduktion:** Voraussetzungen/Befehle im Kopf von
+`tests/e2e/sprint12-browser.mjs`; Build + `wrangler dev --ip 0.0.0.0 --port 8787`,
+alle D1-Befehle ausschließlich `--local`. Browserpakete außerhalb des Repos.
+In dieser Sandbox fehlten NSS/NSPR-Systembibliotheken; sie wurden aus dem
+mitgelieferten `@sparticuz/chromium/bin/al2023.tar.br` lokal extrahiert und
+via `LD_LIBRARY_PATH` bereitgestellt (keine Projektabhängigkeit geändert).
+`cookies()` ohne HTTP-URL-Filter verwenden: ein Filter auf die lokale HTTP-URL
+blendete vorhandene Secure-Cookies aus und erzeugte falsche Negativbefunde.
+Der bereits im Ausgangsskript vermiedene Chromium-`--single-process`-Modus
+bleibt vermieden; seine historische Fehlerursache wurde nicht erneut bewiesen.
+
+Zwischenläufe: 74/80 wegen dieses Cookie-Filters; danach 80/80.
+Nach Erweiterung um die zwei Free-/RSC-Prüfungen einmal Abbruch bei einem
+lokalen Wrangler-SELECT (62/63; derselbe SELECT unmittelbar danach erfolgreich),
+anschließend unveränderter vollständiger Test **82/82**. Keine Assertion wurde
+zum Erzwingen eines grünen Laufs entfernt. Worker-Preview meldet außerdem
+Read-only-Static-Cache- und bei Navigation Broken-Pipe-Hinweise; kein
+fehlgeschlagener funktionaler Check im letzten Lauf, kein Edge-Lastnachweis.
+
+Details und Grenzen: [Abschlussbericht](SPRINT-12-FINAL-REPORT.md).
+
 ## 1. Definition of Done (jede Funktion)
 
 - [ ] Bedienbar (UI + Fehlerfälle), responsiv (mobil/desktop).

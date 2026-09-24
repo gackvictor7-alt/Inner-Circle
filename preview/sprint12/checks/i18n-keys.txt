@@ -1,0 +1,6 @@
+
+> inner-circle@0.1.0 test:keys
+> tsx scripts/check-keys.ts
+
+Checked 616 literal dictionary keys in 196 files.
+All referenced keys exist in DE and EN.

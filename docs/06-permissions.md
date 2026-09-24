@@ -298,3 +298,18 @@ allein sind ungültig.
 | Gruppen-Admin / Firmen-Admin | nicht implementiert (keine Gruppen-/Firmentabellen) |
 | Moderator / Support / Finanzen / Super-Admin | nicht implementiert – nur `user` \| `admin` |
 | Founding Member | Anerkennung ohne Rechte (Feld + Admin-Aktion vorhanden) |
+
+
+## Sprint-12-Abschlussnachweis (2026-09-24)
+
+Keine Rechteänderung in dieser Fortsetzung. Bestehende Server-Matrix erneut
+geprüft: 246 Unit-/Integrationstests inkl. Beta-Races und D1, plus 82
+Worker-Browserchecks. Free-Demo kann weder fremden Chat noch private
+Profildaten über direkten Seiten-/RSC-Aufruf abrufen; Beta schaltet keine
+Membership-Zeile und keine Admin-Rolle frei; Member braucht keinen Key;
+Admin-Routen verweigern Testern/Mitgliedern den Zugang (10/10).
+Wichtig: das bestehende Leserecht für **eigene** frühere Chats nach Beta-Ende
+ist kein Zugriff auf fremde Nachrichten und wurde bewusst beibehalten
+(K-22, Gründerentscheidung zur weiteren Zustellung noch offen).
+Nachweis: `preview/sprint12/e2e-results-final.json` und
+[Abschlussbericht](SPRINT-12-FINAL-REPORT.md).

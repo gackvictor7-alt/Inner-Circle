@@ -11,7 +11,9 @@
  *   PW_MODULES=/tmp/pw/node_modules BASE_URL=http://127.0.0.1:8787 \
  *     node tests/e2e/sprint12-browser.mjs
  *
- * Requirements: `.dev.vars` with ENABLE_DEV_OUTBOX=true and
+ * Requirements: a fresh, isolated LOCAL D1 containing no real users.
+ * Do not reset or run this suite against a shared database.
+ * `.dev.vars` with ENABLE_DEV_OUTBOX=true and
  * DEV_OUTBOX_RECIPIENTS=@innercircle.test (verification codes are read from the
  * local dev outbox), local D1 migrated + bootstrapped. The script only ever
  * touches the LOCAL database (`wrangler d1 execute --local`) and refuses to
@@ -38,7 +40,7 @@ const PW_MODULES = process.env.PW_MODULES ?? "/tmp/pw/node_modules";
 const BASE = process.env.BASE_URL ?? "http://127.0.0.1:8787";
 const REPO = fileURLToPath(new URL("../..", import.meta.url));
 const SHOTS = join(REPO, "preview", "sprint12");
-const RUN = String(Date.now()).slice(-6);
+const RUN = String(Date.now());
 const OUT = process.env.E2E_OUT ?? `/tmp/e2e-results-${RUN}.json`;
 const PASSWORD = "Testing!2026";
 
@@ -153,6 +155,7 @@ async function register(page, { first, last, email }) {
 }
 
 async function onboard(page, interests, goal) {
+  const before = (await page.context().cookies()).find((c) => c.name === "ic_session");
   if (!/\/onboarding/.test(page.url())) await page.goto(`${BASE}/onboarding/interests`);
   for (const label of interests) {
     await page
@@ -164,6 +167,12 @@ async function onboard(page, interests, goal) {
   await page.locator("button[aria-pressed]").filter({ hasText: goal }).last().click();
   await page.locator('form:has(input[name="startTrial"]) button[type="submit"]').click();
   await page.waitForURL((url) => url.pathname.startsWith("/app"), { timeout: 45000 });
+  const after = (await page.context().cookies()).find((c) => c.name === "ic_session");
+  check(Boolean(before?.value) && before.value === after?.value && after.httpOnly && after.secure,
+    "onboarding preserves the secure HTTP-only session cookie",
+    `before=${Boolean(before)}, after=${Boolean(after)}, unchanged=${before?.value === after?.value}, httpOnly=${after?.httpOnly}, secure=${after?.secure}`);
+  await page.reload();
+  check(new URL(page.url()).pathname.startsWith("/app"), "session survives a hard reload after onboarding");
 }
 
 async function login(page, email) {
@@ -204,7 +213,7 @@ async function inboxBadge(page) {
 
 async function createKey(admin, label) {
   await admin.goto(`${BASE}/admin/beta`);
-  await admin.fill('input[name="label"]', label);
+  await admin.fill('input[name="label"]', `${label} ${RUN}`);
   await admin.getByRole("button", { name: "Schlüssel erstellen" }).click();
   const key = admin.locator('[data-testid="beta-key"]');
   await key.waitFor({ state: "visible", timeout: 20000 });
@@ -214,8 +223,8 @@ async function createKey(admin, label) {
 const userId = (email) => sql(`select id from User where email = '${email}'`)[0]?.id;
 const handleOf = (email) => sql(`select handle from User where email = '${email}'`)[0]?.handle;
 
-/** GET every internal link on the given pages with the context's session – nothing may be dead. */
-async function crawlLinks(context, page, paths) {
+/** Navigate every internal link with the browser session; login redirects are failures. */
+async function crawlLinks(page, paths) {
   const hrefs = new Set();
   for (const path of paths) {
     await page.goto(`${BASE}${path}`);
@@ -231,8 +240,12 @@ async function crawlLinks(context, page, paths) {
   }
   const failures = [];
   for (const href of hrefs) {
-    const response = await context.request.get(`${BASE}${href}`, { maxRedirects: 5 });
-    if (response.status() >= 400) failures.push(`${href} → ${response.status()}`);
+    // Use the browser: APIRequestContext does not send Secure cookies over
+    // local HTTP, whereas Chromium treats loopback as a trustworthy origin.
+    const response = await page.goto(`${BASE}${href}`);
+    if (!response || response.status() >= 400 || new URL(page.url()).pathname === "/login") {
+      failures.push(`${href} → ${response?.status()} ${new URL(page.url()).pathname}`);
+    }
   }
   return { total: hrefs.size, failures };
 }
@@ -285,19 +298,19 @@ try {
       ),
     0,
   );
-  const hashRows = sql("select count(*) as n from BetaInvite where length(codeHash) = 64 and codeHint is not null")[0].n;
+  const hashRows = sql(`select count(*) as n from BetaInvite where length(codeHash) = 64 and codeHint is not null and label like '% ${RUN}'`)[0].n;
   check(plainHits === 0 && Number(hashRows) === 5, "database stores only a 64-char hash + 4-char hint, never the key", `plain hits: ${plainHits}, hashed rows: ${hashRows}`);
 
   // Deactivate one unused key through the admin UI; move one redeem-by date into the past.
   await admin.goto(`${BASE}/admin/beta`);
-  await admin.locator("li").filter({ hasText: "E2E Reserve" }).getByRole("button", { name: "Deaktivieren" }).click();
+  await admin.locator("li").filter({ hasText: `E2E Reserve (wird deaktiviert) ${RUN}` }).getByRole("button", { name: "Deaktivieren" }).click();
   let reserveStatus = "";
   for (let attempt = 0; attempt < 20 && reserveStatus !== "disabled"; attempt++) {
     await sleep(500);
-    reserveStatus = sql("select status from BetaInvite where label like 'E2E Reserve%'")[0]?.status;
+    reserveStatus = sql(`select status from BetaInvite where label = 'E2E Reserve (wird deaktiviert) ${RUN}'`)[0]?.status;
   }
   check(reserveStatus === "disabled", "admin deactivates an unused key in the UI", `status: ${reserveStatus}`);
-  sql(`update BetaInvite set expiresAt = ${Date.now() - 60_000} where label like 'E2E Einlösefrist%'`);
+  sql(`update BetaInvite set expiresAt = ${Date.now() - 60_000} where label = 'E2E Einlösefrist (abgelaufen) ${RUN}'`);
 
   /* ---------------------------------------------- testers: register, verify, redeem, profile */
   const annaCtx = await newContext();
@@ -312,6 +325,10 @@ try {
   await anna.fill('input[name="key"]', keys.anna.toLowerCase().replaceAll("-", " "));
   check(!(await keyAlert(anna).isVisible()), "the old error disappears as soon as the key is edited");
   await shot(anna, "03-beta-key-redemption");
+  await anna.setViewportSize({ width: 390, height: 844 });
+  check(await noHorizontalScroll(anna), "beta key form at 390 px: no horizontal scroll");
+  await shot(anna, "03d-beta-key-mobile");
+  await anna.setViewportSize({ width: 1440, height: 900 });
   await anna.locator('form:has(input[name="key"]) button[type="submit"]').click();
   await anna.waitForURL(/\/app\/profile\/edit\?welcome=beta/, { timeout: 45000 });
   check(
@@ -485,6 +502,9 @@ try {
     "real member profile shows the tester's own data",
   );
   await shot(anna, "04-real-member-profile");
+  await annaMobile.goto(`${BASE}/app/people/${benHandle}`);
+  check(await noHorizontalScroll(annaMobile), "member profile at 390 px: no horizontal scroll");
+  await shot(annaMobile, "04c-real-member-profile-mobile");
   const annaDarkCtx = await newContext({ locale: "en", theme: "dark", storageState: await annaCtx.storageState() });
   const annaDark = await annaDarkCtx.newPage();
   await annaDark.goto(`${BASE}/app/people/${benHandle}`);
@@ -510,6 +530,10 @@ try {
   await ben.goto(`${BASE}/app/inbox?tab=requests`);
   check(await isVisible(ben, requestMessage.slice(0, 40), 15000), "incoming request shows sender + personal message");
   await shot(ben, "05-incoming-request");
+  await ben.setViewportSize({ width: 390, height: 844 });
+  check(await noHorizontalScroll(ben), "incoming request at 390 px: no horizontal scroll");
+  await shot(ben, "05b-incoming-request-mobile");
+  await ben.setViewportSize({ width: 1440, height: 900 });
   await ben.getByRole("button", { name: "Annehmen" }).filter({ visible: true }).first().click();
   await ben.waitForURL(/tab=messages&c=/, { timeout: 30000 });
   const conversationId = new URL(ben.url()).searchParams.get("c");
@@ -566,6 +590,23 @@ try {
     !(await mainText(carla)).includes("Donnerstag 10 Uhr") && !carla.url().includes(conversationId),
     "a third account cannot open the chat (redirected, nothing revealed)",
   );
+
+  await dora.goto(`${BASE}/app/inbox?tab=messages&c=${conversationId}`);
+  check(!(await mainText(dora)).includes("Donnerstag 10 Uhr") && !dora.url().includes(conversationId),
+    "free demo account cannot open another pair's protected chat");
+  const privatePayloads = await dora.evaluate(async ([handle, chat]) => {
+    const paths = ["/app/discover", "/app/network", `/app/people/${handle}`,
+      `/app/inbox?tab=messages&c=${chat}`];
+    return Promise.all(paths.map(async (path) => {
+      const response = await fetch(path, { headers: { RSC: "1" } });
+      return { path, status: response.status, body: await response.text() };
+    }));
+  }, [benHandle, conversationId]);
+  check(privatePayloads.every(({ status, body }) => status === 200 &&
+    !body.includes("Hartmann Sales Consulting") && !body.includes("Unterstützt junge Softwarefirmen") &&
+    !body.includes("Donnerstag 10 Uhr")),
+    "free demo account: direct RSC fetches reveal no private profile or chat content",
+    `${privatePayloads.length} protected routes checked`);
 
   await annaMobile.goto(`${BASE}/app/inbox?tab=messages&c=${conversationId}`);
   await visibleText(annaMobile, "Donnerstag 10 Uhr passt").waitFor({ timeout: 15000 });
@@ -718,13 +759,13 @@ try {
     "/app/jobs",
     "/app/investments",
     "/app/marketplace",
-    "/app/academy",
+    "/app/learn",
   ];
-  for (const [who, context, page] of [
-    ["tester", annaCtx, anna],
-    ["demo user", doraCtx, dora],
+  for (const [who, page] of [
+    ["tester", anna],
+    ["demo user", dora],
   ]) {
-    const { total, failures } = await crawlLinks(context, page, appPages);
+    const { total, failures } = await crawlLinks(page, appPages);
     check(failures.length === 0, `no dead internal links for the ${who}`, failures.join("; ") || `${total} links OK`);
   }
 } catch (error) {

@@ -195,10 +195,10 @@ P2 mittelfristig · P3 Aufräumen.
 
 ### K-15 · Lint nicht fehlerfrei (vorbestehend)
 
-- `npm run lint` meldet aktuell **13 Probleme**: 5 Fehler („setState in effect"
+- `npm run lint` meldet aktuell **12 Probleme**: 5 Fehler („setState in effect"
   in `SiteHeader`, `StatsSection` und `lib/auth/presence.ts`; „impure function
   during render" (`Date.now()`) in `app/events/page.tsx`; `module`-Zuweisung in
-  `scripts/seed.ts`) und 8 Warnungen (ungenutzte Importe/Variablen).
+  `scripts/seed.ts`) und 7 Warnungen (ungenutzte Importe/Variablen).
 - **Sprint 12:** vor dem Sprint gemessen **14 (5 / 9)** (die Doku zählte
   zuletzt 13), nach dem Sprint **12 (5 / 7)** – zwei ungenutzte Variablen in
   `actions/network.ts` und `api/webhooks/stripe/route.ts` entfernt, **kein**
@@ -253,6 +253,15 @@ P2 mittelfristig · P3 Aufräumen.
   `mm/dd/yyyy`).
 
 ### K-22 · Private Beta & Networking: bekannte Grenzen (Sprint 12)
+
+**Abschlussprüfung 2026-09-24:** 82/82 Worker-Browserchecks. Session-Verlust
+nach Onboarding nicht reproduziert (6 getrennte Konten mit Cookie-/Reload-
+Nachweis); korrigiert wurde der Browser-Testaufbau, nicht Auth-Code.
+Siehe `08-testing.md` und `SPRINT-12-FINAL-REPORT.md`. Lint-Baseline bleibt
+unverändert rot (K-15). Lokaler Wrangler-SELECT brach in einem Zwischenlauf
+ab; vollständiger Wiederholungslauf grün. Read-only-Static-Cache-/Broken-Pipe-
+Meldungen im lokalen Preview bleiben beobachtet, nicht als Anwendungsfix gelöst.
+
 
 - **Produktions-D1 noch ohne Migration `0002`:** nur lokal angewendet. Vor bzw.
   mit dem Deploy `npm run cf:release` (enthält

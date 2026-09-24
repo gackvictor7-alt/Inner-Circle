@@ -54,7 +54,9 @@ finalisiert, Details `10-design-freeze.md` 1.14; davor: Incident-Fix post-Sprint
   Bildern, Profile humanisiert, Demo-Beiträge, Inbox-Empty-States, kleine
   Visualisierungen, AI-Look-Reduktion; Sprint 5 – Mobile-UX der Startseite,
   Login-UX, Demo-Detail-Dialoge, Event-Bilder)
-- **Technische Basis:** Branch `arena/01a0d435-inner-circle`, Basis `main` @
+- **Technische Basis:** Abschlussbranch `arena/01a0d501-inner-circle`, auf dem
+  gesicherten Sprint-12-Commit `6eebc3d` des Branches
+  `arena/01a0d435-inner-circle`; ursprüngliche Basis `main` @
   `8a1b5ea` (Stand nach PR #25/Sprint 11) – Sprint 12 ist **noch nicht
   gemergt** (Review durch den Gründer ausstehend). Vorheriger dokumentierter
   Stand: Branch `arena/01a0d03a-inner-circle` auf `87a244a` (Sprint 11)
@@ -66,6 +68,33 @@ finalisiert, Details `10-design-freeze.md` 1.14; davor: Incident-Fix post-Sprint
   Dokumentation beschreibt, was dort tatsächlich steht – nicht, was geplant war.
 - **Design-Status:** siehe [`10-design-freeze.md`](10-design-freeze.md) –
   **APPROVED / DO NOT REDESIGN WITHOUT EXPLICIT FOUNDER REQUEST**
+
+## Sprint 12 – Abschlussprüfung (2026-09-24, kein neuer Sprint)
+
+**WORKING, Review ausstehend; nicht gemergt.** Fortsetzung auf
+`arena/01a0d501-inner-circle`, nachgewiesener Vorfahr
+`6eebc3d5b8ec9619959ff5515ccf3f0d36171b68` (gesicherter Sprint-12-Stand).
+Kein Neustart von main; keine Änderung an Anwendung, Schema, Homepage oder Design.
+
+- Worker-Browser-E2E **82/82** mit sechs isolierten Testkonten; kompletter
+  Zwei-Konten-Loop inkl. Registrierung, Verifizierung, Onboarding, Beta-Key,
+  Discover/Profil, Anfrage mit Nachricht, Annahme und Nachrichtenaustausch.
+- Session nach Onboarding bleibt erhalten (6/6 Konten, Secure/HttpOnly-Cookie
+  unverändert, Hard-Reload). Kein reproduzierter Anwendungsfehler.
+  **Testfehler korrigiert:** authentifizierter Browser-Linkcheck statt
+  cookie-losem APIRequestContext über lokales HTTP; Login-Redirects gelten
+  nicht länger als erfolgreicher Seitencheck. Details im Abschlussbericht.
+- Tests **35 Dateien / 246 grün**, Typecheck, i18n-Keycheck, Cloudflare-Build,
+  Wrangler-Dry-Run und frische lokale D1-Migration grün. **Lint nicht grün:**
+  unverändert 5 Fehler / 7 Warnungen (Ausgabe identisch zur Ausgangsbasis, K-15).
+- Echte Screenshots aktualisiert; Mobile-Beta-Key, -Profil und -Anfrage ergänzt.
+- **Grenzen:** externer E-Mail-Versand/Stripe/Produktionsmigration/Edge-Last nicht
+  geprüft; eigene bestehende Chats bleiben nach Beta-Ende lesbar (K-22),
+  fremde Chats sind gesperrt. Keine Produktionsdaten verändert.
+
+**Abschlussbericht:** [SPRINT-12-FINAL-REPORT.md](SPRINT-12-FINAL-REPORT.md) ·
+**Screenshots:** [Galerie](../preview/sprint12/README.md) ·
+**Einzelergebnisse:** [82 Prüfungen](../preview/sprint12/e2e-results-final.json).
 
 ---
 

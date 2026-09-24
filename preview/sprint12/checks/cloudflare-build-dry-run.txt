@@ -1,0 +1,136 @@
+
+> inner-circle@0.1.0 cf:dry-run
+> opennextjs-cloudflare build && wrangler deploy --dry-run
+
+
+┌─────────────────────────────┐
+│ OpenNext — Cloudflare build │
+└─────────────────────────────┘
+
+App directory: /home/user/Inner-Circle
+Next.js version : 16.3.5
+@opennextjs/cloudflare version: 1.20.6
+@opennextjs/aws version: 4.1.4
+workerd compatibility_date: 2026-09-01
+
+┌─────────────────────────────────┐
+│ OpenNext — Building Next.js app │
+└─────────────────────────────────┘
+
+
+> inner-circle@0.1.0 build
+> next build
+
+▲ Next.js 16.3.5 (Turbopack)
+✓ Running next.config.ts took 125ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 1183ms
+  Running TypeScript ...
+  Finished TypeScript in 5.3s ...
+  Collecting page data using 1 worker ...
+  Generating static pages using 1 worker (0/22) ...
+  Generating static pages using 1 worker (5/22) 
+  Generating static pages using 1 worker (10/22) 
+  Generating static pages using 1 worker (16/22) 
+✓ Generating static pages using 1 worker (22/22) in 687ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ƒ /admin
+├ ƒ /admin/applications
+├ ƒ /admin/beta
+├ ƒ /admin/investments
+├ ƒ /admin/users
+├ ƒ /api/auth/logout
+├ ƒ /api/billing/checkout
+├ ƒ /api/webhooks/stripe
+├ ƒ /app
+├ ƒ /app/beta
+├ ƒ /app/billing
+├ ƒ /app/card
+├ ƒ /app/connections
+├ ƒ /app/create/post
+├ ƒ /app/discover
+├ ƒ /app/events
+├ ƒ /app/events/[slug]
+├ ƒ /app/inbox
+├ ƒ /app/investments
+├ ƒ /app/investments/[id]
+├ ƒ /app/investments/submit
+├ ƒ /app/jobs
+├ ƒ /app/learn
+├ ƒ /app/learn/[id]
+├ ƒ /app/marketplace
+├ ƒ /app/marketplace/[id]
+├ ƒ /app/marketplace/new
+├ ƒ /app/membership-application
+├ ƒ /app/messages
+├ ƒ /app/network
+├ ƒ /app/notifications
+├ ƒ /app/opportunities
+├ ƒ /app/opportunities/[id]
+├ ƒ /app/opportunities/new
+├ ƒ /app/people/[handle]
+├ ƒ /app/people/demo/[key]
+├ ƒ /app/profile
+├ ƒ /app/profile/edit
+├ ƒ /app/settings
+├ ƒ /app/trust
+├ ○ /business-deals
+├ ƒ /checkout/cancel
+├ ƒ /checkout/success
+├ ○ /design
+├ ƒ /dev/outbox
+├ ○ /events
+├ ƒ /forgot-password
+├ ○ /how-it-works
+├ ○ /imprint
+├ ○ /investments
+├ ƒ /login
+├ ○ /marketplace
+├ ƒ /member/[publicId]
+├ ○ /membership
+├ ○ /network
+├ ƒ /onboarding/interests
+├ ○ /portfolio
+├ ○ /privacy
+├ ○ /register
+├ ƒ /reset-password
+├ ○ /terms
+└ ƒ /verify
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+
+┌──────────────────────────────┐
+│ OpenNext — Generating bundle │
+└──────────────────────────────┘
+
+Bundling middleware function...
+Bundling static assets...
+Bundling cache assets...
+Building server function: default...
+Applying code patches: 3.457s
+# copyPackageTemplateFiles
+[35m⚙️ Bundling the OpenNext server...
+[0m
+[35mWorker saved in `.open-next/worker.js` 🚀
+[0m
+OpenNext build complete.
+
+ ⛅️ wrangler 4.135.0 (update available 4.139.0)
+───────────────────────────────────────────────
+✨ Read 105 files from the assets directory /home/user/Inner-Circle/.open-next/assets
+Total Upload: 9287.12 KiB / gzip: 1859.11 KiB
+Your Worker has access to the following bindings:
+Binding                               Resource                  
+env.DB (inner-circle-db)              D1 Database               
+env.ASSETS                            Assets                    
+env.NEXTJS_ENV ("production")         Environment Variable      
+
+--dry-run: exiting now.

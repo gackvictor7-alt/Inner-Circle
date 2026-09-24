@@ -1,0 +1,93 @@
+
+> inner-circle@0.1.0 lint
+> eslint
+
+
+/home/user/Inner-Circle/scripts/seed.ts
+  1006:12  error  Do not assign to the variable `module`. See: https://nextjs.org/docs/messages/no-assign-module-variable  @next/next/no-assign-module-variable
+
+/home/user/Inner-Circle/src/app/(app)/app/events/page.tsx
+  29:15  error  Error: Cannot call impure function during render
+
+`Date.now` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+/home/user/Inner-Circle/src/app/(app)/app/events/page.tsx:29:15
+  27 |   ]);
+  28 |
+> 29 |   const now = Date.now();
+     |               ^^^^^^^^^^ Cannot call impure function
+  30 |   const upcoming = allEvents.filter((event) => (event.startsAt?.getTime() ?? 0) >= now);
+  31 |   const concepts = upcoming.filter((event) => event.state === "concept");
+  32 |   const confirmed = upcoming.filter((event) => event.state === "confirmed");  react-hooks/purity
+
+/home/user/Inner-Circle/src/app/(app)/app/marketplace/page.tsx
+  14:10  warning  'LockedArea' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/user/Inner-Circle/src/app/actions/notifications.ts
+  37:3  warning  '_prev' is defined but never used      @typescript-eslint/no-unused-vars
+  38:3  warning  '_formData' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/user/Inner-Circle/src/app/admin/page.tsx
+  4:63  warning  'trials' is defined but never used  @typescript-eslint/no-unused-vars
+  6:10  warning  'Badge' is defined but never used   @typescript-eslint/no-unused-vars
+
+/home/user/Inner-Circle/src/components/app/DiscoverDeck.tsx
+  144:10  warning  'followState' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/user/Inner-Circle/src/components/site/SiteHeader.tsx
+  71:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/home/user/Inner-Circle/src/components/site/SiteHeader.tsx:71:5
+  69 |   // Close the menu on navigation.
+  70 |   useEffect(() => {
+> 71 |     setMenuOpen(false);
+     |     ^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  72 |   }, [pathname]);
+  73 |
+  74 |   useEffect(() => {  react-hooks/set-state-in-effect
+
+/home/user/Inner-Circle/src/components/site/StatsSection.tsx
+  36:7   error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/home/user/Inner-Circle/src/components/site/StatsSection.tsx:36:7
+  34 |     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  35 |     if (reduced) {
+> 36 |       setValue(target);
+     |       ^^^^^^^^ Avoid calling setState() directly within an effect
+  37 |       return;
+  38 |     }
+  39 |     const element = ref.current;  react-hooks/set-state-in-effect
+  67:22  warning  'tf' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     @typescript-eslint/no-unused-vars
+
+/home/user/Inner-Circle/src/lib/auth/presence.ts
+  20:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/home/user/Inner-Circle/src/lib/auth/presence.ts:20:5
+  18 |
+  19 |   useEffect(() => {
+> 20 |     setSignedIn(readPresenceCookie());
+     |     ^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  21 |   }, []);
+  22 |
+  23 |   return signedIn;  react-hooks/set-state-in-effect
+
+✖ 12 problems (5 errors, 7 warnings)
+
