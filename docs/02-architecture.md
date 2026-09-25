@@ -187,7 +187,10 @@ Siehe [`11-known-issues.md`](11-known-issues.md).
 - **E-Mail-/SMS-Versand** ist die einzige fehlende Infrastruktur, die den
   Kern-Flow (Verifizierung) blockiert.
 - **Stripe** ist implementiert, aber ungetestet gegen einen echten Account.
-- **Storage** (Avatare, Kursvideos, Dokumente) ist nicht angebunden.
+- **Storage:** Sprint 13 ist der **Profilfoto-Upload** über das R2-Binding
+  `MEDIA` angebunden (`src/lib/storage.ts`, `src/lib/media.ts`, Auslieferung
+  über `/api/media/<key>` oder optional `R2_PUBLIC_BASE_URL`). Übrige
+  Medientypen (Cover, Kursvideos, Dokumente) sind weiter nicht angebunden.
 - **Kein ISR/Caching:** alle Seiten sind dynamisch; der OpenNext-Cache nutzt
   ausschließlich statische Assets (kein R2, keine Queues).
 - **Keine Transaktionen:** D1 bietet kein Transaktions-API; mehrstufige

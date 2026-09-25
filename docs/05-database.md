@@ -46,7 +46,7 @@
 
 | Tabelle | Zweck | Status |
 | ------- | ----- | ------ |
-| `Profile` | `userId` (unique), `headline`, `bio`, `location`, `company`, `jobTitle`, Links (`websiteUrl`, `linkedinUrl` [DEPRECATED in UI], `xUrl`, `instagramUrl`), `avatarUrl`, `coverUrl`, `rolesJson`, `skillsJson`, `lookingForJson`, **`offeringJson` (Sprint 3, „Ich biete")**, `profileVisibility`, `onboardingCompletedAt` | **aktiv** (Avatar/Cover nur als URL; `linkedinUrl` in sichtbarer UI entfernt und deprecated, Spalte für Migrationssicherheit in DB erhalten) |
+| `Profile` | `userId` (unique), `headline`, `bio`, `location`, `company`, `jobTitle`, Links (`websiteUrl`, `linkedinUrl` [DEPRECATED in UI], `xUrl`, `instagramUrl`), `avatarUrl` (Sprint 13: hochgeladene Fotos liegen im R2 `MEDIA`-Bucket, die Spalte speichert nur die URL `/api/media/avatars/<userId>/<zufall>.<ext>` bzw. eine externe Bild-URL – **nie** Base64), `rolesJson`, `skillsJson`, `lookingForJson`, **`offeringJson` (Sprint 3, „Ich biete")**, `profileVisibility`, `onboardingCompletedAt` | **aktiv** (Avatar/Cover nur als URL; `linkedinUrl` in sichtbarer UI entfernt und deprecated, Spalte für Migrationssicherheit in DB erhalten) |
 | `Interest` / `Goal` | Taxonomie mit DE/EN-Labels und `position` | **aktiv** (Bootstrap per Seed/D1-Bootstrap) |
 | `UserInterest` / `UserGoal` | n:m-Zuordnungen, eindeutig je Paar | **aktiv** |
 | `PrivacySettings` | `profileVisibility`, `performanceVisibility`, `contactVisibility`, `showLocation`, `discoverable`, `allowConnectionRequests`, **`metricsVisibilityJson` (Sprint 3)** | teilweise erzwungen (K-06); `metricsVisibilityJson` in `/app/profile?tab=performance` erzwungen |

@@ -1,0 +1,203 @@
+{
+  "run": "1790341737664",
+  "base": "http://127.0.0.1:8787",
+  "total": 39,
+  "failed": 0,
+  "results": [
+    {
+      "ok": true,
+      "name": "Account A registered, verified and onboarded",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "name": "exactly ONE 'Profil speichern' submit button on the page",
+      "detail": "count=1"
+    },
+    {
+      "ok": true,
+      "name": "no separate interests save button anymore",
+      "detail": "count=0"
+    },
+    {
+      "ok": true,
+      "name": "the whole editor is a single form",
+      "detail": "forms=1"
+    },
+    {
+      "ok": true,
+      "name": "oversized photo is rejected client-side with a size error",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "name": "selected photo shows an immediate live preview",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "name": "unified save shows ONE clear success message (banner)",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "name": "reload: headline persisted",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "name": "reload: company persisted",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "name": "reload: location persisted",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "name": "reload: 'Ich suche' persisted",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "name": "reload: 'Ich biete' persisted",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "name": "reload: bio persisted",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "name": "reload: interest \"Unternehmertum\" still selected",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "name": "reload: interest \"Startups\" still selected",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "name": "reload: interest \"Investieren\" still selected",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "name": "reload: interest \"Marketing\" still selected",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "name": "reload: interest \"Vertrieb\" still selected",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "name": "reload: goal 'Kunden finden' still selected",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "name": "reload: uploaded photo is shown from the media URL",
+      "detail": "src=/api/media/avatars/usr_mugz8uz5f7b42de343/mugz91gu-12392a892274ee8a4574b421.png"
+    },
+    {
+      "ok": true,
+      "name": "media URL returns HTTP 200 with content-type image/png",
+      "detail": "status=200 type=image/png"
+    },
+    {
+      "ok": true,
+      "name": "D1 Profile.avatarUrl equals the shown media URL",
+      "detail": "db=/api/media/avatars/usr_mugz8uz5f7b42de343/mugz91gu-12392a892274ee8a4574b421.png"
+    },
+    {
+      "ok": true,
+      "name": "photo is stored as a URL, not as Base64 data",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "name": "photo appears in the app header avatar",
+      "detail": "visible=2"
+    },
+    {
+      "ok": true,
+      "name": "photo appears on the own profile page (/app/people/<handle>)",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "name": "WebP is accepted with live preview",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "name": "WebP upload persisted after reload",
+      "detail": "src=/api/media/avatars/usr_mugz8uz5f7b42de343/mugz977m-b578b3f3625f306d2a50686f.webp"
+    },
+    {
+      "ok": true,
+      "name": "WebP served with correct content type",
+      "detail": "status=200"
+    },
+    {
+      "ok": true,
+      "name": "replaced PNG upload was cleaned up (previous object deleted)",
+      "detail": "status=404"
+    },
+    {
+      "ok": true,
+      "name": "photo removal clears the avatar (initials shown again)",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "name": "D1 avatarUrl is cleared after removal",
+      "detail": "db=null"
+    },
+    {
+      "ok": true,
+      "name": "removed photo object deleted from storage",
+      "detail": "status=404"
+    },
+    {
+      "ok": true,
+      "name": "photo-by-URL alternative still saves",
+      "detail": "db=https://images.example/fiona.jpg"
+    },
+    {
+      "ok": true,
+      "name": "beta key created for the Discover check",
+      "detail": "key=ICB-V6…"
+    },
+    {
+      "ok": true,
+      "name": "Fiona's photo active again",
+      "detail": "db=/api/media/avatars/usr_mugz8uz5f7b42de343/mugz9iz7-b7fe2e4798ea9f607e96da73.png"
+    },
+    {
+      "ok": true,
+      "name": "Account B redeemed the beta key",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "name": "photo appears on a Discover deck card (img with media URL)",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "name": "browser warns before leaving with unsaved changes (beforeunload)",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "name": "no warning without unsaved changes",
+      "detail": ""
+    }
+  ]
+}

@@ -1,12 +1,12 @@
 import { requireUser } from "@/lib/access/server";
-import { interestTaxonomy, updateProfileAction } from "@/app/actions/profile";
-import { ActionForm, type FormField } from "@/components/app/forms";
-import { InterestGoalEditor } from "@/components/app/InterestGoalEditor";
+import { interestTaxonomy } from "@/app/actions/profile";
+import { ProfileEditForm, type ProfileEditFieldValue } from "@/components/app/ProfileEditForm";
 import { LocalizedPageHeader, LocalizedEmptyState, Tr } from "@/components/app/localized";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { CheckIcon } from "@/components/ui/icons";
 import { formatDate } from "@/lib/datetime";
+import { isMediaStorageConfigured } from "@/lib/storage";
 
 export const dynamic = "force-dynamic";
 
@@ -21,14 +21,15 @@ function parseList(json: string | null | undefined): string[] {
 }
 
 /**
- * Profile editing & guided onboarding (Sprint 12).
+ * Profile editing & guided onboarding (Sprint 13).
  *
- * One form for everyone (no duplicate onboarding form): photo, name, role,
- * company/project, location, industry & interests, goals, "Ich suche",
- * "Ich biete" and a short bio – the existing fields and taxonomies. Every
- * field except the name is optional and can be completed later; the progress
- * indicator shows what is still missing. After a beta key was redeemed the
- * page opens with a welcome note and continues into Discover on save.
+ * ONE form for everyone (no duplicate onboarding form, ONE save button):
+ * photo (direct upload or URL), name, role, company/project, location,
+ * industry & interests, goals, "Ich suche", "Ich biete" and a short bio – the
+ * existing fields and taxonomies. Every field except the name is optional and
+ * can be completed later; the progress indicator shows what is still missing.
+ * After a beta key was redeemed the page opens with a welcome note and
+ * continues into Discover on save.
  */
 export default async function ProfileEditPage({
   searchParams,
@@ -61,22 +62,21 @@ export default async function ProfileEditPage({
   const percent = Math.round((steps.filter((step) => step.done).length / steps.length) * 100);
   const welcome = params.welcome === "beta" && access.beta?.active;
 
-  const fields: FormField[] = [
-    { name: "firstName", labelKey: "app.auth.firstName", required: true, defaultValue: user.firstName, autoComplete: "given-name" },
-    { name: "lastName", labelKey: "app.auth.lastName", required: true, defaultValue: user.lastName, autoComplete: "family-name" },
-    { name: "headline", labelKey: "app.profile.headline", placeholderKey: "app.profile.headlinePlaceholder", defaultValue: profile?.headline ?? "", maxLength: 140 },
-    { name: "jobTitle", labelKey: "app.profile.jobTitle", defaultValue: profile?.jobTitle ?? "", maxLength: 120 },
-    { name: "company", labelKey: "app.profile.company", defaultValue: profile?.company ?? "", maxLength: 120 },
-    { name: "location", labelKey: "app.profile.location", defaultValue: profile?.location ?? "", maxLength: 120, autoComplete: "address-level2" },
-    { name: "lookingFor", labelKey: "app.profile.lookingFor", helpKey: "app.profile.rolesHint", defaultValue: lookingFor.join(", ") },
-    { name: "offering", labelKey: "app.profile.offering", helpKey: "app.profile.offeringHint", defaultValue: offering.join(", ") },
-    { name: "bio", labelKey: "app.profile.bio", placeholderKey: "app.profile.bioPlaceholder", kind: "textarea", rows: 5, defaultValue: profile?.bio ?? "", maxLength: 1200 },
-    { name: "avatarUrl", labelKey: "app.profile.avatar", helpKey: "app.beta.photoHint", kind: "url", defaultValue: profile?.avatarUrl ?? "", maxLength: 400 },
-    { name: "roles", labelKey: "app.profile.roles", helpKey: "app.profile.rolesHint", defaultValue: roles.join(", ") },
-    { name: "skills", labelKey: "app.profile.skills", helpKey: "app.profile.skillsHint", defaultValue: parseList(profile?.skillsJson).join(", ") },
-    { name: "website", labelKey: "app.profile.website", kind: "url", defaultValue: profile?.websiteUrl ?? "" },
-    { name: "xHandle", labelKey: "app.profile.x", defaultValue: profile?.xUrl ?? "" },
-    { name: "instagram", labelKey: "app.profile.instagram", defaultValue: profile?.instagramUrl ?? "" },
+  const fields: ProfileEditFieldValue[] = [
+    { name: "firstName", labelKey: "app.auth.firstName", required: true, value: user.firstName, autoComplete: "given-name" },
+    { name: "lastName", labelKey: "app.auth.lastName", required: true, value: user.lastName, autoComplete: "family-name" },
+    { name: "headline", labelKey: "app.profile.headline", placeholderKey: "app.profile.headlinePlaceholder", value: profile?.headline ?? "", maxLength: 140 },
+    { name: "jobTitle", labelKey: "app.profile.jobTitle", value: profile?.jobTitle ?? "", maxLength: 120 },
+    { name: "company", labelKey: "app.profile.company", value: profile?.company ?? "", maxLength: 120 },
+    { name: "location", labelKey: "app.profile.location", value: profile?.location ?? "", maxLength: 120, autoComplete: "address-level2" },
+    { name: "lookingFor", labelKey: "app.profile.lookingFor", helpKey: "app.profile.rolesHint", value: lookingFor.join(", ") },
+    { name: "offering", labelKey: "app.profile.offering", helpKey: "app.profile.offeringHint", value: offering.join(", ") },
+    { name: "bio", labelKey: "app.profile.bio", placeholderKey: "app.profile.bioPlaceholder", kind: "textarea", rows: 5, value: profile?.bio ?? "", maxLength: 1200 },
+    { name: "roles", labelKey: "app.profile.roles", helpKey: "app.profile.rolesHint", value: roles.join(", ") },
+    { name: "skills", labelKey: "app.profile.skills", helpKey: "app.profile.skillsHint", value: parseList(profile?.skillsJson).join(", ") },
+    { name: "website", labelKey: "app.profile.website", kind: "url", value: profile?.websiteUrl ?? "" },
+    { name: "xHandle", labelKey: "app.profile.x", value: profile?.xUrl ?? "" },
+    { name: "instagram", labelKey: "app.profile.instagram", value: profile?.instagramUrl ?? "" },
   ];
 
   return (
@@ -105,9 +105,9 @@ export default async function ProfileEditPage({
         </Card>
       )}
 
-      {params.saved === "interests" && (
-        <p role="status" className="rounded-xl bg-forest-500/10 px-4 py-3 text-sm text-forest-700 dark:text-forest-200">
-          <Tr k="app.profile.interestsSaved" />
+      {params.saved && (
+        <p role="status" className="rounded-xl bg-forest-500/10 px-4 py-3 text-sm font-medium text-forest-700 dark:text-forest-200">
+          <Tr k="app.profile.savedAll" />
         </p>
       )}
 
@@ -148,17 +148,12 @@ export default async function ProfileEditPage({
         </p>
       </Card>
 
-      <ActionForm
-        action={updateProfileAction}
+      {/* ONE form for the whole page: profile fields + photo + interests &
+          goals. The single submit button persists every change together. */}
+      <ProfileEditForm
         fields={fields}
-        columns={2}
-        submitKey={welcome ? "app.beta.saveAndDiscover" : "app.profile.save"}
-        successKey="app.profile.saved"
-        hidden={welcome ? { next: "/app/discover" } : undefined}
-      />
-
-      {/* Industry & interests + goals – same taxonomy as onboarding (spec §23) */}
-      <InterestGoalEditor
+        nameForAvatar={`${user.firstName} ${user.lastName}`}
+        avatarUrl={profile?.avatarUrl ?? null}
         interests={taxonomy.interests.map((row) => ({
           id: row.id,
           slug: row.slug,
@@ -174,6 +169,9 @@ export default async function ProfileEditPage({
         selectedGoals={user.goals
           .map((goal) => taxonomy.goals.find((row) => row.slug === goal.slug)?.id)
           .filter((id): id is string => Boolean(id))}
+        submitKey={welcome ? "app.beta.saveAndDiscover" : "app.profile.save"}
+        hidden={welcome ? { next: "/app/discover" } : undefined}
+        storageConfigured={isMediaStorageConfigured()}
       />
 
       <Card className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">

@@ -84,18 +84,23 @@ D1-Binding (kein Secret, in `wrangler.jsonc`): Binding-Name **`DB`**,
 | `APPLE_KEY_ID` | Runtime | nein | optional | Apple OAuth | s. o. |
 | `APPLE_PRIVATE_KEY` | Runtime | **ja** | optional | Apple OAuth | s. o. |
 
-## 7. Storage (nicht angebunden)
+## 7. Bildspeicher (R2, Sprint 13)
+
+Der Foto-Upload nutzt das **R2-Binding `MEDIA`** (Bucket `inner-circle-media`).
+Das Binding wird wie die D1-Datenbank in `wrangler.jsonc` deklariert –
+Wranglers Ressourcen-Provisioning legt den Bucket beim ersten
+`wrangler deploy` automatisch an (kein Secret nötig). Die Anwendung
+funktioniert auch ohne Binding weiter: dann ist der Upload deaktiviert
+(ehrliche Fehlermeldung) und das Foto-URL-Feld bleibt nutzbar.
 
 | Variable | Build/Runtime | Secret | erforderlich | Zweck |
 | -------- | ------------- | ------ | ------------ | ----- |
-| `S3_BUCKET` | Runtime | nein | optional | Bucket für Avatare/Cover/Kursvideos |
-| `S3_REGION` | Runtime | nein | optional | Region |
-| `S3_ACCESS_KEY_ID` | Runtime | **ja** | optional | Zugang |
-| `S3_SECRET_ACCESS_KEY` | Runtime | **ja** | optional | Zugang |
-| `S3_PUBLIC_BASE_URL` | Runtime | nein | optional | öffentliche Auslieferungs-URL |
+| `R2_PUBLIC_BASE_URL` | Runtime | nein | optional | Öffentliche Bucket-Domain (z. B. `https://media.example.com` oder r2.dev-URL). Ohne diesen Wert liefert die App die Bilder selbst über `/api/media/<key>` aus – Upload **und** Auslieferung funktionieren also auch ohne diese Variable. |
 
-`storage.configured` zeigt derzeit nur an, ob Werte vorhanden sind – **keine
-Upload-Funktion**.
+Die früheren S3-Felder (`S3_BUCKET`, `S3_REGION`, `S3_ACCESS_KEY_ID`,
+`S3_SECRET_ACCESS_KEY`, `S3_PUBLIC_BASE_URL`) sind für den Foto-Upload
+obsolet; `storage.configured` (Einstellungen → Integrationen) zeigt sie
+weiterhin als unverändert optional an.
 
 ## 8. Entwicklungs-Schalter (in Produktion restriktiv)
 

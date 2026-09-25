@@ -66,7 +66,7 @@ export const appBetaDe = {
     visibilityText:
       "Du entscheidest in den Einstellungen, ob du in der Mitgliedersuche erscheinst, wer dein vollständiges Profil sieht, ob dein Standort angezeigt wird und wer deine Kontaktlinks sieht. Private Kontaktdaten wie E-Mail oder Telefonnummer werden nie angezeigt.",
     visibilityCta: "Privatsphäre einstellen",
-    photoHint: "Link zu einem Foto (https://…). Ein direkter Upload folgt später.",
+    photoHint: "Foto direkt hochladen (JPG, PNG oder WebP) oder Bild-Link einfügen – es erscheint in deinem Profil und in Discover.",
     /* ------------------------------------------------------ dashboard */
     panelKicker: "Private Beta",
     panelTitle: "Dein Beta-Zugang ist aktiv",
@@ -263,7 +263,7 @@ export const appBetaEn: AppBetaDict = {
     visibilityText:
       "In the settings you decide whether you appear in the member search, who sees your full profile, whether your location is shown and who sees your contact links. Private contact data such as e-mail or phone number is never shown.",
     visibilityCta: "Privacy settings",
-    photoHint: "Link to a photo (https://…). A direct upload will follow later.",
+    photoHint: "Upload a photo directly (JPG, PNG or WebP) or paste an image link – it appears on your profile and in Discover.",
     panelKicker: "Private beta",
     panelTitle: "Your beta access is active",
     panelText: "Until {date}: discover members, send connection requests and message confirmed contacts.",

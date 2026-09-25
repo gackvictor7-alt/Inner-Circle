@@ -160,12 +160,15 @@ P2 mittelfristig · P3 Aufräumen.
 
 ## P2 – mittelfristig
 
-### K-10 · Keine Uploads (Avatar, Cover, Kursvideos, Anhänge)
+### K-10 · Keine Uploads (Cover, Kursvideos, Anhänge) – Profilfotos gelöst
 
-- Profilbilder/Cover sind URL-Felder, Nachrichten-Anhänge ungenutzt,
-  Kurslektionen ohne Videoquelle. Ohne Storage-Anbindung keine Uploads.
-- **Lösung:** S3-kompatiblen Bucket anbinden (`S3_*`), Typ-/Größenprüfung,
-  private Bereiche getrennt halten.
+- **Sprint 13:** Profilfoto-Upload ist **WORKING** (R2-Binding `MEDIA`,
+  JPG/PNG/WebP, max. 5 MB, Magic-Byte-Prüfung in Browser und Server,
+  Auslieferung über `/api/media/<key>` oder `R2_PUBLIC_BASE_URL`).
+- Weiterhin offen: Cover, Kursvideos, Nachrichten-Anhänge sind URL-Felder
+  ohne Upload.
+- **Lösung (Rest):** denselben R2-Weg für die verbleibenden Medientypen
+  nutzen (Key-Präfixe trennen, private Bereiche getrennt halten).
 
 ### K-11 · Moderations-Queue ohne Oberfläche
 

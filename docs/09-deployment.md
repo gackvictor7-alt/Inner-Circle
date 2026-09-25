@@ -122,6 +122,51 @@ oder `npm run dev:outbox -- --remote` lesen.
 - **Lokale Prüfung vor jedem Merge:** `npm run typecheck`, `npm test`,
   `npm run cf:dry-run` (optional `npm run cf:preview`).
 
+## 6a. Bildspeicher (R2) – Profilfoto-Upload (Sprint 13)
+
+Der Foto-Upload speichert Bilder im R2-Bucket `inner-circle-media` über das
+Binding `MEDIA`. Für Produktion sind **keine Secrets** nötig:
+
+1. **Nichts weiter tunen (empfohlener Standard):** `wrangler.jsonc` deklariert
+   `r2_buckets: [{ binding: "MEDIA", bucket_name: "inner-circle-media" }]`.
+   Wie bei der D1-Datenbank legt Wranglers Ressourcen-Provisioning den Bucket
+   beim nächsten `npm run cf:deploy` / Workers-Builds-Deploy **automatisch an**
+   (R2 aktivieren, falls noch nicht geschehen: Dashboard → R2 → einmalig
+   „Purchase R2“ – der Plan ist kostenlos, Speicher bis 10 GB inklusive).
+2. **Optional – Auslieferung über Bucket-Domain statt App-Route:** Ohne
+   weitere Einstellung liefert der Worker die Bilder über `/api/media/<key>`
+   aus (funktioniert sofort, verbraucht Worker-Requests). Wer die Bilder
+   direkt aus R2 ausliefern will: Dashboard → R2 → `inner-circle-media` →
+   *Settings* → *Public access* → eigene Domain verbinden (z. B.
+   `media.example.com`) oder r2.dev-URL aktivieren, dann die Plain-Variable
+   `R2_PUBLIC_BASE_URL=https://media.example.com` setzen (Dashboard → Worker →
+   *Settings* → *Variables* oder `wrangler secret`-frei `vars`/`keep_vars`
+   beachten). Nur **neu** gespeicherte Fotos nutzen die Domain; bestehende
+   Profile behalten ihre bereits gespeicherte URL.
+3. **Ohne Binding (Fallback):** Fehlt das Binding (z. B. in einer Umgebung
+   ohne R2), schlägt der Upload mit einer verständlichen Fehlermeldung fehl;
+   Profilfelder und Interessen & Ziele speichern weiterhin normal, das
+   Foto-URL-Feld bleibt nutzbar.
+4. **Kein Schema-/Migrationsaufwand:** `Profile.avatarUrl` speichert nur die
+   URL (`/api/media/avatars/<userId>/<zufall>.<ext>`) – Bilder liegen nie als
+   Base64 in D1. Lokale Entwicklung emuliert R2 automatisch (`next dev`,
+   `cf:preview`), Daten landen in `.wrangler/state` (git-ignoriert).
+5. **Kostenrahmen:** R2 Free Tier umfasst 10 GB Speicher und generous
+   Class-A/B-Operationen; 5-MB-Grenze pro Foto serverseitig erzwungen.
+   Überschreitungen sind reguläre R2-Kosten – vor einem öffentlichen Start
+   Budget-Alarm im Dashboard setzen.
+
+**Checkliste vor Produktiv-Deploy (Foto-Upload):**
+
+- [ ] R2 im Account aktiviert (Dashboard → R2 → „Purchase R2“, kostenlos).
+- [ ] `r2_buckets`-Binding `MEDIA` in `wrangler.jsonc` vorhanden (ist es).
+- [ ] Erster Deploy nach Merge: Wrangler legt `inner-circle-media` an
+      (`cf:dry-run` zeigt das Binding `env.MEDIA (inner-circle-media)`).
+- [ ] Optional: `R2_PUBLIC_BASE_URL` als Plain-Variable gesetzt, wenn Bilder
+      über eine eigene Domain ausgeliefert werden sollen.
+- [ ] Smoke-Test: Foto hochladen → Profil/Kopfzeile/Discover prüfen →
+      hartes Neuladen (Werte bleiben).
+
 ## 7. Häufige Fehler und Gegenmaßnahmen
 
 | Symptom | Ursache | Lösung |
@@ -146,6 +191,7 @@ oder `npm run dev:outbox -- --remote` lesen.
 - [ ] Stripe-Webhook registriert und signiert getestet; Live erst nach Freigabe.
 - [ ] Domain + TLS am Worker.
 - [ ] D1-Backup-Routine nachgewiesen.
+- [ ] R2-Bucket `inner-circle-media` existiert (Binding `MEDIA`), Foto-Upload geraucht (siehe Abschnitt 6a).
 - [ ] Observability + Alarme definiert.
 - [ ] Rechtstexte ersetzt (Impressum, Datenschutz, AGB).
 - [ ] Smoke-Test aller öffentlichen Routen + Auth-Flow in Produktion.
