@@ -6,6 +6,14 @@ const nextConfig: NextConfig = {
   // in Node.js (next dev / next start / tests) only – Cloudflare Workers use D1
   // through the binding declared in wrangler.jsonc (see src/db/client.ts).
   serverExternalPackages: ["@libsql/client", "libsql"],
+  experimental: {
+    serverActions: {
+      // Profile photo uploads travel inside the unified profile save
+      // (multipart server action). 6 MB covers the 5 MB photo limit plus the
+      // remaining form fields.
+      bodySizeLimit: "6mb",
+    },
+  },
 };
 
 export default nextConfig;

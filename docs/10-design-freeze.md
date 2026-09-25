@@ -340,7 +340,20 @@ auf `/app/profile` und `/app/settings` die `lg:`-Spaltenaufteilung (K-23). Diese
 Seiten wurden in Sprint 12 nicht umgebaut, weil sie außerhalb des
 Networking-Kernflows liegen; die Korrektur ist ein eigener, kleiner Auftrag.
 
-## 2. Ausdrücklich erlaubt (kein Designbruch)
+### 1.18 Sprint 13: Profil-Editor – einheitliches Speichern & Foto-Upload (2026-09-24)
+
+**Ausdrücklicher Gründerauftrag** (Foto-Upload + einheitlicher Speichervorgang
+auf `/app/profile/edit`). Nur der Profil-Editor ändert sich; Startseite,
+Navigationsstruktur, Palette, Typografie, Tokens und alle übrigen Bereiche
+bleiben unverändert. Die neuen Bausteine nutzen ausschließlich bestehende
+Design-Tokens (Cards, Button-Varianten, Warn/Danger-Farben, Chip-Stil).
+
+| Bereich | Änderung | Grund |
+| ------- | -------- | ----- |
+| `/app/profile/edit` – Foto-Bereich | Neue Card „Profilfoto“ über den Feldern: Avatar-Vorschau (96 px, rund), Sekundär-Button **„Foto auswählen“** (öffnet Galerie/Dateiauswahl), Ghost-Button „Foto entfernen“, Hinweiszeile (JPG/PNG/WebP, max. 5 MB), darunter das bisherige URL-Feld als optionale Alternative | Auftrag 2: direkter Upload statt nur Bildlink |
+| `/app/profile/edit` – Formularstruktur | Profilfelder, Foto **und** Interessen & Ziele liegen in **einem** `<form>` mit **einem** Primär-Button „Profil speichern“ (unten, rechts); der frühere zweite Speicherbutton „Interessen & Ziele“ entfällt; Speichern zeigt den bekannten grünen Erfolgs-Banner („Alle Änderungen gespeichert – Profilfelder, Foto, Interessen & Ziele“) und verlässt die Seite nicht mehr | Auftrag 1: ein einheitlicher, klar erkennbarer Speichervorgang |
+| `/app/profile/edit` – Statuszeile | dezente Warn-Hinweiszeile „Ungespeicherte Änderungen …“ über dem Button; Browser-Warnung (beforeunload) nur mit tatsächlichen Änderungen | Auftrag 1: Änderungen dürfen beim Wechseln nicht unbemerkt verloren gehen |
+
 ## 2. Ausdrücklich erlaubt (kein Designbruch)
 
 - Technische Responsive-Bugfixes (z. B. Überlauf, abgeschnittene Inhalte,

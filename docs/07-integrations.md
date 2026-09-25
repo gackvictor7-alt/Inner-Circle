@@ -19,7 +19,7 @@ Variablennamen ein. Die vollständige Variablenliste steht in
 | **Stripe** (Abos) | Monats-/Jahresmitgliedschaft, Rechnungen, Billing-Portal | Checkout + Webhook vollständig; **Sprint-12-Audit:** Signaturprüfung im Worker auf `constructEventAsync` umgestellt (die synchrone Prüfung scheitert im Worker), Aktivierung nur bei bestätigter Zahlung, SEPA über `async_payment_*`, `subscription.deleted`-500 behoben; Billing-Portal nur als Funktion (keine Route/UI); **keine Schlüssel** | ❌ nicht produktiv aktiv | `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PORTAL_RETURN_URL`, `ALLOW_STRIPE_LIVE` |
 | **Google OAuth** | Social Login | **nicht implementiert** (nur UI-Hinweis „Einrichtung erforderlich") | ❌ | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` (Variablen bereits ausgewertet, aber ohne Route) |
 | **Apple OAuth** | Social Login | **nicht implementiert** | ❌ | `APPLE_CLIENT_ID`, `APPLE_TEAM_ID`, `APPLE_KEY_ID`, `APPLE_PRIVATE_KEY` |
-| **S3-kompatibler Storage** (z. B. Cloudflare R2) | Avatare, Cover, Kursvideos, Dokumente | **nicht angebunden** (`storage.configured` wird nur angezeigt) | ❌ | `S3_BUCKET`, `S3_REGION`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_PUBLIC_BASE_URL` |
+| **Cloudflare R2** (Binding `MEDIA`, Bucket `inner-circle-media`) | Profilfoto-Upload (Avatare) | WORKING für Profilfotos (Sprint 13, Wrangler-Provisioning legt den Bucket beim Deploy an; lokal emuliert); weitere Media-Typen (Cover, Kursvideos, Dokumente) folgen | optional: `R2_PUBLIC_BASE_URL` für Auslieferung über Bucket-Domain statt App-Route |
 | **Domain + DNS** | Produktions-URL, E-Mail-Absenderdomain (SPF/DKIM/DMARC) | offen | ❌ | – |
 | **Rechtsberatung** | AGB, Datenschutz, Provisionsordnung, Investment-Struktur | offen | ❌ | – |
 
@@ -36,7 +36,7 @@ Worker-Secrets bzw. Dashboard-Variablen.
 | `STRIPE_SECRET_KEY` | `/app/billing` zeigt „Einrichtung erforderlich"; Checkout-Route antwortet mit `error=stripeNotConfigured` (außer Dev-Aktivierung ist erlaubt) |
 | `STRIPE_WEBHOOK_SECRET` | Webhook-Route lehnt jeden Aufruf mit 400 ab (`missing_signature`/`invalid_signature`) |
 | `AUTH_SECRET` | Entwicklung fällt auf einen festen Dev-Wert zurück (`authSecretIsFallback`); `integrationStatus()` weist darauf hin – **in Produktion unzulässig** |
-| Storage | Uploads sind nicht möglich; Profilbilder/Anhänge bestehen nur als URL-Feld |
+| Storage | Sprint 13: Profilfoto-Upload läuft über das R2 `MEDIA`-Binding (JPG/PNG/WebP, max. 5 MB, Magic-Byte-Prüfung); Nachrichten-Anhänge/Cover/Kursvideos bleiben ohne Upload (nur URL-Feld) |
 
 Alle Zustände sind über `integrationStatus()` (`src/lib/env.ts`) abfragbar und
 werden in `/app/settings` (Admin-Sicht) bzw. `/dev/outbox` angezeigt.

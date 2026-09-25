@@ -3,7 +3,20 @@
 **Diese Datei ist der verbindliche Einstiegspunkt für jeden Menschen und jeden
 KI-Agenten, der an diesem Repository arbeitet.**
 
-- **Stand:** 2026-09-24 (Sprint 12 – **Private Beta & echtes Networking**:
+- **Stand:** 2026-09-24 (Sprint 13 – **Profil: einheitliches Speichern & Foto-Upload** (Gründerauftrag):
+  `/app/profile/edit` hat **einen** Speicherbutton für die ganze Seite – ein Klick speichert
+  Profilfelder **und** Interessen & Ziele gemeinsam (`updateProfileAction` mit `saveInterests`-Marker,
+  Success-Banner `?saved=all`, `beforeunload`-Schutz bei ungespeicherten Änderungen; die frühere
+  zweite Interessen-Form `updateInterestsAction` ist entfernt). Dazu direkter **Foto-Upload**
+  („Foto auswählen“, JPG/PNG/WebP, max. 5 MB, Magic-Byte-Prüfung in Browser **und** Server):
+  Bilder liegen im R2-Bucket `inner-circle-media` (Binding `MEDIA`, Schlüssel
+  `avatars/<userId>/<zufall>.<ext>`) und werden über `/api/media/<key>` bzw. optional
+  `R2_PUBLIC_BASE_URL` ausgeliefert – **nie** als Base64 in D1 (`src/lib/media.ts`,
+  `src/lib/storage.ts`, `media-validation.test.ts`, Browser-E2E 39/39,
+  `tests/e2e/profile-save-upload.mjs`). Das URL-Feld bleibt als optionale Alternative.
+  Deploy-Voraussetzung: R2-Bucket + Binding laut `09-deployment.md` §„Bildspeicher (R2)“
+  (Wrangler-Provisioning legt den Bucket beim ersten Deploy automatisch an).
+  Davor: Sprint 12 – **Private Beta & echtes Networking**:
   persönliche, einmalige Beta-Schlüssel (`/admin/beta`, gespeichert nur als
   HMAC) schalten nach normaler Registrierung + Verifizierung einen
   **separaten, zeitlich begrenzten Beta-Zugang** frei (Standard 30 Tage,
@@ -467,15 +480,15 @@ existiert. Backend + Daten + Berechtigungen + Nachweis gehören dazu.
 | Profil ansehen/bearbeiten (Bio, Rolle, Firma, Links, **„Ich biete"**) | WORKING | `/app/profile`, `/app/profile/edit`; **LinkedIn aus UI entfernt und deprecated** (DB-Spalte für Datenintegrität erhalten); Instagram, X und Website sekundär; IC-Business-Identität priorisiert |
 | **Profil als Hauptbereich** (Header + Tabs Übersicht/Aktivitäten/Performance/Angebote) | WORKING | `/app/profile?tab=…`; Profilfortschritt, Trust & Performance und Konto-Links (Member Card, Mitgliedschaft, Einstellungen) leben hier; Sprint 6: socialere Hierarchie (Avatar, Name, Handle, Bio, Rolle, Standort oben; kompakte Stats Follower/Folgt/Connections/Trust; Actions Bearbeiten/Teilen/Einstellungen; Vollständigkeit kompakt) |
 | Interessen & Ziele (Onboarding-Taxonomie) | WORKING | `/onboarding/interests`, `completeOnboardingAction`, Apple-artiges UX-Design, strukturierte Gruppen, mind. 3 Pflicht, `onboarding.test.ts` |
-| **Interessen & Ziele nach dem Onboarding ändern** | WORKING | `/app/profile/edit` → „Interessen & Ziele", `updateInterestsAction`, dieselbe Taxonomie (`Interest`/`Goal`), `profile-preferences.test.ts` |
+| **Interessen & Ziele nach dem Onboarding ändern** | WORKING | Sprint 13: im selben Formular wie die Profilfelder (`updateProfileAction` mit `saveInterests=1`, Auswahl via `InterestGoalPicker`), dieselbe Taxonomie (`Interest`/`Goal`), `profile-preferences.test.ts` – die frühere Eigenaktion `updateInterestsAction` ist entfernt |
 | Statistiken (Kontakte, Follower, Trust Score) | WORKING | `/app/profile`, `profileStats()`, `performanceCountsFor()` |
 | **Sichtbarkeit einzelner Business-Zahlen** | WORKING | `PrivacySettings.metricsVisibilityJson` (7 Kennzahlen), `/app/settings`, erzwungen in `/app/profile?tab=performance` |
 | Trust & Performance (eigene Sicht) | PARTIAL | `/app/profile?tab=performance` (+ `/app/trust` als Detailseite); Bewertungen können **nicht** abgegeben werden (Verifikations-Pipeline fehlt) |
 | Öffentliche Mitgliedskarte verifizieren | WORKING | `/member/[publicId]` |
 | Activity Feed (Posts) | WORKING | `Post`, `createPostAction`, Feed auf Dashboard; Sprint 6: 3-6 hochwertige Demo-Beiträge (Founder Update, neues Projekt, Suche Partner, Event-Erfahrung, neuer Service, Meilenstein) klar als Demo markiert, keine Metrik-Veränderung |
 | Profilsichtbarkeit / Datenschutz-Einstellungen | WORKING (Networking) · PARTIAL (übrige Bereiche) | Sprint 12: im Networking erzwungen – unsichtbar = nicht gelistet/404, reduzierte Karte, Kontaktlinks nur für Kontakte, Standort verborgen, Kennzahlen nach Schalter (`src/lib/network/privacy.ts`, `06-permissions.md` §3d, `beta-networking.test.ts`); außerhalb des Networkings nicht ausgewertet (K-06) |
-| Profil speichern (alle Felder, geführtes Beta-Onboarding mit Fortschritt) | WORKING | Sprint 12: falsche Formularschlüssel behoben (Website/X/Instagram wurden nicht gespeichert bzw. nicht geleert), nur http(s)-Links, `profile-save.test.ts` |
-| Avatar-/Cover-Upload | NOT IMPLEMENTED | nur URL-Feld; kein Storage-Anbieter (S3/R2) angebunden (Upload folgt in separatem Sprint) |
+| Profil speichern (alle Felder, geführtes Beta-Onboarding mit Fortschritt) | WORKING | Sprint 12: falsche Formularschlüssel behoben (Website/X/Instagram wurden nicht gespeichert bzw. nicht geleert), nur http(s)-Links, `profile-save.test.ts`. **Sprint 13:** EIN Speichervorgang für Profilfelder + Interessen & Ziele + Foto (`saveInterests`-Marker, unveränderte Auswahl = no-op, Mindest-3-Interessen nur bei geänderter Auswahl), Erfolgsmeldung `?saved=all` |
+| Profilfoto-Upload | WORKING | Sprint 13: „Foto auswählen“ (JPG/PNG/WebP, max. 5 MB) im einheitlichen Formular, Ablage im R2 `MEDIA`-Binding (`avatars/<userId>/…`), Auslieferung über `/api/media/<key>` (oder `R2_PUBLIC_BASE_URL`), Anzeige in Kopfzeile, Profil, Discover, Network, Inbox, Member Card; URL-Feld bleibt optional; Ersetzen/Löschen räumt alte Uploads ab – `media-validation.test.ts`, Browser-E2E `tests/e2e/profile-save-upload.mjs`. Cover-Upload weiterhin NOT IMPLEMENTED |
 
 ### E. Network
 

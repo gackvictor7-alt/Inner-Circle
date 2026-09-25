@@ -24,7 +24,6 @@ vi.mock("@/lib/auth/session", async (importOriginal) => {
 
 import {
   interestTaxonomy,
-  updateInterestsAction,
   updatePrivacyAction,
   updateProfileAction,
 } from "@/app/actions/profile";
@@ -71,38 +70,72 @@ function form(values: Record<string, string | string[]>) {
   return data;
 }
 
-describe("profile: interests after onboarding (spec §23)", () => {
-  it("reuses the onboarding taxonomy and stores the new selection", async () => {
+describe("profile: unified save incl. interests & goals (spec §23)", () => {
+  it("saves profile fields, interests and goals in ONE request", async () => {
     const taxonomy = await ensureTaxonomy();
     const userId = await createTestUser();
     created.push(userId);
     currentUserId = userId;
 
     const picks = taxonomy.interests.slice(0, 3).map((row) => row.id);
-    const result = await updateInterestsAction(
+    const result = await updateProfileAction(
       initialActionState,
-      form({ interests: picks, goals: [taxonomy.goals[0]!.id] }),
+      form({
+        firstName: "Test",
+        lastName: "Person",
+        headline: "Founder · Test GmbH (fiktiv)",
+        location: "Berlin",
+        interests: picks,
+        goals: [taxonomy.goals[0]!.id],
+        saveInterests: "1",
+      }),
     );
     expect(result.status).toBe("success");
 
+    // Both halves of the unified save really landed in the database.
+    const [profile] = await db.select().from(profiles).where(eq(profiles.userId, userId));
+    expect(profile!.headline).toBe("Founder · Test GmbH (fiktiv)");
     const storedInterests = await db.select().from(userInterests).where(eq(userInterests.userId, userId));
     const storedGoals = await db.select().from(userGoals).where(eq(userGoals.userId, userId));
     expect(storedInterests).toHaveLength(3);
     expect(storedGoals).toHaveLength(1);
   });
 
-  it("keeps the onboarding minimum of three interests", async () => {
+  it("keeps the onboarding minimum of three interests for changed selections", async () => {
     const taxonomy = await ensureTaxonomy();
     const userId = await createTestUser();
     created.push(userId);
     currentUserId = userId;
 
-    const result = await updateInterestsAction(
+    const result = await updateProfileAction(
       initialActionState,
-      form({ interests: [taxonomy.interests[0]!.id] }),
+      form({
+        firstName: "Test",
+        lastName: "Person",
+        interests: [taxonomy.interests[0]!.id],
+        saveInterests: "1",
+      }),
     );
     expect(result.status).toBe("error");
-    if (result.status === "error") expect(result.errorCode).toBe("validation");
+    if (result.status === "error") expect(result.errorCode).toBe("interestsMin");
+  });
+
+  it("saves without touching interests when the selection is unchanged", async () => {
+    // Fresh account without interests: the unified save is a no-op for
+    // interests (0 == 0) – "only the name is required" keeps working.
+    const taxonomy = await ensureTaxonomy();
+    void taxonomy;
+    const userId = await createTestUser();
+    created.push(userId);
+    currentUserId = userId;
+
+    const result = await updateProfileAction(
+      initialActionState,
+      form({ firstName: "Test", lastName: "Person", saveInterests: "1" }),
+    );
+    expect(result.status).toBe("success");
+    const storedInterests = await db.select().from(userInterests).where(eq(userInterests.userId, userId));
+    expect(storedInterests).toHaveLength(0);
   });
 });
 

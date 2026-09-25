@@ -18,6 +18,8 @@ import { audit } from "@/lib/admin/audit";
 import { idFor } from "@/db/ids";
 import { getAccessContext } from "@/lib/access/server";
 import { consumeRateLimit } from "@/lib/rate-limit";
+import { isServableMediaKey } from "@/lib/media";
+import { deleteAvatarMedia, storeAvatar } from "@/lib/storage";
 import { fail, done, bool, text, type ActionState } from "./state";
 import { PROFILE_METRIC_KEYS, VISIBILITY_LEVELS, type ProfileMetricKey } from "@/lib/platform/rules";
 
@@ -38,7 +40,14 @@ function parseMetricsVisibility(formData: FormData): Partial<Record<ProfileMetri
   return result;
 }
 
-/** Updates the member profile (members only for the full profile, spec §19/§26). */
+/**
+ * Unified profile save (Sprint 13): ONE action for the whole edit page.
+ *
+ * Saves the profile fields, the selected interests & goals and – when a photo
+ * was chosen – the uploaded image in a single request, so the one "Speichern"
+ * button really persists every change on the page. The photo can still be set
+ * via URL (`avatarUrl`); a chosen file always wins over the URL field.
+ */
 export async function updateProfileAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const access = await getAccessContext();
   if (!access.user) return fail("unauthorized");
@@ -57,13 +66,46 @@ export async function updateProfileAction(_prev: ActionState, formData: FormData
   const website = text(formData, "website", 300);
   const xHandle = text(formData, "xHandle", 120);
   const instagram = text(formData, "instagram", 120);
-  const avatarUrl = text(formData, "avatarUrl", 400);
+
+  // ---- Profile photo: an uploaded file wins over the URL field -------------
+  const avatarValue = formData.get("avatarFile");
+  const hasAvatarFile = avatarValue instanceof File && avatarValue.size > 0;
+  const avatarRemove = bool(formData, "avatarRemove");
+  const avatarUrl = hasAvatarFile ? "" : text(formData, "avatarUrl", 400);
 
   if (!firstName || !lastName) return fail("validation");
   if (bio.length > 1200) return fail("validation");
   // Links are rendered as href/src – only plain web addresses are accepted
-  // (no javascript:, data: or other schemes).
-  if (!isSafeWebUrl(avatarUrl) || !isSafeWebUrl(website, { allowBareDomain: true })) return fail("invalidUrl");
+  // (no javascript:, data: or other schemes). An uploaded file replaces the
+  // URL field, so its value is not validated (nor used).
+  if (
+    (!hasAvatarFile && !avatarRemove && !isAvatarUrlSafe(avatarUrl, access.user.id)) ||
+    !isSafeWebUrl(website, { allowBareDomain: true })
+  ) {
+    return fail("invalidUrl");
+  }
+
+  // ---- Interests & goals: part of the SAME save ----------------------------
+  // The unified edit form always sends `saveInterests=1` plus the current
+  // selection. Submissions without that marker (older callers/tests) leave
+  // interests untouched – exactly the previous behaviour of the two forms.
+  // Validated BEFORE the photo is stored, so a rejected save never leaves
+  // half-uploaded state.
+  if (formData.has("saveInterests")) {
+    const interestsError = await applyInterestSelection(access.user.id, formData);
+    if (interestsError) return interestsError;
+  }
+
+  // A newly chosen photo is validated (size + magic bytes) and stored in the
+  // media bucket BEFORE any database write – no half-saved state. Without a
+  // configured bucket the upload fails with an honest error (URL alternative
+  // keeps working).
+  let storedAvatarUrl: string | null = null;
+  if (hasAvatarFile) {
+    const stored = await storeAvatar(access.user.id, avatarValue as File);
+    if (!stored.ok) return fail(stored.errorCode);
+    storedAvatarUrl = stored.url;
+  }
 
   const listFrom = (key: string, max: number): string[] =>
     text(formData, key, 600)
@@ -84,6 +126,7 @@ export async function updateProfileAction(_prev: ActionState, formData: FormData
   // (`website`, `xHandle`) were silently dropped by Drizzle, so website and X
   // were never saved. Every field is written as submitted – an emptied field
   // (including the photo URL) is really cleared.
+  const finalAvatarUrl = avatarRemove ? null : (storedAvatarUrl ?? (avatarUrl || null));
   const values = {
     headline: headline || null,
     bio: bio || null,
@@ -94,7 +137,7 @@ export async function updateProfileAction(_prev: ActionState, formData: FormData
     linkedinUrl: existing?.linkedinUrl ?? null,
     xUrl: xHandle || null,
     instagramUrl: instagram || null,
-    avatarUrl: avatarUrl || null,
+    avatarUrl: finalAvatarUrl,
     rolesJson: JSON.stringify(roles),
     skillsJson: JSON.stringify(skills),
     lookingForJson: JSON.stringify(lookingFor),
@@ -112,14 +155,125 @@ export async function updateProfileAction(_prev: ActionState, formData: FormData
 
   await db.update(users).set({ firstName, lastName, updatedAt: new Date() }).where(eq(users.id, access.user.id));
 
+  // Housekeeping: when the photo was removed or cleared, delete this member's
+  // upload from the media bucket (external URLs are never touched). A newly
+  // uploaded file already cleaned up its predecessor in `storeAvatar`.
+  if (!finalAvatarUrl && existing?.avatarUrl) {
+    await deleteAvatarMedia(access.user.id, null);
+  }
+
   revalidatePath("/app/profile");
   revalidatePath("/app/discover");
   revalidatePath("/app");
   revalidatePath(`/app/people/${access.user.handle}`);
   revalidatePath("/app/profile/edit");
-  // Guided beta onboarding continues into the network; otherwise back to the profile.
+  // Guided beta onboarding continues into the network; otherwise the editor
+  // stays open and shows the persistent success banner (?saved=all).
   const next = text(formData, "next", 40);
-  return done({ messageCode: "saved", redirectTo: next === "/app/discover" ? "/app/discover" : "/app/profile?saved=1" });
+  return done({
+    messageCode: "savedAll",
+    redirectTo: next === "/app/discover" ? "/app/discover" : "/app/profile/edit?saved=all",
+  });
+}
+
+/**
+ * Syncs the selected interests & goals as part of the unified profile save
+ * (spec §23 – same taxonomy as onboarding, no second system).
+ *
+ * Rule: an unchanged selection is a no-op (so the profile stays saveable for
+ * accounts with fewer than three interests, e.g. fresh accounts). A CHANGED
+ * selection must keep at least three interests – the same rule as the
+ * onboarding and the previous standalone interests form.
+ */
+async function applyInterestSelection(userId: string, formData: FormData): Promise<ActionState | null> {
+  const selectedInterests = formData
+    .getAll("interests")
+    .filter((value): value is string => typeof value === "string" && value.length > 0)
+    .slice(0, 24);
+  const selectedGoals = formData
+    .getAll("goals")
+    .filter((value): value is string => typeof value === "string" && value.length > 0)
+    .slice(0, 24);
+
+  const now = new Date();
+
+  const interestRows = selectedInterests.length
+    ? await db
+        .select({ id: interests.id, slug: interests.slug })
+        .from(interests)
+        .where(or(inArray(interests.slug, selectedInterests), inArray(interests.id, selectedInterests)))
+    : [];
+  const goalRows = selectedGoals.length
+    ? await db
+        .select({ id: goals.id, slug: goals.slug })
+        .from(goals)
+        .where(or(inArray(goals.slug, selectedGoals), inArray(goals.id, selectedGoals)))
+    : [];
+
+  // Compare with the stored selection (slugs are the canonical identity).
+  const currentInterestSlugs = new Set(
+    (
+      await db
+        .select({ slug: interests.slug })
+        .from(userInterests)
+        .innerJoin(interests, eq(interests.id, userInterests.interestId))
+        .where(eq(userInterests.userId, userId))
+    ).map((row) => row.slug),
+  );
+  const submittedInterestSlugs = new Set(interestRows.map((row) => row.slug));
+  const interestsChanged =
+    submittedInterestSlugs.size !== currentInterestSlugs.size ||
+    [...submittedInterestSlugs].some((slug) => !currentInterestSlugs.has(slug));
+
+  const currentGoalSlugs = new Set(
+    (
+      await db
+        .select({ slug: goals.slug })
+        .from(userGoals)
+        .innerJoin(goals, eq(goals.id, userGoals.goalId))
+        .where(eq(userGoals.userId, userId))
+    ).map((row) => row.slug),
+  );
+  const submittedGoalSlugs = new Set(goalRows.map((row) => row.slug));
+  const goalsChanged =
+    submittedGoalSlugs.size !== currentGoalSlugs.size ||
+    [...submittedGoalSlugs].some((slug) => !currentGoalSlugs.has(slug));
+
+  if (!interestsChanged && !goalsChanged) return null;
+  // Same rule as onboarding: at least three interests keep recommendations useful.
+  if (interestRows.length < 3) return fail("interestsMin");
+
+  await db.delete(userInterests).where(eq(userInterests.userId, userId));
+  if (interestRows.length > 0) {
+    await db.insert(userInterests).values(
+      interestRows.map((row) => ({
+        id: idFor.userInterest(),
+        userId,
+        interestId: row.id,
+        createdAt: now,
+      })),
+    );
+  }
+
+  await db.delete(userGoals).where(eq(userGoals.userId, userId));
+  if (goalRows.length > 0) {
+    await db.insert(userGoals).values(
+      goalRows.map((row) => ({
+        id: idFor.userGoal(),
+        userId,
+        goalId: row.id,
+        createdAt: now,
+      })),
+    );
+  }
+
+  await audit({
+    actorId: userId,
+    action: "profile.interests_updated",
+    entityType: "User",
+    entityId: userId,
+  });
+  return null;
 }
 
 /** http(s) URL or – for websites – a bare domain like "example.com". Empty is fine. */
@@ -132,6 +286,20 @@ function isSafeWebUrl(value: string, options: { allowBareDomain?: boolean } = {}
   } catch {
     return false;
   }
+}
+
+/**
+ * Photo URLs additionally accept this app's own media route (relative
+ * `/api/media/avatars/…` URLs are what the upload stores). Anything else must
+ * be a public http(s) address – exactly like `isSafeWebUrl`.
+ */
+function isAvatarUrlSafe(value: string, userId: string): boolean {
+  if (value.startsWith("/api/media/")) {
+    const key = decodeURIComponent(value.slice("/api/media/".length));
+    // Only the member's OWN upload folder is an acceptable photo value.
+    return key.startsWith(`avatars/${userId}/`) && isServableMediaKey(key);
+  }
+  return isSafeWebUrl(value);
 }
 
 export async function updatePrivacyAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
@@ -304,84 +472,11 @@ export async function requestAccountDeletionAction(
 
 
 /**
- * Interests & goals can be changed after onboarding (spec §23). It reuses the
- * exact onboarding taxonomy (`Interest` / `Goal`) – no second system.
+ * Interest + goal taxonomy for the profile editor (same source as onboarding).
+ * The former standalone `updateInterestsAction` was merged into the unified
+ * `updateProfileAction` (Sprint 13) – one form, one save for profile fields,
+ * photo, interests and goals.
  */
-export async function updateInterestsAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const access = await getAccessContext();
-  if (!access.user) return fail("unauthorized");
-  if (!access.verified) return fail("verificationRequired");
-
-  const user = access.user;
-
-  const limit = await consumeRateLimit(`profile:${user.id}`, 40, 3600);
-  if (!limit.allowed) return fail("rateLimited");
-
-  const selectedInterests = formData
-    .getAll("interests")
-    .filter((value): value is string => typeof value === "string")
-    .slice(0, 24);
-  const selectedGoals = formData
-    .getAll("goals")
-    .filter((value): value is string => typeof value === "string")
-    .slice(0, 24);
-
-  // Same rule as onboarding: at least three interests keep recommendations useful.
-  if (selectedInterests.length < 3) return fail("validation");
-
-  const now = new Date();
-
-  const interestRows = selectedInterests.length
-    ? await db
-        .select({ id: interests.id })
-        .from(interests)
-        .where(or(inArray(interests.slug, selectedInterests), inArray(interests.id, selectedInterests)))
-    : [];
-  const goalRows = selectedGoals.length
-    ? await db
-        .select({ id: goals.id })
-        .from(goals)
-        .where(or(inArray(goals.slug, selectedGoals), inArray(goals.id, selectedGoals)))
-    : [];
-
-  await db.delete(userInterests).where(eq(userInterests.userId, user.id));
-  if (interestRows.length > 0) {
-    await db.insert(userInterests).values(
-      interestRows.map((row) => ({
-        id: idFor.userInterest(),
-        userId: user.id,
-        interestId: row.id,
-        createdAt: now,
-      })),
-    );
-  }
-
-  await db.delete(userGoals).where(eq(userGoals.userId, user.id));
-  if (goalRows.length > 0) {
-    await db.insert(userGoals).values(
-      goalRows.map((row) => ({
-        id: idFor.userGoal(),
-        userId: user.id,
-        goalId: row.id,
-        createdAt: now,
-      })),
-    );
-  }
-
-  await audit({
-    actorId: user.id,
-    action: "profile.interests_updated",
-    entityType: "User",
-    entityId: user.id,
-  });
-
-  revalidatePath("/app/profile");
-  revalidatePath("/app/discover");
-  revalidatePath("/app");
-  return done({ messageCode: "saved", redirectTo: "/app/profile/edit?saved=interests" });
-}
-
-/** Interest + goal taxonomy for the profile editor (same source as onboarding). */
 export async function interestTaxonomy() {
   const [interestRows, goalRows] = await Promise.all([
     db.select().from(interests).orderBy(asc(interests.position)),

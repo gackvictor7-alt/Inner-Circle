@@ -92,7 +92,7 @@ bearbeiten.
 ```bash
 npm install                 # Abhängigkeiten
 npm run dev                 # Node-Entwicklung (0.0.0.0:3000)
-npm test                    # 17 Dateien / 80 Tests (Sprint 3)
+npm test                    # 36 Dateien / 258 Tests (Sprint 13)
 npm run typecheck           # tsc --noEmit
 npm run lint                # 21 bekannte Hinweise (K-15) – nicht schlechter werden
 npm run cf:build            # Produktionsbuild für Cloudflare (OpenNext)

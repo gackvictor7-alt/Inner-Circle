@@ -27,7 +27,7 @@ Kapitalzugang und Erlebnisse in einer Plattform.
   implementiert).
 - **Nächster Schritt:** echten E-Mail-Versand für die Account-Verifizierung
   einrichten ([`docs/12-roadmap.md`](docs/12-roadmap.md) → N-1).
-- **Tests:** `npm test` = 12 Dateien / 56 Tests grün.
+- **Tests:** `npm test` = 36 Dateien / 258 Tests grün.
 
 ## Schnellstart
 

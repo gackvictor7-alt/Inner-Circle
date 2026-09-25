@@ -54,6 +54,23 @@
       "database_name": "inner-circle-db",
       "migrations_dir": "drizzle"
     }
+  ],
+  /**
+   * Media storage for member uploads (profile photos, Sprint 13). Images are
+   * stored as objects under `avatars/<userId>/…` – never as Base64 in D1.
+   * Wrangler resource provisioning creates the bucket on the first deploy if
+   * it does not exist yet (like the D1 database above); locally the binding is
+   * emulated by Wrangler (`next dev` / `cf:preview`), so no cloud account is
+   * needed for development. Public serving works out of the box via the app
+   * route `/api/media/<key>`; optionally set `R2_PUBLIC_BASE_URL` to a public
+   * bucket domain (r2.dev / custom domain) to offload image requests from the
+   * Worker – see docs/09-deployment.md §"Bildspeicher (R2)".
+   */
+  "r2_buckets": [
+    {
+      "binding": "MEDIA",
+      "bucket_name": "inner-circle-media"
+    }
   ]
   /**
    * Optional: on-the-fly image optimisation for next/image via Cloudflare Images.

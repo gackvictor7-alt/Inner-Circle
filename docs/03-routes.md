@@ -62,7 +62,7 @@ Alle Routen liegen unter dem App-Layout `src/app/(app)/app/layout.tsx`, das
 | `/app/messages` | 1:1-Nachrichten | member (Messaging-Entitlement) | WORKING | `Conversation`, `ConversationParticipant`, `Message` | nur mit bestätigter Verbindung; sonst Redirect auf Verbindungen; Trial sieht Hinweis statt Eingabe |
 | `/app/notifications` | **Umleitung** → `/app/inbox?tab=notifications` | free+ | WORKING | – | – |
 | `/app/profile` | **Profil-Hauptbereich** – kompakten Header (Avatar/Name/Handle/Positionierung, Statistikzeile, Action-Zeile) + `?tab=activity\|overview\|performance\|offers` (Standard: Beiträge) | free | WORKING | `Profile`, `User`, `Post`, `Follow`, `Connection`, `TrustScoreSummary`, `PerformanceRecord`, `BusinessOpportunity`, `MarketplaceListing`, `InvestmentOpportunity`, `PrivacySettings` | Übersicht zeigt sekundäre Infos als Accordions (`<details>`); Trust & Performance, Konto-Links und schmaler Profilfortschritt leben hier |
-| `/app/profile/edit` | Profil bearbeiten **inkl. Interessen & Ziele** | free | WORKING | `Profile`, `User`, `UserInterest`, `UserGoal` | Rate-Limit 40/h; dieselbe Taxonomie wie das Onboarding |
+| `/app/profile/edit` | Profil bearbeiten **inkl. Interessen & Ziele** | free | WORKING | `Profile`, `User`, `UserInterest`, `UserGoal` | Rate-Limit 40/h; dieselbe Taxonomie wie das Onboarding – Sprint 13: EIN Formular/ Speicherbutton (Profilfelder + Foto-Upload + Interessen & Ziele, `updateProfileAction`), Success `?saved=all` |
 | `/app/settings` | **Darstellung (Hell/Dunkel/System)**, Datenschutz, Kennzahlen-Sichtbarkeit, Benachrichtigungen, Blockierte, Löschantrag, Dev-Link | free | WORKING | `PrivacySettings` (inkl. `metricsVisibilityJson`), `NotificationPreference`, `Block`, `AccountDeletionRequest` | Theme über die bestehende `ThemeProvider`-Infrastruktur |
 | `/app/card` | digitale Mitgliedskarte + QR | member (Karte) | WORKING | `MembershipCard`, `Membership`, `User` | Free/Trial sieht Sperrhinweis; `entitlements.memberCard` |
 | `/app/billing` | Mitgliedschaft, Planwahl, Abrechnung, Paywall | free | WORKING | `Membership`, `Invoice` | Checkout-POST `/api/billing/checkout`; Dev-Aktivierung nur ohne Stripe & außerhalb Produktion; **Sprint 12:** Karte „Private Beta“ (Einstieg „Beta-Zugang aktivieren“ bzw. Status „aktiv bis …, keine Mitgliedschaft“) |
@@ -103,6 +103,7 @@ Alle Routen liegen unter dem App-Layout `src/app/(app)/app/layout.tsx`, das
 | URL | Methode | Zweck | Zugriff | Status | Hinweise |
 | --- | ------- | ----- | ------- | ------ | -------- |
 | `/api/auth/logout` | POST/GET | Session widerrufen + Redirect `/` | free+ | WORKING | für reine HTML-Formulare ohne Client-JS |
+| `/api/media/[...key]` | GET | liefert hochgeladene Profilfotos aus dem R2 `MEDIA`-Binding aus (nur `avatars/<userId>/<datei>.jpg|png|webp`) | öffentlich (unerratbare Keys, wie bisherige Bild-URLs) | WORKING | Sprint 13; `Cache-Control: immutable`, ohne Binding 404; alternative Auslieferung via `R2_PUBLIC_BASE_URL` |
 | `/api/billing/checkout` | POST | Start des Checkout (Stripe) oder Dev-Aktivierung | free+ (angemeldet) | BLOCKED (Stripe) / WORKING (Dev) | Ratelimit 10/10 min; `GET` leitet auf `/app/billing` |
 | `/api/webhooks/stripe` | POST | einzig erlaubter Produktiv-Pfad für Mitgliedschaftsänderungen | öffentlich, **signaturgeprüft** | BLOCKED (kein Stripe) | Idempotenz über `MembershipEvent.providerEventId`; ohne Secret 400 |
 | `/api/auth/oauth/google` | – | – | – | **NOT IMPLEMENTED** | Route existiert **nicht**; Login-/Register-Buttons sind seit Sprint 5 echte `disabled`-Elemente ohne Link (K-04 behoben) |
@@ -213,6 +214,7 @@ Für jede wichtige Route dokumentiert: Route, Public/Auth Required, Zweck, echte
 | `/admin/investments` | Auth admin | Investment Prüfung | echt | Freigabe/Ablehnung | WORKING | admin | – |
 | `/admin/applications` | Auth admin | Mitglieds-/Löschanträge | echt | – | WORKING | admin | – |
 | `/api/auth/logout` | Auth free+ | Session Widerruf | echt | – | WORKING | free+ | – |
+| `/api/media/[...key]` | öffentlich | Profilfotos aus R2 ausliefern | echt | – | WORKING | free+ | Sprint 13 |
 | `/api/billing/checkout` | Auth free+ | Checkout Stripe oder Dev | echt | – | BLOCKED Stripe / WORKING Dev | free+ | Ratelimit 10/10min |
 | `/api/webhooks/stripe` | Public signaturgeprüft | Membership Änderungen nur via Webhook | echt | – | BLOCKED (kein Secret) | public signiert | – |
 
