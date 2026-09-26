@@ -1,7 +1,7 @@
 import "server-only";
 
 import Stripe from "stripe";
-import { stripe as stripeEnv, appUrl } from "@/lib/env";
+import { getAppUrl, stripe as stripeEnv } from "@/lib/env";
 import { PLANS, type PlanId } from "@/lib/membership/plans";
 
 /**
@@ -67,8 +67,8 @@ export async function createSubscriptionCheckout(params: {
       metadata: { userId: params.userId, plan: plan.id },
       subscription_data: { metadata: { userId: params.userId, plan: plan.id } },
       allow_promotion_codes: true,
-      success_url: `${appUrl}${params.successPath ?? "/checkout/success"}?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${appUrl}${params.cancelPath ?? "/checkout/cancel"}`,
+      success_url: `${getAppUrl()}${params.successPath ?? "/checkout/success"}?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${getAppUrl()}${params.cancelPath ?? "/checkout/cancel"}`,
     });
     if (!session.url) return { ok: false, error: "stripe_no_checkout_url" };
     return { ok: true, url: session.url };
@@ -86,7 +86,7 @@ export async function createBillingPortalSession(params: {
   try {
     const session = await stripe.billingPortal.sessions.create({
       customer: params.customerId,
-      return_url: `${appUrl}${params.returnPath ?? "/app/billing"}`,
+      return_url: `${getAppUrl()}${params.returnPath ?? "/app/billing"}`,
     });
     return { ok: true, url: session.url };
   } catch (error) {

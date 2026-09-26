@@ -28,11 +28,14 @@ export const siteV2De = {
     heroTitleB: "Keine zusätzlichen Kontakte.",
     heroLead:
       "Finde Kunden, Geschäftspartner, Kapital und neue Business-Chancen – alles an einem Ort.",
-    heroCtaPrimary: "INNER CIRCLE entdecken",
-    heroCtaSecondary: "48 Stunden kostenlos entdecken",
+    /** Primärer CTA auf der Startseite (Sprint 14): „Mehr erfahren" scrollt zu
+        den Ergebnissen/Bereichen; sekundärer CTA führt zur Plattform. */
+    heroCtaPrimary: "Mehr erfahren",
+    heroCtaSecondary: "Zur INNER CIRCLE Plattform",
     heroMembershipHint: "24,99 € im Monat oder 249,90 € im Jahr · monatlich kündbar",
-    /** Mobile hero: the single small line under the primary CTA (Sprint 8). */
-    heroTrialCta: "48h Discovery starten",
+    /** Mobile small-text Link unter dem primären Button (Sprint 8) –
+        wird derzeit durch den sekundären CTA ersetzt; bleibt aus Kompatibilität. */
+    heroTrialCta: "Zur Plattform",
     heroCtaTertiary: "Wie es funktioniert",
     heroTrialBadge: "48 Stunden Discovery inklusive",
     heroImageAlt:
@@ -341,11 +344,12 @@ export const siteV2En: SiteV2Dict = {
     heroTitleB: "Not more contacts.",
     heroLead:
       "Find customers, business partners, capital and new opportunities – all in one place.",
-    heroCtaPrimary: "Discover INNER CIRCLE",
-    heroCtaSecondary: "Start 48 hours free",
+    /** Primary homepage CTA (Sprint 14): "Learn more" scrolls to the
+        outcomes/areas; secondary CTA goes to the platform. */
+    heroCtaPrimary: "Learn more",
+    heroCtaSecondary: "Go to the INNER CIRCLE platform",
     heroMembershipHint: "€24.99 a month or €249.90 a year · cancel monthly",
-    /** Mobile hero: the single small line under the primary CTA (Sprint 8). */
-    heroTrialCta: "Start 48h discovery",
+    heroTrialCta: "Go to platform",
     heroCtaTertiary: "How it works",
     heroTrialBadge: "Includes 48 hours of discovery",
     heroImageAlt:

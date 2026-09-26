@@ -119,12 +119,21 @@ export function HomeContent() {
               </h1>
               <p className="mt-7 max-w-[540px] text-[20px] leading-[1.5] text-white/90">{t.home2.heroV3Lead}</p>
               <div className="mt-9 flex items-center gap-4">
-                <Link href="/app" className="flex h-[52px] items-center gap-3 rounded-full bg-electric-500 px-8 font-serif text-[17px] text-white hover:bg-electric-600">
-                  {t.home2.heroV3CtaPrimary}
+                {/* Sprint 14: „Mehr erfahren" ist der primäre CTA (Besucher scrollt
+                    zu den Ergebnissen/Bereichen), „Zur INNER CIRCLE Plattform"
+                    der sekundäre. Desktop Hero, dark. */}
+                <Link
+                  href="#outcomes"
+                  className="flex h-[52px] items-center gap-3 rounded-full bg-electric-500 px-8 font-serif text-[17px] text-white hover:bg-electric-600"
+                >
+                  {t.home2.heroV3CtaSecondary}
                   <ArrowRightIcon size={18} />
                 </Link>
-                <Link href="#outcomes" className="flex h-[52px] items-center rounded-full border border-white/80 px-10 font-serif text-[17px] text-white hover:bg-white/10">
-                  {t.home2.heroV3CtaSecondary}
+                <Link
+                  href="/app"
+                  className="flex h-[52px] items-center rounded-full border border-white/80 px-10 font-serif text-[17px] text-white hover:bg-white/10"
+                >
+                  {t.home2.heroV3CtaPrimary}
                 </Link>
               </div>
             </div>
@@ -186,28 +195,30 @@ export function HomeContent() {
             <p className="mt-4 max-w-2xl text-[15px] leading-6 text-paper-50/85 sm:mt-6 sm:text-lg sm:leading-8">
               {t.home2.heroLead}
             </p>
-            {/* Mobile (Sprint 8): one primary CTA + one small trial line –
-                no second button, no facts list. */}
+            {/* Mobile (Sprint 14): primär „Mehr erfahren" (scrollt zu den
+                Ergebnissen), sekundär „Zur INNER CIRCLE Plattform" als
+                dezenten Link – kein direkter Drücker zur Registrierung. */}
             <div className="mt-6 flex flex-col items-start gap-2.5 sm:mt-8 lg:hidden">
-              <Button href="/register" size="lg" className="w-full sm:w-auto">
+              <Button href="#outcomes" size="lg" className="w-full sm:w-auto">
                 {t.home2.heroCtaPrimary}
                 <ArrowRightIcon size={18} />
               </Button>
               <Link
-                href="/register"
+                href="/app"
                 className="text-[13px] font-semibold text-paper-50/75 underline-offset-4 hover:text-paper-50 hover:underline"
               >
-                {t.home2.heroTrialCta}
+                {t.home2.heroCtaSecondary}
               </Link>
             </div>
-            {/* Tablet + desktop: the approved two-CTA row (unchanged). */}
-            <div className="mt-6 hidden flex-wrap items-center gap-3 sm:mt-8 lg:flex">
+            {/* Tablet (sm-md): primär blau = Mehr erfahren, sekundär = Plattform.
+                lg+ wird durch den dunklen V3-Hero oben ersetzt. */}
+            <div className="mt-6 hidden flex-wrap items-center gap-3 sm:mt-8 sm:flex lg:hidden">
               <Button href="#outcomes" size="lg">
                 {t.home2.heroCtaPrimary}
                 <ArrowRightIcon size={18} />
               </Button>
               <Button
-                href="/register"
+                href="/app"
                 size="lg"
                 variant="ghost"
                 className="text-paper-50/80 hover:bg-white/10 hover:text-paper-50"

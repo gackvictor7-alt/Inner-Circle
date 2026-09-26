@@ -189,7 +189,7 @@ describe("production with the protected dev outbox (ENABLE_DEV_OUTBOX=true)", ()
     });
     const { env, transport } = await loadModules();
 
-    expect(env.devOutboxRecipients).toEqual(["founder@innercircle.test", "@qa.innercircle.test"]);
+    expect(env.getDevOutboxRecipientsList()).toEqual(["founder@innercircle.test", "@qa.innercircle.test"]);
     expect(env.devOutboxAccepts("founder@innercircle.test")).toBe(true);
     expect(env.devOutboxAccepts("FOUNDER@innercircle.test")).toBe(true);
     expect(env.devOutboxAccepts("tester@qa.innercircle.test")).toBe(true);

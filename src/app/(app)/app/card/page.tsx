@@ -4,7 +4,7 @@ import { db } from "@/db/client";
 import { membershipCards } from "@/db/schema";
 import { requireUser } from "@/lib/access/server";
 import QRCode from "qrcode";
-import { appUrl } from "@/lib/env";
+import { getAppUrl } from "@/lib/env";
 import { Tr, LocalizedEmptyState, LocalizedPageHeader } from "@/components/app/localized";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -50,7 +50,7 @@ export default async function MemberCardPage() {
 
   // QR target: public verification route, no tokens or personal data.
   const verifyPath = `/member/${card.publicId}`;
-  const qrSvg = await QRCode.toString(`${appUrl}${verifyPath}`, {
+  const qrSvg = await QRCode.toString(`${getAppUrl()}${verifyPath}`, {
     type: "svg",
     margin: 0,
     color: { dark: "#0b1220", light: "#ffffff" },
