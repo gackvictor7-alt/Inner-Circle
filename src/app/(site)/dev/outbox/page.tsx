@@ -4,7 +4,7 @@ import { desc } from "drizzle-orm";
 import { db } from "@/db/client";
 import { devOutbox } from "@/db/schema";
 import { requireAdmin } from "@/lib/access/server";
-import { flags, integrationStatus, appUrl, devOutboxRecipients } from "@/lib/env";
+import { flags, getAppUrl, getDevOutboxRecipientsList, integrationStatus } from "@/lib/env";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Tr } from "@/components/app/localized";
@@ -40,6 +40,8 @@ export default async function DevOutboxPage() {
 
   const integration = integrationStatus();
   const inProduction = !flags.devToolsVisible;
+  const devOutboxRecipients = getDevOutboxRecipientsList();
+  const baseUrl = getAppUrl();
 
   return (
     <div className="ic-shell py-10 sm:py-16">
@@ -105,7 +107,7 @@ export default async function DevOutboxPage() {
           )}
         </p>
         <p className="mt-2 text-xs text-foreground-subtle">
-          Basis-URL: <span className="font-mono">{appUrl}</span>
+          Basis-URL: <span className="font-mono">{baseUrl}</span>
         </p>
       </Card>
 

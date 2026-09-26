@@ -33,7 +33,7 @@ import {
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 export function hashBetaKey(normalized: string): string {
-  return createHmac("sha256", authSecret).update(`beta-invite:v1:${normalized}`).digest("hex");
+  return createHmac("sha256", authSecret()).update(`beta-invite:v1:${normalized}`).digest("hex");
 }
 
 /* ------------------------------------------------------------ admin: create */
