@@ -355,9 +355,9 @@ export default async function OwnProfilePage({
               <Tr k="app.profile.activityEmptyText" />
             </p>
           ) : (
-            <ul className="divide-y divide-border rounded-2xl border border-border bg-surface">
+            <ul className="divide-y divide-border border-y border-border">
               {posts.map((post) => (
-                <li key={post.id} className="px-5 py-4">
+                <li key={post.id} className="py-4 sm:py-5">
                   <p className="whitespace-pre-wrap text-[15px] leading-7">{post.body}</p>
                   <p className="mt-2 text-xs text-foreground-subtle">
                     {post.createdAt.toLocaleDateString(locale, { day: "2-digit", month: "short", year: "numeric" })}
