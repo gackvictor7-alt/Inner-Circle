@@ -460,3 +460,28 @@ Ausdrücklich beauftragte Konsolidierung der Plattform (kein Public-Redesign):
 - Chancen, Jobs/Projekte, Investments und Marketplace verwenden knappe Teaser, durchgängige Detail-CTAs und reduzierte Trennlinien statt mehrspaltiger Card-Raster. Vorhandene Detailrouten bleiben zuständig für Langtexte. Reale Trust-Scores werden nur bei verifizierten Bewertungsdaten in Discover, Netzwerk, Chancen, Jobs und Marketplace gezeigt.
 - Academy trennt „Meine Kurse“ und „Entdecken“ über eine mobile scrollbare Navigation; gespeicherter Kursfortschritt bleibt unverändert.
 - Keine Farb-/Typografie-Tokens, Sidebar-IA, Kernsysteme oder Datenbanktabellen neu gebaut.
+
+## 1.19 Follow-up-Sprint: Listenprinzip & Profilzähler (2026-09-27)
+
+Dieser Follow-up-Sprint ist ausdrücklich beauftragt und konsolidiert nur die
+zentralen Member-Listen; bestehende Brand-, Sidebar-, Event-, Discover-, Inbox-,
+Trust- und Theme-Strukturen bleiben unverändert:
+
+- `/app` zeigt keinen großen „Für dich“-Container und fragt dort keine
+  Personalisierungsdaten mehr ab. Die sechs Kernbereiche führen als einzelne
+  horizontale Zeilen direkt in die Bereiche.
+- Profilbeiträge und Profilangebote stehen vertikal untereinander. Die drei
+  Profilzähler öffnen jeweils ein sichtbares Modal mit X, sauberem Backdrop,
+  Outside-Klick und Escape; die Liste enthält Avatar, Name, Handle, Rolle/Firma,
+  vorhandenen Trust und „Profil öffnen“.
+- Chancen, Jobs/Projekte, Marketplace und Academy („Meine Kurse“ / „Entdecken“)
+  verwenden je Objekt eine horizontale Zeile mit kurzer Übersicht und
+  konsistenter CTA. Detailinformationen bleiben hinter der bestehenden
+  Detailroute bzw. dem bestehenden Demo-Dialog.
+- Die echte Investment-Übersicht war bereits vertikal und bleibt inhaltlich
+  unverändert. Nur die noch dichte Investment-Demo-Vorschau folgt ebenfalls
+  dem Listenprinzip.
+- Keine neuen Farben, Tokens, Tabellen, Migrationen, Auth-/Beta-/Resend-
+  Änderungen oder Änderungen am Event-Layout. Desktop und Mobile nutzen
+  dieselbe einspaltige Reihenlogik; lange Inhalte erzeugen keinen horizontalen
+  Überlauf.

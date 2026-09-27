@@ -35,9 +35,11 @@ export default async function JobsPage() {
       id: businessOpportunities.id,
       title: businessOpportunities.title,
       type: businessOpportunities.type,
+      category: businessOpportunities.category,
       summary: businessOpportunities.summary,
       location: businessOpportunities.location,
       remote: businessOpportunities.remote,
+      seeking: businessOpportunities.seeking,
       isDemo: businessOpportunities.isDemo,
       ownerFirstName: users.firstName,
       ownerLastName: users.lastName,
@@ -91,17 +93,20 @@ export default async function JobsPage() {
               <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant={row.type === "job" ? "electric" : "sand"}><Tr k={`app.opportunities.type.${row.type}` as "app.opportunities.type.job"} /></Badge>
+                    <Badge variant={row.type === "job" ? "electric" : "sand"}>
+                      {row.category ?? <Tr k={`app.opportunities.type.${row.type}` as "app.opportunities.type.job"} /> }
+                    </Badge>
                     {row.isDemo && <Badge variant="outline"><Tr k="app.common.demo" /></Badge>}
                   </div>
                   <Link href={`/app/opportunities/${row.id}`} className="mt-2 block text-base font-bold tracking-tight hover:underline">{row.title}</Link>
-                  <p className="mt-1 line-clamp-2 text-sm text-foreground-muted">{row.summary}</p>
+                  <p className="mt-1 line-clamp-2 text-sm leading-6 text-foreground-muted">{row.summary}</p>
                   <p className="mt-2 text-xs text-foreground-subtle">
                     {row.ownerCompany ?? `${row.ownerFirstName} ${row.ownerLastName}`} · {[row.location, row.remote ? "Remote" : null].filter(Boolean).join(" · ")}
+                    {row.seeking && <><span aria-hidden="true"> · </span>{row.seeking}</>}
                     {!row.isDemo && row.ownerVerifiedReviews && row.ownerVerifiedReviews > 0 && row.ownerTrustScore10 !== null ? ` · ★ ${(row.ownerTrustScore10 / 10).toFixed(1)} Trust` : ""}
                   </p>
                 </div>
-                <Button href={`/app/opportunities/${row.id}`} size="sm" variant="secondary" className="w-full sm:w-auto"><Tr k="app.common.details" /></Button>
+                <Button href={`/app/opportunities/${row.id}`} size="sm" variant="secondary" className="w-full sm:w-auto"><Tr k="app.jobs.overviewCta" /></Button>
               </div>
             </li>
           ))}

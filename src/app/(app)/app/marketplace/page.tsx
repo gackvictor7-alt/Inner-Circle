@@ -11,7 +11,6 @@ import { Card } from "@/components/ui/Card";
 import { LocalizedEmptyState, LocalizedPageHeader, Tr } from "@/components/app/localized";
 import { MarketplaceDemoSection } from "@/components/app/DemoSections";
 import { DemoAreaNotice } from "@/components/app/DemoAreaNotice";
-import { LockedArea } from "@/components/app/LockedArea";
 
 export const dynamic = "force-dynamic";
 
@@ -45,10 +44,10 @@ export default async function MarketplacePage({
       id: marketplaceListings.id,
       title: marketplaceListings.title,
       kind: marketplaceListings.kind,
+      category: marketplaceListings.category,
       summary: marketplaceListings.summary,
       priceCents: marketplaceListings.priceCents,
       currency: marketplaceListings.currency,
-      deliveryMode: marketplaceListings.deliveryMode,
       isDemo: marketplaceListings.isDemo,
       sellerHandle: users.handle,
       sellerFirstName: users.firstName,
@@ -128,18 +127,18 @@ export default async function MarketplacePage({
               <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant="sand">{row.kind}</Badge>
+                    <Badge variant="sand">{row.category ?? <Tr k={`app.marketplace.kinds.${row.kind}`} />}</Badge>
                     {row.isDemo && <Badge variant="outline"><Tr k="app.common.demo" /></Badge>}
                   </div>
                   <Link href={`/app/marketplace/${row.id}`} className="mt-2 block text-base font-bold tracking-tight hover:underline">{row.title}</Link>
                   <p className="mt-1 line-clamp-2 text-sm leading-6 text-foreground-muted">{row.summary}</p>
                   <p className="mt-2 text-xs text-foreground-subtle">
-                    <span className="font-semibold text-foreground">{formatMoney(row.priceCents, row.currency, "de")}</span>
-                    {" · "}<Link href={`/app/people/${row.sellerHandle}`} className="hover:text-foreground hover:underline">{row.sellerCompany ?? `${row.sellerFirstName} ${row.sellerLastName}`}</Link> · {row.deliveryMode}
+                    <Link href={`/app/people/${row.sellerHandle}`} className="hover:text-foreground hover:underline">{row.sellerCompany ?? `${row.sellerFirstName} ${row.sellerLastName}`}</Link>
+                    <span aria-hidden="true"> · </span><span className="font-semibold text-foreground">{formatMoney(row.priceCents, row.currency, access.user.locale === "en" ? "en" : "de")}</span>
                     {!row.isDemo && row.sellerVerifiedReviews && row.sellerVerifiedReviews > 0 && row.sellerTrustScore10 !== null ? ` · ★ ${(row.sellerTrustScore10 / 10).toFixed(1)} Trust` : ""}
                   </p>
                 </div>
-                <Button href={`/app/marketplace/${row.id}`} size="sm" variant="secondary" className="w-full sm:w-auto"><Tr k="app.common.details" /></Button>
+                <Button href={`/app/marketplace/${row.id}`} size="sm" variant="secondary" className="w-full sm:w-auto"><Tr k="app.marketplace.overviewCta" /></Button>
               </div>
             </li>
           ))}

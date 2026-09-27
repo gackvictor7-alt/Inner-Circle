@@ -1,12 +1,10 @@
 import Link from "next/link";
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 import { db } from "@/db/client";
 import { courses, enrollments, marketplaceListings, profiles, users } from "@/db/schema";
 import { requireUser } from "@/lib/access/server";
-import { formatMoney } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
 import { Progress } from "@/components/ui/Progress";
 import { LocalizedEmptyState, LocalizedPageHeader, Tr } from "@/components/app/localized";
 import { AcademyDemoSection } from "@/components/app/DemoSections";
@@ -39,9 +37,10 @@ export default async function LearnPage({ searchParams }: { searchParams: Promis
       listingId: marketplaceListings.id,
       title: marketplaceListings.title,
       summary: marketplaceListings.summary,
-      priceCents: marketplaceListings.priceCents,
-      currency: marketplaceListings.currency,
+      kind: marketplaceListings.kind,
+      category: marketplaceListings.category,
       isDemo: marketplaceListings.isDemo,
+      moduleCount: sql<number>`(select count(*) from "CourseModule" cm where cm."courseId" = ${courses.id})`,
       sellerFirstName: users.firstName,
       sellerLastName: users.lastName,
       sellerCompany: profiles.company,
@@ -84,23 +83,25 @@ export default async function LearnPage({ searchParams }: { searchParams: Promis
             action={{ labelKey: "app.marketplace.title", href: "/app/marketplace" }}
           />
         ) : (
-          <ul className="grid gap-4 lg:grid-cols-2">
+          <ul className="divide-y divide-border border-y border-border">
             {myCourses.map((course) => (
-              <li key={course.listingId}>
-                <Card className="p-5">
-                  <div className="flex flex-wrap items-center gap-2">
-                    {course.isDemo && <Badge variant="outline"><Tr k="app.common.demo" /></Badge>}
-                    {course.source === "demo_fixture" && <Badge variant="sand"><Tr k="app.learn.demoEnrollment" /></Badge>}
+              <li key={course.listingId} className="py-4 sm:py-5">
+                <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      {course.isDemo && <Badge variant="outline"><Tr k="app.common.demo" /></Badge>}
+                      {course.source === "demo_fixture" && <Badge variant="sand"><Tr k="app.learn.demoEnrollment" /></Badge>}
+                    </div>
+                    <p className="mt-2 text-base font-bold tracking-tight">{course.title}</p>
+                    <p className="mt-1 text-sm leading-6 text-foreground-muted">{course.summary}</p>
+                    <div className="mt-3 max-w-xl">
+                      <Progress value={course.progress} label={`${course.progress}%`} />
+                    </div>
                   </div>
-                  <p className="mt-2 text-base font-bold tracking-tight">{course.title}</p>
-                  <p className="mt-1 text-sm text-foreground-muted">{course.summary}</p>
-                  <div className="mt-3">
-                    <Progress value={course.progress} label={`${course.progress}%`} />
-                  </div>
-                  <Button href={`/app/learn/${course.listingId}`} size="sm" className="mt-4">
+                  <Button href={`/app/learn/${course.listingId}`} size="sm" className="w-full sm:w-auto">
                     <Tr k="app.learn.continueLearning" />
                   </Button>
-                </Card>
+                </div>
               </li>
             ))}
           </ul>
@@ -120,21 +121,25 @@ export default async function LearnPage({ searchParams }: { searchParams: Promis
             <AcademyDemoSection />
           </>
         ) : (
-          <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <ul className="divide-y divide-border border-y border-border">
             {library.map((course) => (
-              <li key={course.listingId}>
-                <Card className="flex h-full flex-col p-5">
-                  {course.isDemo && <Badge variant="outline" className="w-fit"><Tr k="app.common.demo" /></Badge>}
-                  <p className="mt-2 text-base font-bold tracking-tight">{course.title}</p>
-                  <p className="mt-2 flex-1 text-sm leading-6 text-foreground-muted">{course.summary}</p>
-                  <p className="mt-3 text-sm font-bold">{formatMoney(course.priceCents, course.currency, "de")}</p>
-                  <p className="mt-1 text-xs text-foreground-subtle">
-                    {course.sellerCompany ?? `${course.sellerFirstName} ${course.sellerLastName}`}
-                  </p>
-                  <Button href={`/app/marketplace/${course.listingId}`} size="sm" variant="secondary" className="mt-4">
-                    <Tr k="app.learn.previewLesson" />
+              <li key={course.listingId} className="py-4 sm:py-5">
+                <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      {course.isDemo && <Badge variant="outline"><Tr k="app.common.demo" /></Badge>}
+                      <Badge variant="sand">{course.category ?? <Tr k={`app.marketplace.kinds.${course.kind}`} />}</Badge>
+                    </div>
+                    <p className="mt-2 text-base font-bold tracking-tight sm:text-lg">{course.title}</p>
+                    <p className="mt-1 line-clamp-2 text-sm leading-6 text-foreground-muted">{course.summary}</p>
+                    <p className="mt-2 text-xs text-foreground-subtle">
+                      {course.sellerCompany ?? `${course.sellerFirstName} ${course.sellerLastName}`} · <Tr k="app.learn.moduleCount" params={{ count: Number(course.moduleCount) }} />
+                    </p>
+                  </div>
+                  <Button href={`/app/marketplace/${course.listingId}`} size="sm" variant="secondary" className="w-full sm:w-auto">
+                    <Tr k="app.learn.viewCourse" />
                   </Button>
-                </Card>
+                </div>
               </li>
             ))}
           </ul>

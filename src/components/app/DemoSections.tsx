@@ -28,6 +28,7 @@ import {
   type DemoDeal,
   type DemoEvent,
   type DemoInvestment,
+  type DemoJob,
   type DemoListing,
   type DemoProfile,
 } from "@/lib/demo";
@@ -485,44 +486,26 @@ export function DealsDemoSection({ canCreate = false }: { canCreate?: boolean })
 
   return (
     <SectionBlock kicker={t.app.demo.sampleBadge} title={t.app.demo.dealsTitle} lead={t.app.demo.dealsLead}>
-      <ul className="grid gap-4 md:grid-cols-2">
+      <ul className="divide-y divide-border border-y border-border">
         {DEMO_DEALS.map((deal) => (
-          <li key={deal.key}>
-            <Card className="flex h-full flex-col p-5">
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge variant="sand">{t.app.demo.offerBadge}</Badge>
-                <Badge variant="outline">{text(deal).category}</Badge>
-                <Badge variant="neutral">{text(deal).industry}</Badge>
+          <li key={deal.key} className="py-4 sm:py-5">
+            <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant="sand">{t.app.demo.offerBadge}</Badge>
+                  <Badge variant="outline">{text(deal).category}</Badge>
+                </div>
+                <h3 className="mt-2 text-base font-bold tracking-tight sm:text-lg">{text(deal).title}</h3>
+                <p className="mt-1 line-clamp-2 text-sm leading-6 text-foreground-muted">{text(deal).description}</p>
+                <p className="mt-2 text-xs text-foreground-subtle">
+                  {text(deal).location} · {text(deal).sizeLabel} · {t.app.demo.dealsRoleLabel}: {text(deal).seekingRole}
+                </p>
               </div>
-              <h3 className="mt-3 text-base font-bold tracking-tight">{text(deal).title}</h3>
-              <p className="mt-2 flex-1 text-sm leading-6 text-foreground-muted line-clamp-3">{text(deal).description}</p>
-              <dl className="mt-4 grid gap-2 text-xs text-foreground-subtle">
-                <div className="flex justify-between gap-3 border-b border-border pb-2">
-                  <dt>{t.app.common.location}</dt>
-                  <dd className="text-right font-medium text-foreground">{text(deal).location}</dd>
-                </div>
-                <div className="flex justify-between gap-3 border-b border-border pb-2">
-                  <dt>{t.app.demo.dealsSizeLabel}</dt>
-                  <dd className="text-right font-medium text-foreground">{text(deal).sizeLabel}</dd>
-                </div>
-                <div className="flex justify-between gap-3 border-b border-border pb-2">
-                  <dt>{t.app.demo.dealsRoleLabel}</dt>
-                  <dd className="text-right font-medium text-foreground">{text(deal).seekingRole}</dd>
-                </div>
-                <div className="flex justify-between gap-3">
-                  <dt>{t.app.demo.dealsStatusLabel}</dt>
-                  <dd className="text-right">
-                    <Badge variant="neutral">{text(deal).status}</Badge>
-                  </dd>
-                </div>
-              </dl>
-              <div className="mt-4">
-                <Button size="sm" variant="secondary" onClick={() => setSelected(deal)}>
-                  {t.app.demo.dealsCta}
-                  <ArrowRightIcon size={14} />
-                </Button>
-              </div>
-            </Card>
+              <Button size="sm" variant="secondary" onClick={() => setSelected(deal)} className="w-full sm:w-auto">
+                {t.app.demo.dealsCta}
+                <ArrowRightIcon size={14} />
+              </Button>
+            </div>
           </li>
         ))}
       </ul>
@@ -603,33 +586,56 @@ export function DealsDemoSection({ canCreate = false }: { canCreate?: boolean })
 
 export function JobsDemoSection() {
   const { t, locale } = useI18n();
+  const [selected, setSelected] = useState<DemoJob | null>(null);
   if (!DEMO_CONTENT_ENABLED) return null;
   const en = locale === "en";
+  const current = selected ? (en ? selected.en : selected) : null;
 
   return (
     <SectionBlock kicker={t.app.demo.sampleBadge} title={t.app.demo.jobsTitle} lead={t.app.demo.jobsLead}>
-      <ul className="grid gap-4 md:grid-cols-2">
+      <ul className="divide-y divide-border border-y border-border">
         {DEMO_JOBS.map((job) => {
           const text = en ? job.en : job;
           return (
-            <li key={job.key}>
-              <Card className="flex h-full flex-col p-5">
-                <div className="flex flex-wrap items-center gap-2">
-                  <Badge variant="sand">{t.app.demo.offerBadge}</Badge>
-                  <Badge variant="electric">{text.kind}</Badge>
+            <li key={job.key} className="py-4 sm:py-5">
+              <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge variant="sand">{t.app.demo.offerBadge}</Badge>
+                    <Badge variant="electric">{text.kind}</Badge>
+                  </div>
+                  <h3 className="mt-2 text-base font-bold tracking-tight sm:text-lg">{text.title}</h3>
+                  <p className="mt-1 line-clamp-2 text-sm leading-6 text-foreground-muted">{text.description}</p>
+                  <p className="mt-2 text-xs text-foreground-subtle">
+                    <MapPinIcon size={12} className="mr-1 inline" /> {text.location} · {t.app.demo.dealsRoleLabel}: {text.seekingRole}
+                  </p>
                 </div>
-                <h3 className="mt-3 text-base font-bold tracking-tight">{text.title}</h3>
-                <p className="mt-2 flex-1 text-sm leading-6 text-foreground-muted">{text.description}</p>
-                <p className="mt-3 text-xs text-foreground-subtle">
-                  {t.app.demo.dealsRoleLabel}: <span className="font-medium text-foreground">{text.seekingRole}</span>
-                  {" · "}
-                  <MapPinIcon size={12} className="inline" /> {text.location}
-                </p>
-              </Card>
+                <Button size="sm" variant="secondary" onClick={() => setSelected(job)} className="w-full sm:w-auto">
+                  {t.app.jobs.overviewCta}
+                  <ArrowRightIcon size={14} />
+                </Button>
+              </div>
             </li>
           );
         })}
       </ul>
+
+      <DemoDetailDialog
+        open={selected !== null}
+        onClose={() => setSelected(null)}
+        title={current?.title ?? ""}
+        badges={selected && current ? [t.app.demo.offerBadge, current.kind] : []}
+      >
+        {selected && current && (
+          <>
+            <p className="text-sm leading-6 text-foreground-muted">{current.description}</p>
+            <dl className="mt-4 grid gap-2 text-sm text-foreground-muted">
+              <div className="flex justify-between gap-3 border-b border-border pb-2"><dt>{t.app.common.location}</dt><dd className="text-right font-medium text-foreground">{current.location}</dd></div>
+              <div className="flex justify-between gap-3 border-b border-border pb-2"><dt>{t.app.demo.dealsRoleLabel}</dt><dd className="text-right font-medium text-foreground">{current.seekingRole}</dd></div>
+            </dl>
+          </>
+        )}
+      </DemoDetailDialog>
     </SectionBlock>
   );
 }
@@ -653,38 +659,26 @@ export function InvestmentsDemoSection() {
       title={t.app.demo.investmentsTitle}
       lead={t.app.demo.investmentsLead}
     >
-      <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <ul className="divide-y divide-border border-y border-border">
         {DEMO_INVESTMENTS.map((item) => (
-          <li key={item.key}>
-            <Card className="flex h-full flex-col p-5">
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge variant="sand">{t.app.demo.offerBadge}</Badge>
-                <Badge variant="electric">{text(item).sector}</Badge>
-                <Badge variant="outline">{text(item).stage}</Badge>
+          <li key={item.key} className="py-4 sm:py-5">
+            <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant="sand">{t.app.demo.offerBadge}</Badge>
+                  <Badge variant="electric">{text(item).sector}</Badge>
+                </div>
+                <h3 className="mt-2 text-base font-bold tracking-tight sm:text-lg">{text(item).title}</h3>
+                <p className="mt-1 line-clamp-2 text-sm leading-6 text-foreground-muted">{text(item).summary}</p>
+                <p className="mt-2 text-xs text-foreground-subtle">
+                  {text(item).region} · {text(item).ticketLabel} · {text(item).stage}
+                </p>
               </div>
-              <h3 className="mt-3 text-base font-bold tracking-tight">{text(item).title}</h3>
-              <p className="mt-2 flex-1 text-sm leading-6 text-foreground-muted">{text(item).summary}</p>
-              <dl className="mt-4 grid gap-2 text-xs text-foreground-subtle">
-                <div className="flex justify-between gap-3 border-b border-border pb-2">
-                  <dt>{t.app.demo.investmentsTypeLabel}</dt>
-                  <dd className="text-right font-medium text-foreground">{text(item).investmentType}</dd>
-                </div>
-                <div className="flex justify-between gap-3 border-b border-border pb-2">
-                  <dt>{t.app.demo.investmentsRegionLabel}</dt>
-                  <dd className="text-right font-medium text-foreground">{text(item).region}</dd>
-                </div>
-                <div className="flex justify-between gap-3">
-                  <dt>{t.app.demo.investmentsTicketLabel}</dt>
-                  <dd className="text-right font-medium text-foreground">{text(item).ticketLabel}</dd>
-                </div>
-              </dl>
-              <div className="mt-4">
-                <Button size="sm" variant="secondary" onClick={() => setSelected(item)}>
-                  {t.app.demo.investmentsCta}
-                  <ArrowRightIcon size={14} />
-                </Button>
-              </div>
-            </Card>
+              <Button size="sm" variant="secondary" onClick={() => setSelected(item)} className="w-full sm:w-auto">
+                {t.app.demo.investmentsCta}
+                <ArrowRightIcon size={14} />
+              </Button>
+            </div>
           </li>
         ))}
       </ul>
@@ -763,27 +757,26 @@ export function MarketplaceDemoSection() {
       title={t.app.demo.marketplaceTitle}
       lead={t.app.demo.marketplaceLead}
     >
-      <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <ul className="divide-y divide-border border-y border-border">
         {DEMO_LISTINGS.map((listing) => (
-          <li key={listing.key}>
-            <Card className="flex h-full flex-col p-5">
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge variant="sand">{t.app.demo.badge}</Badge>
-                <Badge variant="outline">{text(listing).category}</Badge>
+          <li key={listing.key} className="py-4 sm:py-5">
+            <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant="sand">{t.app.demo.badge}</Badge>
+                  <Badge variant="outline">{text(listing).category}</Badge>
+                </div>
+                <h3 className="mt-2 text-base font-bold tracking-tight sm:text-lg">{text(listing).title}</h3>
+                <p className="mt-1 line-clamp-2 text-sm leading-6 text-foreground-muted">{text(listing).summary}</p>
+                <p className="mt-2 text-xs text-foreground-subtle">
+                  {text(listing).creator} · <span className="font-semibold text-foreground">{text(listing).price}</span> · {text(listing).ratingLabel}
+                </p>
               </div>
-              <h3 className="mt-3 text-base font-bold tracking-tight">{text(listing).title}</h3>
-              <p className="mt-2 flex-1 text-sm leading-6 text-foreground-muted">{text(listing).creator}</p>
-              <p className="mt-2 text-sm font-bold">{text(listing).price}</p>
-              <div className="mt-2">
-                <Badge variant="neutral">{text(listing).ratingLabel}</Badge>
-              </div>
-              <div className="mt-4">
-                <Button size="sm" variant="secondary" onClick={() => setSelected(listing)}>
-                  {t.app.demo.marketplaceCta}
-                  <ArrowRightIcon size={14} />
-                </Button>
-              </div>
-            </Card>
+              <Button size="sm" variant="secondary" onClick={() => setSelected(listing)} className="w-full sm:w-auto">
+                {t.app.demo.marketplaceCta}
+                <ArrowRightIcon size={14} />
+              </Button>
+            </div>
           </li>
         ))}
       </ul>
@@ -818,7 +811,7 @@ export function MarketplaceDemoSection() {
  * ------------------------------------------------------------------ */
 
 export function AcademyDemoSection() {
-  const { t, locale } = useI18n();
+  const { t, tf, locale } = useI18n();
   const [selected, setSelected] = useState<DemoCourse | null>(null);
   if (!DEMO_CONTENT_ENABLED) return null;
 
@@ -832,24 +825,26 @@ export function AcademyDemoSection() {
       title={t.app.demo.academyTitle}
       lead={t.app.demo.academyLead}
     >
-      <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <ul className="divide-y divide-border border-y border-border">
         {DEMO_COURSES.map((course) => (
-          <li key={course.key}>
-            <Card className="flex h-full flex-col p-5">
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge variant="sand">{t.app.demo.badge}</Badge>
-                <Badge variant="outline">{t.app.demo.academyMeta}</Badge>
+          <li key={course.key} className="py-4 sm:py-5">
+            <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant="sand">{t.app.demo.badge}</Badge>
+                  <Badge variant="outline">{text(course).category}</Badge>
+                </div>
+                <h3 className="mt-2 text-base font-bold tracking-tight sm:text-lg">{text(course).title}</h3>
+                <p className="mt-1 line-clamp-2 text-sm leading-6 text-foreground-muted">{text(course).summary}</p>
+                <p className="mt-2 text-xs text-foreground-subtle">
+                  {text(course).creator} · {tf(t.app.learn.moduleCount, { count: course.moduleCount })}
+                </p>
               </div>
-              <h3 className="mt-3 text-base font-bold tracking-tight">{text(course).title}</h3>
-              <p className="mt-2 flex-1 text-sm leading-6 text-foreground-muted">{text(course).summary}</p>
-              <p className="mt-3 text-xs text-foreground-subtle">{text(course).metaLabel}</p>
-              <div className="mt-4">
-                <Button size="sm" variant="secondary" onClick={() => setSelected(course)}>
-                  {t.app.demo.academyCta}
-                  <ArrowRightIcon size={14} />
-                </Button>
-              </div>
-            </Card>
+              <Button size="sm" variant="secondary" onClick={() => setSelected(course)} className="w-full sm:w-auto">
+                {t.app.demo.academyCta}
+                <ArrowRightIcon size={14} />
+              </Button>
+            </div>
           </li>
         ))}
       </ul>
@@ -863,7 +858,11 @@ export function AcademyDemoSection() {
         {selected && current && (
           <>
             <p className="text-sm leading-6 text-foreground-muted">{current.summary}</p>
-            <p className="mt-3 text-xs text-foreground-subtle">{current.metaLabel}</p>
+            <dl className="mt-4 grid gap-2 text-sm text-foreground-muted">
+              <div className="flex justify-between gap-3 border-b border-border pb-2"><dt>{t.app.marketplace.detail.seller}</dt><dd className="text-right font-medium text-foreground">{current.creator}</dd></div>
+              <div className="flex justify-between gap-3 border-b border-border pb-2"><dt>{t.app.common.category}</dt><dd className="text-right font-medium text-foreground">{current.category}</dd></div>
+              <div className="flex justify-between gap-3"><dt>{tf(t.app.learn.moduleCount, { count: "" }).trim()}</dt><dd className="text-right font-medium text-foreground">{selected.moduleCount}</dd></div>
+            </dl>
           </>
         )}
       </DemoDetailDialog>
@@ -1019,35 +1018,34 @@ export function ProfilePostsDemoSection({ asOf }: { asOf: Date }) {
       </div>
       <p className="mt-2 max-w-2xl text-sm leading-6 text-foreground-muted">{t.app.demo.profilePostsLead}</p>
 
-      <ul className="mt-5 grid gap-4 lg:grid-cols-2">
+      <ul className="mt-5 divide-y divide-border border-y border-border">
         {DEMO_PROFILE_POSTS.map((post) => {
           const date = new Date(now - post.daysAgo * 86_400_000);
           return (
-            <li
-              key={post.key}
-              className="flex flex-col overflow-hidden rounded-2xl border border-border bg-background"
-            >
-              {post.image ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={post.image}
-                  alt={isEn ? post.imageAltEn ?? "" : post.imageAltDe ?? ""}
-                  loading="lazy"
-                  className="h-40 w-full object-cover sm:h-44"
-                />
-              ) : null}
-              <div className="flex flex-1 flex-col p-4">
-                <p className="flex flex-wrap items-center gap-2 text-[11px] font-bold uppercase tracking-[0.14em] text-foreground-subtle">
-                  <span className="rounded-full bg-surface-muted px-2 py-0.5">
-                    {isEn ? post.categoryEn : post.categoryDe}
-                  </span>
-                  <span>{date.toLocaleDateString(localeTag, { day: "2-digit", month: "short" })}</span>
-                </p>
-                <p className="mt-2.5 flex-1 text-sm leading-6">{isEn ? post.bodyEn : post.bodyDe}</p>
-                <p className="mt-3 border-t border-border pt-2.5 text-[11px] text-foreground-subtle">
-                  {t.app.demo.profilePostsDemoLine}
-                </p>
-              </div>
+            <li key={post.key} className="py-4 sm:py-5">
+              <article className={`grid gap-4 ${post.image ? "md:grid-cols-[minmax(12rem,0.8fr)_minmax(0,1.2fr)]" : ""}`}>
+                {post.image ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={post.image}
+                    alt={isEn ? post.imageAltEn ?? "" : post.imageAltDe ?? ""}
+                    loading="lazy"
+                    className="h-44 w-full rounded-xl object-cover md:h-full md:min-h-48"
+                  />
+                ) : null}
+                <div className="min-w-0">
+                  <p className="flex flex-wrap items-center gap-2 text-[11px] font-bold uppercase tracking-[0.14em] text-foreground-subtle">
+                    <span className="rounded-full bg-surface-muted px-2 py-0.5">
+                      {isEn ? post.categoryEn : post.categoryDe}
+                    </span>
+                    <span>{date.toLocaleDateString(localeTag, { day: "2-digit", month: "short" })}</span>
+                  </p>
+                  <p className="mt-2.5 text-sm leading-6">{isEn ? post.bodyEn : post.bodyDe}</p>
+                  <p className="mt-3 border-t border-border pt-2.5 text-[11px] text-foreground-subtle">
+                    {t.app.demo.profilePostsDemoLine}
+                  </p>
+                </div>
+              </article>
             </li>
           );
         })}

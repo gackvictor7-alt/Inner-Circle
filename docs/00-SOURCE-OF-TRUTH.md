@@ -3,18 +3,23 @@
 **Diese Datei ist der verbindliche Einstiegspunkt für jeden Menschen und jeden
 KI-Agenten, der an diesem Repository arbeitet.**
 
-- **Neuester Stand (2026-09-27): Platform UX Consolidation & Trust First.**
-  Session-Branch basiert auf dem aktuellen `main` (beim Start gleicher Commit
-  `543aa1d`; `git fetch origin main` ohne Divergenz). Vorhandene VP-Monogramm-
-  Marke im App-Shell, Profil-Header mit prominentem datenbasiertem Trust-Bereich,
-  klickbare Listen aus den bestehenden Follow-/Connection-Tabellen, echte Trust-Hinweise in Discover/Netzwerk/Business-Listen, breite
-  Profil-Tabs, einzeilige Event-/Business-Übersichten und getrennte Academy-
-  Navigation. Monaco-Event-Bild und Datenzuordnung blieben unverändert.
-  **Nachweise:** `npm test` 37 Dateien / 275 Tests; Typecheck, i18n-Audit,
-  OpenNext-Build und Wrangler Dry-Run grün. Lint bleibt auf K-15-Baseline
-  (5 Fehler + 7 Warnungen; keine neuen Befunde). Keine Migration.
-  Screenshot-E2E wurde in dieser Umgebung nicht ausgeführt (kein Chromium/
-  Playwright-Browser vorhanden); siehe `docs/08-testing.md`.
+- **Neuester Stand (2026-09-27): Follow-up UX-Konsolidierung nach PR #32.**
+  Session-Branch basiert auf `main` nach dem Merge von PR #32. Die Startseite
+  lädt keine „Für dich“-Personalisierungsabfrage mehr und führt direkt über
+  ruhige horizontale Bereichszeilen in die Kernbereiche. Profilbeiträge,
+  Angebote, Chancen, Jobs/Projekte, Marketplace und Academy nutzen vertikale
+  Listen; echte Daten bleiben unverändert, Demo-Übersichten sind ebenfalls
+  zeilenbasiert und zeigen Details erst nach Klick. Die drei Profilzähler
+  öffnen ein zugängliches Portal-Modal mit X, Backdrop-/Outside-Klick und
+  Escape-Unterstützung; Avatar, Name, Handle, Rolle/Firma, Trust und
+  Profil-Link werden aus den vorhandenen Tabellen angezeigt. Investments wurden
+  nur dort konsolidiert, wo die Demo-Übersicht noch ein Raster hatte; die klare
+  echte Investment-Liste blieb unverändert. Keine neue Migration.
+  **Nachweise:** `npm test` 37 Dateien / 275 Tests, Typecheck, i18n-Audit,
+  Next/OpenNext-Build und Wrangler Dry-Run grün. Lint bleibt auf der
+  bestehenden K-15-Baseline (5 Fehler + 6 Warnungen; keine neuen Befunde).
+  Screenshot-E2E wurde in dieser Umgebung nicht ausgeführt (kein
+  Chromium/Playwright-Browser vorhanden); siehe `docs/08-testing.md`.
 
 - **Stand Private-Beta-Abnahme (2026-09-27): WORKING im lokalen Worker.**
   Basis `main` @ `9013640`. Kein Auth-/Resend-/Membership-Rewrite.

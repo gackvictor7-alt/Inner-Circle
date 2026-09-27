@@ -2,7 +2,7 @@
 
 **Neueste UX-Konsolidierung (2026-09-27):** `npm test` 37 Dateien / 275 Tests
 grün, Typecheck/i18n-Audit/OpenNext-Build/Wrangler Dry-Run grün; Lint unverändert
-5 Fehler + 7 Warnungen (K-15). Die Profil-/Events-/Business-Listen- und Theme-
+5 Fehler + 6 Warnungen (K-15). Die Profil-/Events-/Business-Listen- und Theme-
 Screenshot-Matrix wurde in dieser Umgebung **nicht** ausgeführt: kein Chromium
 und kein Playwright-Modul auffindbar. Es werden daher keine neuen E2E-Screenshots
 behauptet. Profil-Follower/Following/Connections sowie Trust-Empty-/Score-Zustände
@@ -461,3 +461,19 @@ Dialoge). Unit/Integration: **275/275**. Setup, ehrliche Grenzen und kompakte
 Belege: [Private-Beta-Abnahme](15-private-beta-acceptance.md).
 Theme-Wechsel und diese Server-Action-HTTP-Flows sind damit nicht mehr nur
 manuell geprüft; echte Mobilgeräte/externe Provider bleiben außerhalb.
+
+## 3e. Follow-up-Sprint Listen & Modal (2026-09-27)
+
+Automatisiert wurden für diesen Follow-up-Sprint `npm run typecheck`,
+`npm test`, der OpenNext-Build, `npm run cf:dry-run` und `npm run cf:build`
+erfolgreich ausgeführt. Zusätzlich war der i18n-Audit grün; `npm run lint`
+bleibt wegen 5 bestehender Fehler und 6 Warnungen rot, ohne neue Befunde.
+Die manuelle Matrix umfasst `/app`, `/app/profile`, Follower/Following/
+Connections, Chancen, Jobs, Marketplace, Academy und Investments jeweils in
+Desktop Light/Dark und grundlegendem Mobile-Rendering.
+
+Die Browser-Matrix wurde in dieser Umgebung nicht ausgeführt, weil kein
+Chromium-/Playwright-Browser vorhanden ist. Daher werden für die Modal-
+Interaktionen (X, Outside-Klick, Escape, erneuter Trigger) keine neuen
+Screenshot-/Browserzahlen behauptet; die Implementierung nutzt den bestehenden
+`Dialog`-Mechanismus mit Portal, Backdrop, Fokusbehandlung und Escape.
