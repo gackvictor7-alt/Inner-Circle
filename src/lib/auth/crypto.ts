@@ -50,7 +50,7 @@ export function sha256(value: string): string {
 
 /** Opaque session token stored as a SHA-256 hash. */
 export function hashSessionToken(token: string): string {
-  return sha256(`session:${authSecret}:${token}`);
+  return sha256(`session:${authSecret()}:${token}`);
 }
 
 /** Six-digit one-time code (cryptographically random, no modulo bias). */
@@ -63,16 +63,16 @@ export function generateOtp(): string {
  * so a database leak alone cannot reveal a valid code.
  */
 export function hashOtp(code: string, recordId: string): string {
-  return sha256(`otp:${authSecret}:${recordId}:${code}`);
+  return sha256(`otp:${authSecret()}:${recordId}:${code}`);
 }
 
 /** Password-reset / verification-link token hashing. */
 export function hashAuthToken(token: string): string {
-  return sha256(`auth-token:${authSecret}:${token}`);
+  return sha256(`auth-token:${authSecret()}:${token}`);
 }
 
 /** Best-effort abuse fingerprint (never a plain IP address). */
 export function fingerprint(...parts: (string | undefined)[]): string | undefined {
   const value = parts.filter(Boolean).join("|");
-  return value ? sha256(`fp:${authSecret}:${value}`).slice(0, 32) : undefined;
+  return value ? sha256(`fp:${authSecret()}:${value}`).slice(0, 32) : undefined;
 }

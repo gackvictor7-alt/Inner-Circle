@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { destroySession } from "@/lib/auth/session";
-import { appUrl } from "@/lib/env";
+import { getAppUrl } from "@/lib/env";
 
 /**
  * Logout endpoint used by plain HTML forms (no client JS required).
@@ -8,10 +8,10 @@ import { appUrl } from "@/lib/env";
  */
 export async function POST() {
   await destroySession();
-  return NextResponse.redirect(`${appUrl}/`, { status: 303 });
+  return NextResponse.redirect(`${getAppUrl()}/`, { status: 303 });
 }
 
 export async function GET() {
   await destroySession();
-  return NextResponse.redirect(`${appUrl}/`, { status: 303 });
+  return NextResponse.redirect(`${getAppUrl()}/`, { status: 303 });
 }

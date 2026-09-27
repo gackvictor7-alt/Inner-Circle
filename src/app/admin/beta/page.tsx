@@ -1,6 +1,6 @@
 import { requireAdmin } from "@/lib/access/server";
 import { betaOverview } from "@/lib/beta/service";
-import { appUrl } from "@/lib/env";
+import { getAppUrl } from "@/lib/env";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { StatTile } from "@/components/app/ui";
@@ -50,7 +50,7 @@ export default async function AdminBetaPage() {
         <h2 className="mb-4 text-lg font-bold tracking-tight">
           <Tr k="app.betaAdmin.createTitle" />
         </h2>
-        <AdminBetaCreateForm siteUrl={appUrl.replace(/\/$/, "")} />
+        <AdminBetaCreateForm siteUrl={getAppUrl().replace(/\/$/, "")} />
       </Card>
 
       <section>
