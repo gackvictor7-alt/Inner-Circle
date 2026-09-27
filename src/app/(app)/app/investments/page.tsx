@@ -68,6 +68,12 @@ export default async function InvestmentsPage({
     .orderBy(desc(investmentOpportunities.reviewedAt))
     .limit(30);
 
+  const sectors = await db
+    .selectDistinct({ sector: investmentOpportunities.sector })
+    .from(investmentOpportunities)
+    .where(eq(investmentOpportunities.status, "approved"))
+    .orderBy(investmentOpportunities.sector);
+
   const myInterests = await db
     .select({ opportunityId: investmentInterests.opportunityId })
     .from(investmentInterests)
@@ -100,6 +106,15 @@ export default async function InvestmentsPage({
         </p>
       )}
 
+      {sectors.length > 0 && (
+        <nav aria-label={access.user.locale === "en" ? "Investment categories" : "Investmentkategorien"} className="flex w-full gap-2 overflow-x-auto pb-1">
+          <Link href="/app/investments" aria-current={!params.sector ? "page" : undefined} className={`shrink-0 rounded-full px-3 py-1.5 text-sm font-semibold ${!params.sector ? "bg-electric-500 text-white" : "border border-border text-foreground-muted hover:text-foreground"}`}><Tr k="app.common.all" /></Link>
+          {sectors.map(({ sector }) => (
+            <Link key={sector} href={`/app/investments?sector=${encodeURIComponent(sector)}`} aria-current={params.sector === sector ? "page" : undefined} className={`shrink-0 rounded-full px-3 py-1.5 text-sm font-semibold ${params.sector === sector ? "bg-electric-500 text-white" : "border border-border text-foreground-muted hover:text-foreground"}`}>{sector}</Link>
+          ))}
+        </nav>
+      )}
+
       {/* Unterstruktur (spec): Opportunities für Mitglieder – klar getrennt vom IC Portfolio. */}
       <section aria-label="Investment Opportunities" className="space-y-6">
         <LocalizedSectionHeading titleKey="app.investments.opportunitiesSectionTitle" />
@@ -119,40 +134,25 @@ export default async function InvestmentsPage({
           action={access.entitlements.investmentsSubmit ? { labelKey: "app.investments.submitTitle", href: "/app/investments/submit" } : undefined}
         />
       ) : (
-        // Mobile (Sprint 8, TEIL W): list-based cards – key numbers stay,
-        // the summary is one line until the detail page.
-        <ul className="grid gap-3 lg:grid-cols-2 lg:gap-4">
+        <ul className="divide-y divide-border border-y border-border">
           {rows.map((row) => (
-            <li key={row.id}>
-              <Card className="flex h-full flex-col p-4 sm:p-5">
-                <div className="flex flex-wrap items-center gap-2">
-                  <Badge variant="electric">{row.sector}</Badge>
-                  <Badge variant="outline">{row.stage}</Badge>
-                  {row.isDemo && <Badge variant="sand"><Tr k="app.common.demo" /></Badge>}
-                  {interestSet.has(row.id) && <Badge variant="forest"><Tr k="app.investments.detail.interestSent" /></Badge>}
-                </div>
-                <Link href={`/app/investments/${row.id}`} className="mt-2.5 text-base font-bold tracking-tight hover:underline sm:mt-3">
-                  {row.publicName}
-                </Link>
-                <p className="mt-1.5 line-clamp-1 flex-1 text-sm leading-6 text-foreground-muted lg:line-clamp-none">
-                  {row.summary}
-                </p>
-                <dl className="mt-3 grid grid-cols-2 gap-2 text-xs text-foreground-subtle">
-                  <div>
-                    <dt><Tr k="app.investments.detail.target" /></dt>
-                    <dd className="text-sm font-medium text-foreground">{formatMoney(row.targetAmountCents, row.currency, "de")}</dd>
+            <li key={row.id} className="py-4 sm:py-5">
+              <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge variant="electric">{row.sector}</Badge><Badge variant="outline">{row.investmentType}</Badge><Badge variant="outline">{row.stage}</Badge>
+                    {row.isDemo && <Badge variant="sand"><Tr k="app.common.demo" /></Badge>}
+                    {interestSet.has(row.id) && <Badge variant="forest"><Tr k="app.investments.detail.interestSent" /></Badge>}
                   </div>
-                  <div>
-                    <dt><Tr k="app.investments.detail.minTicket" /></dt>
-                    <dd className="text-sm font-medium text-foreground">{formatMoney(row.minTicketCents, row.currency, "de")}</dd>
-                  </div>
-                </dl>
-                <div className="mt-4">
-                  <Button href={`/app/investments/${row.id}`} size="sm" variant="secondary">
-                    <Tr k="app.common.details" />
-                  </Button>
+                  <Link href={`/app/investments/${row.id}`} className="mt-2 block text-base font-bold tracking-tight hover:underline sm:text-lg">{row.publicName}</Link>
+                  <p className="mt-1 line-clamp-2 text-sm leading-6 text-foreground-muted">{row.summary}</p>
+                  <p className="mt-2 text-xs text-foreground-subtle">
+                    <span className="font-semibold text-foreground">{formatMoney(row.targetAmountCents, row.currency, "de")}</span> {" · "}<Tr k="app.investments.detail.target" />
+                    {" · "}<Tr k="app.investments.detail.minTicket" />: {formatMoney(row.minTicketCents, row.currency, "de")}
+                  </p>
                 </div>
-              </Card>
+                <Button href={`/app/investments/${row.id}`} size="sm" variant="secondary" className="w-full sm:w-auto"><Tr k="app.common.details" /></Button>
+              </div>
             </li>
           ))}
         </ul>

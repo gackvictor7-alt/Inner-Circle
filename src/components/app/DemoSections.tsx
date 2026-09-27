@@ -893,36 +893,34 @@ export function EventsDemoSection() {
       <p className="rounded-xl border border-sand-400/40 bg-sand-200/40 px-4 py-3 text-xs leading-5 text-sand-800 dark:bg-sand-400/10 dark:text-sand-100">
         {t.app.demo.eventsDisclaimer}
       </p>
-      <ul className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <ul className="mt-4 divide-y divide-border border-y border-border">
         {DEMO_EVENTS.map((event) => (
-          <li key={event.key}>
-            <Card className="flex h-full flex-col overflow-hidden">
+          <li key={event.key} className="py-5 sm:py-7">
+            <article className="grid overflow-hidden rounded-2xl bg-surface md:grid-cols-[minmax(15rem,0.9fr)_minmax(0,1.1fr)]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={event.image}
                 alt={en ? event.imageAltEn : event.imageAltDe}
                 loading="lazy"
-                className="h-32 w-full object-cover"
+                className="h-52 w-full object-cover md:h-full md:min-h-64"
               />
-              <div className="flex flex-1 flex-col p-5">
+              <div className="flex min-w-0 flex-col justify-center p-5 sm:p-7">
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant="sand">{t.app.demo.eventsBadge}</Badge>
                   <Badge variant="outline">{text(event).type}</Badge>
                 </div>
-                <h3 className="mt-3 text-base font-bold tracking-tight">{text(event).title}</h3>
-                <p className="mt-2 flex-1 text-sm leading-6 text-foreground-muted">{text(event).summary}</p>
-                <p className="mt-3 flex items-center gap-1 text-xs text-foreground-subtle">
-                  <MapPinIcon size={12} />
-                  {event.city}
+                <h3 className="mt-3 text-xl font-bold tracking-tight sm:text-2xl">{text(event).title}</h3>
+                <p className="mt-2 line-clamp-2 text-sm leading-6 text-foreground-muted">{text(event).summary}</p>
+                <p className="mt-3 flex items-center gap-1 text-sm text-foreground-subtle">
+                  <MapPinIcon size={14} />{event.city}
                 </p>
                 <div className="mt-4">
                   <Button size="sm" variant="secondary" onClick={() => setSelected(event)}>
-                    {t.app.demo.eventsCta}
-                    <ArrowRightIcon size={14} />
+                    {t.app.demo.eventsCta}<ArrowRightIcon size={14} />
                   </Button>
                 </div>
               </div>
-            </Card>
+            </article>
           </li>
         ))}
       </ul>

@@ -3,6 +3,19 @@
 **Diese Datei ist der verbindliche Einstiegspunkt für jeden Menschen und jeden
 KI-Agenten, der an diesem Repository arbeitet.**
 
+- **Neuester Stand (2026-09-27): Platform UX Consolidation & Trust First.**
+  Session-Branch basiert auf dem aktuellen `main` (beim Start gleicher Commit
+  `543aa1d`; `git fetch origin main` ohne Divergenz). Vorhandene VP-Monogramm-
+  Marke im App-Shell, Profil-Header mit prominentem datenbasiertem Trust-Bereich,
+  klickbare Listen aus den bestehenden Follow-/Connection-Tabellen, echte Trust-Hinweise in Discover/Netzwerk/Business-Listen, breite
+  Profil-Tabs, einzeilige Event-/Business-Übersichten und getrennte Academy-
+  Navigation. Monaco-Event-Bild und Datenzuordnung blieben unverändert.
+  **Nachweise:** `npm test` 37 Dateien / 275 Tests; Typecheck, i18n-Audit,
+  OpenNext-Build und Wrangler Dry-Run grün. Lint bleibt auf K-15-Baseline
+  (5 Fehler + 7 Warnungen; keine neuen Befunde). Keine Migration.
+  Screenshot-E2E wurde in dieser Umgebung nicht ausgeführt (kein Chromium/
+  Playwright-Browser vorhanden); siehe `docs/08-testing.md`.
+
 - **Stand Private-Beta-Abnahme (2026-09-27): WORKING im lokalen Worker.**
   Basis `main` @ `9013640`. Kein Auth-/Resend-/Membership-Rewrite.
   Beta-Aktivierung berücksichtigt jetzt die bestehende `profileComplete`-Regel:

@@ -98,48 +98,41 @@ export default async function EventsPage({
           action={{ labelKey: "app.nav.network", href: "/app/network" }}
         />
       ) : (
-        // Mobile (Sprint 8, TEIL X): image-led compact cards – image,
-        // title, place, date, CTA. No long description in the overview.
-        <ul className="grid gap-3 sm:gap-4 lg:grid-cols-2">
+        <ul className="divide-y divide-border border-y border-border">
           {shown.map((event) => (
-            <li key={event.id}>
-              <Card className="flex h-full flex-col overflow-hidden">
+            <li key={event.id} className="py-5 sm:py-7">
+              <article className="grid overflow-hidden rounded-2xl bg-surface md:grid-cols-[minmax(15rem,0.9fr)_minmax(0,1.1fr)]">
                 {event.imageUrl ? (
                   <Image
                     src={event.imageUrl}
                     alt=""
-                    width={800}
-                    height={450}
-                    sizes="(min-width: 1024px) 50vw, 100vw"
-                    className="h-36 w-full object-cover sm:h-40"
+                    width={1000}
+                    height={650}
+                    sizes="(min-width: 768px) 42vw, 100vw"
+                    className="h-52 w-full object-cover md:h-full md:min-h-64"
                   />
-                ) : null}
-                <div className="flex flex-1 flex-col p-4 sm:p-5">
-                <div className="flex flex-wrap items-center gap-2">
-                  <Badge variant={stateVariant[event.state as keyof typeof stateVariant] ?? "outline"}>
-                    <Tr k={`app.events.state.${event.state}`} />
-                  </Badge>
-                  <Badge variant="outline">{event.category}</Badge>
-                  {event.isDemo && <Badge variant="sand"><Tr k="app.common.demo" /></Badge>}
+                ) : (
+                  <div className="min-h-44 bg-surface-muted md:min-h-64" aria-hidden="true" />
+                )}
+                <div className="flex min-w-0 flex-col justify-center p-5 sm:p-7">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge variant={stateVariant[event.state as keyof typeof stateVariant] ?? "outline"}><Tr k={`app.events.state.${event.state}`} /></Badge>
+                    <Badge variant="outline">{event.category}</Badge>
+                    {event.isDemo && <Badge variant="sand"><Tr k="app.common.demo" /></Badge>}
+                  </div>
+                  <h2 className="mt-3 text-xl font-bold tracking-tight sm:text-2xl">
+                    <Link href={`/app/events/${event.slug}`} className="hover:underline">{event.title}</Link>
+                  </h2>
+                  <p className="mt-2 line-clamp-2 text-sm leading-6 text-foreground-muted">{event.summary}</p>
+                  <p className="mt-4 text-sm font-medium text-foreground-subtle">
+                    {event.startsAt?.toLocaleDateString("de-DE")}
+                    {event.startsAt ? ` · ${event.startsAt.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}` : ""}
+                    {" · "}{[event.location, event.city].filter(Boolean).join(", ")}
+                    {event.capacity ? ` · max. ${event.capacity}` : ""}
+                  </p>
+                  <div className="mt-5"><Button href={`/app/events/${event.slug}`} size="sm" variant="secondary"><Tr k="app.events.viewEvent" /></Button></div>
                 </div>
-                <Link href={`/app/events/${event.slug}`} className="mt-2.5 text-base font-bold tracking-tight hover:underline sm:mt-3">
-                  {event.title}
-                </Link>
-                <p className="mt-2 hidden flex-1 text-sm leading-6 text-foreground-muted sm:block">{event.summary}</p>
-                <p className="mt-2 text-xs text-foreground-subtle sm:mt-3">
-                  {event.startsAt?.toLocaleDateString("de-DE")}
-                  {event.startsAt ? ` · ${event.startsAt.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}` : ""}
-                  {" · "}
-                  {[event.location, event.city].filter(Boolean).join(", ")}
-                  {event.capacity ? ` · max. ${event.capacity}` : ""}
-                </p>
-                <div className="mt-3 sm:mt-4">
-                  <Button href={`/app/events/${event.slug}`} size="sm" variant="secondary">
-                    <Tr k="app.events.viewEvent" />
-                  </Button>
-                </div>
-                </div>
-              </Card>
+              </article>
             </li>
           ))}
         </ul>

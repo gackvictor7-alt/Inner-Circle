@@ -28,6 +28,8 @@ export type MemberCardData = {
   avatarUrl: string | null;
   isDemo: boolean;
   foundingMember: boolean;
+  trustScore10?: number | null;
+  verifiedReviewCount?: number | null;
   interests: string[];
   isFollowing: boolean;
   isConnected: boolean;
@@ -149,7 +151,12 @@ export function MemberCard({
             )}
             {member.isConnected && <Badge variant="forest">{t.app.connections.tabConnections}</Badge>}
           </div>
-          <p className="mt-0.5 truncate text-xs text-foreground-subtle">@{member.handle}</p>
+          <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs text-foreground-subtle">
+            <span>@{member.handle}</span>
+            {!isDemoCard && member.verifiedReviewCount && member.verifiedReviewCount > 0 && member.trustScore10 !== null && member.trustScore10 !== undefined && (
+              <span className="font-semibold text-forest-700 dark:text-forest-300">★ {(member.trustScore10 / 10).toFixed(1)} Trust</span>
+            )}
+          </p>
           {member.headline && <p className="mt-1.5 text-sm leading-6 text-foreground-muted">{member.headline}</p>}
           <p className="mt-1 text-xs text-foreground-subtle">
             {[member.company, member.location].filter(Boolean).join(" · ")}

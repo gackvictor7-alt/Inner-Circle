@@ -227,6 +227,8 @@ export default async function DiscoverPage({
     bio: candidate.bio,
     isDemo: candidate.isDemo,
     foundingMember: candidate.foundingMember,
+    trustScore10: candidate.trustScore10,
+    verifiedReviewCount: candidate.verifiedReviewCount,
     roles: candidate.roles,
     skills: candidate.skills,
     interests: candidate.interestLabels,

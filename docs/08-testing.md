@@ -1,5 +1,14 @@
 # 08 – Test- und Qualitätssicherung
 
+**Neueste UX-Konsolidierung (2026-09-27):** `npm test` 37 Dateien / 275 Tests
+grün, Typecheck/i18n-Audit/OpenNext-Build/Wrangler Dry-Run grün; Lint unverändert
+5 Fehler + 7 Warnungen (K-15). Die Profil-/Events-/Business-Listen- und Theme-
+Screenshot-Matrix wurde in dieser Umgebung **nicht** ausgeführt: kein Chromium
+und kein Playwright-Modul auffindbar. Es werden daher keine neuen E2E-Screenshots
+behauptet. Profil-Follower/Following/Connections sowie Trust-Empty-/Score-Zustände
+sind aktuell nicht durch neue Browser-Assertions abgedeckt; reine bestehende
+Service- und Datenbanktests ersetzen diese UI-Prüfung nicht.
+
 **Stand:** 2026-09-27 (Sprint 15 – Passwort-Reset-Root-Cause, Beta-Onboarding,
 CTA-Check, Domain-Vorbereitung) · Branch `arena/01a0e2ea-inner-circle` (Basis
 `main` @ `530be5f`, PR offen): `npm test` = **36 Dateien / 267 Tests grün**

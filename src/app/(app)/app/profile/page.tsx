@@ -1,4 +1,8 @@
 import Link from "next/link";
+import { and, eq, inArray, isNull, or } from "drizzle-orm";
+import { alias } from "drizzle-orm/sqlite-core";
+import { db } from "@/db/client";
+import { connections, follows, profiles, trustScoreSummaries, users } from "@/db/schema";
 import { requireUser } from "@/lib/access/server";
 import {
   ownOfferingsFor,
@@ -89,7 +93,27 @@ export default async function OwnProfilePage({
 
   const locale = user.locale === "en" ? "en-GB" : "de-DE";
   const dict = dictionaries[user.locale === "en" ? "en" : "de"];
-  const score = trust.summary?.score10 ? trust.summary.score10 / 10 : null;
+  const score = trust.summary?.verifiedReviewCount && trust.summary.score10 !== null
+    ? trust.summary.score10 / 10
+    : null;
+
+  const followerUser = alias(users, "profile_follower");
+  const followerProfile = alias(profiles, "profile_follower_profile");
+  const followerTrust = alias(trustScoreSummaries, "profile_follower_trust");
+  const followedUser = alias(users, "profile_followed");
+  const followedProfile = alias(profiles, "profile_followed_profile");
+  const followedTrust = alias(trustScoreSummaries, "profile_followed_trust");
+  const [followers, following, connectionRows] = await Promise.all([
+    db.select({ id: followerUser.id, firstName: followerUser.firstName, lastName: followerUser.lastName, handle: followerUser.handle, headline: followerProfile.headline, company: followerProfile.company, avatarUrl: followerProfile.avatarUrl, score10: followerTrust.score10, verifiedReviewCount: followerTrust.verifiedReviewCount })
+      .from(follows).innerJoin(followerUser, eq(followerUser.id, follows.followerId)).leftJoin(followerProfile, eq(followerProfile.userId, followerUser.id)).leftJoin(followerTrust, eq(followerTrust.userId, followerUser.id)).where(eq(follows.followingId, user.id)).limit(40),
+    db.select({ id: followedUser.id, firstName: followedUser.firstName, lastName: followedUser.lastName, handle: followedUser.handle, headline: followedProfile.headline, company: followedProfile.company, avatarUrl: followedProfile.avatarUrl, score10: followedTrust.score10, verifiedReviewCount: followedTrust.verifiedReviewCount })
+      .from(follows).innerJoin(followedUser, eq(followedUser.id, follows.followingId)).leftJoin(followedProfile, eq(followedProfile.userId, followedUser.id)).leftJoin(followedTrust, eq(followedTrust.userId, followedUser.id)).where(eq(follows.followerId, user.id)).limit(40),
+    db.select({ userAId: connections.userAId, userBId: connections.userBId }).from(connections)
+      .where(and(isNull(connections.endedAt), or(eq(connections.userAId, user.id), eq(connections.userBId, user.id)))).limit(100),
+  ]);
+  const connectionIds = connectionRows.map((row) => row.userAId === user.id ? row.userBId : row.userAId);
+  const connectedMembers = connectionIds.length ? await db.select({ id: users.id, firstName: users.firstName, lastName: users.lastName, handle: users.handle, headline: profiles.headline, company: profiles.company, avatarUrl: profiles.avatarUrl, score10: trustScoreSummaries.score10, verifiedReviewCount: trustScoreSummaries.verifiedReviewCount })
+    .from(users).leftJoin(profiles, eq(profiles.userId, users.id)).leftJoin(trustScoreSummaries, eq(trustScoreSummaries.userId, users.id)).where(inArray(users.id, connectionIds)) : [];
   const roles = parseList(profile?.rolesJson);
   const skills = parseList(profile?.skillsJson);
   // Older profiles (and the dev seed) store goal slugs in the free-text lists –
@@ -131,123 +155,82 @@ export default async function OwnProfilePage({
   return (
     <div className="space-y-6">
       {/* --------------------------------------- compact identity header */}
-      <Card className="p-5 sm:p-6">
-        <div className="flex min-w-0 items-center gap-4">
-          <Avatar
-            user={{
-              firstName: user.firstName,
-              lastName: user.lastName,
-              avatarUrl: profile?.avatarUrl ?? null,
-            }}
-            size={64}
-          />
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-xl font-bold tracking-tight sm:text-2xl">
-                {user.firstName} {user.lastName}
-              </h1>
-              {user.foundingMember && (
-                <Badge variant="sand">
-                  <Tr k="app.card.founding" />
-                </Badge>
-              )}
-              {user.role === "admin" && (
-                <Badge variant="electric">
-                  <Tr k="app.access.levelAdmin" />
-                </Badge>
-              )}
-              {user.isDemo && (
-                <Badge variant="outline">
-                  <Tr k="app.common.demo" />
-                </Badge>
-              )}
+      <Card className="p-0">
+        <div className="grid md:grid-cols-[minmax(0,1.65fr)_minmax(17rem,1fr)]">
+          <section className="min-w-0 p-5 sm:p-7" aria-label={dict.app.profile.title}>
+            <div className="flex min-w-0 items-center gap-4">
+              <Avatar user={{ firstName: user.firstName, lastName: user.lastName, avatarUrl: profile?.avatarUrl ?? null }} size={72} />
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h1 className="text-xl font-bold tracking-tight sm:text-2xl">{user.firstName} {user.lastName}</h1>
+                  {user.foundingMember && <Badge variant="sand"><Tr k="app.card.founding" /></Badge>}
+                  {user.role === "admin" && <Badge variant="electric"><Tr k="app.access.levelAdmin" /></Badge>}
+                  {user.isDemo && <Badge variant="outline"><Tr k="app.common.demo" /></Badge>}
+                </div>
+                <p className="text-sm text-foreground-subtle">@{user.handle}</p>
+                {profile?.headline && <p className="mt-1 truncate text-sm font-medium">{profile.headline}</p>}
+                <p className="mt-0.5 truncate text-sm text-foreground-subtle">{[profile?.jobTitle, profile?.company, profile?.location].filter(Boolean).join(" · ")}</p>
+              </div>
             </div>
-            <p className="text-sm text-foreground-subtle">@{user.handle}</p>
-            {profile?.headline && (
-              <p className="mt-1 truncate text-sm font-medium">{profile.headline}</p>
+
+            <div className="mt-5 flex flex-wrap gap-x-5 gap-y-3 border-t border-border pt-4">
+              <ProfilePeopleList locale={user.locale === "en" ? "en" : "de"} label={dict.app.profile.metricFollowers} count={stats.followers} members={followers} />
+              <ProfilePeopleList locale={user.locale === "en" ? "en" : "de"} label={dict.app.profile.statsFollowing} count={stats.following} members={following} align="center" />
+              <ProfilePeopleList locale={user.locale === "en" ? "en" : "de"} label={dict.app.profile.metricConnections} count={stats.connections} members={connectedMembers} align="right" />
+            </div>
+
+            <div className="mt-5 flex flex-wrap items-center gap-2">
+              <Button href="/app/profile/edit" size="sm"><SparkleIcon size={15} /><Tr k="app.profile.editTitle" /></Button>
+              <ShareProfileButton path={`/app/people/${user.handle}`} />
+              <Button href="/app/settings" size="sm" variant="ghost"><SettingsIcon size={15} /><Tr k="app.settings.title" /></Button>
+            </div>
+
+            {profilePercent < 100 && (
+              <div className="mt-5">
+                <div role="progressbar" aria-valuenow={profilePercent} aria-valuemin={0} aria-valuemax={100}
+                  aria-label={dict.app.profile.profileCompletion.replace("{percent}", String(profilePercent))}
+                  className="flex items-center justify-between gap-3 text-[11px] font-medium text-foreground-muted">
+                  <span>{dict.app.profile.profileCompletion.replace("{percent}", String(profilePercent))}</span>
+                  <span className="font-semibold text-foreground">{profilePercent} %</span>
+                </div>
+                <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-surface-muted"><div className="h-full rounded-full bg-gradient-to-r from-electric-500 to-electric-400" style={{ width: `${profilePercent}%` }} /></div>
+              </div>
             )}
-            <p className="mt-0.5 truncate text-sm text-foreground-subtle">
-              {[profile?.jobTitle, profile?.company, profile?.location].filter(Boolean).join(" · ")}
-            </p>
-          </div>
-        </div>
+          </section>
 
-        {/* compact statistics row */}
-        <dl className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1.5 border-t border-border pt-3">
-          <StatInline labelKey="app.profile.metricFollowers" value={stats.followers} />
-          <StatDot />
-          <StatInline labelKey="app.profile.statsFollowing" value={stats.following} />
-          <StatDot />
-          <StatInline labelKey="app.profile.metricConnections" value={stats.connections} />
-          <StatDot />
-          <div className="inline-flex items-baseline gap-1.5 px-1">
-            <dt className="text-xs text-foreground-muted">
-              <Tr k="app.trust.scoreTitle" />
-            </dt>
-            <dd className="text-sm font-bold">
-              {score === null ? (
-                <span className="font-semibold text-foreground-muted">
-                  <Tr k="app.trust.noRatingsShort" />
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1.5">
-                  {score.toFixed(1)}
-                  <RatingStars value={score} size={12} />
-                </span>
-              )}
-            </dd>
-          </div>
-        </dl>
-
-        {/* separate small action row */}
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <Button href="/app/profile/edit" size="sm">
-            <SparkleIcon size={15} />
-            <Tr k="app.profile.editTitle" />
-          </Button>
-          <ShareProfileButton path={`/app/people/${user.handle}`} />
-          <Button href="/app/settings" size="sm" variant="ghost">
-            <SettingsIcon size={15} />
-            <Tr k="app.settings.title" />
-          </Button>
-        </div>
-
-        {/* deliberately small progress line */}
-        {profilePercent < 100 && (
-          <div className="mt-4">
-            <div
-              role="progressbar"
-              aria-valuenow={profilePercent}
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-label={dict.app.profile.profileCompletion.replace("{percent}", String(profilePercent))}
-              className="flex items-center justify-between gap-3 text-[11px] font-medium text-foreground-muted"
-            >
-              <span>
-                {dict.app.profile.profileCompletion.replace("{percent}", String(profilePercent))}
-              </span>
-              <span className="font-semibold text-foreground">{profilePercent} %</span>
+          <Link href="/app/trust" className="group border-t border-border bg-surface-muted/50 p-5 transition-colors hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-offset-[-3px] md:border-l md:border-t-0 md:p-7">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-bold uppercase tracking-[0.14em] text-foreground-subtle"><Tr k="app.trust.scoreTitle" /></span>
+              <ShieldCheckIcon size={19} className="text-forest-600 dark:text-forest-300" />
             </div>
-            <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-surface-muted">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-electric-500 to-electric-400"
-                style={{ width: `${profilePercent}%` }}
-              />
-            </div>
-          </div>
-        )}
+            {score === null ? (
+              <>
+                <h2 className="mt-5 text-xl font-bold tracking-tight">{user.locale === "en" ? "No Trust Score yet" : "Noch kein Trust Score"}</h2>
+                <p className="mt-2 max-w-sm text-sm leading-6 text-foreground-muted">{user.locale === "en" ? "Your Trust Score grows from verified deals, recommendations and confirmed experiences." : "Der Trust Score entsteht aus verifizierten Deals, Empfehlungen und bestätigten Erfahrungen."}</p>
+                <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-electric-600 dark:text-electric-300">{user.locale === "en" ? "Learn about Trust" : "Mehr über Trust erfahren"}<span aria-hidden="true">→</span></span>
+              </>
+            ) : (
+              <>
+                <div className="mt-4 flex items-end gap-3"><span className="text-4xl font-bold tracking-tight">{score.toLocaleString(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}<span className="text-lg font-medium text-foreground-subtle"> / 5</span></span><RatingStars value={score} size={18} /></div>
+                <p className="mt-3 text-sm font-semibold text-forest-700 dark:text-forest-300"><ShieldCheckIcon size={15} className="mr-1 inline" />{user.locale === "en" ? "Verified Trust" : "Verifizierter Trust"}</p>
+                <p className="mt-1 text-xs text-foreground-muted">{trust.summary?.verifiedReviewCount ?? 0} {user.locale === "en" ? "verified reviews" : "verifizierte Bewertungen"}</p>
+                <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-electric-600 dark:text-electric-300">{user.locale === "en" ? "View details" : "Details ansehen"}<span aria-hidden="true">→</span></span>
+              </>
+            )}
+          </Link>
+        </div>
       </Card>
 
       {/* ------------------------- tabs as central horizontal navigation */}
-      <nav aria-label="Profil" className="flex justify-center">
-        <div className="inline-flex flex-wrap justify-center gap-1 rounded-full border border-border bg-surface p-1">
+      <nav aria-label={dict.app.profile.title} className="-mt-2 flex w-full overflow-x-auto border-b border-border">
+        <div className="flex min-w-max items-center gap-2">
           {tabs.map((item) => (
             <Link
               key={item.key}
               href={item.href}
               aria-current={tab === item.key ? "page" : undefined}
-              className={`rounded-full px-4 py-1.5 text-sm font-semibold transition-colors ${
-                tab === item.key ? "bg-electric-500 text-white" : "text-foreground-muted hover:text-foreground"
+              className={`border-b-2 px-4 py-3 text-sm font-semibold transition-colors ${
+                tab === item.key ? "border-electric-500 text-foreground" : "border-transparent text-foreground-muted hover:text-foreground"
               }`}
             >
               <Tr k={item.labelKey} />
@@ -597,23 +580,27 @@ function ExternalLink({ href, icon, label }: { href: string; icon: React.ReactNo
   );
 }
 
-/** One compact inline statistic for the header row. */
-function StatInline({ labelKey, value }: { labelKey: string; value: number }) {
-  return (
-    <div className="inline-flex items-baseline gap-1.5 px-1">
-      <dt className="text-xs text-foreground-muted">
-        <Tr k={labelKey} />
-      </dt>
-      <dd className="text-sm font-bold">{value}</dd>
-    </div>
-  );
-}
+type ProfileListMember = { id: string; firstName: string; lastName: string; handle: string; headline: string | null; company: string | null; avatarUrl: string | null; score10: number | null; verifiedReviewCount: number | null };
 
-function StatDot() {
+function ProfilePeopleList({ locale, label, count, members, align = "left" }: { locale: "de" | "en"; label: string; count: number; members: ProfileListMember[]; align?: "left" | "center" | "right" }) {
+  const alignment = align === "right" ? "right-0" : align === "center" ? "left-1/2 -translate-x-1/2" : "left-0";
   return (
-    <span aria-hidden="true" className="text-foreground-subtle">
-      ·
-    </span>
+    <details className="group relative min-w-[6rem]">
+      <summary className="cursor-pointer list-none rounded-md text-left focus-visible:outline-2 focus-visible:outline-electric-500 [&::-webkit-details-marker]:hidden">
+        <span className="block text-sm font-bold">{count}</span>
+        <span className="text-xs text-foreground-muted group-hover:text-foreground">{label}</span>
+      </summary>
+      <div className={`absolute ${alignment} z-20 mt-2 max-h-80 w-[min(22rem,calc(100vw-2rem))] overflow-y-auto rounded-xl border border-border bg-surface p-2 shadow-lg`}>
+        {members.length ? members.map((member) => {
+          const memberScore = member.verifiedReviewCount && member.score10 !== null ? member.score10 / 10 : null;
+          return <div key={member.id} className="flex items-center gap-3 rounded-lg px-2 py-2 hover:bg-surface-muted">
+            <Avatar user={{ firstName: member.firstName, lastName: member.lastName, avatarUrl: member.avatarUrl }} size={36} />
+            <div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold">{member.firstName} {member.lastName}</p><p className="truncate text-xs text-foreground-muted">@{member.handle} · {[member.headline, member.company].filter(Boolean).join(" · ")}</p>{memberScore !== null && <p className="mt-0.5 text-xs font-medium text-forest-700 dark:text-forest-300">★ {memberScore.toLocaleString(locale === "en" ? "en-GB" : "de-DE", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} Trust</p>}</div>
+            <Link href={`/app/people/${member.handle}`} className="shrink-0 text-xs font-semibold text-electric-600 hover:underline dark:text-electric-300">{locale === "en" ? "Open profile" : "Profil öffnen"}</Link>
+          </div>;
+        }) : <p className="px-3 py-4 text-sm text-foreground-muted">{locale === "en" ? "No people to show yet." : "Noch keine Einträge."}</p>}
+      </div>
+    </details>
   );
 }
 
