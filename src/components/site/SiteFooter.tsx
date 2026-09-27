@@ -30,7 +30,7 @@ export function SiteFooter() {
   ];
 
   return (
-    <footer className="bg-midnight-900 text-paper-50">
+    <footer className="border-t border-border bg-surface text-foreground">
       <div className="ic-shell py-10 sm:py-16">
         {/* Mobile (Sprint 8): the four columns collapse into a 2-column
             link grid to keep the homepage short; the md+ layout is the
@@ -46,17 +46,17 @@ export function SiteFooter() {
               </span>
               <span className="text-[15px] font-bold tracking-[0.14em]">INNER CIRCLE</span>
             </div>
-            <p className="max-w-xs text-sm leading-6 text-paper-50/60">{t.footer.tagline}</p>
+            <p className="max-w-xs text-sm leading-6 text-foreground-muted">{t.footer.tagline}</p>
           </div>
 
           <nav aria-label={t.footer.platformTitle}>
-            <h2 className="text-xs font-bold uppercase tracking-[0.18em] text-paper-50/50">
+            <h2 className="text-xs font-bold uppercase tracking-[0.18em] text-foreground-muted">
               {t.footer.platformTitle}
             </h2>
             <ul className="mt-4 space-y-2.5">
               {platformLinks.map((link) => (
                 <li key={link.href}>
-                  <Link href={link.href} className="text-sm text-paper-50/75 transition-colors hover:text-paper-50">
+                  <Link href={link.href} className="text-sm text-foreground-muted transition-colors hover:text-foreground">
                     {link.label}
                   </Link>
                 </li>
@@ -65,29 +65,29 @@ export function SiteFooter() {
           </nav>
 
           <nav aria-label={t.footer.companyTitle}>
-            <h2 className="text-xs font-bold uppercase tracking-[0.18em] text-paper-50/50">
+            <h2 className="text-xs font-bold uppercase tracking-[0.18em] text-foreground-muted">
               {t.footer.companyTitle}
             </h2>
             <ul className="mt-4 space-y-2.5">
               {projectLinks.map((link) => (
                 <li key={link.href} className="flex flex-wrap items-baseline gap-x-2">
-                  <a href={link.href} className="text-sm text-paper-50/75 transition-colors hover:text-paper-50">
+                  <a href={link.href} className="text-sm text-foreground-muted transition-colors hover:text-foreground">
                     {link.label}
                   </a>
-                  {link.note && <span className="text-xs text-paper-50/40">{link.note}</span>}
+                  {link.note && <span className="text-xs text-foreground-muted">{link.note}</span>}
                 </li>
               ))}
             </ul>
           </nav>
 
           <nav aria-label={t.footer.legalTitle}>
-            <h2 className="text-xs font-bold uppercase tracking-[0.18em] text-paper-50/50">
+            <h2 className="text-xs font-bold uppercase tracking-[0.18em] text-foreground-muted">
               {t.footer.legalTitle}
             </h2>
             <ul className="mt-4 space-y-2.5">
               {legalLinks.map((link) => (
                 <li key={link.href}>
-                  <Link href={link.href} className="text-sm text-paper-50/75 transition-colors hover:text-paper-50">
+                  <Link href={link.href} className="text-sm text-foreground-muted transition-colors hover:text-foreground">
                     {link.label}
                   </Link>
                 </li>
@@ -96,13 +96,13 @@ export function SiteFooter() {
           </nav>
         </div>
 
-        <div className="mt-8 border-t border-white/10 pt-6 sm:mt-12">
-          <p className="max-w-4xl text-xs leading-5 text-paper-50/45">{t.footer.disclaimer}</p>
+        <div className="mt-8 border-t border-border pt-6 sm:mt-12">
+          <p className="max-w-4xl text-xs leading-5 text-foreground-muted">{t.footer.disclaimer}</p>
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-            <p className="text-xs text-paper-50/55">
+            <p className="text-xs text-foreground-muted">
               © {year} {t.footer.copyright}
             </p>
-            <p className="text-xs text-paper-50/40">Deutsch · English</p>
+            <p className="text-xs text-foreground-muted">Deutsch · English</p>
           </div>
         </div>
       </div>

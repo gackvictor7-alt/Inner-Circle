@@ -141,8 +141,8 @@ export function SiteHeader({ level = "visitor" as AccessLevel }: { level?: Acces
                 key={item.key}
                 href={item.href}
                 aria-current={isActive(item.href) ? "page" : undefined}
-                className={`whitespace-nowrap px-1.5 py-2 text-[13px] font-medium transition-colors ${
-                  isActive(item.href) ? "text-[#0a1a33] underline underline-offset-8 dark:text-paper-50" : "text-[#0a1a33]/85 hover:text-[#0a1a33] dark:text-paper-50/80"
+                className={`whitespace-nowrap rounded-lg px-1.5 py-2 text-[13px] font-medium transition-colors hover:bg-surface-muted focus-visible:bg-surface-muted ${
+                  isActive(item.href) ? "text-foreground underline underline-offset-8" : "text-foreground-muted hover:text-foreground focus-visible:text-foreground"
                 }`}
               >
                 {t.home2.headerNav[item.key]}

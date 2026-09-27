@@ -439,3 +439,12 @@ wurde deshalb **bewusst geändert** und gilt ab sofort als genehmigter Zustand:
 (Hero-Hintergrund, People-Bilder), Premium-/Apple-Richtung, Hero, Registrierung,
 E-Mail-Verifizierung, Discovery-Trial, Mitgliedschaftslogik, DB-Logik, Auth.
 LinkedIn bleibt entfernt. Keine erfundenen Daten.
+
+## Private-Beta-Auftrag: Theme-/Hover-Reparatur (2026-09-27)
+
+Explizit beauftragte Korrektur, kein Redesign: Desktop-Nav verwendet
+semantische Hover-/Fokusfarben; Homepage-Kernbereiche und Footer wechseln mit
+dem bestehenden Theme. Light-Secondary-Text kontrastreicher, Bild-Hero bleibt
+überlagert. Typografie, Bilder, Layout und CTA-Hierarchie unverändert.
+DE/EN, 1440/390 px, Light/Dark im Worker geprüft. Belege und Grenzen:
+[Private-Beta-Abnahme](15-private-beta-acceptance.md).

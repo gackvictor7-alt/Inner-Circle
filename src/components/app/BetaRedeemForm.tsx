@@ -53,7 +53,7 @@ export function BetaRedeemForm() {
         {t.app.beta.keyHint}
       </p>
       {visibleError && (
-        <p role="alert" className="rounded-xl bg-danger-500/10 px-3.5 py-2.5 text-sm text-danger-700 dark:text-danger-200">
+        <p role="alert" className="rounded-xl bg-danger-500/10 px-3.5 py-2.5 text-sm text-danger-600 dark:text-danger-500">
           {visibleError}
         </p>
       )}

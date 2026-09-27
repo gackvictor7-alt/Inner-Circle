@@ -222,9 +222,10 @@ async function fillResetForm(page, password) {
   throw new Error("password field did not retain the typed value");
 }
 
-async function createKey(admin, label) {
+async function createKey(admin, label, email = "") {
   await admin.goto(`${BASE}/admin/beta`);
   await admin.fill('input[name="label"]', `${label} ${RUN}`);
+  await admin.fill('input[name="restrictedEmail"]', email);
   await admin.getByRole("button", { name: "Schlüssel erstellen" }).click();
   const key = admin.locator('[data-testid="beta-key"]');
   await key.waitFor({ state: "visible", timeout: 20000 });
@@ -437,6 +438,8 @@ try {
   check(plainHits === 0, "database stores no plain-text key");
   await shot(admin, "06-admin-invite");
 
+  const boundKey = await createKey(admin, "Email binding regression", emails.carl.toUpperCase());
+
   // Tester: register → verify → onboarding → /app/beta → redeem.
   const testerCtx = await newContext();
   const tester = await testerCtx.newPage();
@@ -450,6 +453,10 @@ try {
   await tester.locator('form:has(input[name="key"]) button[type="submit"]').click();
   check(await isVisible(tester, "Dieser Beta-Schlüssel ist ungültig", 20000), "invalid key is refused clearly");
   await shot(tester, "07-beta-invalid-key");
+
+  await tester.fill('input[name="key"]', boundKey);
+  await tester.locator('form:has(input[name="key"]) button[type="submit"]').click();
+  check(await isVisible(tester, "für ein anderes Konto bestimmt", 20000), "email-bound key rejects wrong account");
 
   await tester.fill('input[name="key"]', key);
   await tester.locator('form:has(input[name="key"]) button[type="submit"]').click();
@@ -504,6 +511,40 @@ try {
   await carl.locator('form:has(input[name="key"]) button[type="submit"]').click();
   check(await isVisible(carl, "Dieser Beta-Schlüssel wurde bereits verwendet", 20000), "used key cannot be redeemed twice");
   await shot(carl, "10-beta-used-key");
+
+  // Complete-profile regression: no redundant profile step after activation.
+  await carl.goto(`${BASE}/app/profile/edit`);
+  await carl.fill('[name="headline"]', 'Founder (Testkonto)');
+  await carl.fill('[name="location"]', 'Berlin');
+  await carl.fill('[name="bio"]', 'Complete profile for beta redirect regression.');
+  await carl.locator('form:has(input[name="firstName"]) button[type="submit"]').click();
+  await carl.waitForURL(/saved=all/, { timeout: 30000 });
+  const completeKey = boundKey;
+  await carl.goto(`${BASE}/app/beta`);
+  await carl.fill('input[name="key"]', completeKey);
+  await carl.locator('form:has(input[name="key"]) button[type="submit"]').click();
+  await carl.waitForURL(/\/app\/discover\?welcome=beta/, { timeout: 30000 });
+  check(true, "complete profile redirects directly to Discover");
+  check(true, "email-bound key remains usable by its intended account (case-insensitive)");
+  check(await isVisible(carl, "Willkommen in der Private Beta"), "Discover shows activation success");
+  check(await isVisible(carl, "noch 30 Tage"), "Discover shows beta duration and expiry");
+
+  // Existing app primitives must follow the same persisted preference.
+  for (const mobile of [false, true]) for (const locale of ["de", "en"]) for (const theme of ["light", "dark"]) {
+    const ctx = await newContext({ mobile, locale, theme });
+    await ctx.addCookies(await carlCtx.cookies());
+    const page = await ctx.newPage();
+    await page.goto(`${BASE}/app/profile/edit`);
+    await page.waitForLoadState("networkidle");
+    const style = await page.locator('input[name="headline"]').evaluate(el => ({
+      background: getComputedStyle(el).backgroundColor, color: getComputedStyle(el).color,
+      border: getComputedStyle(el).borderColor,
+    }));
+    check(style.background === (theme === "light" ? "rgb(247, 248, 250)" : "rgb(10, 14, 21)"), `app input theme ${mobile}/${locale}/${theme}`, JSON.stringify(style));
+    check(await page.locator('a[href="/app/inbox"]').filter({ visible: true }).count() > 0, `app navigation visible ${mobile}/${locale}/${theme}`);
+    check(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `app has no horizontal overflow ${mobile}/${locale}/${theme}`);
+    await ctx.close();
+  }
 
   await carlCtx.close();
   await resetCtx.close();

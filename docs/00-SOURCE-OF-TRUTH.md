@@ -3,7 +3,20 @@
 **Diese Datei ist der verbindliche Einstiegspunkt für jeden Menschen und jeden
 KI-Agenten, der an diesem Repository arbeitet.**
 
-- **Stand:** 2026-09-27 (**Inbox-Deliverability der Verifizierungs-Mail**,
+- **Stand Private-Beta-Abnahme (2026-09-27): WORKING im lokalen Worker.**
+  Basis `main` @ `9013640`. Kein Auth-/Resend-/Membership-Rewrite.
+  Beta-Aktivierung berücksichtigt jetzt die bestehende `profileComplete`-Regel:
+  unvollständig → `/app/profile/edit?welcome=beta`, vollständig →
+  `/app/discover?welcome=beta`, jeweils mit sichtbarem Erfolg und Laufzeit/Ablauf.
+  Desktop-Navigation verwendet kontrastsichere semantische Hover-/Fokusfarben.
+  Homepage-Kernbereiche und Footer folgen jetzt dem vorhandenen Light/Dark-Theme;
+  Light-Secondary-Text verstärkt. Bild-Hero bleibt bewusst dunkel überlagert.
+  **Nachweise:** 275 Tests, Typecheck, i18n-Audit, OpenNext-Build/Dry-Run grün;
+  Lint unverändert 5 Fehler + 7 Warnungen. Browser im echten lokalen workerd:
+  122/122 Beta/Auth/CTA/App, 82/82 Networking, 140/140 Theme/Hover/Dialog.
+  Keine neue Migration, keine Produktions-/DNS-/Secret-Änderung.
+  Testgrenzen und Ergebnisse: [`15-private-beta-acceptance.md`](15-private-beta-acceptance.md).
+- **Vorheriger Stand:** 2026-09-27 (**Inbox-Deliverability der Verifizierungs-Mail**,
   Gründerauftrag – bewusst **ohne** Auth-/Resend-/DNS-/Verification-Code-Umbau):
   Der sechsstellige Code steht **nicht mehr im Betreff** (neu: DE „Dein
   Bestätigungscode für INNER CIRCLE“ / EN „Your INNER CIRCLE verification
