@@ -1,4 +1,5 @@
 import { sendEmail, sendSms } from "./transport";
+import { email } from "@/lib/env";
 import type { Locale } from "@/lib/i18n/dictionaries";
 
 /**
@@ -7,6 +8,17 @@ import type { Locale } from "@/lib/i18n/dictionaries";
  *
  * Designed with Apple-like minimalism, plenty of whitespace, clear hierarchy,
  * and standard-compliant multipart (HTML + Text) to maximize deliverability.
+ *
+ * Verification-mail rules (inbox deliverability):
+ *   * The six-digit code lives only in the body – never in the subject
+ *     (a code in the subject line reads like a machine dump and hurt Gmail
+ *     classification; a stable, code-free subject also lets reply threading
+ *     and support lookups work on the message itself).
+ *   * Strictly transactional copy: short greeting, clear purpose, large
+ *     legible code, expiry, ignore hint – no marketing text, no external
+ *     images, no links a filter could rewrite.
+ *   * Sent from the dedicated verification sender (`email.fromVerification`,
+ *     fallback `EMAIL_FROM`) instead of a `noreply` mailbox.
  */
 
 type VerificationCtx = { code: string; ttlMinutes: number; firstName: string };
@@ -16,15 +28,14 @@ function renderVerificationHtml(ctx: VerificationCtx, locale: Locale): string {
   const title = isDe ? "Bestätige deine E-Mail-Adresse" : "Verify your email address";
   const greeting = isDe ? `Hallo ${ctx.firstName},` : `Hi ${ctx.firstName},`;
   const intro = isDe
-    ? "dein Bestätigungscode für INNER CIRCLE lautet:"
-    : "your verification code for INNER CIRCLE is:";
+    ? "bitte bestätige deine E-Mail-Adresse für INNER CIRCLE. Verwende dazu den folgenden Code:"
+    : "please confirm your e-mail address for INNER CIRCLE using the code below:";
   const expiry = isDe
     ? `Der Code ist ${ctx.ttlMinutes} Minuten gültig.`
     : `The code is valid for ${ctx.ttlMinutes} minutes.`;
   const ignoreNotice = isDe
-    ? "Wenn du kein INNER-CIRCLE-Konto erstellt hast, kannst du diese Nachricht ignorieren."
-    : "If you did not create an INNER CIRCLE account, you can safely ignore this email.";
-  const slogan = isDe ? "Zugang schafft Chancen." : "Access creates opportunity.";
+    ? "Wenn du dich nicht bei INNER CIRCLE registriert hast, kannst du diese E-Mail ignorieren."
+    : "If you did not sign up for INNER CIRCLE, you can simply ignore this e-mail.";
 
   return `<!DOCTYPE html>
 <html lang="${locale}">
@@ -76,9 +87,6 @@ function renderVerificationHtml(ctx: VerificationCtx, locale: Locale): string {
               <p style="margin: 0; font-size: 12px; font-weight: 600; color: #718096; letter-spacing: 0.08em; text-transform: uppercase;">
                 INNER CIRCLE
               </p>
-              <p style="margin: 4px 0 0 0; font-size: 12px; color: #A0AEC0;">
-                ${slogan}
-              </p>
             </td>
           </tr>
         </table>
@@ -97,16 +105,15 @@ Bestätige deine E-Mail-Adresse
 
 Hallo ${ctx.firstName},
 
-dein Bestätigungscode für INNER CIRCLE lautet:
+bitte bestätige deine E-Mail-Adresse für INNER CIRCLE. Verwende dazu den folgenden Code:
 
   ${ctx.code}
 
 Der Code ist ${ctx.ttlMinutes} Minuten gültig.
 
-Wenn du kein INNER-CIRCLE-Konto erstellt hast, kannst du diese Nachricht ignorieren.
+Wenn du dich nicht bei INNER CIRCLE registriert hast, kannst du diese E-Mail ignorieren.
 
-INNER CIRCLE
-Zugang schafft Chancen.`;
+INNER CIRCLE`;
   }
 
   return `INNER CIRCLE
@@ -115,16 +122,15 @@ Verify your email address
 
 Hi ${ctx.firstName},
 
-your verification code for INNER CIRCLE is:
+please confirm your e-mail address for INNER CIRCLE using the code below:
 
   ${ctx.code}
 
 The code is valid for ${ctx.ttlMinutes} minutes.
 
-If you did not sign up for an INNER CIRCLE account, you can safely ignore this email.
+If you did not sign up for INNER CIRCLE, you can simply ignore this e-mail.
 
-INNER CIRCLE
-Access creates opportunity.`;
+INNER CIRCLE`;
 }
 
 function renderPasswordResetHtml(params: { link: string; firstName: string; locale: Locale }): string {
@@ -258,10 +264,12 @@ export async function sendVerificationCodeEmail(params: {
   locale: Locale;
   ttlMinutes: number;
 }) {
+  // The code is deliberately absent from the subject – it belongs in the
+  // body only (deliverability + reply threading, see module docs above).
   const subject =
     params.locale === "de"
-      ? `Dein INNER CIRCLE Bestätigungscode: ${params.code}`
-      : `Your INNER CIRCLE verification code: ${params.code}`;
+      ? "Dein Bestätigungscode für INNER CIRCLE"
+      : "Your INNER CIRCLE verification code";
 
   const ctx: VerificationCtx = {
     code: params.code,
@@ -275,6 +283,9 @@ export async function sendVerificationCodeEmail(params: {
     text: renderVerificationText(ctx, params.locale),
     html: renderVerificationHtml(ctx, params.locale),
     template: "verification_code",
+    // Dedicated transactional sender (EMAIL_FROM_VERIFICATION, fallback
+    // EMAIL_FROM) – Resend asks not to use a noreply mailbox for this mail.
+    from: email.fromVerification,
   });
 }
 

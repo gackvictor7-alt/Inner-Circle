@@ -3,8 +3,31 @@
 **Diese Datei ist der verbindliche Einstiegspunkt für jeden Menschen und jeden
 KI-Agenten, der an diesem Repository arbeitet.**
 
-- **Stand:** 2026-09-27 (Sprint 15 – **Passwort-Reset in Produktion, Beta-Onboarding-Abnahme,
-  Landing-CTA-Check, Domain-Vorbereitung** (Gründerauftrag)):
+- **Stand:** 2026-09-27 (**Inbox-Deliverability der Verifizierungs-Mail**,
+  Gründerauftrag – bewusst **ohne** Auth-/Resend-/DNS-/Verification-Code-Umbau):
+  Der sechsstellige Code steht **nicht mehr im Betreff** (neu: DE „Dein
+  Bestätigungscode für INNER CIRCLE“ / EN „Your INNER CIRCLE verification
+  code“); der Body ist rein transaktional (kurze Begrüßung, klarer
+  Bestätigungs-Hinweis, groß darstellter Code, Ablaufzeit,
+  Ignore-Hinweis „Wenn du dich nicht bei INNER CIRCLE registriert hast,
+  kannst du diese E-Mail ignorieren.“, keine Links/Bilder/Marketing-Footer,
+  HTML+Text, DE/EN). Für die Verification-Mail greift optional der
+  Eigen-Absender `EMAIL_FROM_VERIFICATION` (empfohlen: `INNER CIRCLE
+  <verify@innercirclevp.com>`, da Resend-Insights `no-reply` beanstanden);
+  ohne diese Variable bleibt alles beim globalen `EMAIL_FROM` – alle übrigen
+  Mails (Passwort-Reset, Beta-Einladung) nutzen weiterhin `EMAIL_FROM`.
+  Open-/Click-Tracking wird im Versandcode nicht gesetzt (Resend steuert
+  Tracking pro Domain im Dashboard). Resend-Resend-Schutz unverändert:
+  Client-Countdown (60 s, Button deaktiviert; startet jetzt auch bei
+  serverseitigem `rateLimited`) + `otp:cooldown` 1/60 s + `otp:hourly` 6/h.
+  Verifikation: `npm test` **37 Dateien / 274 grün** (neu `tests/unit/
+  email-sender.test.ts`; `resend-provider.test.ts` pakt Betreff ohne Code,
+  Body-Inhalt, Absender-Kette, Cooldown-Flutschutz), Typecheck und Lint auf
+  Baseline (K-15: 12 Befunde), `cf:build`/`cf:dry-run` grün. **Echtes
+  Gmail-Inbox-Placement ist in Arena nicht testbar** – Beobachtungsliste
+  K-25 (`11-known-issues.md`).
+- **Davor (2026-09-27):** Sprint 15 – **Passwort-Reset in Produktion, Beta-Onboarding-Abnahme,
+  Landing-CTA-Check, Domain-Vorbereitung** (Gründerauftrag):
   **Root Cause des Reset-Weiterleitungshinweises behoben** – die Passwort-Reset-Mail enthielt
   einen *relativen* Link (`/reset-password?token=…`), den Mailclient/Link-Proxy gegen dessen
   eigenen Origin auflösten (daraus entstand der „versucht dich … weiterzuleiten“-Hinweis);
@@ -472,7 +495,7 @@ existiert. Backend + Daten + Berechtigungen + Nachweis gehören dazu.
 | Logout (Session-Widerruf serverseitig) | WORKING | `logoutAction`, `/api/auth/logout` |
 | Sessions (30 Tage, httpOnly, gehasht) | WORKING | `src/lib/auth/session.ts`; zusätzlich nicht-httpOnly-Präsenz-Flag `ic_presence` in Lockstep mit `ic_session` (nur für den „Zur App\"-CTA der öffentlichen Seiten, keine Identität, keine Autorisierung) |
 | E-Mail-Verifizierung (Code-Erzeugung, Hash, Ablauf, Versuche) | WORKING | `src/lib/auth/otp.ts`, `onboarding.test.ts` |
-| **Echter E-Mail-Versand (Resend)** | **WORKING (Sender-Domain verifiziert) / PARTIAL (Website-Domain offen)** | `RESEND_API_KEY` aktiv; responsive Multipart-Templates (HTML+Text DE/EN); Absender `INNER CIRCLE <noreply@innercirclevp.com>` – Domain bei Resend verifiziert (Nur-Senden, **kein** DNS-/Namensserverwechsel in diesem PR); offene Abhängigkeit: Website-Domain (heute `workers.dev`) erst bei bewusstem Umzug auf `innercirclevp.com` binden, Checkliste `09-deployment.md`/`14-environment.md` |
+| **Echter E-Mail-Versand (Resend)** | **WORKING (Sender-Domain verifiziert) / PARTIAL (Website-Domain offen)** | `RESEND_API_KEY` aktiv; responsive Multipart-Templates (HTML+Text DE/EN); Absender `INNER CIRCLE <noreply@innercirclevp.com>` (via `EMAIL_FROM`), Verifizierungs-Mail optional über dedizierten `EMAIL_FROM_VERIFICATION` (empfohlen `verify@…`, Fallback `EMAIL_FROM`) – Betreff ohne Code, Code nur im Body; Domain bei Resend verifiziert (Nur-Senden, **kein** DNS-/Namensserverwechsel in diesem PR); offene Abhängigkeit: Website-Domain (heute `workers.dev`) erst bei bewusstem Umzug auf `innercirclevp.com` binden, Checkliste `09-deployment.md`/`14-environment.md`; Gmail-Inbox-Platzierung: Beobachtung K-25 |
 | Verifizierung im Dev-Postausgang | WORKING | `ENABLE_DEV_OUTBOX` + Admin-Rolle, Testabdeckung `message-delivery.test.ts` |
 | SMS-Verifizierung (Twilio) | BLOCKED | kein Twilio-Konto/Schlüssel |
 | Registrierung per Telefonnummer | NOT IMPLEMENTED | UI-Umschalter existiert, Übermittlung schlägt fehl (Known Issue K-05) |

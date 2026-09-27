@@ -65,6 +65,17 @@ export const email = {
   get from() {
     return read("EMAIL_FROM") ?? "INNER CIRCLE <onboarding@resend.dev>";
   },
+  /**
+   * Dedicated sender for transactional authentication mail (verification
+   * codes). Resend's Deliverability Insights advise against "noreply"/
+   * "no-reply" addresses for transactional mail; a purpose-built mailbox such
+   * as `INNER CIRCLE <verify@innercirclevp.com>` on the verified domain is the
+   * recommended value. Optional by design: without `EMAIL_FROM_VERIFICATION`
+   * the global `EMAIL_FROM` applies, so existing deployments never break.
+   */
+  get fromVerification() {
+    return read("EMAIL_FROM_VERIFICATION") ?? this.from;
+  },
   get replyTo() {
     return read("EMAIL_REPLY_TO");
   },

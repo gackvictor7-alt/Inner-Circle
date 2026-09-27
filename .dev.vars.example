@@ -12,3 +12,5 @@ DEV_OUTBOX_RECIPIENTS=
 # STRIPE_WEBHOOK_SECRET=
 # RESEND_API_KEY=
 # EMAIL_FROM=
+# Optional dedicated sender for verification-code mail (falls back to EMAIL_FROM):
+# EMAIL_FROM_VERIFICATION=

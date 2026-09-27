@@ -49,6 +49,7 @@ D1-Binding (kein Secret, in `wrangler.jsonc`): Binding-Name **`DB`**,
 | -------- | ------------- | ------ | ------------ | ----- | ----------- | ---------- |
 | `RESEND_API_KEY` | Runtime | **ja** | **Pflicht für Verifizierung** | echter Mailversand | leer → Dev-Postausgang | **zwingend**, sonst meldet `/verify` offen „Versand noch nicht eingerichtet" |
 | `EMAIL_FROM` | Runtime | nein | empfohlen | Absender (`"Name <adresse@domain>"`); ohne Wert gilt der Resend-Testabsender `INNER CIRCLE <onboarding@resend.dev>` (stellt nur an die Konto-Adresse des Resend-Kontos zu) | `"INNER CIRCLE <noreply@example.com>"` | Absender der verifizierten Domain |
+| `EMAIL_FROM_VERIFICATION` | Runtime | nein | optional | Eigener Absender nur für die Verifizierungs-Code-Mail; Fallback ist `EMAIL_FROM`, daher unverändert kompatibel. Resend rät bei transaktionaler Mail von `no-reply` ab | leer (nutzt `EMAIL_FROM`) | `"INNER CIRCLE <verify@innercirclevp.com>"` |
 | `EMAIL_REPLY_TO` | Runtime | nein | optional | Antwortadresse für E-Mails (z. B. `support@meine-domain.com`) | leer | optional |
 
 ## 4. SMS (Twilio) – optional
@@ -123,7 +124,12 @@ Code über den Resend-Testabsender `INNER CIRCLE <onboarding@resend.dev>`
 Resend-Kontos** zu. **Stand Sprint 15:** die Domain `innercirclevp.com` ist bei
 Resend verifiziert und `EMAIL_FROM="INNER CIRCLE <noreply@innercirclevp.com>"`
 ist gesetzt – die verifizierte Domain dient weiterhin **nur** dem Versand, die
-Website bleibt auf `workers.dev` (Umzug: `09-deployment.md` §7a).
+Website bleibt auf `workers.dev` (Umzug: `09-deployment.md` §7a). Für die
+Verifizierungs-Code-Mail kann zusätzlich `EMAIL_FROM_VERIFICATION` gesetzt
+werden (empfohlen: `INNER CIRCLE <verify@innercirclevp.com>` – Resend
+Deliverability rät bei transaktionaler Mail von `no-reply` ab); ohne sie greift
+`EMAIL_FROM`. Alle übrigen Mails (Passwort-Reset, Beta-Einladung) nutzen
+unabhängig davon immer `EMAIL_FROM`.
 
 **Muss zusätzlich für Bezahlung gesetzt sein:**
 `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`.

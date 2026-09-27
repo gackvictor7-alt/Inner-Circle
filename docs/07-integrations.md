@@ -14,7 +14,7 @@ Variablennamen ein. Die vollständige Variablenliste steht in
 | **Cloudflare D1** | Produktionsdatenbank, Binding `DB`, DB-Name `inner-circle-db` | Migrationen `0000`–`0002` vorhanden (52 Tabellen, Sprint 12: `BetaInvite`, `BetaAccess`, `Conversation.directKey`), Anwendung im Deploy-Befehl | ✅ vorbereitet | keine (Binding in `wrangler.jsonc`) |
 | **GitHub** | Repository, Versionierung, PRs, Workers-Builds-Auslöser | aktiv (`gackvictor7-alt/Inner-Circle`) | ✅ | keine |
 | **OpenNext-Adapter** (`@opennextjs/cloudflare`) | Brücke Next.js → Worker | aktiv (Build erzeugt `.open-next/worker.js`) | ✅ | keine |
-| **Resend** (E-Mail) | Verifizierungscodes, Passwort-Reset, Benachrichtigungen | Code aktiv, Key vorhanden; HTML+Text Multipart-Templates; offene Produktionsabhängigkeit: eigene Domain | ⚠️ Testversand aktiv, Domain verifizieren | `RESEND_API_KEY` (Secret), `EMAIL_FROM` (Text), `EMAIL_REPLY_TO` (Text) |
+| **Resend** (E-Mail) | Verifizierungscodes, Passwort-Reset, Benachrichtigungen | Code aktiv, Key vorhanden; HTML+Text Multipart-Templates; Absenderdomain `innercirclevp.com` verifiziert; Verifizierungs-Mail ohne Code im Betreff, optionaler Eigen-Absender `EMAIL_FROM_VERIFICATION` (Inbox-Feinschliff 2026-09-27) | ⚠️ Versand läuft über die verifizierte Domain; Website-Domain weiterhin offen | `RESEND_API_KEY` (Secret), `EMAIL_FROM` (Text), `EMAIL_REPLY_TO` (Text), `EMAIL_FROM_VERIFICATION` (Text, optional) |
 | **Twilio** (SMS) | Telefon-Verifizierung | Code fertig, keine Zugangsdaten | ❌ optional | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM_NUMBER`, `TWILIO_TEST_MODE` |
 | **Stripe** (Abos) | Monats-/Jahresmitgliedschaft, Rechnungen, Billing-Portal | Checkout + Webhook vollständig; **Sprint-12-Audit:** Signaturprüfung im Worker auf `constructEventAsync` umgestellt (die synchrone Prüfung scheitert im Worker), Aktivierung nur bei bestätigter Zahlung, SEPA über `async_payment_*`, `subscription.deleted`-500 behoben; Billing-Portal nur als Funktion (keine Route/UI); **keine Schlüssel** | ❌ nicht produktiv aktiv | `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PORTAL_RETURN_URL`, `ALLOW_STRIPE_LIVE` |
 | **Google OAuth** | Social Login | **nicht implementiert** (nur UI-Hinweis „Einrichtung erforderlich") | ❌ | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` (Variablen bereits ausgewertet, aber ohne Route) |
@@ -53,6 +53,22 @@ Versand läuft über die eigene Domain, nicht mehr über `onboarding@resend.dev`
 `workers.dev`, DNS weiter bei STRATO) – Checkliste für den späteren Umzug in
 `09-deployment.md` §7a. Für Rücklauf-Mails (MX) und eigene DMARC-RUAs die
 Records bei Bedarf nach Resend-Vorgabe ergänzen.
+
+**Inbox-Deliverability der Verifizierungs-Mail (2026-09-27):** Resends
+Deliverability Insights monieren `no-reply`-Absender. Der Code hält dafür eine
+eigene, optionale Variable bereit: `EMAIL_FROM_VERIFICATION` (Empfehlung:
+`INNER CIRCLE <verify@innercirclevp.com>`); ist sie nicht gesetzt, greift
+`EMAIL_FROM` – bestehende Deployments brechen also nicht. Betreff der
+Verifizierungs-Mail ist bewusst **ohne** den sechsstelligen Code
+(DE „Dein Bestätigungscode für INNER CIRCLE“ / EN „Your INNER CIRCLE
+verification code“); der Code steht nur in HTML+Text-Body (groß, mit
+Ablaufzeit und Ignore-Hinweis, ohne Links/Bilder/Marketing-Footer). Für die
+Mail werden **keine** Open-/Click-Tracking-Header gesendet – Resend steuert
+Tracking pro Domain im Dashboard; bleibt dort aus, werden auch
+Verifizierungs-Mails nicht getrackt (kein API-seitiger Regressionsspielraum).
+Wiederholte Resends begrenzen clientseitiger Countdown (60 s, Button
+deaktiviert) **und** serverseitige Limits (`otp:cooldown` 1/60 s,
+`otp:hourly` 6/h pro Nutzer + Zweck).
 
 ### 3.2 Für Bezahlung
 

@@ -132,6 +132,10 @@ describe("Resend is configured (RESEND_API_KEY present)", () => {
     const payload = resend.payload();
     expect(payload.from).toBe(FALLBACK_FROM);
     expect(payload.to).toEqual([user.email]);
+    // The subject names the brand and the purpose – never the code itself
+    // (inbox deliverability; the code belongs to the body only).
+    expect(payload.subject).toBe("Dein Bestätigungscode für INNER CIRCLE");
+    expect(String(payload.subject)).not.toMatch(/\d{4,}/);
     expect(payload.text).toMatch(/\b\d{6}\b/);
     expect(typeof payload.html).toBe("string");
     expect(payload.headers).toHaveProperty("X-Entity-Ref-ID");
@@ -193,6 +197,89 @@ describe("Resend is configured (RESEND_API_KEY present)", () => {
     expect(resend.payload().from).toBe("INNER CIRCLE <noreply@inner-circle.example>");
   });
 
+  it("renders the verification mail transactional: no code in the subject, code in HTML and text, no links or tracking", async () => {
+    resendEnv();
+    const resend = stubResend();
+    const { sendVerificationCodeEmail } = await import("@/lib/messages/templates");
+
+    const result = await sendVerificationCodeEmail({
+      to: "member@inner-circle.test",
+      code: "246810",
+      firstName: "Test",
+      locale: "de",
+      ttlMinutes: 10,
+    });
+    expect(result.ok).toBe(true);
+
+    const de = resend.payload(0);
+    expect(de.subject).toBe("Dein Bestätigungscode für INNER CIRCLE");
+    expect(String(de.subject)).not.toMatch(/\d{4,}/); // no code in the subject
+    // Multipart with the code in both versions, plus expiry and ignore hint.
+    expect(String(de.text)).toContain("246810");
+    expect(String(de.html)).toContain("246810");
+    expect(String(de.text)).toContain("10 Minuten gültig");
+    expect(String(de.html)).toContain("Minuten gültig");
+    expect(String(de.text)).toContain(
+      "Wenn du dich nicht bei INNER CIRCLE registriert hast, kannst du diese E-Mail ignorieren.",
+    );
+    // Purely transactional: no links, no images, no marketing footer text.
+    expect(String(de.html)).not.toContain("<a ");
+    expect(String(de.html)).not.toContain("<img");
+    expect(String(de.html)).not.toContain("Zugang schafft Chancen");
+    // No tracking/analytics extras – only the entity header for threading.
+    expect(de.headers).toEqual({ "X-Entity-Ref-ID": expect.any(String) });
+    expect(de).not.toHaveProperty("reply_to");
+
+    const en = await sendVerificationCodeEmail({
+      to: "member@inner-circle.test",
+      code: "135790",
+      firstName: "Test",
+      locale: "en",
+      ttlMinutes: 10,
+    });
+    expect(en.ok).toBe(true);
+    const enPayload = resend.payload(1);
+    expect(enPayload.subject).toBe("Your INNER CIRCLE verification code");
+    expect(String(enPayload.subject)).not.toMatch(/\d{4,}/);
+    expect(String(enPayload.text)).toContain("135790");
+    expect(String(enPayload.html)).toContain("135790");
+    expect(String(enPayload.text)).toContain("valid for 10 minutes");
+    expect(String(enPayload.html)).toContain("If you did not sign up for INNER CIRCLE");
+  });
+
+  it("uses EMAIL_FROM_VERIFICATION for the verification mail while other mails keep EMAIL_FROM", async () => {
+    resendEnv({
+      EMAIL_FROM: "INNER CIRCLE <noreply@innercirclevp.com>",
+      EMAIL_FROM_VERIFICATION: "INNER CIRCLE <verify@innercirclevp.com>",
+      EMAIL_REPLY_TO: "support@innercirclevp.com",
+    });
+    const resend = stubResend();
+    const { sendVerificationCodeEmail, sendPasswordResetEmail } = await import("@/lib/messages/templates");
+
+    const verification = await sendVerificationCodeEmail({
+      to: "member@inner-circle.test",
+      code: "112233",
+      firstName: "Test",
+      locale: "de",
+      ttlMinutes: 10,
+    });
+    expect(verification.ok).toBe(true);
+    const v = resend.payload(0);
+    // Dedicated, non-noreply sender on the verified domain + monitored reply-to.
+    expect(v.from).toBe("INNER CIRCLE <verify@innercirclevp.com>");
+    expect(v.reply_to).toBe("support@innercirclevp.com");
+
+    const reset = await sendPasswordResetEmail({
+      to: "member@inner-circle.test",
+      link: "https://inner-circle.example/reset-password?token=abc",
+      firstName: "Test",
+      locale: "de",
+    });
+    expect(reset.ok).toBe(true);
+    // Everything else keeps the global sender untouched.
+    expect(resend.payload(1).from).toBe("INNER CIRCLE <noreply@innercirclevp.com>");
+  });
+
   it("reports a rejected send honestly and invalidates the code nobody received", async () => {
     resendEnv();
     stubResend(403, { message: "You can only send testing emails to your own email address" });
@@ -243,6 +330,37 @@ describe("resending from /verify with a Resend key", () => {
     expect(resend.calls).toHaveLength(1);
     expect(resend.calls[0].url).toBe(RESEND_ENDPOINT);
     expect(resend.payload().text).toMatch(/\b\d{6}\b/);
+  });
+
+  it("refuses an immediate second resend – no second provider call, no mailbox flood", async () => {
+    resendEnv();
+    const resend = stubResend();
+    const { resendCodeAction } = await import("@/app/actions/auth");
+    const { initialAuthState } = await import("@/app/actions/auth-state");
+
+    const userId = await createTestUser({ verified: false });
+    created.push(userId);
+    currentUserId = userId;
+
+    const form = new FormData();
+    form.set("channel", "email");
+
+    const first = await resendCodeAction(initialAuthState, form);
+    expect(first.status).toBe("success");
+    expect(resend.calls).toHaveLength(1);
+
+    // Same click twice in a row: the server-side cooldown (not just the
+    // disabled button) must keep the inbox calm – exactly one mail per window.
+    const second = await resendCodeAction(initialAuthState, form);
+    expect(second.status).toBe("error");
+    expect(second.errorCode).toBe("rateLimited");
+    expect(second.errorParams?.seconds).toBeGreaterThan(0);
+    expect(resend.calls).toHaveLength(1);
+
+    const third = await resendCodeAction(initialAuthState, form);
+    expect(third.status).toBe("error");
+    expect(third.errorCode).toBe("rateLimited");
+    expect(resend.calls).toHaveLength(1);
   });
 
   it("surfaces a provider rejection as 'codeFailed' – never as a missing channel", async () => {

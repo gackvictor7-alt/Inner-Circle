@@ -41,6 +41,13 @@ P2 mittelfristig · P3 Aufräumen.
   - Keine Spam-Triggerwörter, korrekte UTF-8-Codierung und Tabellen-Layout
   - Eindeutiger Entity-Header (`X-Entity-Ref-ID`)
   - Konfigurierbare `EMAIL_FROM` und `EMAIL_REPLY_TO` Variablen
+  - **2026-09-27 (Inbox-Feinschliff):** Verifizierungs-Betreff ohne Code
+    (DE „Dein Bestätigungscode für INNER CIRCLE“ / EN „Your INNER CIRCLE
+    verification code“), rein transaktionaler Inhalt ohne Slogan/Links/Bilder,
+    optionaler dedizierter Absender `EMAIL_FROM_VERIFICATION` (Empfehlung
+    `verify@innercirclevp.com`, da Resend `no-reply` beanstandet), keine
+    Tracking-Header im Versand; Resend-Cooldown bleibt 60 s (Client-Countdown
+    + serverseitiges Limit). Restliche Gmail-Platzierung: siehe K-25.
 - **Erledigt (Stand Sprint 15):** Die Domain **`innercirclevp.com` ist bei Resend
   verifiziert** (SPF/DKIM/DMARC von Resend verwaltet) und
   `EMAIL_FROM="INNER CIRCLE <noreply@innercirclevp.com>"` ist gesetzt – die
@@ -164,6 +171,33 @@ P2 mittelfristig · P3 Aufräumen.
 - **Symptom:** `/imprint`, `/privacy`, `/terms` sind Platzhalter.
 - **Risiko:** kein öffentlicher Start ohne geprüfte Rechtstexte.
 - **Lösung:** Rechtsberatung (siehe [`12-roadmap.md`](12-roadmap.md) → LEGAL).
+
+### K-25 · Gmail-Inbox-Platzierung der Verifizierungs-Mail — **OFFEN (Beobachtung)**
+
+- **Symptom (produktiv, Stand 2026-09-27):** Resend markiert gesendete
+  Verifizierungs-Mails an Gmail-Adressen als **Delivered**, und dieselbe
+  Adresse erhält die Passwort-Reset-Mail sichtbar im Postfach – die
+  Verifizierungs-Mail taucht in Gmail jedoch weder im Postfach noch bei Suche
+  mit `in:anywhere` auf. Der Code funktioniert (aus dem Resend-Log kopierbar),
+  Registrierung/Verifizierung sind also nicht blockiert; betroffen ist die
+  Sichtbarkeit beim Endnutzer.
+- **Eingrenzung:** Kein Auth-, DNS- oder Code-Problem (DKIM/Sending-Records
+  verified, Versand über `innercirclevp.com`). Es wirkt eine
+  nachgelagerte Gmail-Seite (Klassifizierung/Filter), die vom Mailinhalt
+  mitgesteuert wird – nicht vom Verify-Flow.
+- **Im Code umgesetzt (2026-09-27):** Betreff ohne sechsstelligen Code,
+  schlanker rein transaktionaler Inhalt (HTML+Text, große Code-Darstellung,
+  Ablaufzeit, Ignore-Hinweis, keine Links/Bilder/Marketingzeilen),
+  kein Open-/Click-Tracking im API-Aufruf, optionaler Absender
+  `EMAIL_FROM_VERIFICATION` (Empfehlung `INNER CIRCLE <verify@innercirclevp.com>`,
+  da Resend Insights `no-reply` beanstanden), Resend-Cooldown unverändert.
+- **Offen/nicht testbar hier:** echtes Inbox-Placement (Zustellung im
+  Postfach eines echten Gmail-Kontos) ist in der Arena-Sandbox nicht prüfbar
+  (K-19) – nach dem Setzen von `EMAIL_FROM_VERIFICATION` (Deployment-Var,
+  keine DNS-Änderung) manuell mit frischem Gmail-Konto verifizieren. Sollte
+  Gmail die Mail weiterhin verstecken: Postmaster-Tools-Daten der Domain und
+  Resend-Logs (Anzahl/Einwilligungen) prüfen; inhaltlich ist kein weiterer
+  Hebel im Code bekannt.
 
 ## P2 – mittelfristig
 

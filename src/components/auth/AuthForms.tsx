@@ -497,10 +497,23 @@ export function VerifyForm({
   }, [state, router]);
 
   useEffect(() => {
-    if (resendState.status !== "success") return;
-    const timer = setTimeout(() => setCooldown(60), 0);
-    return () => clearTimeout(timer);
-  }, [resendState.status]);
+    if (resendState.status === "success") {
+      const timer = setTimeout(() => setCooldown(60), 0);
+      return () => clearTimeout(timer);
+    }
+    // A server-side refusal with `rateLimited` (e.g. the cooldown was already
+    // consumed from another tab) also starts the countdown – the button then
+    // reflects the server truth instead of inviting immediate retries.
+    if (resendState.status === "error" && resendState.errorCode === "rateLimited") {
+      const seconds = Number(resendState.errorParams?.seconds ?? 60);
+      const safe = Number.isFinite(seconds) && seconds > 0 ? seconds : 60;
+      const timer = setTimeout(() => {
+        setCooldown((current) => Math.max(current, Math.min(3600, Math.ceil(safe))));
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+    return undefined;
+  }, [resendState]);
 
   useEffect(() => {
     if (cooldown <= 0) return;
