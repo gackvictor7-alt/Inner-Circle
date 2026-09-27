@@ -448,3 +448,15 @@ dem bestehenden Theme. Light-Secondary-Text kontrastreicher, Bild-Hero bleibt
 überlagert. Typografie, Bilder, Layout und CTA-Hierarchie unverändert.
 DE/EN, 1440/390 px, Light/Dark im Worker geprüft. Belege und Grenzen:
 [Private-Beta-Abnahme](15-private-beta-acceptance.md).
+
+## 1.18 Sprint: Member-Plattform UX-Konsolidierung (2026-09-27)
+
+Ausdrücklich beauftragte Konsolidierung der Plattform (kein Public-Redesign):
+
+- App-Shell nutzt das vorhandene Venture & Partners-Monogramm `public/brand/vp-monogram.png`; Dark Mode invertiert nur die vorhandene Bildmarke. Sidebar-Breite und Navigation bleiben bestehen.
+- Eigenes Profil ist als ein gemeinsamer Identity-/Trust-Header angeordnet; Trust Score bekommt 35–40 % Desktop-Fläche. Score und Trust-Angaben erscheinen ausschließlich bei vorhandenen verifizierten Bewertungsdaten. Follower, Following und Connections öffnen native, server-gerenderte Listen aus den vorhandenen Tabellen; kein neues Backend/Schema.
+- Profil-Tabs sind eine volle, mobil horizontal scrollbare Unter-Navigation.
+- Bestätigte und geplante Events sowie klar als Beispiel markierte Event-Vorschauen verwenden einzelne horizontale Bild-/Text-Zeilen. Event-Bilddateien und Zuordnungen, insbesondere Monaco Networking Weekend, wurden nicht geändert.
+- Chancen, Jobs/Projekte, Investments und Marketplace verwenden knappe Teaser, durchgängige Detail-CTAs und reduzierte Trennlinien statt mehrspaltiger Card-Raster. Vorhandene Detailrouten bleiben zuständig für Langtexte. Reale Trust-Scores werden nur bei verifizierten Bewertungsdaten in Discover, Netzwerk, Chancen, Jobs und Marketplace gezeigt.
+- Academy trennt „Meine Kurse“ und „Entdecken“ über eine mobile scrollbare Navigation; gespeicherter Kursfortschritt bleibt unverändert.
+- Keine Farb-/Typografie-Tokens, Sidebar-IA, Kernsysteme oder Datenbanktabellen neu gebaut.

@@ -38,6 +38,8 @@ export type DiscoverCardData = {
   bio: string | null;
   isDemo: boolean;
   foundingMember: boolean;
+  trustScore10?: number | null;
+  verifiedReviewCount?: number | null;
   roles: string[];
   skills: string[];
   interests: string[];
@@ -570,7 +572,12 @@ export function DiscoverDeck({
                   {current.requestPending && <Badge variant="electric">{t.app.discover.pendingBadge}</Badge>}
                   {current.isConnected && <Badge variant="forest">{t.app.discover.connectedBadge}</Badge>}
                 </div>
-                {!isDemo && <p className="mt-1 text-sm text-foreground-subtle">@{current.handle}</p>}
+                {!isDemo && <p className="mt-1 flex flex-wrap items-center gap-x-2 text-sm text-foreground-subtle">
+                  <span>@{current.handle}</span>
+                  {current.verifiedReviewCount && current.verifiedReviewCount > 0 && current.trustScore10 !== null && current.trustScore10 !== undefined && (
+                    <span className="text-xs font-semibold text-forest-700 dark:text-forest-300">★ {(current.trustScore10 / 10).toFixed(1)} Trust</span>
+                  )}
+                </p>}
                 {(current.jobTitle || current.headline) && (
                   <p className="mt-2 text-sm font-medium">{current.jobTitle ?? current.headline}</p>
                 )}

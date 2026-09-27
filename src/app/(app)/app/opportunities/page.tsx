@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/db/client";
-import { businessOpportunities, profiles, users } from "@/db/schema";
+import { businessOpportunities, profiles, trustScoreSummaries, users } from "@/db/schema";
 import { requireUser } from "@/lib/access/server";
 import { myApplications } from "@/lib/platform/queries";
 import { Badge } from "@/components/ui/Badge";
@@ -52,11 +52,14 @@ export default async function OpportunitiesPage({
       ownerLastName: users.lastName,
       ownerHandle: users.handle,
       ownerHeadline: profiles.headline,
+      ownerTrustScore10: trustScoreSummaries.score10,
+      ownerVerifiedReviews: trustScoreSummaries.verifiedReviewCount,
       applicationCount: sql<number>`(select count(*) from "OpportunityApplication" a where a."opportunityId" = ${businessOpportunities.id})`,
     })
     .from(businessOpportunities)
     .innerJoin(users, eq(users.id, businessOpportunities.ownerId))
     .leftJoin(profiles, eq(profiles.userId, users.id))
+    .leftJoin(trustScoreSummaries, eq(trustScoreSummaries.userId, users.id))
     .where(
       and(
         eq(businessOpportunities.status, "published"),
@@ -155,38 +158,29 @@ export default async function OpportunitiesPage({
       ) : (
         // Mobile (Sprint 8, TEIL W): list-based cards – type, title,
         // location, one summary line and the CTAs; details after the click.
-        <ul className="grid gap-3 lg:grid-cols-2 lg:gap-4">
+        <ul className="divide-y divide-border border-y border-border">
           {rows.map((row) => (
-            <li key={row.id}>
-              <Card className="flex h-full flex-col p-4 sm:p-5">
-                <div className="flex flex-wrap items-center gap-2">
-                  <Badge variant="electric">
-                    <Tr k={`app.opportunities.type.${row.type}` as "app.opportunities.type.co_founder"} />
-                  </Badge>
-                  {row.isDemo && <Badge variant="outline"><Tr k="app.common.demo" /></Badge>}
-                  {row.ownerId === access.user.id && <Badge variant="forest"><Tr k="app.common.you" /></Badge>}
+            <li key={row.id} className="py-4 sm:py-5">
+              <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge variant="electric"><Tr k={`app.opportunities.type.${row.type}` as "app.opportunities.type.co_founder"} /></Badge>
+                    {row.isDemo && <Badge variant="outline"><Tr k="app.common.demo" /></Badge>}
+                    {row.ownerId === access.user.id && <Badge variant="forest"><Tr k="app.common.you" /></Badge>}
+                  </div>
+                  <Link href={`/app/opportunities/${row.id}`} className="mt-2 block text-base font-bold tracking-tight hover:underline sm:text-lg">{row.title}</Link>
+                  <p className="mt-1 line-clamp-2 text-sm leading-6 text-foreground-muted">{row.summary}</p>
+                  <p className="mt-2 text-xs text-foreground-subtle">
+                    {row.ownerFirstName} {row.ownerLastName} · {[row.location, row.remote ? "Remote" : null].filter(Boolean).join(" · ")}
+                    {Number(row.applicationCount) > 0 ? ` · ${row.applicationCount} Bewerbungen` : ""}
+                    {!row.isDemo && row.ownerVerifiedReviews && row.ownerVerifiedReviews > 0 && row.ownerTrustScore10 !== null ? ` · ★ ${(row.ownerTrustScore10 / 10).toFixed(1)} Trust` : ""}
+                  </p>
                 </div>
-                <Link href={`/app/opportunities/${row.id}`} className="mt-2.5 text-base font-bold tracking-tight hover:underline sm:mt-3 sm:text-lg">
-                  {row.title}
-                </Link>
-                <p className="mt-1.5 line-clamp-1 flex-1 text-sm leading-6 text-foreground-muted lg:line-clamp-none">
-                  {row.summary}
-                </p>
-                <p className="mt-3 text-xs text-foreground-subtle">
-                  {row.ownerFirstName} {row.ownerLastName} · {[row.location, row.remote ? "Remote" : null].filter(Boolean).join(" · ")}
-                  {Number(row.applicationCount) > 0 ? ` · ${row.applicationCount} Bewerbungen` : ""}
-                </p>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <Button href={`/app/opportunities/${row.id}`} size="sm" variant="secondary">
-                    <Tr k="app.common.details" />
-                  </Button>
-                  {row.ownerId !== access.user.id && access.entitlements.opportunitiesApply && (
-                    <Button href={`/app/opportunities/${row.id}#apply`} size="sm">
-                      <Tr k="app.opportunities.apply.cta" />
-                    </Button>
-                  )}
+                <div className="flex flex-col gap-2 sm:min-w-36">
+                  <Button href={`/app/opportunities/${row.id}`} size="sm" variant="secondary" className="w-full"><Tr k="app.common.details" /></Button>
+                  {row.ownerId !== access.user.id && access.entitlements.opportunitiesApply && <Button href={`/app/opportunities/${row.id}#apply`} size="sm" className="w-full"><Tr k="app.opportunities.apply.cta" /></Button>}
                 </div>
-              </Card>
+              </div>
             </li>
           ))}
         </ul>

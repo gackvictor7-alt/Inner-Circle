@@ -50,6 +50,8 @@ export type DirectoryMember = {
   isDemo: boolean;
   foundingMember: boolean;
   lastLoginAt: Date | null;
+  trustScore10: number | null;
+  verifiedReviewCount: number | null;
   interests: string[];
   isFollowing: boolean;
   isConnected: boolean;
@@ -71,6 +73,8 @@ const memberColumns = {
   isDemo: users.isDemo,
   foundingMember: users.foundingMember,
   lastLoginAt: users.lastLoginAt,
+  trustScore10: trustScoreSummaries.score10,
+  verifiedReviewCount: trustScoreSummaries.verifiedReviewCount,
   headline: profiles.headline,
   location: profiles.location,
   company: profiles.company,
@@ -160,6 +164,7 @@ export async function listDirectoryMembers(options: {
     .from(users)
     .leftJoin(profiles, eq(profiles.userId, users.id))
     .leftJoin(privacySettings, eq(privacySettings.userId, users.id))
+    .leftJoin(trustScoreSummaries, eq(trustScoreSummaries.userId, users.id))
     .where(
       and(
         listedMemberSql(options.viewerId, now.getTime()),
@@ -228,6 +233,8 @@ export async function listDirectoryMembers(options: {
     isDemo: row.isDemo,
     foundingMember: row.foundingMember,
     lastLoginAt: row.lastLoginAt,
+    trustScore10: row.trustScore10,
+    verifiedReviewCount: row.verifiedReviewCount,
     interests: interestsByUser.get(row.id) ?? [],
     isFollowing: relations.following.has(row.id),
     isConnected: relations.connected.has(row.id),
@@ -878,6 +885,8 @@ export type DiscoverCandidate = {
   bio: string | null;
   isDemo: boolean;
   foundingMember: boolean;
+  trustScore10: number | null;
+  verifiedReviewCount: number | null;
   interestSlugs: string[];
   interestLabels: string[];
   goalSlugs: string[];
@@ -930,6 +939,8 @@ export async function listDiscoverCandidates(options: {
       handle: users.handle,
       isDemo: users.isDemo,
       foundingMember: users.foundingMember,
+      trustScore10: trustScoreSummaries.score10,
+      verifiedReviewCount: trustScoreSummaries.verifiedReviewCount,
       avatarUrl: profiles.avatarUrl,
       headline: profiles.headline,
       jobTitle: profiles.jobTitle,
@@ -945,6 +956,7 @@ export async function listDiscoverCandidates(options: {
     .from(users)
     .leftJoin(profiles, eq(profiles.userId, users.id))
     .leftJoin(privacySettings, eq(privacySettings.userId, users.id))
+    .leftJoin(trustScoreSummaries, eq(trustScoreSummaries.userId, users.id))
     .where(listedMemberSql(viewerId, now.getTime()))
     .orderBy(desc(users.lastLoginAt), desc(users.createdAt))
     .limit(options.limit);
@@ -1042,6 +1054,8 @@ export async function listDiscoverCandidates(options: {
       bio: row.bio,
       isDemo: row.isDemo,
       foundingMember: row.foundingMember,
+      trustScore10: row.trustScore10,
+      verifiedReviewCount: row.verifiedReviewCount,
       interestSlugs: myInterests.map((interest) => interest.slug),
       interestLabels: myInterests.map((interest) => (en ? interest.labelEn : interest.labelDe)),
       goalSlugs: myGoals.map((goal) => goal.slug),

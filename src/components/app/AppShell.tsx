@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { useI18n } from "@/lib/i18n/context";
@@ -220,10 +221,8 @@ export function AppShell({
       {/* Mobile top bar */}
       <header className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur-xl xl:hidden">
         <div className="flex h-14 items-center justify-between gap-2 px-3 sm:px-4">
-          <Link href="/app" className="flex items-center gap-2 shrink-0">
-            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-electric-500 text-[11px] font-bold text-white">
-              IC
-            </span>
+          <Link href="/app" aria-label="INNER CIRCLE by Venture & Partners" className="flex items-center gap-2 shrink-0">
+            <Image src="/brand/vp-monogram.png" alt="" width={34} height={34} className="h-8 w-8 object-contain dark:brightness-0 dark:invert" />
             <span className="text-sm font-bold tracking-[0.12em]">INNER CIRCLE</span>
           </Link>
           <div className="flex items-center gap-1.5 shrink-0">
@@ -259,10 +258,8 @@ export function AppShell({
       <div className="flex w-full min-h-svh">
         {/* Desktop sidebar – six primary areas only */}
         <aside className="sticky top-0 hidden h-svh w-64 shrink-0 flex-col border-r border-border bg-surface px-4 py-5 xl:flex">
-          <Link href="/app" className="flex items-center gap-2.5 px-2">
-            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-electric-500 text-xs font-bold text-white">
-              IC
-            </span>
+          <Link href="/app" aria-label="INNER CIRCLE by Venture & Partners" className="flex items-center gap-2.5 px-2">
+            <Image src="/brand/vp-monogram.png" alt="" width={38} height={38} className="h-9 w-9 shrink-0 object-contain dark:brightness-0 dark:invert" />
             <span className="text-sm font-bold tracking-[0.12em]">INNER CIRCLE</span>
           </Link>
 

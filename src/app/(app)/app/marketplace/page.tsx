@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/db/client";
-import { marketplaceListings, profiles, users } from "@/db/schema";
+import { marketplaceListings, profiles, trustScoreSummaries, users } from "@/db/schema";
 import { requireUser } from "@/lib/access/server";
 import { hasMemberAccess } from "@/lib/access/levels";
 import { formatMoney } from "@/lib/utils";
@@ -54,10 +54,13 @@ export default async function MarketplacePage({
       sellerFirstName: users.firstName,
       sellerLastName: users.lastName,
       sellerCompany: profiles.company,
+      sellerTrustScore10: trustScoreSummaries.score10,
+      sellerVerifiedReviews: trustScoreSummaries.verifiedReviewCount,
     })
     .from(marketplaceListings)
     .innerJoin(users, eq(users.id, marketplaceListings.sellerId))
     .leftJoin(profiles, eq(profiles.userId, users.id))
+    .leftJoin(trustScoreSummaries, eq(trustScoreSummaries.userId, users.id))
     .where(
       and(
         eq(marketplaceListings.status, "published"),
@@ -119,28 +122,25 @@ export default async function MarketplacePage({
           <MarketplaceDemoSection />
         </>
       ) : (
-        <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <ul className="divide-y divide-border border-y border-border">
           {rows.map((row) => (
-            <li key={row.id}>
-              <Card className="flex h-full flex-col p-5">
-                <div className="flex flex-wrap items-center gap-2">
-                  <Badge variant="sand">{row.kind}</Badge>
-                  {row.isDemo && <Badge variant="outline"><Tr k="app.common.demo" /></Badge>}
+            <li key={row.id} className="py-4 sm:py-5">
+              <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge variant="sand">{row.kind}</Badge>
+                    {row.isDemo && <Badge variant="outline"><Tr k="app.common.demo" /></Badge>}
+                  </div>
+                  <Link href={`/app/marketplace/${row.id}`} className="mt-2 block text-base font-bold tracking-tight hover:underline">{row.title}</Link>
+                  <p className="mt-1 line-clamp-2 text-sm leading-6 text-foreground-muted">{row.summary}</p>
+                  <p className="mt-2 text-xs text-foreground-subtle">
+                    <span className="font-semibold text-foreground">{formatMoney(row.priceCents, row.currency, "de")}</span>
+                    {" · "}<Link href={`/app/people/${row.sellerHandle}`} className="hover:text-foreground hover:underline">{row.sellerCompany ?? `${row.sellerFirstName} ${row.sellerLastName}`}</Link> · {row.deliveryMode}
+                    {!row.isDemo && row.sellerVerifiedReviews && row.sellerVerifiedReviews > 0 && row.sellerTrustScore10 !== null ? ` · ★ ${(row.sellerTrustScore10 / 10).toFixed(1)} Trust` : ""}
+                  </p>
                 </div>
-                <Link href={`/app/marketplace/${row.id}`} className="mt-3 text-base font-bold tracking-tight hover:underline">
-                  {row.title}
-                </Link>
-                <p className="mt-2 flex-1 text-sm leading-6 text-foreground-muted">{row.summary}</p>
-                <p className="mt-3 text-sm font-bold">{formatMoney(row.priceCents, row.currency, "de")}</p>
-                <p className="mt-1 text-xs text-foreground-subtle">
-                  {row.sellerCompany ?? `${row.sellerFirstName} ${row.sellerLastName}`} · {row.deliveryMode}
-                </p>
-                <div className="mt-4">
-                  <Button href={`/app/marketplace/${row.id}`} size="sm" variant="secondary">
-                    <Tr k="app.common.details" />
-                  </Button>
-                </div>
-              </Card>
+                <Button href={`/app/marketplace/${row.id}`} size="sm" variant="secondary" className="w-full sm:w-auto"><Tr k="app.common.details" /></Button>
+              </div>
             </li>
           ))}
         </ul>

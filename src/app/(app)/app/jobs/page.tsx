@@ -1,11 +1,10 @@
 import Link from "next/link";
 import { and, desc, eq, ne, sql } from "drizzle-orm";
 import { db } from "@/db/client";
-import { businessOpportunities, profiles, users } from "@/db/schema";
+import { businessOpportunities, profiles, trustScoreSummaries, users } from "@/db/schema";
 import { requireUser } from "@/lib/access/server";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
 import { LocalizedEmptyState, LocalizedPageHeader, Tr } from "@/components/app/localized";
 import { LockedArea } from "@/components/app/LockedArea";
 import { DemoAreaNotice } from "@/components/app/DemoAreaNotice";
@@ -44,10 +43,13 @@ export default async function JobsPage() {
       ownerLastName: users.lastName,
       ownerHandle: users.handle,
       ownerCompany: profiles.company,
+      ownerTrustScore10: trustScoreSummaries.score10,
+      ownerVerifiedReviews: trustScoreSummaries.verifiedReviewCount,
     })
     .from(businessOpportunities)
     .innerJoin(users, eq(users.id, businessOpportunities.ownerId))
     .leftJoin(profiles, eq(profiles.userId, users.id))
+    .leftJoin(trustScoreSummaries, eq(trustScoreSummaries.userId, users.id))
     .where(
       and(
         eq(businessOpportunities.status, "published"),
@@ -83,32 +85,24 @@ export default async function JobsPage() {
           <JobsDemoSection />
         </>
       ) : (
-        <ul className="space-y-3">
+        <ul className="divide-y divide-border border-y border-border">
           {rows.map((row) => (
-            <li key={row.id}>
-              {/* Mobile (Sprint 8, TEIL W): list-based row – title, type,
-                  location, one-line summary, CTA. */}
-              <Card className="flex flex-wrap items-start justify-between gap-3 p-4 sm:gap-4 sm:p-5">
-                <div className="min-w-0 flex-1">
+            <li key={row.id} className="py-4 sm:py-5">
+              <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+                <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant={row.type === "job" ? "electric" : "sand"}>
-                      <Tr k={`app.opportunities.type.${row.type}` as "app.opportunities.type.job"} />
-                    </Badge>
+                    <Badge variant={row.type === "job" ? "electric" : "sand"}><Tr k={`app.opportunities.type.${row.type}` as "app.opportunities.type.job"} /></Badge>
                     {row.isDemo && <Badge variant="outline"><Tr k="app.common.demo" /></Badge>}
                   </div>
-                  <Link href={`/app/opportunities/${row.id}`} className="mt-2 block text-base font-bold tracking-tight hover:underline">
-                    {row.title}
-                  </Link>
+                  <Link href={`/app/opportunities/${row.id}`} className="mt-2 block text-base font-bold tracking-tight hover:underline">{row.title}</Link>
                   <p className="mt-1 line-clamp-2 text-sm text-foreground-muted">{row.summary}</p>
                   <p className="mt-2 text-xs text-foreground-subtle">
-                    {row.ownerCompany ?? `${row.ownerFirstName} ${row.ownerLastName}`} ·{" "}
-                    {[row.location, row.remote ? "Remote" : null].filter(Boolean).join(" · ")}
+                    {row.ownerCompany ?? `${row.ownerFirstName} ${row.ownerLastName}`} · {[row.location, row.remote ? "Remote" : null].filter(Boolean).join(" · ")}
+                    {!row.isDemo && row.ownerVerifiedReviews && row.ownerVerifiedReviews > 0 && row.ownerTrustScore10 !== null ? ` · ★ ${(row.ownerTrustScore10 / 10).toFixed(1)} Trust` : ""}
                   </p>
                 </div>
-                <Button href={`/app/opportunities/${row.id}#apply`} size="sm" className="w-full sm:w-auto">
-                  <Tr k="app.opportunities.apply.cta" />
-                </Button>
-              </Card>
+                <Button href={`/app/opportunities/${row.id}`} size="sm" variant="secondary" className="w-full sm:w-auto"><Tr k="app.common.details" /></Button>
+              </div>
             </li>
           ))}
         </ul>

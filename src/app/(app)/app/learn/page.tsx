@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { desc, eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import { courses, enrollments, marketplaceListings, profiles, users } from "@/db/schema";
@@ -12,8 +13,10 @@ import { AcademyDemoSection } from "@/components/app/DemoSections";
 
 export const dynamic = "force-dynamic";
 
-export default async function LearnPage() {
+export default async function LearnPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
   const access = await requireUser("/app/learn");
+  const params = await searchParams;
+  const tab = params.tab === "discover" ? "discover" : "my-courses";
 
   const myCourses = await db
     .select({
@@ -55,7 +58,23 @@ export default async function LearnPage() {
     <div className="space-y-8">
       <LocalizedPageHeader titleKey="app.learn.title" leadKey="app.learn.lead" />
 
-      <section>
+      <nav aria-label="Academy" className="flex w-full overflow-x-auto border-b border-border">
+        <div className="flex min-w-max gap-2">
+          {[
+            { key: "my-courses", href: "/app/learn", label: "app.learn.myCourses", description: "app.learn.myCoursesLead" },
+            { key: "discover", href: "/app/learn?tab=discover", label: "app.learn.discover", description: "app.learn.discoverLead" },
+          ].map((item) => (
+            <Link key={item.key} href={item.href} aria-current={tab === item.key ? "page" : undefined}
+              className={`border-b-2 px-4 py-3 text-sm font-semibold ${tab === item.key ? "border-electric-500 text-foreground" : "border-transparent text-foreground-muted hover:text-foreground"}`}>
+              <Tr k={item.label} />
+            </Link>
+          ))}
+        </div>
+      </nav>
+
+      <p className="text-sm text-foreground-muted"><Tr k={tab === "my-courses" ? "app.learn.myCoursesLead" : "app.learn.discoverLead"} /></p>
+
+      {tab === "my-courses" && <section>
         <h2 className="mb-4 text-lg font-bold tracking-tight"><Tr k="app.learn.myCourses" /></h2>
         {myCourses.length === 0 ? (
           <LocalizedEmptyState
@@ -86,10 +105,10 @@ export default async function LearnPage() {
             ))}
           </ul>
         )}
-      </section>
+      </section>}
 
-      <section>
-        <h2 className="mb-4 text-lg font-bold tracking-tight"><Tr k="app.learn.library" /></h2>
+      {tab === "discover" && <section>
+        <h2 className="mb-4 text-lg font-bold tracking-tight"><Tr k="app.learn.discover" /></h2>
         {library.length === 0 ? (
           <>
             <LocalizedEmptyState
@@ -120,7 +139,7 @@ export default async function LearnPage() {
             ))}
           </ul>
         )}
-      </section>
+      </section>}
     </div>
   );
 }
