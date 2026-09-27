@@ -332,3 +332,12 @@ Kein eigener Registrierungsweg, keine Änderung an Mitgliedschaft oder Rolle:
 | E-Mail bei neuer Kontaktanfrage/Nachricht | BLOCKED | Benachrichtigung nur in der App (Inbox-Badge); E-Mail-Benachrichtigungen brauchen den produktiven Mail-Versand (K-01, K-22) |
 
 Details und Status: [`11-known-issues.md`](11-known-issues.md).
+
+### Beta-Aktivierung: Ziel nach Profilstatus (2026-09-27)
+
+Nach erfolgreicher Einlösung nutzt die Server Action die bestehende
+`profileComplete`-Regel (Headline, Bio, Standort): vollständig →
+`/app/discover?welcome=beta`, unvollständig → `/app/profile/edit?welcome=beta`.
+Beide Ziele zeigen Aktivierung und Laufzeit/Ablauf; der Queryparameter allein
+gewährt nichts. Beta-Service, Auth, Membership und Berechtigungen unverändert.
+[Abnahme und Testgrenzen](15-private-beta-acceptance.md).

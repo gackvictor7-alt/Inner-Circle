@@ -86,11 +86,12 @@ export async function redeemBetaKeyAction(_prev: RedeemState, formData: FormData
   }
 
   revalidatePath("/app", "layout");
-  // Guided next step: the most important profile fields, then the network.
+  // Existing completeness rule: headline, bio and location. Complete profiles
+  // go straight to the network; both destinations retain the success notice.
   // A server-side redirect (not a client effect): the revalidated /app/beta
   // page swaps the form for the status card, so a client-side redirect in the
   // form would never run.
-  redirect("/app/profile/edit?welcome=beta");
+  redirect(access.profileComplete ? "/app/discover?welcome=beta" : "/app/profile/edit?welcome=beta");
 }
 
 /* ---------------------------------------------------------------- admin */

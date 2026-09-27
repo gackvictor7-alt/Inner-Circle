@@ -441,3 +441,14 @@ Legende: **AUT** = automatisiert vorhanden · **MAN** = manuell verifiziert
 Testkonten klar kennzeichnen (z. B. `…@innercircle.test`), niemals als echte
 Mitglieder oder Erfolge präsentieren. Keine Produktionsdaten in Tests.
 Seed-Daten sind fiktiv und im Schema als Demo markiert (`isDemo`, `seedTag`).
+
+## Private-Beta-Abnahme (2026-09-27)
+
+Aktueller Worker-Nachweis: **122/122** `sprint15-browser.mjs` (erweitert um
+E-Mail-Binding, vollständiges Profil → Discover und App-Themes), **82/82**
+`sprint12-browser.mjs`, **140/140** neuer `theme-browser.mjs` (DE/EN ×
+Desktop/Mobile × Light/Dark, echter Toggle, Persistenz, Kontrastmessung,
+Dialoge). Unit/Integration: **275/275**. Setup, ehrliche Grenzen und kompakte
+Belege: [Private-Beta-Abnahme](15-private-beta-acceptance.md).
+Theme-Wechsel und diese Server-Action-HTTP-Flows sind damit nicht mehr nur
+manuell geprüft; echte Mobilgeräte/externe Provider bleiben außerhalb.

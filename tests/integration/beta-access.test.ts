@@ -1,7 +1,7 @@
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { eq, like } from "drizzle-orm";
 import { db } from "@/db/client";
-import { betaAccess, betaInvites, membershipEvents, memberships, rateLimits, trials, users } from "@/db/schema";
+import { betaAccess, betaInvites, membershipEvents, memberships, profiles, rateLimits, trials, users } from "@/db/schema";
 import { loadUserContext } from "@/db/queries";
 import { activateMembership } from "@/lib/membership/service";
 import { startTrial } from "@/lib/trial/service";
@@ -112,6 +112,13 @@ describe("2 · admin creates a key → tester registers → redeems → immediat
     expect(row.codeHash).not.toContain(normalizeBetaKey(key)!);
     expect(JSON.stringify(row)).not.toContain(normalizeBetaKey(key)!);
     expect(row.codeHint).toBe(`…${normalizeBetaKey(key)!.slice(-4)}`);
+  });
+
+  it("a complete profile goes directly to Discover after activation", async () => {
+    const tester = await user("Complete");
+    await db.update(profiles).set({ headline: "Founder", bio: "Test bio", location: "Berlin" }).where(eq(profiles.userId, tester));
+    const { key } = await newKey();
+    expect((await redeemAs(tester, key)).redirectTo).toBe("/app/discover?welcome=beta");
   });
 
   it("redemption grants networking immediately – not a membership, not paid, not admin", async () => {

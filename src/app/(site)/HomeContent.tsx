@@ -310,27 +310,27 @@ export function HomeContent() {
       <div id="areas" className="scroll-mt-20">
       {/* Desktop (founder reference Bild 2, finalized 2026-09-23): calm,
           editorial, alternating image/text rows on deep navy. */}
-      <section className="relative hidden overflow-hidden bg-[#0a1628] text-white lg:block">
+      <section className="relative hidden overflow-hidden bg-surface-muted text-foreground dark:bg-[#0a1628] dark:text-white lg:block">
         {/* deliberate seam: the light outcomes chapter closes into the dark
             ecosystem chapter – soft top depth instead of a hard random cut */}
-        <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-56 bg-gradient-to-b from-[#050b16] to-transparent" />
+        <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-56 bg-gradient-to-b from-paper-200 dark:from-[#050b16] to-transparent" />
         {/* Sprint 11 (Teil A): the rows use almost the full usable desktop
             width with even premium gutters (40 / 56 / 64 px) instead of the
             1480 px column – images grow, text stays measured. Hero, header and
             the light outcomes chapter keep their own containers. */}
         <div className="relative mx-auto max-w-[1800px] px-10 pt-14 pb-10 xl:px-14 xl:pb-12 2xl:px-16">
-          <div aria-hidden="true" className="mx-auto mb-14 h-20 w-px bg-gradient-to-b from-white/0 via-white/40 to-white/15" />
-          <div className="flex items-end justify-between gap-12 border-b border-white/15 pb-12">
+          <div aria-hidden="true" className="mx-auto mb-14 h-20 w-px bg-gradient-to-b from-transparent via-border-strong to-border dark:via-white/40 dark:to-white/15" />
+          <div className="flex items-end justify-between gap-12 border-b border-border dark:border-white/15 pb-12">
             <div className="max-w-[640px]">
-              <p className="text-[12px] font-medium uppercase tracking-[0.3em] text-electric-300">{t.home2.enablesKicker}</p>
+              <p className="text-[12px] font-medium uppercase tracking-[0.3em] text-electric-600 dark:text-electric-300">{t.home2.enablesKicker}</p>
               <h2 className="mt-5 font-serif text-[3.5rem] font-normal leading-[1.06] tracking-[-0.02em] xl:text-[4rem]">
                 {t.home2.enablesTitle}
               </h2>
-              <p className="mt-6 max-w-[540px] text-[17px] leading-[1.65] text-white/70">{t.home2.areasV3Lead}</p>
+              <p className="mt-6 max-w-[540px] text-[17px] leading-[1.65] text-foreground-muted dark:text-white/70">{t.home2.areasV3Lead}</p>
             </div>
             <Link
               href="/how-it-works"
-              className="group mb-2 inline-flex shrink-0 items-center gap-2 text-[15px] font-medium text-electric-300 hover:text-white"
+              className="group mb-2 inline-flex shrink-0 items-center gap-2 text-[15px] font-medium text-electric-600 dark:text-electric-300 hover:text-electric-700 dark:hover:text-white"
             >
               {t.home2.enablesCta}
               <ArrowRightIcon size={16} className="transition-transform group-hover:translate-x-0.5" />
@@ -343,7 +343,7 @@ export function HomeContent() {
               const Icon = v.icon;
               const reverse = index % 2 === 1;
               return (
-                <li key={item.key} className="border-b border-white/15 last:border-b-0">
+                <li key={item.key} className="border-b border-border dark:border-white/15 last:border-b-0">
                   {/* One harmonious row: image 7/12 with a uniform 16:10 crop,
                       text 5/12 with a fixed measure (never stretched). */}
                   <Link href={v.href} className="group grid grid-cols-12 items-center gap-12 py-10 xl:gap-16 xl:py-12">
@@ -358,14 +358,14 @@ export function HomeContent() {
                       />
                     </span>
                     <span className={`col-span-5 block ${reverse ? "order-1 xl:pr-6" : "xl:pl-2"}`}>
-                      <span className="flex items-center gap-4 text-[12px] font-medium tracking-[0.3em] text-white/50">
+                      <span className="flex items-center gap-4 text-[12px] font-medium tracking-[0.3em] text-foreground-muted dark:text-white/50">
                         <span>0{index + 1}</span>
-                        <span aria-hidden="true" className="h-px w-10 bg-white/30" />
-                        <Icon size={22} className="text-white/80" />
+                        <span aria-hidden="true" className="h-px w-10 bg-border-strong dark:bg-white/30" />
+                        <Icon size={22} className="text-foreground dark:text-white/80" />
                       </span>
                       <span className="mt-5 block font-serif text-[2.5rem] leading-[1.1] tracking-[-0.01em]">{item.title}</span>
-                      <span className="mt-4 block max-w-[460px] text-[16px] leading-[1.65] text-white/70 2xl:max-w-[500px]">{item.text}</span>
-                      <span className="mt-7 inline-flex items-center gap-2 text-[14px] font-medium text-electric-300 group-hover:text-white">
+                      <span className="mt-4 block max-w-[460px] text-[16px] leading-[1.65] text-foreground-muted dark:text-white/70 2xl:max-w-[500px]">{item.text}</span>
+                      <span className="mt-7 inline-flex items-center gap-2 text-[14px] font-medium text-electric-600 dark:text-electric-300 group-hover:text-electric-700 dark:group-hover:text-white">
                         {t.home2.areasV3Cta}
                         <ArrowRightIcon size={15} className="transition-transform group-hover:translate-x-0.5" />
                       </span>
@@ -380,15 +380,15 @@ export function HomeContent() {
 
       {/* Mobile/tablet: the same editorial rows, compact and stacked
           (Bild → Text), on deep navy – founder brief 2026-09-23. */}
-      <section className="relative overflow-hidden bg-[#0a1628] text-white lg:hidden">
-        <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-[#050b16] to-transparent" />
+      <section className="relative overflow-hidden bg-surface-muted text-foreground dark:bg-[#0a1628] dark:text-white lg:hidden">
+        <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-paper-200 dark:from-[#050b16] to-transparent" />
         <div className="relative ic-shell-wide pt-12 pb-10 sm:pt-16 sm:pb-14">
-          <div aria-hidden="true" className="mx-auto mb-10 h-14 w-px bg-gradient-to-b from-white/0 via-white/40 to-white/15" />
-          <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-electric-300">{t.home2.enablesKicker}</p>
+          <div aria-hidden="true" className="mx-auto mb-10 h-14 w-px bg-gradient-to-b from-transparent via-border-strong to-border dark:via-white/40 dark:to-white/15" />
+          <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-electric-600 dark:text-electric-300">{t.home2.enablesKicker}</p>
           <h2 className="mt-3 font-serif text-[2.1rem] leading-[1.12] tracking-[-0.01em] sm:text-[2.6rem]">
             {t.home2.enablesTitle}
           </h2>
-          <p className="mt-4 max-w-xl text-[14.5px] leading-6 text-white/70 sm:text-[15.5px] sm:leading-7">
+          <p className="mt-4 max-w-xl text-[14.5px] leading-6 text-foreground-muted dark:text-white/70 sm:text-[15.5px] sm:leading-7">
             {t.home2.areasV3Lead}
           </p>
 
@@ -409,14 +409,14 @@ export function HomeContent() {
                         className="h-48 w-full object-cover transition-transform duration-500 group-hover:scale-[1.02] sm:h-60"
                       />
                     </span>
-                    <span className="mt-5 flex items-center gap-3 text-[11px] font-medium tracking-[0.3em] text-white/50">
+                    <span className="mt-5 flex items-center gap-3 text-[11px] font-medium tracking-[0.3em] text-foreground-muted dark:text-white/50">
                       <span>0{index + 1}</span>
-                      <span aria-hidden="true" className="h-px w-8 bg-white/30" />
-                      <Icon size={17} className="text-white/80" />
+                      <span aria-hidden="true" className="h-px w-8 bg-border-strong dark:bg-white/30" />
+                      <Icon size={17} className="text-foreground dark:text-white/80" />
                     </span>
                     <span className="mt-3 block font-serif text-[1.65rem] leading-tight sm:text-[1.9rem]">{item.title}</span>
-                    <span className="mt-2 block max-w-md text-[14px] leading-6 text-white/70 sm:text-[15px]">{item.text}</span>
-                    <span className="mt-3.5 inline-flex items-center gap-2 text-[13.5px] font-medium text-electric-300 group-hover:text-white">
+                    <span className="mt-2 block max-w-md text-[14px] leading-6 text-foreground-muted dark:text-white/70 sm:text-[15px]">{item.text}</span>
+                    <span className="mt-3.5 inline-flex items-center gap-2 text-[13.5px] font-medium text-electric-600 dark:text-electric-300 group-hover:text-electric-700 dark:group-hover:text-white">
                       {t.home2.areasV3Cta}
                       <ArrowRightIcon size={14} className="transition-transform group-hover:translate-x-0.5" />
                     </span>

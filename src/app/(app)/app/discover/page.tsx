@@ -1,3 +1,4 @@
+import { BetaWelcome } from "@/components/app/BetaWelcome";
 import { asc } from "drizzle-orm";
 import { db } from "@/db/client";
 import { goals, interests } from "@/db/schema";
@@ -66,6 +67,7 @@ export default async function DiscoverPage({
     invest?: string;
     radius?: string;
     more?: string;
+    welcome?: string;
   }>;
 }) {
   const access = await requireUser("/app/discover");
@@ -74,6 +76,9 @@ export default async function DiscoverPage({
 
   const params = await searchParams;
   const locale = access.user.locale === "en" ? "en" : "de";
+  const welcome = params.welcome === "beta" && access.beta?.active
+    ? <BetaWelcome endsAt={access.beta.endsAt} msRemaining={access.beta.msRemaining} locale={locale} />
+    : null;
 
   const [interestTaxonomy, goalTaxonomy] = await Promise.all([
     db.select().from(interests).orderBy(asc(interests.position)),
@@ -243,6 +248,7 @@ export default async function DiscoverPage({
   if (cards.length === 0) {
     return (
       <div className="space-y-6">
+        {welcome}
         <LocalizedPageHeader titleKey="app.discover.title" leadKey="app.discover.leadShort" />
         {hasActiveFilters(filters) ? (
           <LocalizedEmptyState
@@ -264,17 +270,20 @@ export default async function DiscoverPage({
   }
 
   return (
-    <DiscoverDeck
-      members={cards}
-      canFollow={access.entitlements.follow}
-      canConnect={access.entitlements.connect !== "no"}
-      trialRemaining={null}
-      filters={deckFilters}
-      moreOpen={moreOpen}
-      /** The radius only really works for cities in the offline table. */
-      locationGeocodable={geocodeLocation(filters.location) !== null}
-      filterOptions={filterOptions}
-    />
+    <div className="space-y-6">
+      {welcome}
+      <DiscoverDeck
+        members={cards}
+        canFollow={access.entitlements.follow}
+        canConnect={access.entitlements.connect !== "no"}
+        trialRemaining={null}
+        filters={deckFilters}
+        moreOpen={moreOpen}
+        /** The radius only really works for cities in the offline table. */
+        locationGeocodable={geocodeLocation(filters.location) !== null}
+        filterOptions={filterOptions}
+      />
+    </div>
   );
 }
 
