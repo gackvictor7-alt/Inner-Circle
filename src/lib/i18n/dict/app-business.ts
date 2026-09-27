@@ -145,6 +145,7 @@ export const appBusinessDe = {
     closedSuccess: "Chance geschlossen.",
     deletedSuccess: "Chance gelöscht.",
     demoNotice: "Beispiel-Chance aus den Demo-Daten (nicht von einem echten Mitglied erstellt).",
+    overviewCta: "Deal ansehen",
   },
   jobs: {
     title: "Jobs, Projekte & Zusammenarbeit",
@@ -164,6 +165,7 @@ export const appBusinessDe = {
     projectsTitle: "Projekte",
     coFounderTitle: "Co-Founder-Suchen",
     servicesTitle: "Angebotene Dienstleistungen",
+    overviewCta: "Mehr erfahren",
   },
   marketplace: {
     kindField: "Kategorie",
@@ -244,6 +246,7 @@ export const appBusinessDe = {
     demoNotice: "Beispielangebot – kein echtes Angebot eines Mitglieds.",
     sellerProfile: "Anbieterprofil",
     sellerListings: "Weitere Angebote",
+    overviewCta: "Angebot ansehen",
   },
   learn: {
     title: "Academy",
@@ -275,6 +278,7 @@ export const appBusinessDe = {
     purchaseNotice:
       "Ein echter Kurskauf benötigt die Zahlungsanbieter-Einrichtung. Bis dahin kannst du Kurse als Demo-Teilnehmer starten.",
     demoEnrollment: "Beispiel-Teilnahme – keine echte Buchung.",
+    viewCourse: "Kurs ansehen",
     duration: "Dauer: {minutes} Minuten",
     certificateNote: "Zertifikate folgen, sobald Abschlüsse geprüft werden können.",
     player: "Kursplayer",
@@ -983,6 +987,7 @@ export const appBusinessEn: AppBusinessDict = {
     closedSuccess: "Opportunity closed.",
     deletedSuccess: "Opportunity deleted.",
     demoNotice: "Sample opportunity from the demo data (not created by a real member).",
+    overviewCta: "View deal",
   },
   jobs: {
     title: "Jobs, projects & collaboration",
@@ -1002,6 +1007,7 @@ export const appBusinessEn: AppBusinessDict = {
     projectsTitle: "Projects",
     coFounderTitle: "Co-founder searches",
     servicesTitle: "Offered services",
+    overviewCta: "Learn more",
   },
   marketplace: {
     kindField: "Category",
@@ -1082,6 +1088,7 @@ export const appBusinessEn: AppBusinessDict = {
     demoNotice: "Sample offer – not a real member offer.",
     sellerProfile: "Provider profile",
     sellerListings: "More offers",
+    overviewCta: "View offer",
   },
   learn: {
     title: "Academy",
@@ -1113,6 +1120,7 @@ export const appBusinessEn: AppBusinessDict = {
     purchaseNotice:
       "A real course purchase requires the payment provider setup. Until then you can start courses as a demo participant.",
     demoEnrollment: "Sample enrollment – not a real booking.",
+    viewCourse: "View course",
     duration: "Duration: {minutes} minutes",
     certificateNote: "Certificates follow once completions can be verified.",
     player: "Course player",

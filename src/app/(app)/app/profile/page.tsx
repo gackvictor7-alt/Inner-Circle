@@ -17,6 +17,7 @@ import { Avatar } from "@/components/app/AppShell";
 import { ShareProfileButton } from "@/components/app/ShareProfileButton";
 import { LocalizedEmptyState, Tr } from "@/components/app/localized";
 import { ProfilePostsDemoSection } from "@/components/app/DemoSections";
+import { ProfilePeopleModal } from "@/components/app/ProfilePeopleModal";
 import { DEMO_CONTENT_ENABLED } from "@/lib/demo";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -174,9 +175,33 @@ export default async function OwnProfilePage({
             </div>
 
             <div className="mt-5 flex flex-wrap gap-x-5 gap-y-3 border-t border-border pt-4">
-              <ProfilePeopleList locale={user.locale === "en" ? "en" : "de"} label={dict.app.profile.metricFollowers} count={stats.followers} members={followers} />
-              <ProfilePeopleList locale={user.locale === "en" ? "en" : "de"} label={dict.app.profile.statsFollowing} count={stats.following} members={following} align="center" />
-              <ProfilePeopleList locale={user.locale === "en" ? "en" : "de"} label={dict.app.profile.metricConnections} count={stats.connections} members={connectedMembers} align="right" />
+              <ProfilePeopleModal
+                locale={user.locale === "en" ? "en" : "de"}
+                label={dict.app.profile.metricFollowers}
+                count={stats.followers}
+                members={followers}
+                openProfileLabel={dict.app.profile.relationshipOpenProfile}
+                emptyLabel={dict.app.profile.relationshipEmpty}
+                closeLabel={dict.app.common.close}
+              />
+              <ProfilePeopleModal
+                locale={user.locale === "en" ? "en" : "de"}
+                label={dict.app.profile.statsFollowing}
+                count={stats.following}
+                members={following}
+                openProfileLabel={dict.app.profile.relationshipOpenProfile}
+                emptyLabel={dict.app.profile.relationshipEmpty}
+                closeLabel={dict.app.common.close}
+              />
+              <ProfilePeopleModal
+                locale={user.locale === "en" ? "en" : "de"}
+                label={dict.app.profile.metricConnections}
+                count={stats.connections}
+                members={connectedMembers}
+                openProfileLabel={dict.app.profile.relationshipOpenProfile}
+                emptyLabel={dict.app.profile.relationshipEmpty}
+                closeLabel={dict.app.common.close}
+              />
             </div>
 
             <div className="mt-5 flex flex-wrap items-center gap-2">
@@ -330,9 +355,9 @@ export default async function OwnProfilePage({
               <Tr k="app.profile.activityEmptyText" />
             </p>
           ) : (
-            <ul className="divide-y divide-border rounded-2xl border border-border bg-surface">
+            <ul className="divide-y divide-border border-y border-border">
               {posts.map((post) => (
-                <li key={post.id} className="px-5 py-4">
+                <li key={post.id} className="py-4 sm:py-5">
                   <p className="whitespace-pre-wrap text-[15px] leading-7">{post.body}</p>
                   <p className="mt-2 text-xs text-foreground-subtle">
                     {post.createdAt.toLocaleDateString(locale, { day: "2-digit", month: "short", year: "numeric" })}
@@ -512,10 +537,9 @@ export default async function OwnProfilePage({
               action={{ labelKey: "app.profile.offersEmptyCta", href: "/app/opportunities/new" }}
             />
           ) : (
-            <div className="ic-grid">
+            <div className="space-y-5">
               {offerings.opportunities.length > 0 && (
                 <OfferList
-                  className="ic-span-12 lg:col-span-4"
                   titleKey="app.profile.offersOpportunities"
                   icon={<BriefcaseIcon size={15} />}
                   items={offerings.opportunities.map((row) => ({
@@ -528,7 +552,6 @@ export default async function OwnProfilePage({
               )}
               {offerings.listings.length > 0 && (
                 <OfferList
-                  className="ic-span-12 lg:col-span-4"
                   titleKey="app.profile.offersListings"
                   icon={
                     offerings.listings[0]?.kind === "course" ? (
@@ -547,7 +570,6 @@ export default async function OwnProfilePage({
               )}
               {offerings.investments.length > 0 && (
                 <OfferList
-                  className="ic-span-12 lg:col-span-4"
                   titleKey="app.profile.offersInvestments"
                   icon={<ChartIcon size={15} />}
                   items={offerings.investments.map((row) => ({
@@ -580,29 +602,7 @@ function ExternalLink({ href, icon, label }: { href: string; icon: React.ReactNo
   );
 }
 
-type ProfileListMember = { id: string; firstName: string; lastName: string; handle: string; headline: string | null; company: string | null; avatarUrl: string | null; score10: number | null; verifiedReviewCount: number | null };
 
-function ProfilePeopleList({ locale, label, count, members, align = "left" }: { locale: "de" | "en"; label: string; count: number; members: ProfileListMember[]; align?: "left" | "center" | "right" }) {
-  const alignment = align === "right" ? "right-0" : align === "center" ? "left-1/2 -translate-x-1/2" : "left-0";
-  return (
-    <details className="group relative min-w-[6rem]">
-      <summary className="cursor-pointer list-none rounded-md text-left focus-visible:outline-2 focus-visible:outline-electric-500 [&::-webkit-details-marker]:hidden">
-        <span className="block text-sm font-bold">{count}</span>
-        <span className="text-xs text-foreground-muted group-hover:text-foreground">{label}</span>
-      </summary>
-      <div className={`absolute ${alignment} z-20 mt-2 max-h-80 w-[min(22rem,calc(100vw-2rem))] overflow-y-auto rounded-xl border border-border bg-surface p-2 shadow-lg`}>
-        {members.length ? members.map((member) => {
-          const memberScore = member.verifiedReviewCount && member.score10 !== null ? member.score10 / 10 : null;
-          return <div key={member.id} className="flex items-center gap-3 rounded-lg px-2 py-2 hover:bg-surface-muted">
-            <Avatar user={{ firstName: member.firstName, lastName: member.lastName, avatarUrl: member.avatarUrl }} size={36} />
-            <div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold">{member.firstName} {member.lastName}</p><p className="truncate text-xs text-foreground-muted">@{member.handle} · {[member.headline, member.company].filter(Boolean).join(" · ")}</p>{memberScore !== null && <p className="mt-0.5 text-xs font-medium text-forest-700 dark:text-forest-300">★ {memberScore.toLocaleString(locale === "en" ? "en-GB" : "de-DE", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} Trust</p>}</div>
-            <Link href={`/app/people/${member.handle}`} className="shrink-0 text-xs font-semibold text-electric-600 hover:underline dark:text-electric-300">{locale === "en" ? "Open profile" : "Profil öffnen"}</Link>
-          </div>;
-        }) : <p className="px-3 py-4 text-sm text-foreground-muted">{locale === "en" ? "No people to show yet." : "Noch keine Einträge."}</p>}
-      </div>
-    </details>
-  );
-}
 
 /**
  * Collapsible section for secondary profile information – native
@@ -702,22 +702,22 @@ function OfferList({
   className?: string;
 }) {
   return (
-    <Card className={`h-full p-5 ${className}`}>
+    <section className={`border-y border-border py-4 ${className}`}>
       <h3 className="flex items-center gap-2 text-sm font-bold tracking-tight">
         {icon}
         <Tr k={titleKey} />
       </h3>
       <ul className="mt-3 divide-y divide-border">
         {items.map((item) => (
-          <li key={item.id} className="py-2.5">
-            <Link href={item.href} className="text-sm font-medium hover:underline">
+          <li key={item.id} className="flex items-center justify-between gap-4 py-3">
+            <Link href={item.href} className="min-w-0 text-sm font-medium hover:underline">
               {item.title}
             </Link>
-            <p className="mt-0.5 text-xs text-foreground-subtle">{item.meta}</p>
+            <p className="shrink-0 text-xs text-foreground-subtle">{item.meta}</p>
           </li>
         ))}
       </ul>
-    </Card>
+    </section>
   );
 }
 

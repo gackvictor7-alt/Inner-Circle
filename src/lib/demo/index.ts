@@ -942,63 +942,70 @@ export type DemoListing = {
   key: string;
   title: string;
   creator: string; // fictional provider
+  summary: string;
   price: string;
   category: string;
   /** Rating shown ONLY as a labelled demo value. */
   ratingLabel: string;
   /** English variant (demo parity rule). */
-  en: { title: string; creator: string; price: string; category: string; ratingLabel: string };
+  en: { title: string; creator: string; summary: string; price: string; category: string; ratingLabel: string };
 };
 
 export const DEMO_LISTINGS: DemoListing[] = [
   {
     key: "listing-marketing-service",
     title: "Marketing Service: 30-Tage Kanal-Audit",
+    summary: "Prüfung von Kanälen, Tracking und ersten Wachstumshebeln für ein klares Go-to-Market-Setup.",
     creator: "Nina Kovač (Beispiel)",
     price: "ab 1.900 €",
     category: "Marketing Service",
     ratingLabel: "Beispiel-Bewertung: 4,8",
-  en: { title: "Marketing service: 30-day channel audit", creator: "Nina Kovač (example)", price: "from €1,900", category: "Marketing service", ratingLabel: "Example rating: 4.8" },  },
+  en: { title: "Marketing service: 30-day channel audit", creator: "Nina Kovač (example)", summary: "Channel, tracking and growth-lever review for a focused go-to-market setup.", price: "from €1,900", category: "Marketing service", ratingLabel: "Example rating: 4.8" },  },
   {
     key: "listing-webdesign",
     title: "Webdesign: Landing-Page & Brand-Guide",
+    summary: "Landingpage und kompakter Brand-Guide für einen konsistenten ersten Markenauftritt.",
     creator: "Maya Studio (Beispiel)",
     price: "ab 3.500 €",
     category: "Webdesign",
     ratingLabel: "Beispiel-Bewertung: 4,9",
-  en: { title: "Web design: landing page & brand guide", creator: "Maya Studio (example)", price: "from €3,500", category: "Web design", ratingLabel: "Example rating: 4.9" },  },
+  en: { title: "Web design: landing page & brand guide", creator: "Maya Studio (example)", summary: "Landing page and compact brand guide for a consistent first brand impression.", price: "from €3,500", category: "Web design", ratingLabel: "Example rating: 4.9" },  },
   {
     key: "listing-consulting",
     title: "Consulting: B2B Sales Playbook",
+    summary: "Struktur für ICP, Pipeline und Sales-Prozess – als umsetzbares Playbook für das Team.",
     creator: "Reyes Advisory (Beispiel)",
     price: "ab 890 €",
     category: "Consulting",
     ratingLabel: "Beispiel-Bewertung: 4,7",
-  en: { title: "Consulting: B2B sales playbook", creator: "Reyes Advisory (example)", price: "from €890", category: "Consulting", ratingLabel: "Example rating: 4.7" },  },
+  en: { title: "Consulting: B2B sales playbook", creator: "Reyes Advisory (example)", summary: "A practical playbook for ICP, pipeline and the team sales process.", price: "from €890", category: "Consulting", ratingLabel: "Example rating: 4.7" },  },
   {
     key: "listing-coaching",
     title: "Business Coaching: 6 Wochen Klarheit",
+    summary: "Sechs Wochen strukturierte Begleitung für Positionierung, Prioritäten und nächste Schritte.",
     creator: "Maya Okafor (Beispiel)",
     price: "ab 1.450 €",
     category: "Business Coaching",
     ratingLabel: "Beispiel-Bewertung: 4,8",
-  en: { title: "Business coaching: 6 weeks of clarity", creator: "Maya Okafor (example)", price: "from €1,450", category: "Business coaching", ratingLabel: "Example rating: 4.8" },  },
+  en: { title: "Business coaching: 6 weeks of clarity", creator: "Maya Okafor (example)", summary: "Six weeks of structured support for positioning, priorities and next steps.", price: "from €1,450", category: "Business coaching", ratingLabel: "Example rating: 4.8" },  },
   {
     key: "listing-digital-product",
     title: "Digital Product: Pricing-Vorlagen-Paket",
+    summary: "Vorlagen für Angebotsstruktur, Preislogik und die Vorbereitung von Kundengesprächen.",
     creator: "Julian Weiss (Beispiel)",
     price: "149 €",
     category: "Digital Product",
     ratingLabel: "Beispiel-Bewertung: 4,6",
-  en: { title: "Digital product: pricing template pack", creator: "Julian Weiss (example)", price: "€149", category: "Digital product", ratingLabel: "Example rating: 4.6" },  },
+  en: { title: "Digital product: pricing template pack", creator: "Julian Weiss (example)", summary: "Templates for offer structure, pricing logic and customer conversations.", price: "€149", category: "Digital product", ratingLabel: "Example rating: 4.6" },  },
   {
     key: "listing-design-service",
     title: "Design Service: Pitch-Deck & Visual Identity",
+    summary: "Pitch-Deck und visuelle Grundlage für einen klaren Auftritt bei Partnern und Investoren.",
     creator: "Maya Studio (Beispiel)",
     price: "ab 2.400 €",
     category: "Design Service",
     ratingLabel: "Beispiel-Bewertung: 4,9",
-  en: { title: "Design service: pitch deck & visual identity", creator: "Maya Studio (example)", price: "from €2,400", category: "Design service", ratingLabel: "Example rating: 4.9" },  },
+  en: { title: "Design service: pitch deck & visual identity", creator: "Maya Studio (example)", summary: "Pitch deck and visual foundation for a clear partner and investor presence.", price: "from €2,400", category: "Design service", ratingLabel: "Example rating: 4.9" },  },
 ];
 
 /* ------------------------------------------------------------------ *
@@ -1008,44 +1015,63 @@ export const DEMO_LISTINGS: DemoListing[] = [
 export type DemoCourse = {
   key: string;
   title: string;
+  creator: string;
+  category: string;
   summary: string;
-  /** Illustrative info, NOT real sales numbers. */
+  /** Illustrative module count, clearly labelled as a demo value. */
+  moduleCount: number;
+  /** Legacy display label used by the public preview. */
   metaLabel: string;
   /** English variant (demo parity rule). */
-  en: { title: string; summary: string; metaLabel: string };
+  en: { title: string; creator: string; category: string; summary: string; metaLabel: string };
 };
 
 export const DEMO_COURSES: DemoCourse[] = [
   {
     key: "course-startup-finance",
     title: "Startup Finance Basics",
+    creator: "Venture & Partners Academy",
+    category: "Finance",
     summary: "Cap Table, Runway und KPIs verstehen – kompakt für Gründer ohne Finance-Background.",
+    moduleCount: 4,
     metaLabel: "Beispiel: 4 Module",
-  en: { title: "Startup Finance Basics", summary: "Understand cap table, runway and KPIs – compact for founders without a finance background.", metaLabel: "Example: 4 modules" },  },
+  en: { title: "Startup Finance Basics", creator: "Venture & Partners Academy", category: "Finance", summary: "Understand cap table, runway and KPIs – compact for founders without a finance background.", metaLabel: "Example: 4 modules" },  },
   {
     key: "course-b2b-sales",
     title: "B2B Sales Playbook",
+    creator: "Nina Kovač (Beispiel)",
+    category: "Sales",
     summary: "Von der ICP-Definition bis zur wiederholbaren Pipeline – ein praktisches Vertriebssystem.",
+    moduleCount: 6,
     metaLabel: "Beispiel: 6 Module",
-  en: { title: "B2B Sales Playbook", summary: "From ICP definition to a repeatable pipeline – a practical sales system.", metaLabel: "Example: 6 modules" },  },
+  en: { title: "B2B Sales Playbook", creator: "Nina Kovač (example)", category: "Sales", summary: "From ICP definition to a repeatable pipeline – a practical sales system.", metaLabel: "Example: 6 modules" },  },
   {
     key: "course-personal-branding",
     title: "Personal Branding",
+    creator: "Maya Studio (Beispiel)",
+    category: "Branding",
     summary: "Positionierung, Profil und Content-Strategie für Gründer und Berater.",
+    moduleCount: 3,
     metaLabel: "Beispiel: 3 Module",
-  en: { title: "Personal Branding", summary: "Positioning, profile and content strategy for founders and consultants.", metaLabel: "Example: 3 modules" },  },
+  en: { title: "Personal Branding", creator: "Maya Studio (example)", category: "Branding", summary: "Positioning, profile and content strategy for founders and consultants.", metaLabel: "Example: 3 modules" },  },
   {
     key: "course-real-estate",
     title: "Real Estate Fundamentals",
+    creator: "Atelier Capital (Beispiel)",
+    category: "Real Estate",
     summary: "Projektentwicklung, Finanzierung und Due Diligence – Grundlagen für Einsteiger.",
+    moduleCount: 5,
     metaLabel: "Beispiel: 5 Module",
-  en: { title: "Real Estate Fundamentals", summary: "Project development, financing and due diligence – basics for newcomers.", metaLabel: "Example: 5 modules" },  },
+  en: { title: "Real Estate Fundamentals", creator: "Atelier Capital (example)", category: "Real estate", summary: "Project development, financing and due diligence – basics for newcomers.", metaLabel: "Example: 5 modules" },  },
   {
     key: "course-ai-automation",
     title: "AI Automation for Business",
+    creator: "Flow Systems Lab (Beispiel)",
+    category: "Automation",
     summary: "Praxisnahe Automation von Vertriebs- und Marketingprozessen mit KI-Tools.",
+    moduleCount: 4,
     metaLabel: "Beispiel: 4 Module",
-  en: { title: "AI Automation for Business", summary: "Hands-on automation of sales and marketing processes with AI tools.", metaLabel: "Example: 4 modules" },  },
+  en: { title: "AI Automation for Business", creator: "Flow Systems Lab (example)", category: "Automation", summary: "Hands-on automation of sales and marketing processes with AI tools.", metaLabel: "Example: 4 modules" },  },
 ];
 
 /* ------------------------------------------------------------------ *

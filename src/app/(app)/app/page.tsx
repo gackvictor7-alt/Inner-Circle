@@ -1,5 +1,5 @@
 import { requireUser } from "@/lib/access/server";
-import { forYouItems, inboxBadgeTotal, inboxCounts } from "@/lib/platform/queries";
+import { inboxBadgeTotal, inboxCounts } from "@/lib/platform/queries";
 import { DashboardScreen, type DashboardData } from "@/components/app/DashboardScreen";
 
 export const dynamic = "force-dynamic";
@@ -18,26 +18,6 @@ export default async function AppDashboardPage() {
   const user = access.user;
   const counts = await inboxCounts(user.id);
 
-  // "Für dich" (Sprint 8, TEIL E): a few real, currently relevant entries –
-  // request, unread message, matching member, newest deal, event, investment.
-  // Entries are filtered by the viewer's entitlements so a free account is
-  // never pointed at member/trial-only content (directory, deals, investments).
-  const { entitlements } = access;
-  const forYou = (
-    await forYouItems(user.id, user.interests.map((interest) => interest.slug), user.locale === "en" ? "en" : "de")
-  ).filter((item) => {
-    switch (item.kind) {
-      case "person":
-        return entitlements.networkDirectory;
-      case "deal":
-        return entitlements.opportunitiesBrowse;
-      case "investment":
-        return entitlements.investmentsBrowse;
-      default:
-        return true;
-    }
-  });
-
   const data: DashboardData = {
     firstName: user.firstName,
     level: access.level,
@@ -48,7 +28,6 @@ export default async function AppDashboardPage() {
     betaEnded: Boolean(access.beta && !access.beta.active) && !access.networkAccess,
     networkAccess: access.networkAccess,
     membershipDevelopment: access.membership?.isDevelopment ?? false,
-    forYou,
   };
 
   return <DashboardScreen data={data} />;
