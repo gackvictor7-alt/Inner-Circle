@@ -66,7 +66,10 @@ als Produktionsdatenbank. Vercel/Postgres (ADR-007) ist ersetzt (ADR-008).
      `https://inner-circle.<account>.workers.dev`.
    - Optional Secrets: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`,
      `RESEND_API_KEY`, `TWILIO_*`, `GOOGLE_*`, `APPLE_*`.
-   - Optional Text: `EMAIL_FROM`, `STRIPE_PUBLISHABLE_KEY`.
+   - Optional Text: `EMAIL_FROM`, `EMAIL_FROM_VERIFICATION` (eigener
+     Absender für Verifizierungs-Code-Mails, z. B.
+     `INNER CIRCLE <verify@innercirclevp.com>`; Fallback `EMAIL_FROM`),
+     `STRIPE_PUBLISHABLE_KEY`.
    - **Nicht setzen:** `ALLOW_DEV_MEMBERSHIP_ACTIVATION`.
      `ENABLE_DEV_OUTBOX` nur bewusst für den Testbetrieb ohne Mailanbieter.
    Vollständige Liste inkl. Pflicht/Optional: [`14-environment.md`](14-environment.md).
@@ -76,7 +79,10 @@ als Produktionsdatenbank. Vercel/Postgres (ADR-007) ist ersetzt (ADR-008).
    Taxonomie ein.
 5. **E-Mail-Versand aktivieren** (Pflicht für echte Verifizierung): Resend-Konto,
    Domain verifizieren, `RESEND_API_KEY` (Secret) + `EMAIL_FROM` (Text) setzen.
-   Ohne Provider sagt `/verify` offen „Versand noch nicht eingerichtet".
+   Für die Verifizierungs-Code-Mail zusätzlich `EMAIL_FROM_VERIFICATION`
+   (Text, optional) empfehlen – Resend rät bei transaktionaler Mail von
+   `no-reply`-Absendern ab (`INNER CIRCLE <verify@…>`). Ohne Provider sagt
+   `/verify` offen „Versand noch nicht eingerichtet".
 6. **Ersten Admin anlegen:** im Live-System registrieren und verifizieren, dann
    entweder D1-Konsole (`UPDATE User SET role = 'admin' WHERE email = '…';`)
    oder `npm run cf:admin -- --email=… --remote`.
@@ -204,7 +210,11 @@ Quellcode (nur in der gitignorierten lokalen `.dev.vars`).
 3. Einmal-Prüfung nach dem Deploy: Passwort-Reset-Mail (Link zeigt auf die neue
    Domain), Beta-Einladungstext, Stripe-Redirects (`STRIPE_PORTAL_RETURN_URL`),
    Logo/Media-URLs.
-4. `EMAIL_FROM` bleibt unverändert (bereits die verifizierte Domain); Resend
+4. `EMAIL_FROM` bleibt unverändert (bereits die verifizierte Domain); falls
+   `EMAIL_FROM_VERIFICATION` gesetzt ist (Empfehlung:
+   `INNER CIRCLE <verify@innercirclevp.com>`), gilt es nur für die
+   Verifizierungs-Code-Mail und muss bei einem Domain-Umzug ebenfalls auf die
+   neue Absenderpraxis geprüft werden; Resend
    DKIM/SPF/DMARC prüfen, sobald dieselbe Domain auch als Webdomain dient
    (TXT-Records dann im neuen Zone-Halter).
 5. Alte `workers.dev`-URL nicht mehr als Basis in Secrets führen; Dev-Postausgang

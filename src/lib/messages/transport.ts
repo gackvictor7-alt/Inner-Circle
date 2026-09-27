@@ -31,11 +31,19 @@ type MailInput = {
   text: string;
   html?: string;
   template?: string;
+  /**
+   * Explicit sender (e.g. the dedicated verification sender from
+   * `email.fromVerification`). Without it the global `EMAIL_FROM` applies.
+   */
+  from?: string;
 };
 
 export async function sendEmail(input: MailInput): Promise<SendResult> {
   if (email.configured && email.apiKey) {
     try {
+      // No open/click tracking is attached here on purpose: the Resend
+      // e-mail API would apply tracking per send domain (dashboard setting),
+      // and transactional auth mail needs no marketing analytics.
       const response = await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: {
@@ -43,7 +51,7 @@ export async function sendEmail(input: MailInput): Promise<SendResult> {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          from: email.from,
+          from: input.from ?? email.from,
           to: [input.to],
           subject: input.subject,
           text: input.text,

@@ -53,7 +53,7 @@ Voll-Mitglied (nach manueller Freigabe durch die Administration)
 | ------ | --------- |
 | Voraussetzung | Session **oder** gültige `userId`-Übergabe; Code 6-stellig |
 | Code-Erzeugung | `randomInt` (keine Modulo-Verzerrung), gepeppert gehasht (Hash enthält Datensatz-ID), TTL 15 min, max. 5 Versuche, alte offene Codes werden entwertet |
-| Zustellung | `sendVerificationCodeEmail` → Provider Resend **wenn** `RESEND_API_KEY`; sonst Dev-Postausgang **wenn** erlaubt; sonst `ok:false, mode:"none"` → Code wird sofort entwertet |
+| Zustellung | `sendVerificationCodeEmail` → Provider Resend **wenn** `RESEND_API_KEY`; sonst Dev-Postausgang **wenn** erlaubt; sonst `ok:false, mode:"none"` → Code wird sofort entwertet. Betreff bewusst **ohne** Code (DE „Dein Bestätigungscode für INNER CIRCLE“ / EN „Your INNER CIRCLE verification code“), Code nur im HTML+Text-Body mit Ablaufzeit und Ignore-Hinweis; Absender `EMAIL_FROM_VERIFICATION` (Fallback `EMAIL_FROM`, Empfehlung `INNER CIRCLE <verify@innercirclevp.com>`); keine Links, keine Bilder, keine Tracking-Header |
 | DB-Änderung | `User.emailVerifiedAt` und/oder `User.phoneVerifiedAt`, `VerificationCode.consumedAt`, `AdminAuditLog` (`auth.verified`), bei fehlender Session neue `Session` |
 | Nächste Route | `/onboarding/interests` (bzw. `/app`, wenn Onboarding bereits abgeschlossen; Admin zusätzlich `?admin=1`) |
 | Fehlerzustände | `unauthorized`, `validation.invalidCode`, `rateLimited`, `expired`, `too_many_attempts`, `already_used`, `not_configured` (kein Versandweg) |
