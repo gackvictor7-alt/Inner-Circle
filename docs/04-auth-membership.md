@@ -106,17 +106,47 @@ Präsenz-Flag gelöscht, Redirect `/`. Kein reiner Client-Logout. Audit
 
 - Rate-Limit 6/h pro IP; Antwort **immer identisch** (keine Enumeration).
 - Bei existierendem, nicht gesperrtem Konto: `AuthToken` Typ `password_reset`,
-  Hash des 32-Byte-Tokens, Gültigkeit 60 min, Versand per E-Mail-Template.
+  Hash des 32-Byte-Tokens (`hashAuthToken` = SHA-256 mit `AUTH_SECRET`-Präfix),
+  Gültigkeit 60 min, Versand per E-Mail-Template.
+- **Reset-Link (Sprint 15):** `passwordResetLink()` baut eine **absolute
+  HTTPS-URL** aus `getAppUrl()` (= `NEXT_PUBLIC_SITE_URL`, Fallback `APP_URL`,
+  zuletzt `http://localhost:3000`) + `/reset-password?token=` + URL-kodiertem
+  Token. In Produktion (`NEXTJS_ENV=production`) wird der Versand gestoppt und
+  nur die Kategorie geloggt (`password_reset_email_skipped reason=invalid_site_url|insecure_site_url`),
+  wenn die Basis-URL nicht `https://` ist oder auf `localhost` zeigt – ein
+  relativer/localhost-Link ist die Ursprung des Weiterleitungshinweises
+  (Mailclient/Proxy löste `href="/reset-password?…"` gegen den eigenen Origin
+  auf). Versandfehler werden als
+  `[auth] password_reset_email_failed mode=… reason=…` geloggt – **nie** der
+  Token oder das Passwort.
+- Mail (`src/lib/messages/templates.ts`, `sendPasswordResetEmail`): Betreff DE
+  „Passwort für INNER CIRCLE zurücksetzen“ / EN „Reset your password for INNER
+  CIRCLE“, Absender `INNER CIRCLE <noreply@innercirclevp.com>` (via
+  `EMAIL_FROM`), Button „Neues Passwort festlegen“ **plus sichtbarer
+  Fallback-Link** mit absoluter URL, Hinweis auf 60-Minuten-Ablauf und
+  Single-Use sowie „Falls du das nicht warst, ignorieren“ – kein
+  Tracking-/Redirect-Wrapper.
 - Audit `auth.reset_requested`.
 
 ### 2.6 Passwort zurücksetzen – `/reset-password?token=…` → `resetPasswordAction`
 
-- Token wird gehasht verglichen, muss unbenutzt und unverfallen sein.
+- Token wird gehasht verglichen, muss unbenutzt und unverfallen sein;
+  die Prüfung erfolgt beim Absenden des Formulars (die Seite rendert auch mit
+  ungültigem Token das Formular, Fehler kommt als `tokenInvalid`-Karte nach
+  Submit). Abgelehnte Token werden nur als Kategorie geloggt
+  (`[auth] reset_token_rejected reason=invalid|used|expired`), nie der Token.
 - Änderungen: `User.passwordHash`, `AuthToken.usedAt = now`,
   **alle Sessions widerrufen** (`revokeAllSessions`), Audit
-  `auth.password_reset`, Weiterleitung `/login?reset=1`.
-- Fehler: `passwordTooShort`, `passwordNeedsBoth`, `passwordMismatch`,
-  `tokenInvalid`.
+  `auth.password_reset`, Weiterleitung `/login?reset=1` (danach Login mit dem
+  neuen Passwort; alter Reset-Link ist unbrauchbar – Single-Use).
+- Fehler: `passwordTooShort` (mind. 10 Zeichen), `passwordNeedsBoth`
+  (Buchstabe + Ziffer), `passwordMismatch`, `tokenInvalid`.
+- Nachweise: `auth-flow.test.ts` (Sprint-15-Block: gültiger Ablauf, unbekannte
+  E-Mail ohne Enumeration, absoluter HTTPS-Link ohne localhost, abgelaufene/
+  wiederverwendete Token, alter Token nach Erfolg ungültig, Login mit neuem
+  Passwort), `resend-provider.test.ts` (Button-`href` absolut, Fallback-Link,
+  Betreff/60-Minuten-Text, kein relativer `href`), Browser-E2E Flow A
+  (`08-testing.md` §3c).
 
 ### 2.7 Onboarding + Trial-Start – `/onboarding/interests` → `completeOnboardingAction`
 
@@ -240,7 +270,10 @@ Kein eigener Registrierungsweg, keine Änderung an Mitgliedschaft oder Rolle:
 1. **Admin** erstellt unter `/admin/beta` einen persönlichen Schlüssel
    (`ICB-XXXX-XXXX-XXXX-XXXX`, Klartext genau einmal sichtbar, gespeichert nur
    als HMAC-SHA-256) – optional mit Notiz, E-Mail-Bindung, Dauer (Standard
-   30 Tage) und Einlöse-Enddatum.
+   30 Tage) und Einlöse-Enddatum. Die Einladungs-URL im Einladungstext wird
+   serverseitig über `getAppUrl()` erzeugt (= `NEXT_PUBLIC_SITE_URL`, ohne
+   `localhost`, ohne trailing slash) – Umzug auf eine eigene Domain ist damit
+   reine Env-Umschaltung (`admin/beta/page.tsx`, `AdminBeta.tsx`).
 2. **Tester** registriert sich normal (`/register`), bestätigt die E-Mail,
    durchläuft das bestehende Onboarding (die 48-h-Demo startet wie bisher).
 3. **Einlösen** unter Profil › Beta-Zugang (`/app/beta`): Prüfung
@@ -249,7 +282,12 @@ Kein eigener Registrierungsweg, keine Änderung an Mitgliedschaft oder Rolle:
    `BetaInvite.status = redeemed` und `BetaAccess` (`startsAt = jetzt`,
    `endsAt = jetzt + Dauer`). Anschließend Weiterleitung zu
    `/app/profile/edit?welcome=beta` (Profilfelder mit Fortschritt, danach
-   Discover).
+   Discover). **Sprint 15:** die Zielseite zeigt dort eine Welcome-Card
+   („Beta-Zugang aktiviert“, `role=status`) mit Laufzeit in Tagen
+   (`welcomeText {days}`), Ablaufdatum und den vier freigeschalteten
+   Funktionen (Mitglieder finden, Entdecken, Anfragen senden, Nachrichten) –
+   kein toter Endpunkt nach dem Einlösen; Inhalt DE/EN in `app-beta.ts`,
+   Nachweis E2E Flow B.
 4. **Während des Zugangs:** `getAccessContext()` ergänzt die Networking-
    Entitlements (`06-permissions.md` §3c). Läuft die 48-h-Demo noch, bleiben
    die übrigen Bereiche (Deals/Jobs/Investments) bis zu deren Ende im

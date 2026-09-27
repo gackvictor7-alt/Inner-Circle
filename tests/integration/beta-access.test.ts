@@ -42,6 +42,8 @@ import { createBetaInvite, hashBetaKey, redeemBetaKey } from "@/lib/beta/service
 import { normalizeBetaKey } from "@/lib/beta/keys";
 import { initialActionState, type ActionState } from "@/app/actions/state";
 import AdminBetaPage from "@/app/admin/beta/page";
+import BetaPage from "@/app/(app)/app/beta/page";
+import ProfileEditPage from "@/app/(app)/app/profile/edit/page";
 
 const created: string[] = [];
 let admin = "";
@@ -366,5 +368,49 @@ describe("7 · admin-only endpoints", () => {
     const page = await AdminBetaPage();
     const serialised = JSON.stringify(page, (_key, value) => (typeof value === "function" ? undefined : value));
     expect(serialised).not.toContain(normalizeBetaKey(key)!);
+  });
+});
+
+describe("sprint 15 · tester page, welcome card and invitation URL", () => {
+  const strip = (_key: string, value: unknown) => (typeof value === "function" ? undefined : value);
+
+  it("a verified free tester can open /app/beta (redeem form, no admin content)", async () => {
+    const tester = await user("Bea");
+    currentUserId = tester;
+    const page = await BetaPage(); // must not redirect for a verified free account
+    const serialised = JSON.stringify(page, strip);
+    expect(serialised).toContain("app.beta.pageTitle");
+    expect(serialised).toContain("app.beta.redeemTitle");
+    expect(serialised).toContain("app.beta.includedDiscover");
+    expect(serialised).not.toContain("app.betaAdmin.createTitle");
+  });
+
+  it("the activation welcome card shows runtime, expiry date and unlocked features", async () => {
+    const tester = await user("Wanda");
+    const { key } = await newKey();
+    expect((await redeemAs(tester, key)).status).toBe("success");
+
+    currentUserId = tester;
+    const page = await ProfileEditPage({ searchParams: Promise.resolve({ welcome: "beta" }) });
+    const serialised = JSON.stringify(page, strip);
+    expect(serialised).toContain("app.beta.welcomeTitle");
+    expect(serialised).toContain("app.beta.welcomeText");
+    expect(serialised).toContain("app.beta.includedDiscover");
+    expect(serialised).toContain("app.beta.includedChat");
+    // The card receives the concrete end date + remaining days as params.
+    expect(serialised).toMatch(/"days":\s*\d+/);
+  });
+
+  it("the invitation base URL follows NEXT_PUBLIC_SITE_URL (never a hardcoded host)", async () => {
+    currentUserId = admin;
+    vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://inner-circle.example");
+    try {
+      const serialised = JSON.stringify(await AdminBetaPage(), strip);
+      expect(serialised).toContain("https://inner-circle.example");
+      expect(serialised).not.toContain("localhost:3000");
+      expect(serialised).not.toContain("workers.dev");
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 });

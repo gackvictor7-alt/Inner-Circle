@@ -182,16 +182,48 @@ Binding `MEDIA`. Für Produktion sind **keine Secrets** nötig:
 | `npm run dev` von außen nicht erreichbar | Bind-Adresse | Skripte binden bereits `0.0.0.0` |
 | Build bricht mit DB-Zugriff ab | `.env` im Cloudflare-Build sichtbar | im Repo liegt keine `.env`; OpenNext würde Werte einbetten – keine `.env` committen |
 
+## 7a. Eigene Domain `innercirclevp.com` – vorbereitet, bewusst nicht umgesetzt (Sprint 15)
+
+**Stand:** `innercirclevp.com` ist bei Resend **nur zum Senden** verifiziert
+(`EMAIL_FROM="INNER CIRCLE <noreply@innercirclevp.com>"`), das DNS liegt weiterhin
+bei STRATO, die Website läuft auf `https://inner-circle.gackvictor7.workers.dev`.
+**Dieser Sprint hat an DNS/Namensservern und an der Produktionsdomain nichts
+geändert.** Die App ist umzugsfertig: alle absoluten Links (Passwort-Reset-Mail,
+Beta-Einladung) werden zentral über `getAppUrl()` aus `NEXT_PUBLIC_SITE_URL`
+gebaut; im Repository gibt es keine hartkodierten `workers.dev`-URLs im
+Quellcode (nur in der gitignorierten lokalen `.dev.vars`).
+
+**Checkliste für den späteren Umzug (manuell, kontrolliert):**
+1. Domain bei Cloudflare als Zone anlegen (Namensserver bei STRATO umstellen)
+   **oder** die Zone bei STRATO belassen und `innercirclevp.com` als Custom
+   Domain am Worker `inner-circle` binden (Workers → Domains → *Add custom
+   domain*); A-Record/CNAME auf den Worker, TLS automatisch.
+2. `NEXT_PUBLIC_SITE_URL` (Build **und** Runtime des Workers) auf
+   `https://inner-circle-gackvictor7...` → korrekt: `https://<neue-domain>`
+   setzen – **vor** dem nächsten Build, da der Wert eingebettet wird.
+3. Einmal-Prüfung nach dem Deploy: Passwort-Reset-Mail (Link zeigt auf die neue
+   Domain), Beta-Einladungstext, Stripe-Redirects (`STRIPE_PORTAL_RETURN_URL`),
+   Logo/Media-URLs.
+4. `EMAIL_FROM` bleibt unverändert (bereits die verifizierte Domain); Resend
+   DKIM/SPF/DMARC prüfen, sobald dieselbe Domain auch als Webdomain dient
+   (TXT-Records dann im neuen Zone-Halter).
+5. Alte `workers.dev`-URL nicht mehr als Basis in Secrets führen; Dev-Postausgang
+   (`ENABLE_DEV_OUTBOX`) in Produktion entfernt halten.
+
 ## 8. Produktions-Checkliste
 
-- [ ] `AUTH_SECRET` gesetzt (kein Dev-Fallback).
-- [ ] `NEXT_PUBLIC_SITE_URL` auf die echte Domain gesetzt.
-- [ ] `RESEND_API_KEY` + verifizierte Absenderdomain (SPF/DKIM/DMARC).
+- [x] `AUTH_SECRET` gesetzt (kein Dev-Fallback).
+- [x] `NEXT_PUBLIC_SITE_URL` gesetzt (aktuell die `workers.dev`-URL; Umzug auf
+      `innercirclevp.com` nach §7a, **nicht** in diesem Sprint).
+- [x] `RESEND_API_KEY` + verifizierte Absenderdomain (`innercirclevp.com`,
+      SPF/DKIM/DMARC von Resend verwaltet).
 - [ ] `ENABLE_DEV_OUTBOX` entfernt, `DevOutbox` geleert.
 - [ ] Stripe-Webhook registriert und signiert getestet; Live erst nach Freigabe.
-- [ ] Domain + TLS am Worker.
+- [ ] Domain + TLS am Worker (Custom Domain `innercirclevp.com`, §7a – bewusst
+      noch offen).
 - [ ] D1-Backup-Routine nachgewiesen.
 - [ ] R2-Bucket `inner-circle-media` existiert (Binding `MEDIA`), Foto-Upload geraucht (siehe Abschnitt 6a).
-- [ ] Observability + Alarme definiert.
+- [ ] Observability + Alarme definiert (Reset-Versand meldet im Fehlerfall nur
+      Kategorien: `password_reset_email_skipped/_failed`, `reset_token_rejected`).
 - [ ] Rechtstexte ersetzt (Impressum, Datenschutz, AGB).
 - [ ] Smoke-Test aller öffentlichen Routen + Auth-Flow in Produktion.

@@ -143,6 +143,44 @@ describe("Resend is configured (RESEND_API_KEY present)", () => {
     expect(verified.ok).toBe(true);
   });
 
+  it("sends the password-reset mail with an absolute button link and a fallback link", async () => {
+    resendEnv();
+    const resend = stubResend();
+    vi.resetModules();
+    const { sendPasswordResetEmail } = await import("@/lib/messages/templates");
+
+    const link = "https://inner-circle.example/reset-password?token=Abc-DEF_123";
+    const result = await sendPasswordResetEmail({
+      to: "member@inner-circle.test",
+      firstName: "Test",
+      locale: "de",
+      link,
+    });
+    expect(result.ok).toBe(true);
+
+    const payload = resend.payload();
+    expect(payload.subject).toBe("Passwort für INNER CIRCLE zurücksetzen");
+    const html = String(payload.html);
+    // Button and fallback both carry the ABSOLUTE link – never a relative href
+    // (a relative href is exactly what broke the production flow, sprint 15).
+    expect(html).toContain(`href="${link}"`);
+    expect(html).not.toMatch(/href="\/(?!\/)/);
+    expect(html).toContain("Neues Passwort festlegen");
+    expect(html).toContain("Falls der Button nicht funktioniert");
+    expect(html).toContain("60 Minuten");
+    expect(String(payload.text)).toContain(link);
+
+    const en = await sendPasswordResetEmail({
+      to: "member@inner-circle.test",
+      firstName: "Test",
+      locale: "en",
+      link,
+    });
+    expect(en.ok).toBe(true);
+    expect(resend.payload(1).subject).toBe("Reset your password for INNER CIRCLE");
+    expect(String(resend.payload(1).html)).toContain("Set new password");
+  });
+
   it("uses EMAIL_FROM as the sender address when it is set", async () => {
     resendEnv({ EMAIL_FROM: "INNER CIRCLE <noreply@inner-circle.example>" });
     const resend = stubResend();
