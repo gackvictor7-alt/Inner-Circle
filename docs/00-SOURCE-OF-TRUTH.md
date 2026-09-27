@@ -3,7 +3,32 @@
 **Diese Datei ist der verbindliche Einstiegspunkt für jeden Menschen und jeden
 KI-Agenten, der an diesem Repository arbeitet.**
 
-- **Stand:** 2026-09-24 (Sprint 13 – **Profil: einheitliches Speichern & Foto-Upload** (Gründerauftrag):
+- **Stand:** 2026-09-27 (Sprint 15 – **Passwort-Reset in Produktion, Beta-Onboarding-Abnahme,
+  Landing-CTA-Check, Domain-Vorbereitung** (Gründerauftrag)):
+  **Root Cause des Reset-Weiterleitungshinweises behoben** – die Passwort-Reset-Mail enthielt
+  einen *relativen* Link (`/reset-password?token=…`), den Mailclient/Link-Proxy gegen dessen
+  eigenen Origin auflösten (daraus entstand der „versucht dich … weiterzuleiten“-Hinweis);
+  die Mail baut den Link jetzt **absolut** über `passwordResetLink()` =
+  `getAppUrl()` (= `NEXT_PUBLIC_SITE_URL`) + URL-kodiertem Token, in Produktion ohne
+  localhost-Fallback (Prod-Guard loggt nur die Kategorie `invalid_site_url`/`insecure_site_url`,
+  nie den Token), Betreff DE „Passwort für INNER CIRCLE zurücksetzen“ / EN „Reset your
+  password for INNER CIRCLE“, HTML-Mail mit Button **und** sichtbarem Fallback-Link
+  (`src/app/actions/auth.ts`, `src/lib/messages/templates.ts`; Nachweis
+  `auth-flow.test.ts`, `resend-provider.test.ts`). Token weiterhin Single-Use + 60 min TTL,
+  Hash-Speicherung, generische Erfolgsmeldung ohne Enumerierung. **Beta-Onboarding:**
+  Einladungstext in `/admin/beta` nutzt `getAppUrl()` (kein `localhost`, Architektur für
+  eigene Domain offen), Welcome-Card nach dem Einlösen zeigt Laufzeit, Ablauf und die
+  vier freigeschalteten Funktionen und leitet ohne Sackgasse weiter
+  (`/app/profile/edit?welcome=beta`, `app-beta.ts` `welcomeText`). **Landing-CTA abgenommen:**
+  primär „Mehr erfahren“ (blau, zuerst) → `#outcomes`, sekundär „Zur INNER CIRCLE Plattform“
+  → `/app`, in 4 Lokalen × Desktop/Mobile im Browser geprüft (kein Regress). **Verifikation:**
+  Browser-E2E `tests/e2e/sprint15-browser.mjs` **93/93** (inkl. kompletter Reset-Flow und
+  Beta-Einlöse-Flow gegen den Worker-Preview; Rezepte `08-testing.md` §3c), `npm test`
+  **36 Dateien / 267 grün**, Typecheck, i18n-Audit, `cf:build` und `cf:dry-run` grün,
+  Lint unverändert auf Baseline (K-15). **Kein DNS-/Domainwechsel in diesem PR:**
+  `innercirclevp.com` ist nur die verifizierte Resend-Absenderdomain, die Website läuft
+  weiter auf `workers.dev`; Domain-Bindungs-Checkliste in `09-deployment.md`/`14-environment.md`.
+  Davor: Sprint 13 – **Profil: einheitliches Speichern & Foto-Upload** (Gründerauftrag):
   `/app/profile/edit` hat **einen** Speicherbutton für die ganze Seite – ein Klick speichert
   Profilfelder **und** Interessen & Ziele gemeinsam (`updateProfileAction` mit `saveInterests`-Marker,
   Success-Banner `?saved=all`, `beforeunload`-Schutz bei ungespeicherten Änderungen; die frühere
@@ -143,16 +168,18 @@ Details: [`01-product.md`](01-product.md)
 
 - `/` – Startseite, **getrennte Informationsdichte je Viewport (Sprint 8)**:
   - **Mobile (`<lg`):** radikal verkürzt – Hero (Headline + EIN kurzer Satz +
-    CTA „INNER CIRCLE entdecken“ + kleine Zeile „48h Discovery starten“,
-    Facts-Liste ausgeblendet) → 3 Outcomes (je Titel + 1 kurze Zeile) →
+    CTA-Paar „Mehr erfahren“ (primär, blau) + „Zur INNER CIRCLE Plattform“
+    (sekundär, Sprint 14/15), Facts-Liste ausgeblendet) → 3 Outcomes (je Titel + 1 kurze Zeile) →
     6 Kernbereiche als kompakte gestapelte editorial Rows auf Deep Navy
     (Bild → Nummer → Serif-Titel → 1–2 Sätze → „Entdecken →“, tappt auf die
     Unterseite; Sprint 9, ersetzt die Sprint-8-2×3-Übersicht) → Trust als
     kompakte 3-Punkte-Zeile (keine große Marketing-Section) → Membership
-    kompakt (Titel + beide Preise in einer Zeile + CTA „48h Discovery
-    starten“) → Footer (2-Spalten-Links unter `sm`). **Keine** Events-/
+    kompakt (Titel + beide Preise in einer Zeile + CTA „Zugang starten“)
+    → Footer (2-Spalten-Links unter `sm`). **Keine** Events-/
     Kapital-/Final-CTA-Sections auf Mobile.
-  - **Desktop (`lg+`):** unverändert – Hero (beide Preise) → 3 Outcomes (volle
+  - **Desktop (`lg+`):** unverändert – Hero (V&P-Bild, Headline, CTA-Paar „Mehr
+    erfahren“ (primär, `#outcomes`) → „Zur INNER CIRCLE Plattform“ (`/app`),
+    Sprint 14, Sprint 15 im Browser bestätigt) → 3 Outcomes (volle
     Sätze) → 6 Kernbereiche als alternierende editorial Rows auf Deep Navy
     (Network → Business Deals → Jobs & Projekte → Investments → Events →
     Insights, CTA „Entdecken →“, `hidden lg:block`, Sprint 9) → Events →
@@ -403,7 +430,7 @@ Discover → Profil → Connect (Pflichtnachricht) → Anfrage → Inbox (Anfrag
 | Deployment | Build `npm run cf:build` · Deploy `npm run cf:release` · Production-Branch `main` |
 | Datenbank (Produktion) | D1 `inner-circle-db`, Binding `DB`, Migrationen in `drizzle/` |
 | i18n | Eigenes Wörterbuch `src/lib/i18n` (DE = Standard, EN vollständig) |
-| Tests | Vitest: **24 Dateien / 134 Tests grün** (`npm test`, inkl. D1-Regressionstest `for-you-d1.test.ts`) |
+| Tests | Vitest: **36 Dateien / 267 Tests grün** (`npm test`, Sprint 15; inkl. D1-Läufe `for-you-d1`/`beta-network-d1`) + Browser-E2E `tests/e2e/sprint15-browser.mjs` **93/93** (§`08-testing.md` 3d) |
 | App-Navigation | **6 Primärbereiche**: Start · Discover · Erstellen · Inbox · Events · Profil |
 
 ## 3. Status-Legende (verbindlich)
@@ -445,13 +472,13 @@ existiert. Backend + Daten + Berechtigungen + Nachweis gehören dazu.
 | Logout (Session-Widerruf serverseitig) | WORKING | `logoutAction`, `/api/auth/logout` |
 | Sessions (30 Tage, httpOnly, gehasht) | WORKING | `src/lib/auth/session.ts`; zusätzlich nicht-httpOnly-Präsenz-Flag `ic_presence` in Lockstep mit `ic_session` (nur für den „Zur App\"-CTA der öffentlichen Seiten, keine Identität, keine Autorisierung) |
 | E-Mail-Verifizierung (Code-Erzeugung, Hash, Ablauf, Versuche) | WORKING | `src/lib/auth/otp.ts`, `onboarding.test.ts` |
-| **Echter E-Mail-Versand (Resend)** | **WORKING / PARTIAL (DNS offen)** | `RESEND_API_KEY` aktiv; responsive Multipart-Templates (HTML+Text DE/EN); offene Produktionsabhängigkeit: eigene verifizierte Domain (SPF/DKIM/DMARC) gegen Spamfilter der Test-Domain `resend.dev`; **Custom Domain in diesem Sprint bewusst PAUSIERT** |
+| **Echter E-Mail-Versand (Resend)** | **WORKING (Sender-Domain verifiziert) / PARTIAL (Website-Domain offen)** | `RESEND_API_KEY` aktiv; responsive Multipart-Templates (HTML+Text DE/EN); Absender `INNER CIRCLE <noreply@innercirclevp.com>` – Domain bei Resend verifiziert (Nur-Senden, **kein** DNS-/Namensserverwechsel in diesem PR); offene Abhängigkeit: Website-Domain (heute `workers.dev`) erst bei bewusstem Umzug auf `innercirclevp.com` binden, Checkliste `09-deployment.md`/`14-environment.md` |
 | Verifizierung im Dev-Postausgang | WORKING | `ENABLE_DEV_OUTBOX` + Admin-Rolle, Testabdeckung `message-delivery.test.ts` |
 | SMS-Verifizierung (Twilio) | BLOCKED | kein Twilio-Konto/Schlüssel |
 | Registrierung per Telefonnummer | NOT IMPLEMENTED | UI-Umschalter existiert, Übermittlung schlägt fehl (Known Issue K-05) |
 | Google OAuth | NOT IMPLEMENTED | Button zeigt „Einrichtung erforderlich\", Route `/api/auth/oauth/google` existiert **nicht** |
 | Apple OAuth | NOT IMPLEMENTED | wie Google |
-| Passwort vergessen/zurücksetzen | PARTIAL | Mechanik + Token + Session-Widerruf WORKING; Versandweg ohne Provider = Dev-Postausgang oder gar nicht |
+| Passwort vergessen/zurücksetzen | **WORKING** | Sprint 15: absoluter HTTPS-Reset-Link (`passwordResetLink()` = `getAppUrl()` + kodierter Token, Prod-Guard ohne localhost), Betreff/Fallback-Link/60-min-Hinweis in `templates.ts`, Single-Use + TTL + Session-Widerruf + generische Erfolgsmeldung; Nachweis `auth-flow.test.ts`, `resend-provider.test.ts`, Browser-E2E `sprint15-browser.mjs` (Flow A, 93/93); Fehler-Logs nur als Kategorie, nie den Token |
 | Rollen (`user` / `admin`) | WORKING | `User.role`, `requireAdmin()` |
 | 2FA (`login_2fa`) | PREPARED | Enum-Wert im Schema, keine UI/Logik |
 
@@ -465,7 +492,7 @@ existiert. Backend + Daten + Berechtigungen + Nachweis gehören dazu.
 | Trial-Kontaktanfragen-Zähler (`TRIAL_CONNECTION_LIMIT`) | PREPARED | Service + Test bleiben, wird seit Sprint 11 von keiner Action mehr verbraucht (Trial darf keine echten Anfragen senden) |
 | Paid Membership (Monat/Jahr) über Service | WORKING | `src/lib/membership/service.ts`, `tests/integration/membership.test.ts` |
 | Stripe-Checkout + signierte Webhooks | BLOCKED | Code vollständig (`/api/billing/checkout`, `/api/webhooks/stripe`, `webhook.test.ts`), aber kein Stripe-Konto/Schlüssel; Sprint 12: Worker-Signaturprüfung + Aktivierungsregeln korrigiert (`stripe-webhook-route.test.ts`, `stripe-worker-signature.test.ts`) |
-| **Private Beta: Schlüssel einlösen → befristeter Beta-Zugang (Sprint 12)** | WORKING (lokal verifiziert) | `src/lib/beta/*`, `src/app/actions/beta.ts`, `/app/beta`, `beta-access.test.ts` (18), `beta-network-d1.test.ts`, Browser-E2E; Produktions-D1 braucht Migration `0002` (K-22) |
+| **Private Beta: Schlüssel einlösen → befristeter Beta-Zugang (Sprint 12)** | WORKING (lokal verifiziert) | `src/lib/beta/*`, `src/app/actions/beta.ts`, `/app/beta`, `beta-access.test.ts` (18), `beta-network-d1.test.ts`, Browser-E2E; **Sprint 15:** Welcome-Card nach dem Einlösen zeigt Laufzeit (`welcomeText {days}`), Ablaufdatum und die vier freigeschalteten Funktionen und leitet ohne Sackgasse nach `/app/profile/edit?welcome=beta` weiter (E2E Flow B); Produktions-D1 braucht Migration `0002` (K-22) |
 | Kundenportal (Kündigung/Zahlungsmittel) | PREPARED | `createBillingPortalSession()` vorhanden, keine Route/UI |
 | Dev-Mitgliedschaftsaktivierung (klar gekennzeichnet) | WORKING | nur ohne Stripe und außerhalb Produktion (`ALLOW_DEV_MEMBERSHIP_ACTIVATION`) |
 | Mitgliedskarte (Nummer + öffentliche Verifizierung) | WORKING | `issueCardIfNeeded`, `/member/[publicId]` |
@@ -576,7 +603,7 @@ existiert. Backend + Daten + Berechtigungen + Nachweis gehören dazu.
 | Moderations-Queue (`Report`) | PREPARED | Tabelle vorhanden, keine UI/Aktion |
 | Rollenstufen (Support/Moderation/Finanzen) | NOT IMPLEMENTED | nur `user` \| `admin` |
 | Dev-Postausgang (`/dev/outbox`) | WORKING | nur mit `ENABLE_DEV_OUTBOX=true` und Rolle `admin` |
-| **Beta-Verwaltung (Sprint 12)** | WORKING (lokal verifiziert) | `/admin/beta`: Schlüssel erstellen (Klartext einmal), Status/Nutzer/Start/Ende, verlängern (+7/14/30/60 Tage), widerrufen, unbenutzte deaktivieren, Anzahl aktiver Tester; serverseitig `requireAdmin`, Audit ohne Schlüssel; `beta-access.test.ts` |
+| **Beta-Verwaltung (Sprint 12)** | WORKING (lokal verifiziert) | `/admin/beta`: Schlüssel erstellen (Klartext einmal), Status/Nutzer/Start/Ende, verlängern (+7/14/30/60 Tage), widerrufen, unbenutzte deaktivieren, Anzahl aktiver Tester; serverseitig `requireAdmin`, Audit ohne Schlüssel; `beta-access.test.ts`; **Sprint 15:** Einladungstext baut die Registrierungs-URL über `getAppUrl()` (=`NEXT_PUBLIC_SITE_URL`, ohne trailing slash, kein `localhost`), Umzug auf eigene Domain = nur Env-Umschaltung |
 
 ### L. Infrastructure
 
@@ -586,7 +613,7 @@ existiert. Backend + Daten + Berechtigungen + Nachweis gehören dazu.
 | D1-Anbindung + Migrationen (52 Tabellen) | WORKING (lokal) · Produktion ausstehend | `drizzle/0000_init.sql` … `0002_sprint12_private_beta.sql`, `cf:release`; `0002` bisher **nur lokal** angewendet (K-22) |
 | Laufzeit-Treiberwechsel D1 ↔ libSQL | WORKING | `src/db/client.ts` |
 | Deployment über Workers Builds (main → Produktion) | PARTIAL | dokumentierter Weg; letzter Merge nach `main` durch den Gründer zu prüfen (Dashboard) |
-| Automatisierte Tests | WORKING | **246 Tests grün (35 Testdateien)** (Sprint 12), inkl. echter D1-Läufe (`for-you-d1`, `beta-network-d1`, workerd/Miniflare); Browser-E2E `tests/e2e/sprint12-browser.mjs` gegen den Worker-Preview **65/65** (nicht Teil von `npm test`, `08-testing.md` §3b) |
+| Automatisierte Tests | WORKING | **267 Tests grün (36 Testdateien)** (Sprint 15), inkl. echter D1-Läufe (`for-you-d1`, `beta-network-d1`, workerd/Miniflare); Browser-E2E `tests/e2e/sprint15-browser.mjs` gegen den Worker-Preview **93/93** (CTA-Matrix, Reset-Flow, Beta-Einlöse-Flow; `08-testing.md` §3c), zuvor `sprint12-browser.mjs` **65/65** (§3b); E2E nicht Teil von `npm test` |
 | Worker-Build + Dry-Run | WORKING | Sprint 12: `npm run cf:build` grün, `wrangler deploy --dry-run` grün – Upload 9287,12 KiB / gzip 1859,17 KiB, Bindings `DB`, `ASSETS`, `NEXTJS_ENV` |
 | CPU-Zeit / Worker-Limits | PARTIAL (lokal gemessen) | Startphase 50 ms (Limit 1 s); Seiten 43–68 ms, Login ~0,6 s im lokalen workerd → über Free (10 ms), weit unter Paid (30 s) → **Workers Paid Voraussetzung** (K-24, `08-testing.md` §3c); auf Cloudflare nicht gemessen |
 | CI (GitHub Actions) | NOT IMPLEMENTED | keine Workflows im Repo |
@@ -764,22 +791,25 @@ lässt auf 2560 px symmetrische Ränder statt einer toten rechten Fläche.
 
 ## 8. Nächster empfohlener Schritt
 
-**Sprint 12 (Private Beta) ist implementiert und lokal geprüft, aber noch nicht
-gemergt.** Reihenfolge für den Gründer:
-1. Review des Branches `arena/01a0d435-inner-circle` (Screenshots unter
-   `preview/sprint12/`), danach PR gegen `main`.
-2. Deploy mit `npm run cf:deploy` bzw. `cf:release` – **wendet Migration
-   `0002` auf die Produktions-D1 an**; ohne Migration fehlen die Beta-Tabellen.
-3. Admin-Konto prüfen (`npm run cf:admin`), unter `/admin/beta` die ersten
-   Schlüssel erzeugen, persönlich weitergeben.
+**Sprint 15 (Passwort-Reset-Root-Cause, Beta-Onboarding-Abnahme, Landing-CTA-Check,
+Domain-Vorbereitung) ist implementiert und geprüft, aber noch nicht gemergt.**
+Reihenfolge für den Gründer:
+1. Review des Branches `arena/01a0e2ea-inner-circle` (Screenshots und E2E-Ergebnisse
+   unter `preview/sprint15/`), danach PR gegen `main` – **nicht automatisch mergen**.
+2. **Domain-Vorbereitung bewusst später:** `innercirclevp.com` ist in diesem PR nur
+   Absenderdomain; Checklisten in `09-deployment.md` (§„Eigene Domain“) und
+   `14-environment.md` abarbeiten, sobald die Website-Domain umziehen soll
+   (Zone/Custom Domain bei Cloudflare, `NEXT_PUBLIC_SITE_URL` auf die neue HTTPS-URL,
+   einmaligen Mail-/Einladungs-Link prüfen; `EMAIL_FROM` bleibt unverändert).
+3. **Workers Paid** im Cloudflare-Dashboard bestätigen – Seitenaufbau und
+   Login liegen über dem Free-Limit von 10 ms CPU (K-24).
 4. Stripe im Testmodus anbinden (`04-auth-membership.md` §4a,
    `07-integrations.md` §3.2) – erst danach echte Mitgliedschaften.
-5. **Workers Paid** im Cloudflare-Dashboard bestätigen – Seitenaufbau und
-   Login liegen über dem Free-Limit von 10 ms CPU (K-24).
-6. Offene Punkte: K-22 (u. a. E-Mail-Benachrichtigungen, Foto-Upload,
-   Schreiben an abgelaufene Tester – Gründerentscheidung), K-23.
+5. Offene Punkte: K-22 (u. a. Migration `0002` auf die Produktions-D1,
+   E-Mail-Benachrichtigungen, Schreiben an abgelaufene Tester – Gründerentscheidung),
+   K-23.
 
-Vorheriger Stand (Sprint 8):
+Vorheriger Stand (Sprint 12):
 
 **Sprint 8 ist abgeschlossen** (Mobile Public Homepage radikal verkürzt,
 Mobile Member App (Bottom Nav / Mobile-Chat / Mobile-Menü), Core Connection

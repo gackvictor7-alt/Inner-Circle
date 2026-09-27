@@ -99,9 +99,29 @@ export default async function ProfileEditPage({
           <p className="mt-1 text-sm leading-6 text-foreground-muted">
             <Tr
               k="app.beta.welcomeText"
-              params={{ date: formatDate(access.beta.endsAt, locale, { day: "2-digit", month: "long", year: "numeric" }) }}
+              params={{
+                date: formatDate(access.beta.endsAt, locale, { day: "2-digit", month: "long", year: "numeric" }),
+                days: Math.max(1, Math.ceil(access.beta.msRemaining / 86_400_000)),
+              }}
             />
           </p>
+          {/* Activation in one glance: runtime + expiry date + what the key unlocked. */}
+          <p className="mt-3 text-sm font-semibold">
+            <Tr k="app.beta.includedTitle" />
+          </p>
+          <ul className="mt-1.5 space-y-1 text-sm leading-6 text-foreground-muted">
+            {[
+              "app.beta.includedDiscover",
+              "app.beta.includedRequests",
+              "app.beta.includedChat",
+              "app.beta.includedProfile",
+            ].map((key) => (
+              <li key={key} className="flex items-start gap-2">
+                <CheckIcon size={15} className="mt-1 shrink-0 text-forest-500" />
+                <Tr k={key} />
+              </li>
+            ))}
+          </ul>
         </Card>
       )}
 

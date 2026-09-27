@@ -26,7 +26,7 @@
 | Variable | Build/Runtime | Secret | erforderlich | Zweck | Entwicklungswert erlaubt | Produktionsanforderung |
 | -------- | ------------- | ------ | ------------ | ----- | ------------------------ | ---------------------- |
 | `AUTH_SECRET` | Runtime | **ja** | **Pflicht** | Pepper/Signatur für Session-Token, OTP-Hashes und (seit Sprint 12) die HMAC-Hashes der Beta-Schlüssel | lokal Fallback erlaubt (`authSecretIsFallback`) | **zwingend** setzen, ≥ 32 Zufallszeichen (`openssl rand -base64 48`); Fallback ist in Produktion unzulässig. **Rotation** beendet alle Sessions und entwertet alle noch nicht eingelösten Beta-Schlüssel (laufende Beta-Zugänge bleiben) |
-| `NEXT_PUBLIC_SITE_URL` | Build **und** Runtime | nein | **Pflicht** | öffentliche Origin: Links in E-Mails, Stripe-Rückleitungen, Logout-Redirect | `http://localhost:3000` | echte Worker-/Domain-URL |
+| `NEXT_PUBLIC_SITE_URL` | Build **und** Runtime | nein | **Pflicht** | öffentliche Origin: Links in E-Mails (Passwort-Reset `passwordResetLink()`), Beta-Einladungstext (`getAppUrl()`), Stripe-Rückleitungen, Logout-Redirect; in Produktion **muss** der Wert `https://`-URL und kein `localhost` sein – sonst stoppt der Reset-Versand mit Kategorie-Log (`invalid_site_url`/`insecure_site_url`) | `http://localhost:3000` | echte Worker-/Domain-URL, heute `https://inner-circle.gackvictor7.workers.dev`; Umzug auf `innercirclevp.com` = nur dieser Wert ändern (Sprint-15-Checkliste `09-deployment.md` §7a) |
 | `NODE_VERSION` | Build (Dashboard) | nein | empfohlen | Node-Version im Cloudflare-Build | – | `22` (≥ 20 nötig) |
 | `NEXTJS_ENV` | Runtime | nein | ja (Worker) | unterscheidet Produktions-/Entwicklungsverhalten in OpenNext | `production` (in `.dev.vars`) | `production` (in `wrangler.jsonc` gesetzt) |
 
@@ -120,8 +120,10 @@ weiterhin als unverändert optional an.
 **Empfohlen, technisch aber optional:** `EMAIL_FROM`. Fehlt sie, sendet der
 Code über den Resend-Testabsender `INNER CIRCLE <onboarding@resend.dev>`
 (`src/lib/env.ts`). Der Testabsender stellt **nur an die E-Mail-Adresse des
-Resend-Kontos** zu – gut für den ersten Testversand, nicht für echte Empfänger
-(dafür Domain verifizieren, dann `EMAIL_FROM` setzen).
+Resend-Kontos** zu. **Stand Sprint 15:** die Domain `innercirclevp.com` ist bei
+Resend verifiziert und `EMAIL_FROM="INNER CIRCLE <noreply@innercirclevp.com>"`
+ist gesetzt – die verifizierte Domain dient weiterhin **nur** dem Versand, die
+Website bleibt auf `workers.dev` (Umzug: `09-deployment.md` §7a).
 
 **Muss zusätzlich für Bezahlung gesetzt sein:**
 `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`.

@@ -1,6 +1,12 @@
 # 11 – Known Issues
 
-**Stand:** 2026-09-24 · Basis: Branch `arena/01a0d435-inner-circle`
+**Stand:** 2026-09-27 · Basis: Branch `arena/01a0e2ea-inner-circle`
+(Basis `main` @ `530be5f`, Sprint 15). Sprint 15 schließt **K-01** (eigene
+Absenderdomain `innercirclevp.com` bei Resend verifiziert, `EMAIL_FROM` gesetzt;
+DNS-/Domainwechsel der Website bewusst offen, `09-deployment.md` §7a) und
+behebt den Root Cause der Passwort-Reset-Weiterleitungsmeldung (absoluter
+HTTPS-Link in der Mail, `04-auth-membership.md` §2.5).
+Vorheriger Stand 2026-09-24: Branch `arena/01a0d435-inner-circle`
 (Basis `main` @ `8a1b5ea`, Sprint 12 – Private Beta). Sprint 12 schließt K-06
 (Datenschutz-Einstellungen), ergänzt K-22 (Private Beta: bekannte Grenzen) und
 K-23 (Layout-Klassen auf Profil/Einstellungen) und K-24 (CPU-Zeit der
@@ -22,7 +28,7 @@ P2 mittelfristig · P3 Aufräumen.
 
 ## P0 – blockiert den Kern-Flow
 
-### K-01 · E-Mail-Zustellung im Spam-Ordner (Test-Domain `resend.dev`)
+### K-01 · E-Mail-Zustellung im Spam-Ordner (Test-Domain `resend.dev`) — **ERLEDIGT (Sprint 15)**
 
 - **Symptom:** Verifizierungs-E-Mails kommen zwar technisch bei Resend an, landen
   beim Empfänger aber im Spam-Ordner.
@@ -35,11 +41,12 @@ P2 mittelfristig · P3 Aufräumen.
   - Keine Spam-Triggerwörter, korrekte UTF-8-Codierung und Tabellen-Layout
   - Eindeutiger Entity-Header (`X-Entity-Ref-ID`)
   - Konfigurierbare `EMAIL_FROM` und `EMAIL_REPLY_TO` Variablen
-- **Offene Produktions-Abhängigkeit (Gründer):** Eigene Domain in Resend anlegen
-  und DNS-Einträge für SPF (`TXT`), DKIM (`CNAME`) und DMARC (`TXT`) setzen.
-  Anschließend `EMAIL_FROM="INNER CIRCLE <verify@unsere-domain.com>"` als
-  Cloudflare Environment-Variable hinterlegen. Erst damit ist eine saubere
-  Posteingangs-Zustellung ohne Spamfilter-Klassifizierung gewährleistet.
+- **Erledigt (Stand Sprint 15):** Die Domain **`innercirclevp.com` ist bei Resend
+  verifiziert** (SPF/DKIM/DMARC von Resend verwaltet) und
+  `EMAIL_FROM="INNER CIRCLE <noreply@innercirclevp.com>"` ist gesetzt – die
+  geteilte Test-Domain wird nicht mehr verwendet. Bewusst **nicht** Teil dieses
+  Sprints: der DNS-/Namensserverwechsel für die Website (siehe `09-deployment.md`
+  §7a); die Domain dient aktuell nur dem Versand.
 
 ### K-20 · Produktions-500 auf `/app`: rohe `Date`-Objekte als D1-Bind-Parameter — **BEHOBEN (2026-09-22)**
 

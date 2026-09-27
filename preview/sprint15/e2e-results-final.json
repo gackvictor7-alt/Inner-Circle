@@ -1,0 +1,474 @@
+{
+  "run": "1790517022746",
+  "base": "http://127.0.0.1:8787",
+  "siteUrl": "https://inner-circle.gackvictor7.workers.dev",
+  "total": 93,
+  "failed": 0,
+  "results": [
+    {
+      "ok": true,
+      "name": "hero headline renders (de-desktop)",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "name": "exactly two hero CTAs (de-desktop)",
+      "detail": "[{\"href\":\"#outcomes\",\"text\":\"Mehr erfahren\",\"bg\":\"rgb(54, 108, 245)\"},{\"href\":\"/app\",\"text\":\"Zur INNER CIRCLE Plattform\",\"bg\":\"rgba(0, 0, 0, 0)\"}]"
+    },
+    {
+      "ok": true,
+      "name": "first CTA is „Mehr erfahren“ (de-desktop)",
+      "detail": "Mehr erfahren"
+    },
+    {
+      "ok": true,
+      "name": "first CTA points to #outcomes (de-desktop)",
+      "detail": "#outcomes"
+    },
+    {
+      "ok": true,
+      "name": "first CTA is blue/electric (de-desktop)",
+      "detail": "rgb(54, 108, 245)"
+    },
+    {
+      "ok": true,
+      "name": "second CTA is „Zur INNER CIRCLE Plattform“ (de-desktop)",
+      "detail": "Zur INNER CIRCLE Plattform"
+    },
+    {
+      "ok": true,
+      "name": "second CTA points to /app (de-desktop)",
+      "detail": "/app"
+    },
+    {
+      "ok": true,
+      "name": "second CTA is not the blue primary (de-desktop)",
+      "detail": "rgba(0, 0, 0, 0)"
+    },
+    {
+      "ok": true,
+      "name": "no layout shift on the hero (de-desktop)",
+      "detail": "CLS=0"
+    },
+    {
+      "ok": true,
+      "name": "no horizontal scroll (de-desktop)",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "name": "„Mehr erfahren“ scrolls to the info section (de-desktop)",
+      "detail": "{\"hash\":\"#outcomes\",\"scrollY\":821,\"inView\":true}"
+    },
+    {
+      "ok": true,
+      "name": "platform CTA leads anonymous visitors into the login flow",
+      "detail": "http://127.0.0.1:8787/login?next=%2Fapp"
+    },
+    {
+      "ok": true,
+      "name": "hero headline renders (de-mobile)",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "name": "exactly two hero CTAs (de-mobile)",
+      "detail": "[{\"href\":\"#outcomes\",\"text\":\"Mehr erfahren\",\"bg\":\"rgb(54, 108, 245)\"},{\"href\":\"/app\",\"text\":\"Zur INNER CIRCLE Plattform\",\"bg\":\"rgba(0, 0, 0, 0)\"}]"
+    },
+    {
+      "ok": true,
+      "name": "first CTA is „Mehr erfahren“ (de-mobile)",
+      "detail": "Mehr erfahren"
+    },
+    {
+      "ok": true,
+      "name": "first CTA points to #outcomes (de-mobile)",
+      "detail": "#outcomes"
+    },
+    {
+      "ok": true,
+      "name": "first CTA is blue/electric (de-mobile)",
+      "detail": "rgb(54, 108, 245)"
+    },
+    {
+      "ok": true,
+      "name": "second CTA is „Zur INNER CIRCLE Plattform“ (de-mobile)",
+      "detail": "Zur INNER CIRCLE Plattform"
+    },
+    {
+      "ok": true,
+      "name": "second CTA points to /app (de-mobile)",
+      "detail": "/app"
+    },
+    {
+      "ok": true,
+      "name": "second CTA is not the blue primary (de-mobile)",
+      "detail": "rgba(0, 0, 0, 0)"
+    },
+    {
+      "ok": true,
+      "name": "no layout shift on the hero (de-mobile)",
+      "detail": "CLS=0"
+    },
+    {
+      "ok": true,
+      "name": "no horizontal scroll (de-mobile)",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "name": "„Mehr erfahren“ scrolls to the info section (de-mobile)",
+      "detail": "{\"hash\":\"#outcomes\",\"scrollY\":395,\"inView\":true}"
+    },
+    {
+      "ok": true,
+      "name": "hero headline renders (en-desktop)",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "name": "exactly two hero CTAs (en-desktop)",
+      "detail": "[{\"href\":\"#outcomes\",\"text\":\"Learn more\",\"bg\":\"rgb(54, 108, 245)\"},{\"href\":\"/app\",\"text\":\"Go to the INNER CIRCLE platform\",\"bg\":\"rgba(0, 0, 0, 0)\"}]"
+    },
+    {
+      "ok": true,
+      "name": "first CTA is „Learn more“ (en-desktop)",
+      "detail": "Learn more"
+    },
+    {
+      "ok": true,
+      "name": "first CTA points to #outcomes (en-desktop)",
+      "detail": "#outcomes"
+    },
+    {
+      "ok": true,
+      "name": "first CTA is blue/electric (en-desktop)",
+      "detail": "rgb(54, 108, 245)"
+    },
+    {
+      "ok": true,
+      "name": "second CTA is „Go to the INNER CIRCLE platform“ (en-desktop)",
+      "detail": "Go to the INNER CIRCLE platform"
+    },
+    {
+      "ok": true,
+      "name": "second CTA points to /app (en-desktop)",
+      "detail": "/app"
+    },
+    {
+      "ok": true,
+      "name": "second CTA is not the blue primary (en-desktop)",
+      "detail": "rgba(0, 0, 0, 0)"
+    },
+    {
+      "ok": true,
+      "name": "no layout shift on the hero (en-desktop)",
+      "detail": "CLS=0.0009728823731138545"
+    },
+    {
+      "ok": true,
+      "name": "no horizontal scroll (en-desktop)",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "name": "„Mehr erfahren“ scrolls to the info section (en-desktop)",
+      "detail": "{\"hash\":\"#outcomes\",\"scrollY\":821,\"inView\":true}"
+    },
+    {
+      "ok": true,
+      "name": "hero headline renders (en-mobile)",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "name": "exactly two hero CTAs (en-mobile)",
+      "detail": "[{\"href\":\"#outcomes\",\"text\":\"Learn more\",\"bg\":\"rgb(54, 108, 245)\"},{\"href\":\"/app\",\"text\":\"Go to the INNER CIRCLE platform\",\"bg\":\"rgba(0, 0, 0, 0)\"}]"
+    },
+    {
+      "ok": true,
+      "name": "first CTA is „Learn more“ (en-mobile)",
+      "detail": "Learn more"
+    },
+    {
+      "ok": true,
+      "name": "first CTA points to #outcomes (en-mobile)",
+      "detail": "#outcomes"
+    },
+    {
+      "ok": true,
+      "name": "first CTA is blue/electric (en-mobile)",
+      "detail": "rgb(54, 108, 245)"
+    },
+    {
+      "ok": true,
+      "name": "second CTA is „Go to the INNER CIRCLE platform“ (en-mobile)",
+      "detail": "Go to the INNER CIRCLE platform"
+    },
+    {
+      "ok": true,
+      "name": "second CTA points to /app (en-mobile)",
+      "detail": "/app"
+    },
+    {
+      "ok": true,
+      "name": "second CTA is not the blue primary (en-mobile)",
+      "detail": "rgba(0, 0, 0, 0)"
+    },
+    {
+      "ok": true,
+      "name": "no layout shift on the hero (en-mobile)",
+      "detail": "CLS=0"
+    },
+    {
+      "ok": true,
+      "name": "no horizontal scroll (en-mobile)",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "name": "„Mehr erfahren“ scrolls to the info section (en-mobile)",
+      "detail": "{\"hash\":\"#outcomes\",\"scrollY\":375,\"inView\":true}"
+    },
+    {
+      "ok": true,
+      "name": "tester account ready for the reset flow",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "name": "login page shows „Passwort vergessen?“",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "name": "generic success without account enumeration",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "name": "success text explains the anti-enumeration behaviour",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "name": "reset mail was recorded (mail transport mocked by the dev outbox)",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "name": "mail subject matches the brand wording",
+      "detail": "Passwort für INNER CIRCLE zurücksetzen"
+    },
+    {
+      "ok": true,
+      "name": "mail contains an absolute reset link",
+      "detail": "https://inner-circle.gackvictor7.workers.dev/reset-password?token=iYjmgU_aRwGYgl7RfHRTRnTnB7EXl91Jq7r67Dx7R0I"
+    },
+    {
+      "ok": true,
+      "name": "link origin equals the configured NEXT_PUBLIC_SITE_URL",
+      "detail": "https://inner-circle.gackvictor7.workers.dev vs https://inner-circle.gackvictor7.workers.dev"
+    },
+    {
+      "ok": true,
+      "name": "link path is the reset route",
+      "detail": "/reset-password"
+    },
+    {
+      "ok": true,
+      "name": "link contains no localhost",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "name": "link carries no open redirect parameter",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "name": "mail text contains the call to open the link",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "name": "mail text uses the new-password wording",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "name": "mail states the expiry time",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "name": "mail contains the ignore hint",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "name": "reset page opens directly (no interstitial)",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "name": "new-password field is present",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "name": "confirmation field is present",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "name": "password requirements are visible",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "name": "password requirements include the digit rule",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "name": "successful reset lands on /login?reset=1",
+      "detail": "http://127.0.0.1:8787/login?reset=1"
+    },
+    {
+      "ok": true,
+      "name": "old password no longer works",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "name": "login with the new password works",
+      "detail": "http://127.0.0.1:8787/app"
+    },
+    {
+      "ok": true,
+      "name": "used token is refused (single use)",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "name": "admin opens /admin/beta",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "name": "admin created a personal ICB key",
+      "detail": "79YK"
+    },
+    {
+      "ok": true,
+      "name": "invitation text uses the configured production URL",
+      "detail": "https://inner-circle.gackvictor7.workers.dev"
+    },
+    {
+      "ok": true,
+      "name": "invitation text contains no localhost",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "name": "invitation text links register + redemption page",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "name": "database stores no plain-text key",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "name": "verified free tester opens /app/beta",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "name": "tester sees the unlocked features",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "name": "invalid key is refused clearly",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "name": "successful redemption redirects to the guided profile step",
+      "detail": "http://127.0.0.1:8787/app/profile/edit?welcome=beta"
+    },
+    {
+      "ok": true,
+      "name": "activation card greets the tester",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "name": "activation card states the runtime (30 days)",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "name": "activation card lists the unlocked features",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "name": "activation card names a networking feature",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "name": "profile step continues into /app/discover",
+      "detail": "http://127.0.0.1:8787/app/discover"
+    },
+    {
+      "ok": true,
+      "name": "beta tester sees the real network, not the locked/demo state",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "name": "tester area loads: /app",
+      "detail": "200 http://127.0.0.1:8787/app"
+    },
+    {
+      "ok": true,
+      "name": "tester area loads: /app/profile",
+      "detail": "200 http://127.0.0.1:8787/app/profile"
+    },
+    {
+      "ok": true,
+      "name": "tester area loads: /app/discover",
+      "detail": "200 http://127.0.0.1:8787/app/discover"
+    },
+    {
+      "ok": true,
+      "name": "tester area loads: /app/inbox",
+      "detail": "200 http://127.0.0.1:8787/app/inbox"
+    },
+    {
+      "ok": true,
+      "name": "tester area loads: /app/beta",
+      "detail": "200 http://127.0.0.1:8787/app/beta"
+    },
+    {
+      "ok": true,
+      "name": "/app/beta now shows the active status card",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "name": "beta tester is refused by /admin/beta",
+      "detail": "http://127.0.0.1:8787/app?denied=admin"
+    },
+    {
+      "ok": true,
+      "name": "used key cannot be redeemed twice",
+      "detail": ""
+    }
+  ]
+}

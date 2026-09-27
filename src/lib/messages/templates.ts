@@ -135,6 +135,9 @@ function renderPasswordResetHtml(params: { link: string; firstName: string; loca
     ? "du hast ein neues Passwort angefordert. Öffne den folgenden Link, um ein neues Passwort zu vergeben:"
     : "you requested a new password. Use the button below to choose a new password:";
   const buttonText = isDe ? "Neues Passwort festlegen" : "Set new password";
+  const fallbackLead = isDe
+    ? "Falls der Button nicht funktioniert, kopiere diesen Link in deinen Browser:"
+    : "If the button does not work, copy this link into your browser:";
   const expiry = isDe
     ? "Der Link ist 60 Minuten gültig und kann nur einmal verwendet werden."
     : "This link is valid for 60 minutes and can be used once.";
@@ -142,6 +145,14 @@ function renderPasswordResetHtml(params: { link: string; firstName: string; loca
     ? "Falls du das nicht warst, ignoriere diese E-Mail – dein Passwort bleibt unverändert."
     : "If you did not request this, you can safely ignore this email – your password stays unchanged.";
   const slogan = isDe ? "Zugang schafft Chancen." : "Access creates opportunity.";
+  // The link comes from `NEXT_PUBLIC_SITE_URL` + token; escaping keeps the
+  // attribute safe regardless of what the environment supplies.
+  const href = params.link
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+  const linkText = params.link.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
   return `<!DOCTYPE html>
 <html lang="${params.locale}">
@@ -171,16 +182,20 @@ function renderPasswordResetHtml(params: { link: string; firstName: string; loca
               <p style="margin: 12px 0 0 0; font-size: 15px; line-height: 1.6; color: #4A5568;">
                 ${intro}
               </p>
-              <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="margin: 28px 0;">
+              <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="margin: 28px 0 0 0;">
                 <tr>
                   <td align="center">
-                    <a href="${params.link}" style="display: inline-block; background-color: #366CF5; color: #FFFFFF; font-size: 14px; font-weight: 600; text-decoration: none; padding: 14px 28px; border-radius: 12px;">
+                    <a href="${href}" style="display: inline-block; background-color: #366CF5; color: #FFFFFF; font-size: 14px; font-weight: 600; text-decoration: none; padding: 14px 28px; border-radius: 12px;">
                       ${buttonText}
                     </a>
                   </td>
                 </tr>
               </table>
-              <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #718096;">
+              <p style="margin: 12px 0 0 0; font-size: 12px; line-height: 1.6; color: #A0AEC0; word-break: break-word;">
+                ${fallbackLead}<br>
+                <a href="${href}" style="color: #366CF5; text-decoration: underline; word-break: break-all;">${linkText}</a>
+              </p>
+              <p style="margin: 16px 0 0 0; font-size: 14px; line-height: 1.6; color: #718096;">
                 ${expiry}
               </p>
               <p style="margin: 16px 0 0 0; font-size: 13px; line-height: 1.5; color: #A0AEC0;">
@@ -284,8 +299,8 @@ export async function sendPasswordResetEmail(params: {
 }) {
   const subject =
     params.locale === "de"
-      ? "INNER CIRCLE – Passwort zurücksetzen"
-      : "INNER CIRCLE – Reset your password";
+      ? "Passwort für INNER CIRCLE zurücksetzen"
+      : "Reset your password for INNER CIRCLE";
 
   return sendEmail({
     to: params.to,

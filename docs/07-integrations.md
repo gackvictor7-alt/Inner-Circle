@@ -43,25 +43,16 @@ werden in `/app/settings` (Admin-Sicht) bzw. `/dev/outbox` angezeigt.
 
 ## 3. Was der Gründer selbst einrichten muss
 
-### 3.1 Produktions-Zustellbarkeit (Eigene Domain & DNS)
+### 3.1 Produktions-Zustellbarkeit (Eigene Domain & DNS) — **erledigt für den Versand (Sprint 15)**
 
-Der E-Mail-Versand funktioniert mit `RESEND_API_KEY` und `onboarding@resend.dev`
-bereits real. Um Spam-Zustellung bei echten Nutzern (Gmail, Outlook, Apple Mail)
-zu verhindern, ist der Domain-Schritt im DNS zwingend erforderlich:
-
-1. **Eigene Domain in Resend anlegen:** Im Resend Dashboard unter *Domains* die
-   Produktionsdomain (z. B. `inner-circle.app`) hinzufügen.
-2. **DNS-Einträge konfigurieren:**
-   - **DKIM:** CNAME-Einträge laut Resend Dashboard (`resend._domainkey`).
-   - **SPF:** TXT-Eintrag für Domain (`v=spf1 include:amazonses.com ~all` bzw. Resend-Vorgabe).
-   - **DMARC:** TXT-Eintrag auf `_dmarc.<domain>` mit z. B. `v=DMARC1; p=quarantine; pct=100; rua=mailto:dmarc@<domain>`.
-   - **MX (optional):** Falls E-Mail-Rückläufer/Inbound über denselben Host verarbeitet werden.
-3. **Environment anpassen:**
-   - Text-Variable `EMAIL_FROM` im Cloudflare Dashboard auf die verifizierte Domain
-     setzen, z. B. `INNER CIRCLE <verify@unsere-domain.com>` oder `INNER CIRCLE <hello@unsere-domain.com>`.
-   - Optional: `EMAIL_REPLY_TO` auf z. B. `support@unsere-domain.com` setzen.
-   - Es ist **keine Code-Änderung** nötig.
-4. **Dev-Postausgang deaktivieren:** `ENABLE_DEV_OUTBOX` in Produktion entfernen.
+**Stand:** Die Domain **`innercirclevp.com` ist bei Resend verifiziert**
+(DKIM/SPF/DMARC-Records liegen im Resend-Konto) und
+`EMAIL_FROM="INNER CIRCLE <noreply@innercirclevp.com>"` ist gesetzt – der
+Versand läuft über die eigene Domain, nicht mehr über `onboarding@resend.dev`.
+**Noch offen / bewusst nicht Teil des Sprints:** die Website-Domain (heute
+`workers.dev`, DNS weiter bei STRATO) – Checkliste für den späteren Umzug in
+`09-deployment.md` §7a. Für Rücklauf-Mails (MX) und eigene DMARC-RUAs die
+Records bei Bedarf nach Resend-Vorgabe ergänzen.
 
 ### 3.2 Für Bezahlung
 

@@ -1,6 +1,19 @@
 # 08 – Test- und Qualitätssicherung
 
-**Stand:** 2026-09-24 (Sprint 12 – Private Beta & echtes Networking, zweite
+**Stand:** 2026-09-27 (Sprint 15 – Passwort-Reset-Root-Cause, Beta-Onboarding,
+CTA-Check, Domain-Vorbereitung) · Branch `arena/01a0e2ea-inner-circle` (Basis
+`main` @ `530be5f`, PR offen): `npm test` = **36 Dateien / 267 Tests grün**
+(neu: Sprint-15-Block in `auth-flow.test.ts` inkl. absolutem HTTPS-Link ohne
+localhost, abgelaufener/wiederverwendeter Token, Login mit neuem Passwort;
+Willkommens-Card-Test in `beta-access.test.ts`; HTML-Button-/Fallback-Link-Test
+in `resend-provider.test.ts`), `npm run typecheck` grün, `npm run i18n:audit`
+grün, `npx eslint .` = **12 Befunde (5 Fehler, 7 Warnungen)** = Baseline (K-15),
+`npm run cf:build` grün, `npm run cf:dry-run` grün (Upload 9338,71 KiB /
+gzip 1871,09 KiB). **Browser-E2E** `tests/e2e/sprint15-browser.mjs` gegen den
+Worker-Preview: **93/93 Prüfungen bestanden** (CTA-Matrix 40, Flow A Reset 31,
+Flow B Beta 22), Ergebnisliste `preview/sprint15/e2e-results-final.json` (§3d).
+
+Vorheriger Stand: 2026-09-24 (Sprint 12 – Private Beta & echtes Networking, zweite
 Prüfrunde) · Branch `arena/01a0d435-inner-circle` (Basis `main` @ `8a1b5ea`,
 **nicht gemergt**): `npx vitest run` = **35 Dateien / 246 Tests grün** (62 neu,
 siehe §3a), `npm run typecheck` grün, `npm run test:keys` grün (616 Schlüssel,
@@ -129,7 +142,7 @@ Details und Grenzen: [Abschlussbericht](SPRINT-12-FINAL-REPORT.md).
 | `tests/unit/demo-discover.test.ts` | **Sprint 11:** Demo-Profile nutzen gültige Slugs der echten Taxonomie (Interessen/Ziele) mit DE/EN-Paar, Avatare nur aus dem freigegebenen Satz oder neutral, Demo-Deals/-Jobs/-Investments ohne abgeschlossene Zustände/Renditeversprechen; `demoDiscoverCandidate` (Präfix-ID `demo:`), `demoDiscoverResults` mit den echten Filtern (Standort, Rolle DE/EN, Interesse, Branche, Investmentinteresse, Typ, Umkreis) und Sortierung nach Interessen/Zielen des Betrachters | Unit |
 | `tests/integration/discovery-demo.test.ts` | **Sprint 11 – komplette Journey:** verifiziert ohne Demo (Zustand 3) → Onboarding speichert Interessen und startet die Demo genau einmal (48 h, zweiter Start abgelehnt) → Discover/Network/Chancen/Jobs/Investments rendern nur Demo (keine echten Handles im Elementbaum, Filter + Leerzustand, Sortierung nach eigenen Interessen) → Demo-Profil offen, echtes Profil gesperrt → Connect/Follow/Bewerbung/Interesse serverseitig `membershipRequired`, Datenbank vorher = nachher, Demo-IDs ungültig → echtes Event mit realer Kapazität lesbar (19 von 20 Plätzen frei), Sperrkarte statt Formular, `applyToEventAction` abgewiesen, Mitglied kann sich weiterhin anmelden → Ablauf lazy, `already_used`, erneutes Onboarding legt keinen zweiten Trial an, Demo-Seiten gesperrt, eigenes Profil/Events/Billing erreichbar → Checkout ohne Provider und ohne Dev-Schalter legt keine Mitgliedschaft an → Mitglied sieht echte Daten, nie Demo | Integration (DB, `flags.devMembershipActivation=false` gemockt) |
 | `tests/unit/i18n-parity.test.ts` | DE/EN gleiche Struktur, keine leeren Strings | Unit |
-| `tests/integration/auth-flow.test.ts` | Registrierung, OTP-Verifizierung, Login-Routing, Recovery (Dev-Postausgang); **Sprint 5**: fehlende/ungültige Login-Eingaben als Feldfehler, identische Antwort für unbekanntes Konto und falsches Passwort (keine Enumeration), gesperrte Konten (`accountSuspended`), Passwortregeln-Fehlercodes beim Reset (`passwordTooShort`/`passwordNeedsBoth`/`passwordMismatch`) | Integration (DB) |
+| `tests/integration/auth-flow.test.ts` | Registrierung, OTP-Verifizierung, Login-Routing, Recovery (Dev-Postausgang); **Sprint 5**: fehlende/ungültige Login-Eingaben als Feldfehler, identische Antwort für unbekanntes Konto und falsches Passwort (keine Enumeration), gesperrte Konten (`accountSuspended`), Passwortregeln-Fehlercodes beim Reset (`passwordTooShort`/`passwordNeedsBoth`/`passwordMismatch`); **Sprint 15**: Reset-Mail mit **absolutem HTTPS-Link** (`NEXT_PUBLIC_SITE_URL`, kein localhost/relativer Pfad), unbekannte E-Mail bleibt ohne Enumeration, abgelaufener und wiederverwendeter Token → `tokenInvalid`, erfolgreicher Reset sperrt den alten Token, Login mit dem neuen Passwort klappt | Integration (DB) |
 | `tests/unit/password-rules.test.ts` | **Sprint 5**: eine gemeinsame Quelle für Client-Checkliste und Server-Validierung (≥10 Zeichen, Buchstabe + Ziffer), Regelzustände pro Zeichen, gleiche Fehlercodes wie die Actions, DE/EN-Beschriftungen für jede Regel | Unit |
 | `tests/unit/auth-error-messages.test.ts` | **Sprint 5**: jeder von `src/app/actions/auth.ts` zurückgebbare Fehlercode hat eine echte DE- **und** EN-Meldung (oder dokumentiertes Handling), Feldfehler-Codes vorhanden, `serverError`-Meldung vorhanden | Unit (Quelltext + Wörterbücher) |
 | `tests/integration/onboarding.test.ts` | Interessen/Ziele per ID **und** Slug, Trial startet genau einmal, unverifiziert/anonym abgewiesen | Integration (DB) |
@@ -142,7 +155,7 @@ Details und Grenzen: [Abschlussbericht](SPRINT-12-FINAL-REPORT.md).
 | `tests/unit/event-permissions.test.ts` | **Sprint 3**: keine `eventsCreate`-Freigabe in der Matrix, keine `insert`/`update`/`delete` auf `events` in Server-Actions, deaktivierter Create-Eintrag in `AppShell`, Kuratoren-Hinweis auf `/app/events` | Unit (Quelltext) |
 | `tests/integration/connection-request.test.ts` | **Sprint 3**: Anfrage **ohne** Nachricht wird abgelehnt (`connectionMessageRequired`), mit gültiger Nachricht wird `ConnectionRequest` + Benachrichtigung geschrieben; **Sprint 11:** Fixtures sind Mitglieder (ein Trial sendet keine echten Anfragen mehr) | Integration (DB) |
 | `tests/integration/profile-preferences.test.ts` | **Sprint 3**: „Ich biete" wird gespeichert, Kennzahlen-Sichtbarkeit je Metrik (ungültige Werte verworfen, Fallback `performanceVisibility`). **Sprint 13:** Interessen/Ziele im EINEN Save mit den Profilfeldern (`saveInterests`), Mindest-3-Interessen nur bei geänderter Auswahl (`interestsMin`), unveränderte Auswahl = no-op | Integration (DB) |
-| `tests/integration/resend-provider.test.ts` | konfigurierter `RESEND_API_KEY` → Versand über die Resend-API (Endpoint, Auth-Header, Absender `EMAIL_FROM` bzw. `onboarding@resend.dev`), Code bleibt gültig, Ablehnung durch Resend → ehrliches `send_failed` + Entwertung, „Code erneut senden" geht an Resend statt in den Postausgang | Integration (DB, `fetch` gestubbt) |
+| `tests/integration/resend-provider.test.ts` | konfigurierter `RESEND_API_KEY` → Versand über die Resend-API (Endpoint, Auth-Header, Absender `EMAIL_FROM` bzw. `onboarding@resend.dev`), Code bleibt gültig, Ablehnung durch Resend → ehrliches `send_failed` + Entwertung, „Code erneut senden" geht an Resend statt in den Postausgang; **Sprint 15:** Reset-Mail mit absolutem Button-`href`, sichtbarem Fallback-Link, Betreff + 60-Minuten-Hinweis, kein relativer `href`, EN-Variante | Integration (DB, `fetch` gestubbt) |
 | `tests/unit/network-demo-supplement.test.ts` | **Sprint 7**: Mixing-Regeln des Netzwerks (Mitglieder) – leere echte Liste → komplette Demo-Sammlung (8), kleine Listen auf Ziel-Total 8 aufgestockt, Limit respektiert, **ab 8 echten Mitgliedern automatisch Rückzug**; `filterDemoProfiles` (Suche Name/Firma/Positionierung DE+EN, Rolle DE+EN, Standort, Interesse DE- oder EN-Label, AND-Semantik); `demoProfileHandle` (Diakritik-Normierung) | Unit |
 | `tests/integration/network-directory.test.ts` | **Sprint 7**: `listDirectoryMembers` zeigt echte Mitglieder (nie sich selbst), **richtungsabhängige Anfrage-Zustände** (`outgoingRequestId` beim Sender, `incomingRequestId` beim Empfänger), Zurückziehen nur vom Sender (freit den Zustand), Ablehnen → keine Connection, Annehmen → Connection, Rolle-Filter via `jobTitle`/`rolesJson`, Standort-Filter | Integration (DB) |
 | `tests/integration/core-loop.test.ts` | **Sprint 8**: vollständiger Core Loop – Annehmen → Connection + Notification-Deep-Link `/app/inbox?tab=requests&sub=connections` + **kein implizites Follow**; Ablehnen → keine Connection/Follow + neutraler Hinweis + Trial-Slot frei; Zurückziehen nur vom Sender + Trial-Slot frei; `connectionRequestState()` richtungsabhängig; `forYouItems()` zeigt nur echte Daten (Anfrage, passendes Mitglied ohne offene Anfrage, neueste Chance), max. 5 Einträge; `interestLabelsFor()` je Locale | Integration (DB) |
@@ -291,6 +304,63 @@ Dev-Flags, löscht `STRIPE_*`/`RESEND_*` und vergibt pro Testdatei eine eigene
 Fake-IP (Rate-Limits addieren sich nicht über Dateien).
 Stubs: `server-only` und `next/headers` (`tests/stubs/*`).
 
+### 3d. Browser-E2E gegen den Worker-Preview (Sprint 15)
+
+**Skript im Repo:** `tests/e2e/sprint15-browser.mjs` (nicht Teil von `npm test`,
+keine neue Projektabhängigkeit – dieselbe externe Playwright/Chromium-Installation
+wie §3b; Aufruf und Voraussetzungen stehen im Kopf der Datei):
+
+```
+npm run cf:build
+npx opennextjs-cloudflare preview --ip 0.0.0.0 --port 8787   # Terminal 1
+npm run cf:d1:migrate:local && npm run cf:bootstrap:local     # einmalig
+PW_MODULES=/tmp/pw/node_modules BASE_URL=http://127.0.0.1:8787 node tests/e2e/sprint15-browser.mjs
+```
+
+Voraussetzungen in `.dev.vars` (gitignored): `NEXTJS_ENV=production`,
+`NEXT_PUBLIC_SITE_URL=https://inner-circle.gackvictor7.workers.dev`,
+`ENABLE_DEV_OUTBOX=true`, `DEV_OUTBOX_RECIPIENTS=@innercircle.test`.
+Die UserID-2-Admin-Bootstrap-Zeile steht im Skript-Kopf (analog §3b).
+
+**Ehrlicher Geltungsbereich:** Ein externes Postfach ist in der Sandbox nicht
+erreichbar; das Skript prüft deshalb den Mailinhalt im Dev-Postausgang, vergleicht
+die Link-Herkunft mit `NEXT_PUBLIC_SITE_URL` (kein `localhost`, kein relativer
+Link) und klickt den Link erst danach mit lokal umgeschriebener Herkunft durch.
+Das reine HTML-Mail-Template (Button-Href absolut, Fallback-Link) ist zusätzlich
+in `tests/integration/resend-provider.test.ts` abgedeckt.
+
+**Letzter Lauf: 93/93 Prüfungen bestanden (Ergebnisliste
+`preview/sprint15/e2e-results-final.json`, 10 Screenshots in `preview/sprint15/`).**
+Geprüft:
+
+- **CTA-Matrix Startseite (40):** Desktop und Mobil × DE und EN: Hero-CTA-Paar
+  sichtbar, primär „Mehr erfahren“ (blau `rgb(54,108,245)`, erster Knoten,
+  `href="#outcomes"`), sekundär „Zur INNER CIRCLE Plattform“ (Kontur,
+  `href="/app"`), Anker-Klick scrollt das Ziel in den Viewport, kein
+  horizontales Scrollen, Layout-Sprung < 0,1 px; Screenshot-Beweis
+  `01-cta-de-desktop.png`.
+- **Flow A Passwort-Reset (31):** `/forgot-password` → Mail im Dev-Postausgang
+  mit absolutem HTTPS-Link auf `NEXT_PUBLIC_SITE_URL` (kein `localhost`, kein
+  relativer Pfad) → Zielseite zeigt Passwortfeld, Bestätigungsfeld und die
+  sichtbaren Regeln (mind. 10 Zeichen, Buchstabe + Ziffer) → Setzen →
+  automatischer Wechsel nach `/login` (Hinweis `?reset=1`) → Login mit dem
+  **neuen** Passwort erfolgreich; **Wiederverwendung desselben Links** lehnt
+  nach dem Neuladen mit der Token-Invalid-Meldung ab; Screenshots 02–06
+  inkl. `04-reset-form-rules.png`.
+- **Flow B Beta-Onboarding (22):** interne Links der Public-Sektion ohne 4xx →
+  Registrierung über die echte UI inkl. Verifizierungscode aus dem
+  Dev-Postausgang → Onboarding → `/app/beta` → Einlösen eines frischen
+  `ICB-…`-Schlüssels (vorbereitet via Admin-UI) → Welcome-Card
+  („Beta-Zugang aktiviert“, Laufzeit „noch 30 Tage“, Ablauf, „Im Beta-Zugang
+  enthalten“ mit vier Funktionen) → Profilseite mit Fortschritt (kein toter
+  Endpunkt) → Dashboard zeigt Networking-Funktionen; Screenshots 07–09
+  inkl. `08-beta-welcome.png`.
+
+**Nicht Teil des Skripts:** Versand an ein echtes externes Postfach, Produktion
+unter `workers.dev` (Sandbox-Egress blockiert direkte TLS-Verbindungen dorthin –
+die Produktions-Reset-Seite wurde per Seitenabruf mit Dummy-Token als erreichbar
+geprüft), DNS-/Domainwechsel.
+
 ## 4. Testmatrix (Bereiche × Abdeckung)
 
 Legende: **AUT** = automatisiert vorhanden · **MAN** = manuell verifiziert
@@ -311,7 +381,7 @@ Legende: **AUT** = automatisiert vorhanden · **MAN** = manuell verifiziert
 | Auth | Login-Fehlermeldungen (Feldfehler, keine Enumeration, `accountSuspended`, DE/EN-Abdeckung aller Codes) | AUT (Sprint 5) |
 | Auth | Passwortregeln identisch in UI-Checkliste und Server-Validierung (≥10 Zeichen, Buchstabe + Ziffer) | AUT (Sprint 5) |
 | Auth | Logout/Session-Widerruf | OFFEN (Code vorhanden, kein Test) |
-| Auth | Passwort-Reset (Antwort ohne Enumeration, Token, Session-Widerruf) | AUT (teilweise: Request + Token-Fluss) |
+| Auth | Passwort-Reset (Antwort ohne Enumeration, absoluter HTTPS-Mail-Link, gültig/ungültig/abgelaufen/wiederverwendet, Single-Use, Session-Widerruf, Login mit neuem Passwort) | AUT (vollständig, Sprint 15: Request + Token-Fluss + Mail-Template + E2E Flow A) |
 | Auth | Rate-Limits greifen (Register/Login/Verify/Forgot) | AUT indirekt (Limits im Code, Tests nutzen eigene IPs) |
 | Auth | E-Mail-Zustellung über echten Provider | OFFEN / BLOCKED (kein Key) |
 | Auth | Google/Apple-Login | nicht implementiert |

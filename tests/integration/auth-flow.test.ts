@@ -1,7 +1,7 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { eq } from "drizzle-orm";
 import { db } from "@/db/client";
-import { devOutbox, sessions, users } from "@/db/schema";
+import { authTokens, devOutbox, sessions, users } from "@/db/schema";
 
 // The auth actions run server-side; the Next.js request primitives are doubled
 // in tests/stubs so the same code path can be executed without a browser.
@@ -21,8 +21,9 @@ import {
 } from "@/app/actions/auth";
 import { initialAuthState } from "@/app/actions/auth-state";
 import { idFor } from "@/db/ids";
-import { hashPassword } from "@/lib/auth/crypto";
-import { deleteTestUser } from "../helpers";
+import { hashPassword, hashAuthToken, randomToken } from "@/lib/auth/crypto";
+import { deleteTestUser, createTestUser } from "../helpers";
+import { __setTestHeaders } from "../stubs/next-headers";
 
 const PASSWORD = "Testing!2026";
 const createdEmails: string[] = [];
@@ -261,5 +262,144 @@ describe("login & reset error handling (sprint: login UX)", () => {
 
     const mismatch = await resetPasswordAction(initialAuthState, form({ token: "x", password: "Ab12345678", passwordConfirm: "Ab12345679" }));
     expect(mismatch.errorCode).toBe("passwordMismatch");
+  });
+});
+
+/**
+ * Sprint 15 – password reset regression net.
+ *
+ * Production broke because the e-mail carried a RELATIVE link: mail clients
+ * cannot resolve `/reset-password?token=…` against the INNER CIRCLE origin,
+ * so the click ended up in a client-side redirect interstitial with an
+ * unusable target. These tests pin the fixed contract: absolute URL from
+ * `NEXT_PUBLIC_SITE_URL`, never localhost in production, single-use token,
+ * working login with the new password – with the mail transport mocked by
+ * the development outbox (no provider ever configured in tests).
+ */
+describe("password reset link & token lifecycle (sprint 15)", () => {
+  // The forgot action is rate limited per IP (6/h); every test gets its own
+  // origin so the cases stay independent of their execution order.
+  const octet = () => 1 + Math.floor(Math.random() * 253);
+  beforeEach(() => {
+    __setTestHeaders({ "x-forwarded-for": `10.${octet()}.${octet()}.${octet()}` });
+  });
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.restoreAllMocks();
+  });
+
+  async function lastResetMail(to: string) {
+    const outbox = await db.select().from(devOutbox).where(eq(devOutbox.to, to));
+    return outbox.filter((row) => row.template === "password_reset").at(-1) ?? null;
+  }
+
+  it("sends an absolute reset URL built from NEXT_PUBLIC_SITE_URL (no relative link, no broken redirect)", async () => {
+    vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://inner-circle.example");
+    const email = `reset-link-${Date.now()}@innercircle.test`;
+    await createTestUser({ email, firstName: "Rita" });
+
+    const state = await requestPasswordResetAction(initialAuthState, form({ email }));
+    expect(state.status).toBe("success");
+    expect(state.messageKey).toBe("resetSent");
+
+    const mail = await lastResetMail(email);
+    expect(mail).not.toBeNull();
+    expect(mail?.subject).toBe("Passwort für INNER CIRCLE zurücksetzen");
+
+    const link = mail?.body.match(/https?:\/\/[^\s"<>]+\/reset-password\?token=[A-Za-z0-9_-]+/)?.[0];
+    expect(link, `no absolute reset link in: ${mail?.body}`).toBeTruthy();
+    const url = new URL(link as string);
+    expect(url.origin).toBe("https://inner-circle.example");
+    expect(url.pathname).toBe("/reset-password");
+    expect(url.searchParams.get("token") ?? "").toMatch(/^[A-Za-z0-9_-]{20,}$/);
+    // The link is self-contained: no second redirect, no wrapper, no localhost.
+    expect(mail?.body).not.toContain("localhost");
+    expect(url.searchParams.get("redirect")).toBeNull();
+  });
+
+  it("refuses to mail a localhost link in production – generic answer, server-side log code instead", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("NEXT_PUBLIC_SITE_URL", "http://localhost:3000");
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const email = `reset-no-localhost-${Date.now()}@innercircle.test`;
+    await createTestUser({ email });
+
+    // Anti-enumeration response stays identical …
+    const state = await requestPasswordResetAction(initialAuthState, form({ email }));
+    expect(state.status).toBe("success");
+    expect(state.messageKey).toBe("resetSent");
+    // … but no reset mail with a localhost/relative link is recorded …
+    expect(await lastResetMail(email)).toBeNull();
+    // … and the skip is diagnosable without any secret.
+    expect(
+      warn.mock.calls.some((call) => String(call[0]).includes("password_reset_email_skipped")),
+    ).toBe(true);
+    expect(JSON.stringify(warn.mock.calls)).not.toContain(email);
+  });
+
+  it("runs the full flow: mail link → new password → login; the old link and old password die", async () => {
+    const email = `reset-flow-${Date.now()}@innercircle.test`;
+    await createTestUser({ email, firstName: "Finn" });
+    const NEW_PASSWORD = "NeuesPasswort1";
+
+    await requestPasswordResetAction(initialAuthState, form({ email }));
+    const mail = await lastResetMail(email);
+    const token = mail?.body.match(/\/reset-password\?token=([A-Za-z0-9_-]+)/)?.[1];
+    expect(token).toBeTruthy();
+
+    // Password rules run before any token is looked at.
+    const mismatch = await resetPasswordAction(
+      initialAuthState,
+      form({ token: token as string, password: NEW_PASSWORD, passwordConfirm: `${NEW_PASSWORD}x` }),
+    );
+    expect(mismatch.errorCode).toBe("passwordMismatch");
+
+    const ok = await resetPasswordAction(
+      initialAuthState,
+      form({ token: token as string, password: NEW_PASSWORD, passwordConfirm: NEW_PASSWORD }),
+    );
+    expect(ok.status).toBe("success");
+    expect(ok.redirectTo).toBe("/login?reset=1");
+
+    // Single use: the very same link is dead after the reset …
+    const replay = await resetPasswordAction(
+      initialAuthState,
+      form({ token: token as string, password: NEW_PASSWORD, passwordConfirm: NEW_PASSWORD }),
+    );
+    expect(replay.status).toBe("error");
+    expect(replay.errorCode).toBe("tokenInvalid");
+
+    // … the old password no longer works …
+    const oldPassword = await loginAction(initialAuthState, form({ identifier: email, password: PASSWORD }));
+    expect(oldPassword.errorCode).toBe("invalidCredentials");
+
+    // … and the new one signs in (verified + onboarded → dashboard).
+    const fresh = await loginAction(initialAuthState, form({ identifier: email, password: NEW_PASSWORD }));
+    expect(fresh.status).toBe("success");
+    expect(fresh.redirectTo).toBe("/app");
+  });
+
+  it("refuses an expired token (category logged, raw token never logged)", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const email = `reset-expired-${Date.now()}@innercircle.test`;
+    const userId = await createTestUser({ email });
+    const expiredToken = randomToken(32);
+    await db.insert(authTokens).values({
+      id: idFor.authToken(),
+      userId,
+      type: "password_reset",
+      tokenHash: hashAuthToken(expiredToken),
+      expiresAt: new Date(Date.now() - 1_000),
+      createdAt: new Date(Date.now() - 3_600_000),
+    });
+
+    const state = await resetPasswordAction(
+      initialAuthState,
+      form({ token: expiredToken, password: PASSWORD, passwordConfirm: PASSWORD }),
+    );
+    expect(state.status).toBe("error");
+    expect(state.errorCode).toBe("tokenInvalid");
+    expect(warn.mock.calls.some((call) => String(call[0]).includes("reason=expired"))).toBe(true);
+    expect(JSON.stringify(warn.mock.calls)).not.toContain(expiredToken);
   });
 });

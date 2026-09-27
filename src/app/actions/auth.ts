@@ -2,7 +2,7 @@
 
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { and, eq, gt, inArray, isNull, or } from "drizzle-orm";
+import { and, eq, inArray, or } from "drizzle-orm";
 import { db } from "@/db/client";
 import {
   authTokens,
@@ -29,7 +29,7 @@ import { startTrial } from "@/lib/trial/service";
 import { sendPasswordResetEmail } from "@/lib/messages/templates";
 import { EMAIL_RE, handleify, maskEmail } from "@/lib/utils";
 import { getAccessContext } from "@/lib/access/server";
-import { canOpenDevOutbox } from "@/lib/env";
+import { canOpenDevOutbox, getAppUrl } from "@/lib/env";
 
 // Form state type lives in ./auth-state (a "use server" file may only export async functions).
 import type { AuthState } from "./auth-state";
@@ -305,6 +305,43 @@ export async function resendCodeAction(_prev: AuthState, formData: FormData): Pr
 
 /* ------------------------------------------------------- password recovery */
 
+/**
+ * Absolute HTTPS link for the password-reset e-mail (sprint 15).
+ *
+ * E-mail clients cannot resolve relative URLs – an `href` without an origin
+ * gets mangled by the receiving client or its link wrapper (observed in
+ * production as a "Weiterleitungshinweis" interstitial with an unusable
+ * target). The link therefore always carries the public origin from
+ * `NEXT_PUBLIC_SITE_URL` (read lazily, Worker-safe) and is refused – not
+ * sent – when production would fall back to localhost or plain http.
+ */
+function passwordResetLink(token: string): { link: string; reason?: string } {
+  const base = getAppUrl().replace(/\/+$/, "");
+  let url: URL;
+  try {
+    url = new URL(`/reset-password?token=${encodeURIComponent(token)}`, `${base}/`);
+  } catch {
+    return { link: "", reason: "invalid_site_url" };
+  }
+  if (url.protocol !== "http:" && url.protocol !== "https:") {
+    return { link: "", reason: "invalid_site_url" };
+  }
+  const isLocalhost = url.hostname === "localhost" || url.hostname === "127.0.0.1" || url.hostname === "[::1]";
+  if (process.env.NODE_ENV === "production" && (url.protocol !== "https:" || isLocalhost)) {
+    return { link: "", reason: "insecure_site_url" };
+  }
+  return { link: url.toString() };
+}
+
+/** Non-safe details (e-mail bodies, API responses) never reach the log – only a stable code. */
+function mailFailureReason(error?: string): string {
+  if (!error) return "unknown";
+  if (error === "no_delivery_channel" || error === "outbox_write_failed") return error;
+  const resend = /^resend_(\d{3})/.exec(error);
+  if (resend) return `resend_${resend[1]}`;
+  return "provider_error";
+}
+
 export async function requestPasswordResetAction(_prev: AuthState, formData: FormData): Promise<AuthState> {
   const limit = await consumeRateLimit(await clientIpKey("forgot"), 6, 3600);
   if (!limit.allowed) {
@@ -328,12 +365,22 @@ export async function requestPasswordResetAction(_prev: AuthState, formData: For
       expiresAt: new Date(now.getTime() + 60 * 60 * 1000),
       createdAt: now,
     });
-    await sendPasswordResetEmail({
-      to: email,
-      firstName: user.firstName,
-      locale: (user.locale as Locale) ?? defaultLocale,
-      link: `/reset-password?token=${token}`,
-    });
+    // Observability without secrets: never the token, the password or the
+    // recipient – only the delivery outcome as a stable, greppable code.
+    const { link, reason } = passwordResetLink(token);
+    if (!link) {
+      console.warn(`[auth] password_reset_email_skipped reason=${reason}`);
+    } else {
+      const result = await sendPasswordResetEmail({
+        to: email,
+        firstName: user.firstName,
+        locale: (user.locale as Locale) ?? defaultLocale,
+        link,
+      });
+      if (!result.ok) {
+        console.error(`[auth] password_reset_email_failed mode=${result.mode} reason=${mailFailureReason(result.error)}`);
+      }
+    }
     await audit({ actorId: user.id, action: "auth.reset_requested", entityType: "User", entityId: user.id });
   }
 
@@ -349,22 +396,22 @@ export async function resetPasswordAction(_prev: AuthState, formData: FormData):
   const pwProblem = passwordProblem(password, passwordConfirm);
   if (pwProblem) return { status: "error", errorCode: pwProblem };
 
+  const now = new Date();
   const [record] = await db
     .select()
     .from(authTokens)
-    .where(
-      and(
-        eq(authTokens.tokenHash, hashAuthToken(token)),
-        eq(authTokens.type, "password_reset"),
-        isNull(authTokens.usedAt),
-        gt(authTokens.expiresAt, new Date()),
-      ),
-    )
+    .where(and(eq(authTokens.tokenHash, hashAuthToken(token)), eq(authTokens.type, "password_reset")))
     .limit(1);
 
-  if (!record) return { status: "error", errorCode: "tokenInvalid" };
+  // Server-side category for observability ("invalid" / "expired" / "used").
+  // The client only ever sees `tokenInvalid` (no oracle), and the token itself
+  // is never logged.
+  const rejection = !record ? "invalid" : record.usedAt ? "used" : record.expiresAt.getTime() <= now.getTime() ? "expired" : null;
+  if (rejection) {
+    console.warn(`[auth] reset_token_rejected reason=${rejection}`);
+    return { status: "error", errorCode: "tokenInvalid" };
+  }
 
-  const now = new Date();
   await db
     .update(users)
     .set({ passwordHash: await hashPassword(password), updatedAt: now })

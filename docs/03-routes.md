@@ -39,9 +39,9 @@ nur konsolidiert wenn Verhalten 100% erhalten bleibt.
 | --- | ----- | ------- | ------ | ----- | ------------------------- |
 | `/register` | Registrierung E-Mail/Passwort | public | WORKING | schreibt `User`, `Profile`, `PrivacySettings`, `NotificationPreference`, `Session`, `VerificationCode`, `AdminAuditLog` | Rate-Limit 8/h pro IP; Alter + AGB Pflicht. Telefon-Umschalter führt in einen Fehler (K-05) |
 | `/login` | Anmeldung | public | WORKING | liest `User`, schreibt `Session`, ggf. `VerificationCode` | unverifizierte Konten landen auf `/verify`; Ratelimit 12/15 min pro IP |
-| `/verify` | Code-Eingabe (E-Mail/Telefon) | registered-unverified | PARTIAL | `VerificationCode`, `User.emailVerifiedAt/phoneVerifiedAt` | Zustellmodus wird serverseitig ermittelt (`provider`/`dev`/`none`); ohne Provider = „Versand noch nicht eingerichtet" (K-01). Dev-Link nur für Admins |
-| `/forgot-password` | Reset anfordern | public | PARTIAL | schreibt `AuthToken`, versendet Link | Antwort immer identisch (keine Enumeration); ohne Provider landet die Mail im Dev-Postausgang oder nirgends (K-01) |
-| `/reset-password?token=…` | neues Passwort setzen | public (Token) | WORKING | liest/aktualisiert `AuthToken`, `User`; widerruft `Session`s | Token 60 min, einmalig; Rate-Limits greifen über die Action |
+| `/verify` | Code-Eingabe (E-Mail/Telefon) | registered-unverified | WORKING | `VerificationCode`, `User.emailVerifiedAt/phoneVerifiedAt` | Zustellmodus wird serverseitig ermittelt (`provider`/`dev`/`none`); Produktion: Resend mit verifizierter Absenderdomain `innercirclevp.com` (K-01 erledigt). Dev-Link nur für Admins |
+| `/forgot-password` | Reset anfordern | public | WORKING | schreibt `AuthToken`, versendet Link | Antwort immer identisch (keine Enumeration); Sprint 15: Mail enthält **absoluten** HTTPS-Link (`passwordResetLink()` via `NEXT_PUBLIC_SITE_URL`), Prod-Guard ohne localhost, ohne Provider landet die Mail im Dev-Postausgang oder wird mit Kategorie-Log übersprungen (K-01 erledigt) |
+| `/reset-password?token=…` | neues Passwort setzen | public (Token) | WORKING | liest/aktualisiert `AuthToken`, `User`; widerruft `Session`s | Token 60 min, einmalig (Replay → `tokenInvalid`); Mail-Button „Neues Passwort festlegen“ + Fallback-Link; Rate-Limits greifen über die Action |
 | `/checkout/success` | Rückleitung von Stripe/Dev-Aktivierung | public | WORKING | liest `Membership` des angemeldeten Nutzers | **erteilt nichts** – Status kommt ausschließlich aus DB/Webhook |
 | `/checkout/cancel` | Abbruch der Zahlung | public | WORKING | keine DB | – |
 | `/dev/outbox` | Entwicklungs-Postausgang (Code-Einsicht) | admin + `ENABLE_DEV_OUTBOX=true` | WORKING | `DevOutbox` | sonst `notFound()`; `noindex`; Produktions-Warnbanner; Allowlist sichtbar |
@@ -169,8 +169,8 @@ Für jede wichtige Route dokumentiert: Route, Public/Auth Required, Zweck, echte
 | `/member/[publicId]` | Public | Öffentliche Karten-Verifikation | echt (MembershipCard + User/Profile) | – | WORKING (force-dynamic) | visitor | Keine |
 | `/login` | Public | Anmeldung | echt | „Anmelden" | WORKING | visitor | – |
 | `/register` | Public | Registrierung E-Mail/Passwort | echt, Telefon-Umschalter NOT IMPLEMENTED | „Konto erstellen" | WORKING | visitor | K-05 Telefon-Registrierung |
-| `/verify` | Auth (registered-unverified) | Code-Eingabe, ehrlicher Zustellstatus | echt, mode provider/dev/none | „Code bestätigen", „Code erneut senden" / „Erneut versuchen" | WORKING (Sprint 6 gefixt: keine widersprüchlichen Meldungen) | registered-unverified | K-01 Spam-Ordner wegen resend.dev, Custom Domain pausiert |
-| `/forgot-password` | Public | Reset anfordern | echt (AuthToken) | „Link senden" | PARTIAL (Versand hängt an Provider) | visitor | K-01 |
+| `/verify` | Auth (registered-unverified) | Code-Eingabe, ehrlicher Zustellstatus | echt, mode provider/dev/none | „Code bestätigen", „Code erneut senden" / „Erneut versuchen" | WORKING (Sprint 6 gefixt: keine widersprüchlichen Meldungen) | registered-unverified | K-01 erledigt (Absenderdomain `innercirclevp.com` verifiziert) |
+| `/forgot-password` | Public | Reset anfordern | echt (AuthToken) | „Link senden" | WORKING (Sprint 15: absoluter HTTPS-Reset-Link, kein relativer/localhost-Link mehr) | visitor | – |
 | `/reset-password` | Public (Token) | Neues Passwort setzen, Regeln sichtbar | echt | „Passwort setzen" | WORKING | token | Keine |
 | `/checkout/success` | Public | Rückleitung Stripe/Dev | echt (liest Membership) | – | WORKING | free+ | Erteilt nichts, nur DB/Webhook |
 | `/checkout/cancel` | Public | Abbruch Zahlung | keine DB | – | WORKING | visitor | Keine |

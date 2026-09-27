@@ -44,7 +44,7 @@ export const appBetaDe = {
       "Beta-Schlüssel werden persönlich vom INNER-CIRCLE-Team vergeben. Bis dahin kannst du die Discovery-Demo nutzen und dein Profil vorbereiten.",
     welcomeTitle: "Willkommen in der Private Beta",
     welcomeText:
-      "Dein Beta-Zugang ist aktiv bis {date}. Vervollständige jetzt die wichtigsten Profilangaben – danach findest du unter „Discover“ passende Mitglieder.",
+      "Dein Beta-Zugang ist aktiv bis {date} – noch {days} Tage. Vervollständige jetzt die wichtigsten Profilangaben – danach findest du unter „Discover“ passende Mitglieder.",
     /* ------------------------------------------- onboarding / profile */
     progressTitle: "Dein Profil",
     progressLabel: "{percent} % vollständig",
@@ -243,7 +243,7 @@ export const appBetaEn: AppBetaDict = {
       "Beta keys are handed out personally by the INNER CIRCLE team. Until then you can use the discovery demo and prepare your profile.",
     welcomeTitle: "Welcome to the private beta",
     welcomeText:
-      "Your beta access is active until {date}. Complete the most important profile details now – then you will find matching members in “Discover”.",
+      "Your beta access is active until {date} – {days} days left. Complete the most important profile details now – then you will find matching members in “Discover”.",
     progressTitle: "Your profile",
     progressLabel: "{percent}% complete",
     progressHint: "A complete profile helps others understand who you are. Every detail is optional and can be changed any time.",
