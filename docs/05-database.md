@@ -1,8 +1,9 @@
 # 05 – Datenbank (Cloudflare D1 / Drizzle)
 
-**Stand:** 2026-09-24 (Sprint 12: Private Beta) · Basis: `src/db/schema.ts` und
-`drizzle/0000_init.sql` + `drizzle/0001_sprint3_discover_profile.sql` +
-**`drizzle/0002_sprint12_private_beta.sql`**.
+**Stand:** 2026-09-28 (Sprint 16: Trust & Reputation) · Basis: `src/db/schema.ts`
+und `drizzle/0000_init.sql` + `drizzle/0001_sprint3_discover_profile.sql` +
+`drizzle/0002_sprint12_private_beta.sql` +
+**`drizzle/0003_sprint16_trust_reviews.sql`**.
 
 - **Dialekt:** SQLite. In Produktion **Cloudflare D1** über das Binding `DB`
   (`database_name: inner-circle-db`), lokal/testweise **libSQL**
@@ -14,7 +15,13 @@
   `npm run db:push`, remote per `npm run cf:d1:migrate:remote`) und
   `drizzle/0002_sprint12_private_beta.sql` (Sprint 12, **additiv**: Tabellen
   `BetaInvite` + `BetaAccess`, Spalte `Conversation.directKey` mit
-  Unique-Index, ein Daten-UPDATE – Details unten). Damit **52 Tabellen**.
+  Unique-Index, ein Daten-UPDATE – Details unten) und
+  `drizzle/0003_sprint16_trust_reviews.sql` (Sprint 16, **rein additiv auf
+  `TrustReview`**: Spalten `moderatedById`/`moderatedAt`/`moderationNote`,
+  Index `review_author_idx`, **Unique-Index `trust_review_basis_unique`** auf
+  `(subjectId, authorId, contextType, contextId)` – eine Bewertung je
+  Bewertender, Bewertetem und Zusammenarbeit). Keine Tabelle kommt hinzu oder
+  entfällt, weiterhin **52 Tabellen**.
 - **Keine Transaktionen:** D1 bietet kein Transaktions-API; mehrstufige
   Schreibvorgänge sind sequenziell und idempotent gehalten.
 
@@ -124,8 +131,8 @@
 
 | Tabelle | Zweck | Status |
 | ------- | ----- | ------ |
-| `TrustReview` | Bewertung 1–10 (`rating10`) mit `contextType`/`contextId`, `status` (`pending`\|`published`\|`hidden`), `verifiedContext`, `isDemo` | vorbereitet (keine Abgabe-UI) |
-| `TrustScoreSummary` | aggregierter Score je Nutzer (`score10`, Zähler, `breakdownJson`) | vorbereitet (Anzeige aktiv, Berechnung fehlt) |
+| `TrustReview` | Bewertung 1–5 Sterne in Zehnteln (`rating10`: 10 = 1,0 … 50 = 5,0) mit `contextType` (`opportunity`\|`marketplace`\|`investment`) / `contextId` / `contextLabel` (**nur neutraler Kategoriecode**, nie Titel/Gegenseite/Betrag), `comment`, `status` (`pending`\|`published`\|`hidden`), `verifiedContext`, `isDemo`, `moderatedById`/`moderatedAt`/`moderationNote`; **unique** je `subjectId`+`authorId`+`contextType`+`contextId` | **aktiv** (Sprint 16, `submitTrustReviewAction`) |
+| `TrustScoreSummary` | materialisierter Cache des Scores je Nutzer (`score10` = 10–50 oder `null`, `reviewCount`, `verifiedReviewCount`, `breakdownJson`); wird bei jeder Bewertungs-Änderung aus `TrustReview` neu berechnet (`refreshTrustSummaryFor()`), damit Listenansichten joinen können | **aktiv** (Cache; Profilseiten rechnen live) |
 | `PerformanceRecord` | Kennzahlen: `kind`, `labelDe/En`, `valueNumber`/`valueCents`, `unit`, `verification` (`self_reported`\|`member_confirmed`\|`verified`), `visibility`, Quell-Entity | vorbereitet (keine Eingabemaske) |
 | `Badge` / `UserBadge` | Badge-Taxonomie DE/EN + Vergabe (`grantedById`, `grantedAt`, eindeutig je Nutzer+Badge) | Taxonomie aktiv (Seed/D1-Bootstrap), Vergabe manuell |
 
@@ -204,9 +211,9 @@ User 1──n PerformanceRecord / UserBadge / AdminAuditLog(actor)
   `LessonProgress`, `InvestmentOpportunity`, `InvestmentInterest`, `Event`,
   `EventApplication`, `MembershipApplication`, `AccountDeletionRequest`,
   `AdminAuditLog`, `RateLimit`, `DevOutbox`, `PlatformMetric`, `Badge`,
-  `UserBadge`.
+  `UserBadge`, `TrustReview`, `TrustScoreSummary` (seit Sprint 16 aktiv).
 - **Vorbereitet (Datenmodell ohne vollständige Funktion):** `SellerProfile`,
-  `Invoice`, `TrustReview`, `TrustScoreSummary`, `PerformanceRecord`,
+  `Invoice`, `PerformanceRecord`,
   `Report`, `VerificationCode`-Zwecke `login_2fa`/`phone_change`,
   `BusinessOpportunity.confidentiality > standard`, `Conversation.kind = opportunity`.
 
@@ -221,6 +228,11 @@ User 1──n PerformanceRecord / UserBadge / AdminAuditLog(actor)
 | Taxonomie (Interessen, Ziele, Badges) einspielen | `npm run cf:d1:bootstrap:local` / `:remote` (idempotent, Quelle `scripts/taxonomy.ts`) |
 | Entwicklung seeden | `npm run db:seed` (fiktive Demo-Konten, **niemals** remote) |
 | Backup | `npx wrangler d1 export DB --remote --output=backup.sql` |
+
+**Regel (Sprint 16):** `drizzle/0003_sprint16_trust_reviews.sql` ist **erzeugt
+und getestet, aber NICHT auf Production angewendet**. Sie wird mit
+`npm run cf:d1:migrate:remote` bzw. automatisch in `npm run cf:release`
+eingespielt – erst nach Freigabe.
 
 **Regel:** Migrationen sind additiv. Destruktive Änderungen nur mit Backup und
 ausdrücklicher Freigabe. Jede Schemaänderung aktualisiert dieses Dokument.

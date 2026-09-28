@@ -535,3 +535,43 @@ Abnahme auf einem Rechner mit Browser: `node tests/e2e/sprint15-browser.mjs`
 gegen `npm run cf:preview` (Rezepte in §3d) plus ein manueller Mobile-Durchlauf
 der in §3f genannten Seiten bei 360 px, 390–430 px, Tablet und Desktop, jeweils
 DE/EN und Light/Dark.
+
+## 3g. Trust & Reputation (Sprint 16, 2026-09-28)
+
+Ausgeführt und grün:
+
+| Prüfung | Befehl / Weg | Ergebnis |
+| ------- | ------------- | -------- |
+| Typecheck | `npm run typecheck` | 0 Fehler |
+| Unit/Integration | `npm test` | **41 Dateien / 334 Tests** grün (vorher 38 / 278) |
+| Score-Regeln (Unit) | `tests/unit/trust-score.test.ts` | 17 Tests: kein Review → kein Score (nie 5,0), 1 Review, mehrere Reviews, Durchschnitt 4,5, Demo/versteckt/unverifiziert fließen nicht ein, Verteilung 1–5, Skalenprüfung `1`–`5`, Formatierung `4,7` / `4.7` |
+| Trust-Ansicht (Unit, statisches Markup) | `tests/unit/trust-view.test.tsx` | 9 Tests: Score mit einer Nachkommastelle + Sternen + Anzahl, Leerzustand, Demo-Markierung, nur Kategorie statt Deal-Titel/-Betrag, lange Kommentare mit Umbruch-Klassen, Reputations-Signale, `TrustBadge` rendert ohne echte Bewertung **nichts** |
+| Bewertungslogik (Integration) | `tests/integration/trust-reviews.test.ts` | 30 Tests: kein Score ohne Bewertung, gültige Bewertung nach nachgewiesener Zusammenarbeit (Deal, Dienstleistung, Investment), Cache-Sync, Durchschnitt über mehrere Reviews, **keine** Selbstbewertung, **keine** Bewertung ohne Zusammenarbeit, **keine** mit gefälschter `contextId`, **keine** Doppelbewertung (Aktion + Unique Index), offene Bewerbung reicht nicht, ungültige Sternwerte (`0`, `6`, `4.5`, `5abc`, `-1`, `50`, `0x5`), Payload-Felder `rating10`/`verifiedContext`/`isDemo`/`status`/`contextLabel` werden ignoriert, unbekannter Kontexttyp, abgemeldet, ohne Mitgliedschaft, blockierte Beziehung, Gegenseite darf ebenfalls bewerten, nur noch offene Zusammenarbeiten werden angeboten, Admin: entfernen/wiederherstellen mit sofortiger Score-Änderung, Nicht-Admin abgewiesen, Reputations-Signale, Demo-Review ohne Wirkung, Datenschutz (nur Kategoriecode) |
+| i18n | `npm run i18n:audit` | DE 2675 / EN 2675, identische Form, alle referenzierten Keys vorhanden; `i18n-parity.test.ts` grün |
+| Lint-Baseline | `npm run lint` | unverändert **5 Fehler + 6 Warnungen** (K-15), keine neuen Befunde |
+| OpenNext-Produktionsbuild | `npm run cf:build` (Teil von `cf:dry-run`) | grün |
+| Wrangler | `wrangler deploy --dry-run` | grün, Upload 9463,20 KiB / gzip 1889,91 KiB, Bindings `DB`, `MEDIA`, `ASSETS`, `NEXTJS_ENV` |
+| Laufzeit Node-Dev | `npm run dev` + HTTP (Mitglied mit 2 verifizierten Bewertungen) | `/app/trust` 200 mit `4,8` und „2 verifizierte Bewertungen“; `/app/profile` und `/app/profile?tab=performance` 200 mit `4,8` und `aria-haspopup="dialog"` (Score öffnet die Detailansicht); `/app/opportunities` 200 mit `4,8 · 2 Bewertungen`; `/app/discover`, `/app/network`, `/app/marketplace`, `/app/jobs` 200 |
+| Migration | `npm run db:push` (lokal) + D1-Tests (`for-you-d1`, `beta-network-d1`) | `drizzle/0003_sprint16_trust_reviews.sql` wird von `applyAllMigrations()` gegen eine echte D1 gespielt – grün; **nicht** remote angewendet |
+
+**Nicht ausgeführt – und deshalb auch nicht behauptet:** Browser-/Screenshot-E2E.
+In dieser Umgebung ließ sich kein Chromium starten (fehlende Systembibliotheken,
+`apt`-Download blockiert, siehe K-26). Der vorhandene `Dialog` liefert den
+Mobile-Bottom-Sheet inklusive X, Klick-daneben und Escape; die neue Ansicht
+prüft die Struktur stattdessen als statisches Markup
+(`tests/unit/trust-view.test.tsx`). Für die visuelle Abnahme auf einem Rechner
+mit Browser:
+
+```bash
+mkdir -p /tmp/pw && cd /tmp/pw && npm i playwright-core @sparticuz/chromium
+npm run db:push && npm run db:seed
+npm run dev
+PW_MODULES=/tmp/pw/node_modules BASE_URL=http://127.0.0.1:3000 \
+  SESSION_COOKIE=<Token> ADMIN_COOKIE=<Token> \
+  node tests/e2e/trust-browser.mjs
+```
+
+`tests/e2e/trust-browser.mjs` prüft Desktop und 360 px jeweils in Light und
+Dark: Score sichtbar, Dialog öffnet/schließt (Escape und Klick daneben), kein
+horizontaler Überlauf, X sichtbar, Trust-Badge in Chancen und Jobs, Trust-Seite
+mit Score und Signalen, Admin-Moderationsseite.

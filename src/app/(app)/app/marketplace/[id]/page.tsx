@@ -2,7 +2,16 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { and, asc, eq } from "drizzle-orm";
 import { db } from "@/db/client";
-import { courseModules, courses, enrollments, lessons, marketplaceListings, profiles, users } from "@/db/schema";
+import {
+  courseModules,
+  courses,
+  enrollments,
+  lessons,
+  marketplaceListings,
+  profiles,
+  trustScoreSummaries,
+  users,
+} from "@/db/schema";
 import { requireUser } from "@/lib/access/server";
 import { hasMemberAccess } from "@/lib/access/levels";
 import { integrationStatus } from "@/lib/env";
@@ -13,6 +22,7 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { LocalizedPageHeader, Tr } from "@/components/app/localized";
+import { TrustBadge } from "@/components/app/TrustPanel";
 import { LockedArea } from "@/components/app/LockedArea";
 
 export const dynamic = "force-dynamic";
@@ -28,10 +38,13 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
       sellerLastName: users.lastName,
       sellerHandle: users.handle,
       sellerHeadline: profiles.headline,
+      sellerTrustScore10: trustScoreSummaries.score10,
+      sellerVerifiedReviews: trustScoreSummaries.verifiedReviewCount,
     })
     .from(marketplaceListings)
     .innerJoin(users, eq(users.id, marketplaceListings.sellerId))
     .leftJoin(profiles, eq(profiles.userId, users.id))
+    .leftJoin(trustScoreSummaries, eq(trustScoreSummaries.userId, users.id))
     .where(eq(marketplaceListings.id, id))
     .limit(1);
   if (!row) notFound();
@@ -89,6 +102,9 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
             {row.sellerFirstName} {row.sellerLastName}
           </Link>
           {row.sellerHeadline && <span className="text-xs text-foreground-subtle">{row.sellerHeadline}</span>}
+          {!listing.isDemo && (
+            <TrustBadge score10={row.sellerTrustScore10} verifiedReviewCount={row.sellerVerifiedReviews} />
+          )}
         </div>
       </Card>
 

@@ -321,3 +321,44 @@ stehen, sind aber unten ausdrücklich als ersetzt markiert – der **Code** und
 - **Konsequenz:** Migration `0002` markiert alte ungelesene
   `message`-Mitteilungen als gelesen. Echtzeit-Zustellung und E-Mail-
   Benachrichtigungen bleiben offen (K-22).
+
+## ADR-017: Trust Score = Durchschnitt verifizierter Bewertungen, `TrustScoreSummary` nur als Cache (2026-09-28, Sprint 16)
+
+- **Kontext:** Das Trust-System war Anzeige ohne Wirkung: `TrustScoreSummary`
+  wurde per Seed mit `score10 = 47` gefüllt, eine Berechnung existierte nicht,
+  eine Abgabe gab es nicht. Ein gespeichertes Feld kann aber veralten, nachträglich
+  verändert oder mit Demodaten gefüllt sein – und genau das war der Ist-Zustand.
+- **Entscheidung:**
+  - `TrustReview` ist die einzige Quelle der Wahrheit. Der öffentliche Score ist
+    der **Durchschnitt aller gültigen verifizierten 1–5-Sterne-Bewertungen**
+    (`computeTrustScore()`): nur `status = 'published'`, `verifiedContext = true`,
+    `isDemo = false`. Ohne solche Zeilen ist `score10 = null` – die Anzeige sagt
+    das ausdrücklich, statt 5,0 zu zeigen.
+  - `TrustScoreSummary` bleibt als **Cache** erhalten, weil Listenansichten
+    (Discover, Netzwerk, Chancen, Jobs, Marketplace) joinen statt pro Zeile zu
+    aggregieren. `refreshTrustSummaryFor()` schreibt ihn bei jeder
+    Bewertungs- oder Moderationsänderung neu.
+  - Andere Signale (Deals, Kunden, Investments, Events, Kontakte) sind
+    **getrennte** Anzeigen und fließen **nicht** in den Sterne-Score ein.
+    Erweiterungspunkt ist `computeTrustScore()` – ein späterer, gewichteter
+    Signal-Beitritt wird dort *explizit* eingebaut, nicht heimlich.
+  - Eine Bewertung braucht eine **serverseitig nachweisbare** Interaktion:
+    abgeschlossene Opportunity (`OpportunityApplication.status = 'accepted'`),
+    abgeschlossene Kurs-/Leistungsbuchung (`Enrollment.completedAt`) oder
+    Investment-Interaktion (`InvestmentInterest`). Eine bestätigte Verbindung
+    allein genügt nicht, ein Event ist ohne Attendance-Daten nicht nachweisbar
+    (K-27). Der Client sendet nur einen Zeiger; geprüft wird in der Datenbank.
+  - Missbrauchsschutz: keine Selbstbewertung, keine Doppelbewertung derselben
+    Grundlage (Unique Index `trust_review_basis_unique` **und** Vorprüfung),
+    keine Demo-Konten, keine blockierten Beziehungen, strikt `1`–`5`, Rate-Limit.
+  - Speichert `rating10` die Sterne in Zehnteln (10 = 1,0 … 50 = 5,0). Der
+    Spaltenname und das Schema bleiben, damit keine Datenmigration nötig ist;
+    Umrechnung nur in `src/lib/trust/score.ts`.
+  - `contextLabel` speichert ausschließlich einen neutralen Kategoriecode.
+    Titel, Gegenseite, Beträge und Vertragsinhalte werden nie gespeichert und
+    nie angezeigt.
+- **Konsequenz:** `drizzle/0003_sprint16_trust_reviews.sql` (rein additiv:
+  drei Moderationsspalten, ein Index, ein Unique Index). Profil- und
+  Trust-Seiten rechnen live; Listen nutzen den Cache. Migration ist erzeugt
+  und getestet, **aber nicht auf Production angewendet**. Doku: `00` §J, `05`,
+  `06` §4a, `03`, `08` §3g, `11` K-08/K-27.

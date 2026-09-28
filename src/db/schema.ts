@@ -700,6 +700,25 @@ export const eventApplications = sqliteTable(
 
 /* -------------------------------------------------------- trust & performance */
 
+/**
+ * Verified trust reviews (Sprint 16).
+ *
+ * The table already existed; the review flow now actually exists, so the
+ * constraints carry the product rules:
+ *
+ *   * `rating10` stores the 1–5 star rating in tenths (10 = 1.0 … 50 = 5.0).
+ *     The average of all valid reviews is the public Trust Score – nothing
+ *     else is mixed into it.
+ *   * `contextType` / `contextId` point at the *verified* collaboration the
+ *     review is based on (`opportunity`, `marketplace`, `investment`). The
+ *     server derives both from real platform data, never from the browser.
+ *   * `contextLabel` keeps a neutral category code only – never a deal title,
+ *     counterparty or amount (privacy, see docs/00-SOURCE-OF-TRUTH.md §J).
+ *   * `trust_review_basis_unique` makes "one review per author, subject and
+ *     collaboration" a database rule, not a client-side guard.
+ *   * `moderated*` record who removed or restored a review, so the admin can
+ *     always answer "who rated whom, why, when, and is it still active".
+ */
 export const trustReviews = sqliteTable(
   "TrustReview",
   {
@@ -714,16 +733,36 @@ export const trustReviews = sqliteTable(
     status: text("status").notNull().default("pending"), // pending | published | hidden
     verifiedContext: integer("verifiedContext", { mode: "boolean" }).notNull().default(false),
     isDemo: integer("isDemo", { mode: "boolean" }).notNull().default(false),
+    /** Admin who hid/restored the review (null while it was never moderated). */
+    moderatedById: text("moderatedById").references(() => users.id, { onDelete: "set null" }),
+    moderatedAt: ts("moderatedAt"),
+    moderationNote: text("moderationNote"),
     createdAt: createdAt(),
   },
-  (t) => [index("review_subject_idx").on(t.subjectId, t.status)],
+  (t) => [
+    index("review_subject_idx").on(t.subjectId, t.status),
+    index("review_author_idx").on(t.authorId),
+    uniqueIndex("trust_review_basis_unique").on(t.subjectId, t.authorId, t.contextType, t.contextId),
+  ],
 );
 
+/**
+ * Materialised Trust Score cache (Sprint 16).
+ *
+ * `TrustReview` is the single source of truth; this table only caches the
+ * result so list views (Discover, Network, Marketplace, Jobs) can join it
+ * instead of aggregating per row. It is rewritten by
+ * `refreshTrustSummaryFor()` whenever a review is created or moderated, and
+ * never holds a score without at least one valid review – an empty cache row
+ * simply carries `score10 = null`.
+ */
 export const trustScoreSummaries = sqliteTable("TrustScoreSummary", {
   userId: text("userId").primaryKey().references(() => users.id, { onDelete: "cascade" }),
+  /** 1–5 stars in tenths (48 = 4.8); null while no valid review exists. */
   score10: integer("score10"),
   reviewCount: integer("reviewCount").notNull().default(0),
   verifiedReviewCount: integer("verifiedReviewCount").notNull().default(0),
+  /** Reserved for later reputation signals – never part of the star score. */
   breakdownJson: text("breakdownJson").notNull().default("{}"),
   updatedAt: updatedAt(),
 });

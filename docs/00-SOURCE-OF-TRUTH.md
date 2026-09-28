@@ -3,7 +3,42 @@
 **Diese Datei ist der verbindliche Einstiegspunkt für jeden Menschen und jeden
 KI-Agenten, der an diesem Repository arbeitet.**
 
-- **Neuester Stand (2026-09-28): Mobile-Polish & Cross-Device-QA.**
+- **Neuester Stand (2026-09-28): Sprint 16 – Trust & Reputation.** Session-Branch
+  auf Basis von `main` @ `c472384`. Der Trust-Bereich wird vom Dekorativen zum
+  Produktbestandteil: Der **Trust Score ist der Durchschnitt aller gültigen
+  verifizierten 1–5-Sterne-Bewertungen** und wird live aus `TrustReview`
+  berechnet (`src/lib/trust/score.ts`); ohne echte Bewertung steht dort
+  „Noch keine verifizierten Bewertungen", nie ein erfundener Wert.
+  **Verifizierte Bewertungen** sind möglich, wenn zwischen zwei Mitgliedern eine
+  serverseitig nachweisbare Plattform-Interaktion liegt (abgeschlossene
+  Opportunity, abgeschlossene Dienstleistungs-/Kursbuchung, Investment-Interaktion;
+  `src/lib/trust/contexts.ts`). Missbrauchsschutz: keine Selbstbewertung, keine
+  Doppelbewertung derselben Grundlage (Unique Index), kein Durchgriff per
+  API-Aufruf (Grundlage wird in der DB nachgewiesen), Rate-Limit, Demo-Konten
+  ausgeschlossen, `rating10`/`verifiedContext`/`contextLabel` werden serverseitig
+  abgeleitet. **Klick auf den Score** öffnet eine Detailansicht
+  (Score, Bewertungen, nachweisbare Signale, Datenschutzhinweis);
+  **Reputation/Erfolge** zeigen nur aggregierte, provable Zahlen; **TrustBadge**
+  erscheint dezent in Netzwerk, Discover, Chancen, Jobs und Marketplace; **Admin**
+  kann unter `/admin/reviews` nachvollziehen, wer wen warum bewertet hat und
+  Bewertungen entfernen/wiederherstellen (Score aktualisiert sich sofort).
+  **Migration** `drizzle/0003_sprint16_trust_reviews.sql` ist erzeugt und
+  getestet, **aber nicht auf Production angewendet**. Kein Eingriff in DNS,
+  Domain, Auth, Beta-Schlüssel, Pricing, Membership, Navigation, Chat oder
+  Kontaktanfragen; Design unverändert (bestehende Tokens/Dialog). **Nachweise:**
+  `npm test` **41 Dateien / 334 Tests** grün, `npx tsc --noEmit` grün,
+  `npm run i18n:audit` grün (DE/EN 2675 Schlüssel, identische Form),
+  `npm run lint` unverändert **11 Befunde (5 Fehler, 6 Warnungen)** = K-15,
+  `npm run cf:build` und `wrangler deploy --dry-run` grün; Live geprüft per
+  HTTP: `/app/trust`, `/app/profile` (Header + Tab Performance), Detailansicht
+  am Mitgliederprofil, Bewertungsformular, `/app/network`, `/app/discover`,
+  `/app/opportunities`, `/app/jobs`, `/app/marketplace` (Liste + Detail) und
+  `/admin/reviews`. **Browser-/Screenshot-E2E ist in dieser Umgebung nicht
+  ausführbar** (kein Chromium, `apt`-Download blockiert, K-26); das Rezept
+  liegt als `tests/e2e/trust-browser.mjs` vor, visuelle Abnahme bleibt offen.
+  Details §J, `05`, `06` §4a, `03`, `08` §3g, `11` K-08/K-27, `13` ADR-017.
+
+- **Vorheriger Stand (2026-09-28): Mobile-Polish & Cross-Device-QA.**
   Session-Branch auf Basis von `main` nach dem Merge von PR #34. Auftrag:
   ausschließlich Mobile-Erlebnis und Cross-Device-QA, keine neuen Features,
   keine funktionierenden Desktop-Bereiche umgebaut. **Öffentliche Seite:**
@@ -275,7 +310,7 @@ Vier Säulen: **Netzwerk · Geschäfte · Wissen · Kapitalzugang (+ Erlebnisse)
 | 9 | **Inbox** | Nachrichten (nur verbundene Konten), Anfragen (eingehend/ausgehend/Verbindungen), Benachrichtigungen | `/app/inbox` (Tabs) | – |
 | 10 | **Profile** | Business Identity (Header, Stats, Actions, Vollständigkeit, Tabs Beiträge/Übersicht/Performance/Angebote) | `/app/profile` | `/member/[publicId]` (Karten-Verifikation) |
 | 11 | **Membership** | Pläne, Billing, Paywall, Mitgliedsantrag, Rechnungen (vorbereitet) | `/app/billing`, `/app/membership-application`, `/app/card` | `/membership` |
-| 12 | **Trust** | Trust Score Anzeige (leer ohne echte Bewertungen), Performance Records, Badges, Founding Member | `/app/profile?tab=performance`, `/app/trust` | – |
+| 12 | **Trust** | Trust Score aus verifizierten Bewertungen + Detailansicht, verifizierte Bewertungen nach echter Zusammenarbeit, nachweisbare Erfolge, Performance Records, Badges, Founding Member | `/app/profile?tab=performance`, `/app/trust`, `/admin/reviews` | – |
 | 13 | **INNER CIRCLE Portfolio** | Strategische Zielallokation 20% → 25% Netzwerk / 75% extern = 5%/15%; kein Fonds, keine Renditeversprechen | `/app/investments` (untere Sektion) + `/portfolio` | `/portfolio` |
 
 Details: [`01-product.md`](01-product.md)
@@ -628,7 +663,7 @@ existiert. Backend + Daten + Berechtigungen + Nachweis gehören dazu.
 | **Interessen & Ziele nach dem Onboarding ändern** | WORKING | Sprint 13: im selben Formular wie die Profilfelder (`updateProfileAction` mit `saveInterests=1`, Auswahl via `InterestGoalPicker`), dieselbe Taxonomie (`Interest`/`Goal`), `profile-preferences.test.ts` – die frühere Eigenaktion `updateInterestsAction` ist entfernt |
 | Statistiken (Kontakte, Follower, Trust Score) | WORKING | `/app/profile`, `profileStats()`, `performanceCountsFor()` |
 | **Sichtbarkeit einzelner Business-Zahlen** | WORKING | `PrivacySettings.metricsVisibilityJson` (7 Kennzahlen), `/app/settings`, erzwungen in `/app/profile?tab=performance` |
-| Trust & Performance (eigene Sicht) | PARTIAL | `/app/profile?tab=performance` (+ `/app/trust` als Detailseite); Bewertungen können **nicht** abgegeben werden (Verifikations-Pipeline fehlt) |
+| Trust & Performance (eigene Sicht) | WORKING | **Sprint 16:** `/app/profile?tab=performance` + `/app/trust`; Score aus echten verifizierten Bewertungen, Detailansicht als Dialog, Bewertungsformular nur bei nachweisbarer Zusammenarbeit (`src/app/actions/trust.ts`, `trust-reviews.test.ts`) |
 | Öffentliche Mitgliedskarte verifizieren | WORKING | `/member/[publicId]` |
 | Activity Feed (Posts) | WORKING | `Post`, `createPostAction`, Feed auf Dashboard; Sprint 6: 3-6 hochwertige Demo-Beiträge (Founder Update, neues Projekt, Suche Partner, Event-Erfahrung, neuer Service, Meilenstein) klar als Demo markiert, keine Metrik-Veränderung |
 | Profilsichtbarkeit / Datenschutz-Einstellungen | WORKING (Networking) · PARTIAL (übrige Bereiche) | Sprint 12: im Networking erzwungen – unsichtbar = nicht gelistet/404, reduzierte Karte, Kontaktlinks nur für Kontakte, Standort verborgen, Kennzahlen nach Schalter (`src/lib/network/privacy.ts`, `06-permissions.md` §3d, `beta-networking.test.ts`); außerhalb des Networkings nicht ausgewertet (K-06) |
@@ -702,8 +737,12 @@ existiert. Backend + Daten + Berechtigungen + Nachweis gehören dazu.
 
 | Funktion | Status | Nachweis |
 | -------- | ------ | -------- |
-| Trust-Score-Anzeige (leer, ohne erfundene Werte) | PARTIAL | `TrustScoreSummary`, `/app/profile?tab=performance` und `/app/trust`; **kein eigener Navigationspunkt mehr**; ohne verifizierte Bewertungen bleibt der Score leer |
-| Bewertungen abgeben | NOT IMPLEMENTED | bewusst nicht aktiv (Verifikationskontext fehlt) |
+| Trust-Score-Anzeige (echt, datenbasiert) | WORKING | **Sprint 16:** Durchschnitt aller gültigen verifizierten 1–5-Sterne-Bewertungen, live aus `TrustReview` berechnet (`src/lib/trust/score.ts` → `computeTrustScore()`); `TrustScoreSummary` ist nur noch Cache für Listenansichten. Ohne Bewertung: „Noch keine verifizierten Bewertungen" – nie 5,0, nie ein Demo-Wert. `TrustPanel.tsx` (Profilkopf, `/app/people/[handle]`, `/app/trust?tab`) |
+| Trust-Detailansicht | WORKING | Klick auf den Score öffnet `TrustDetailDialog` (Sprint 16): Score, Bewertungen, nachweisbare Signale, Datenschutzhinweis – getrennte Kategorien, keine erfundenen Kennzahlen |
+| Verifizierte Bewertungen abgeben | WORKING | `submitTrustReviewAction` (`src/app/actions/trust.ts`): nur mit nachweisbarer Plattform-Interaktion (`src/lib/trust/contexts.ts` → `opportunity` \| `marketplace` \| `investment`), serverseitig autorisiert, keine Selbstbewertung, keine Doppelbewertung derselben Grundlage (Unique Index), Rate-Limit, Demo-Konten ausgeschlossen; Formular nur bei echter Grundlage |
+| Reputation / Erfolge | WORKING | `src/lib/trust/reputation.ts`: aggregierte, nachweisbare Zahlen (abgeschlossene Deals, Kunden, gebuchte Dienstleistungen, Investments, Event-Teilnahmen, Kontakte) – keine Deal-Details, keine Beträge; leerer Zustand statt Demo-Zahlen |
+| Trust in Listen | WORKING | `TrustBadge` in Discover (`DiscoverDeck`), Netzwerk (`MemberCard`), Chancen, Jobs, Marketplace (Liste + Detail) – eine ruhige Zeile `4,8 ★ · 2 Bewertungen`, nur bei echter Bewertung |
+| Trust-Moderation (Admin) | WORKING | `/admin/reviews` + `moderateTrustReviewAction`: wer wen, Grundlage, Datum, Status; Entfernen/Wiederherstellen mit `moderatedById/At/Note`, Audit-Log, sofortige Neuberechnung des Scores |
 | Performance-Records (Kennzahlen) | PREPARED | Tabelle + Admin-freie Anzeige, keine Eingabemaske |
 | Badges | PARTIAL | `Badge`/`UserBadge` + Taxonomie vorhanden, Zuweisung nur per Seed/DB |
 | Founding Member | PREPARED | Felder + Admin-Aktion vorhanden |

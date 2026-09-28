@@ -68,7 +68,7 @@ Alle Routen liegen unter dem App-Layout `src/app/(app)/app/layout.tsx`, das
 | `/app/billing` | Mitgliedschaft, Planwahl, Abrechnung, Paywall | free | WORKING | `Membership`, `Invoice` | Checkout-POST `/api/billing/checkout`; Dev-Aktivierung nur ohne Stripe & außerhalb Produktion; **Sprint 12:** Karte „Private Beta“ (Einstieg „Beta-Zugang aktivieren“ bzw. Status „aktiv bis …, keine Mitgliedschaft“) |
 | `/app/beta` | **Beta-Zugang aktivieren** (Sprint 12): persönlichen Schlüssel einlösen bzw. Status (aktiv bis / abgelaufen / beendet) | free/trial (verifiziert) | WORKING | `BetaInvite`, `BetaAccess`, `RateLimit`, `AdminAuditLog` | `redeemBetaKeyAction`; Erfolg ⇒ Redirect `/app/profile/edit?welcome=beta` (geführte Profilfelder mit Fortschritt, danach Discover); Mitglieder/Admins sehen „nicht nötig“; erreichbar über Profil-Menü, Billing-Karte, Hinweise in Demo/Locked-States |
 | `/app/membership-application` | Antrag auf Voll-Mitgliedschaft | member | WORKING | `MembershipApplication` | Free/Trial sieht Sperrhinweis; Prüfung durch Admin |
-| `/app/trust` | Trust & Performance (Detailseite; kein Navigationspunkt mehr) | member+ | PARTIAL | `TrustScoreSummary`, `TrustReview`, `PerformanceRecord` | ohne Bewertungen bleibt der Score leer; Abgabe bewusst nicht aktiv (K-08) |
+| `/app/trust` | Trust & Performance (Detailseite; kein Navigationspunkt mehr) | member+ | WORKING (Sprint 16) | `TrustReview` (Quelle der Wahrheit), `TrustScoreSummary` (Cache), `PerformanceRecord` | Score live aus verifizierten Bewertungen; ohne Bewertung „Noch keine verifizierten Bewertungen“; **Bewertungsformular nur bei serverseitig nachgewiesener Zusammenarbeit**; zusätzlich nachweisbare Erfolge |
 | `/app/opportunities` | Business-Chancen (Liste, Filter) | member+ (Demo-Zweig für `trial`) | WORKING | `BusinessOpportunity`, `OpportunityApplication`, `User`, `Profile` | Free sieht Locked-State; Discovery-Demo sieht nur Demo-Deals (`DemoAreaNotice`); Demo-Inhalte markiert |
 | `/app/opportunities/new` | Chance anlegen (`?type=job` wählt den Typ vor) | member | WORKING | schreibt `BusinessOpportunity` | Ratelimit 10/h; `entitlements.opportunitiesManage` |
 | `/app/opportunities/[id]` | Detail + Bewerbung, Antworten des Owners | member (Free/Demo: `LockedArea`, Owner ausgenommen) | WORKING | `BusinessOpportunity`, `OpportunityApplication` | Bewerbung nur mit `opportunitiesApply`; Owner sieht Bewerbungen |
@@ -95,6 +95,7 @@ Alle Routen liegen unter dem App-Layout `src/app/(app)/app/layout.tsx`, das
 | `/admin/users` | Nutzersuche, Sperre, Founding Member | admin | WORKING | `User`, Aktionen schreiben `AdminAuditLog` | `setUserSuspendedAction`, `setFoundingMemberAction` |
 | `/admin/investments` | Investment-Prüfung (Freigabe/Ablehnung) | admin | WORKING | `InvestmentOpportunity` | `reviewInvestmentAction` |
 | `/admin/applications` | Mitgliedsanträge + Löschanträge | admin | WORKING | `MembershipApplication`, `AccountDeletionRequest` | `reviewMembershipApplicationAction`, `processDeletionRequestAction` |
+| `/admin/reviews` | **Trust-Moderation** (Sprint 16): alle Bewertungen mit bewertender Person, bewertetem Mitglied, Grundlage, Datum, Status und Moderationsspur; entfernen/wiederherstellen | admin | WORKING | `TrustReview`, `AdminAuditLog`, `TrustScoreSummary` | `moderateTrustReviewAction` – serverseitige Score-Neu Berechnung, Audit-Eintrag |
 | `/admin/beta` | **Private Beta** (Sprint 12): Schlüssel erstellen (Klartext genau einmal + Einladungstext), Liste der Schlüssel (Status, Notiz, E-Mail-Bindung, Hinweis `…XXXX`), Tester (Konto, Beginn, Ende, Resttage), verlängern, vorzeitig beenden, ungenutzte deaktivieren, Anzahl aktiver Tester | admin | WORKING | `BetaInvite`, `BetaAccess`, `User`, `AdminAuditLog` | `createBetaInviteAction`, `extendBetaAccessAction`, `revokeBetaAccessAction`, `disableBetaInviteAction` – jeweils Rollenprüfung + Audit |
 | (keine Route) | Moderations-Queue | admin | PREPARED | `Report` existiert | keine UI/Aktion (K-11) |
 
@@ -191,7 +192,7 @@ Für jede wichtige Route dokumentiert: Route, Public/Auth Required, Zweck, echte
 | `/app/card` | Auth member | Mitgliedskarte + QR | echt | – | WORKING | member memberCard | Free/Trial locked |
 | `/app/billing` | Auth free | Mitgliedschaft, Planwahl, Abrechnung, Paywall | echt (Membership, Invoice) | „Mitglied werden", Checkout | WORKING | free | Stripe BLOCKED, Dev-Aktivierung nur lokal |
 | `/app/membership-application` | Auth member | Antrag Voll-Mitgliedschaft | echt | „Antrag stellen" | WORKING | member | – |
-| `/app/trust` | Auth trial+ | Trust & Performance Detail | echt, leer ohne Bewertungen | – | PARTIAL | trial+ | K-08 keine Erfassung |
+| `/app/trust` | Auth trial+ | Trust & Performance Detail + verifizierte Bewertungen | echt, leer ohne Bewertungen (Sprint 16) | – | WORKING | trial+ (`trustView` = member/admin) | K-27 Event-Kontext fehlt (kein Attendance) |
 | `/app/opportunities` | Auth trial+ | Business-Chancen Liste Filter | echt + Demo wenn leer (Demo-Detail-Dialog funktional) | „Details", „Deal ansehen" → Detail oder Demo-Dialog | WORKING (Sprint 6: jeder CTA funktional) | trial+ opportunitiesBrowse | Keine |
 | `/app/opportunities/new` | Auth member | Chance anlegen | echt | „Veröffentlichen" | WORKING | member opportunitiesManage | – |
 | `/app/opportunities/[id]` | Auth trial+ view, member apply | Detail + Bewerbung, Owner Antworten | echt | „Bewerben", „Annehmen/Ablehnen" | WORKING | trial+ browse, member apply/manage | – |
@@ -213,6 +214,7 @@ Für jede wichtige Route dokumentiert: Route, Public/Auth Required, Zweck, echte
 | `/admin/users` | Auth admin | Nutzersuche Sperre Founding Member | echt | – | WORKING | admin | – |
 | `/admin/investments` | Auth admin | Investment Prüfung | echt | Freigabe/Ablehnung | WORKING | admin | – |
 | `/admin/applications` | Auth admin | Mitglieds-/Löschanträge | echt | – | WORKING | admin | – |
+| `/admin/reviews` | Auth admin | Trust-Bewertungen moderieren | echt | Entfernen / Wiederherstellen | WORKING (Sprint 16) | admin | – |
 | `/api/auth/logout` | Auth free+ | Session Widerruf | echt | – | WORKING | free+ | – |
 | `/api/media/[...key]` | öffentlich | Profilfotos aus R2 ausliefern | echt | – | WORKING | free+ | Sprint 13 |
 | `/api/billing/checkout` | Auth free+ | Checkout Stripe oder Dev | echt | – | BLOCKED Stripe / WORKING Dev | free+ | Ratelimit 10/10min |

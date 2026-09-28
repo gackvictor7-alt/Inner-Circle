@@ -20,10 +20,11 @@ import {
   type ViewerRelation,
 } from "@/lib/network/privacy";
 import { ProfileActions } from "@/components/app/ProfileActions";
+import { TrustReviewForm } from "@/components/app/TrustReviewForm";
+import { TrustScoreBlock } from "@/components/app/TrustPanel";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { RatingStars } from "@/components/ui/RatingStars";
 import { GlobeIcon, InstagramIcon, LockIcon, MapPinIcon, XSocialIcon } from "@/components/ui/icons";
 import { Tr } from "@/components/app/localized";
 import { NetworkLocked } from "@/components/app/NetworkLocked";
@@ -114,11 +115,9 @@ export default async function MemberProfilePage({ params }: { params: Promise<{ 
   const [interestLabels, goalLabels, trust, posts] = await Promise.all([
     depth === "full" ? interestLabelsFor(profile.id, locale) : Promise.resolve([] as string[]),
     depth === "full" ? goalLabelsFor(profile.id, locale) : Promise.resolve([] as string[]),
-    showTrust ? trustProfile(profile.id) : Promise.resolve(null),
+    showTrust ? trustProfile(profile.id, viewerId) : Promise.resolve(null),
     showPosts ? userPosts(profile.id, 10) : Promise.resolve([]),
   ]);
-  const score = trust?.summary?.score10 ? trust.summary.score10 / 10 : null;
-
   const roles = parseList(profile.rolesJson);
   const skills = parseList(profile.skillsJson);
   const lookingFor = parseList(profile.lookingForJson);
@@ -300,25 +299,52 @@ export default async function MemberProfilePage({ params }: { params: Promise<{ 
             </Card>
           )}
 
-          {showTrust && trust && (score !== null || trust.reviews.length > 0) && (
-            <Card className="p-5">
-              <SectionTitle k="app.trust.scoreTitle" />
-              {score !== null && (
-                <p className="mt-3 flex items-center gap-2 text-sm font-semibold">
-                  {score.toFixed(1)} / 5 <RatingStars value={score} size={14} />
-                </p>
-              )}
+          {/* Trust: the score block is the entry point into the detail view.
+              The review form only exists when the server found a provable
+              collaboration between the viewer and this member – there is no
+              public "rate anyone" button. */}
+          {showTrust && trust && (
+            <Card className="p-0">
+              <TrustScoreBlock
+                detail={trust.detail}
+                memberName={`${profile.firstName} ${profile.lastName}`}
+                variant="stacked"
+              />
               {trust.reviews.length > 0 && (
-                <ul className="mt-4 space-y-3">
-                  {trust.reviews.slice(0, 3).map((review) => (
-                    <li key={review.id} className="rounded-xl bg-surface-muted p-3">
-                      <p className="text-sm">{review.comment}</p>
-                      <p className="mt-1 text-xs text-foreground-subtle">
-                        {review.authorFirstName} {review.authorLastName}
-                      </p>
-                    </li>
-                  ))}
-                </ul>
+                <div className="border-t border-border p-5">
+                  <SectionTitle k="app.trust.detailScoreTitle" />
+                  <ul className="mt-3 space-y-3">
+                    {trust.reviews.slice(0, 3).map((review) => (
+                      <li key={review.id} className="rounded-xl bg-surface-muted p-3">
+                        {review.comment && (
+                          <p className="text-sm leading-6 break-words [overflow-wrap:anywhere]">{review.comment}</p>
+                        )}
+                        <p className="mt-1 text-xs text-foreground-subtle">
+                          <Tr
+                            k="app.trust.reviewBy"
+                            params={{ name: `${review.authorFirstName} ${review.authorLastName}` }}
+                          />
+                          {" · "}
+                          <Tr k={`app.trust.context.${review.contextType}` as "app.trust.context.opportunity"} />
+                        </p>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {trust.detail.reviewable.length > 0 && (
+                <div className="border-t border-border p-5">
+                  <h3 className="text-sm font-bold tracking-tight">
+                    <Tr k="app.trust.reviewSectionTitle" />
+                  </h3>
+                  <p className="mt-1.5 mb-4 text-sm leading-6 text-foreground-muted">
+                    <Tr k="app.trust.reviewSectionLead" />
+                  </p>
+                  <TrustReviewForm
+                    options={trust.detail.reviewable}
+                    emptyMessageKey="app.trust.reviewNoneForMember"
+                  />
+                </div>
               )}
             </Card>
           )}

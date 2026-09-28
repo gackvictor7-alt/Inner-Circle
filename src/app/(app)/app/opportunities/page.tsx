@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/db/client";
-import { businessOpportunities, users } from "@/db/schema";
+import { businessOpportunities, trustScoreSummaries, users } from "@/db/schema";
 import { requireUser } from "@/lib/access/server";
 import { myApplications } from "@/lib/platform/queries";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { LocalizedEmptyState, LocalizedPageHeader, Tr } from "@/components/app/localized";
+import { TrustBadge } from "@/components/app/TrustPanel";
 import { LockedArea } from "@/components/app/LockedArea";
 import { DemoAreaNotice } from "@/components/app/DemoAreaNotice";
 import { DealsDemoSection } from "@/components/app/DemoSections";
@@ -50,10 +51,13 @@ export default async function OpportunitiesPage({
       publishedAt: businessOpportunities.publishedAt,
       isDemo: businessOpportunities.isDemo,
       ownerId: users.id,
+      ownerTrustScore10: trustScoreSummaries.score10,
+      ownerVerifiedReviews: trustScoreSummaries.verifiedReviewCount,
       applicationCount: sql<number>`(select count(*) from "OpportunityApplication" a where a."opportunityId" = ${businessOpportunities.id})`,
     })
     .from(businessOpportunities)
     .innerJoin(users, eq(users.id, businessOpportunities.ownerId))
+    .leftJoin(trustScoreSummaries, eq(trustScoreSummaries.userId, users.id))
     .where(
       and(
         eq(businessOpportunities.status, "published"),
@@ -170,6 +174,12 @@ export default async function OpportunitiesPage({
                     {[row.location, row.remote ? "Remote" : null].filter(Boolean).join(" · ")}
                     {Number(row.applicationCount) > 0 && <><span aria-hidden="true"> · </span><Tr k="app.opportunities.detail.applications" params={{ count: Number(row.applicationCount) }} /></>}
                     {row.seeking && <><span aria-hidden="true"> · </span>{row.seeking}</>}
+                    {!row.isDemo && (
+                      <>
+                        {" · "}
+                        <TrustBadge score10={row.ownerTrustScore10} verifiedReviewCount={row.ownerVerifiedReviews} />
+                      </>
+                    )}
                   </p>
                 </div>
                 <div className="flex flex-col gap-2 sm:min-w-36">

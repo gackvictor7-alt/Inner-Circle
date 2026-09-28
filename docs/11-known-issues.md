@@ -1,7 +1,14 @@
 # 11 – Known Issues
 
-**Stand:** 2026-09-27 · Basis: Branch `arena/01a0e2ea-inner-circle`
-(Basis `main` @ `530be5f`, Sprint 15). Sprint 15 schließt **K-01** (eigene
+**Stand:** 2026-09-28 · Basis: Branch `arena/01a0e87e-inner-circle`
+(Basis `main` @ `c472384`, Sprint 16 – Trust & Reputation). Sprint 16 schließt
+**K-08 teilweise** (verifizierte Bewertungen, serverseitige Verifikation,
+Missbrauchsschutz, Score-Berechnung, Detailansicht, Listen-Integration,
+Admin-Moderation), ergänzt **K-27** (Event-Teilnahme technisch nicht
+nachweisbar → kein Event-Kontext im Trust) und aktualisiert K-15 sowie K-08 in
+[`12-roadmap.md`](12-roadmap.md). Vorheriger Stand 2026-09-27: Branch
+`arena/01a0e2ea-inner-circle` (Basis `main` @ `530be5f`, Sprint 15) – Sprint 15
+schließt **K-01** (eigene
 Absenderdomain `innercirclevp.com` bei Resend verifiziert, `EMAIL_FROM` gesetzt;
 DNS-/Domainwechsel der Website bewusst offen, `09-deployment.md` §7a) und
 behebt den Root Cause der Passwort-Reset-Weiterleitungsmeldung (absoluter
@@ -157,14 +164,31 @@ P2 mittelfristig · P3 Aufräumen.
 - **Lösung:** Zahlungsweg über Stripe (Checkout + Webhook) und Freigabeprüfung
   im Listing-Flow; vorher Freigabe-Ansprüche im UI zurücknehmen.
 
-### K-08 · Trust-System ohne Erfassung
+### K-08 · Trust-System ohne Erfassung — **TEILWEISE BEHOBEN (Sprint 16)**
 
-- **Symptom:** `/app/trust` und Profilseiten zeigen Bewertungen/Score, aber es
-  kann **keine** Bewertung abgegeben werden; `TrustScoreSummary` bleibt leer
-  (bewusst kein erfundener Wert).
-- **Ursache:** Verifikationskontext (abgeschlossene Kollaboration) fehlt.
-- **Lösung:** Kontext-Verifikation (z. B. abgeschlossene Opportunity/Connection)
-  definieren, dann Erfassung + Aggregation implementieren.
+- **Symptom (offen):** eine Bewertung ist nur möglich, wenn zwischen zwei
+  Mitgliedern eine *technisch nachweisbare* Plattform-Interaktion existiert.
+  Im Datenmodell sind das aktuell drei Kontexte: abgeschlossene Opportunity
+  (`OpportunityApplication.status = 'accepted'`), abgeschlossene Kurs-/
+  Leistungsbuchung (`Enrollment.completedAt`) und Investment-Interaktion
+  (`InvestmentInterest`). Eine bestätigte Verbindung allein reicht bewusst
+  **nicht**, und eine Event-Interaktion ist noch nicht nachweisbar, weil
+  `EventApplication` keinen Attendance-Status erhält (siehe K-27).
+- **Behoben:** Erfassung, serverseitige Verifikation, Missbrauchsschutz,
+  Score-Berechnung, Detailansicht, Listen-Integration und Admin-Moderation
+  (`src/lib/trust/*`, `src/app/actions/trust.ts`, `/admin/reviews`).
+- **Lösung (Rest):** Attendance je Event technisch erfassen, dann
+  `event` als vierten Kontext in `src/lib/trust/contexts.ts` ergänzen.
+
+### K-27 · Event-Teilnahme ist nicht nachweisbar
+
+- **Symptom:** `EventApplication.status` verlässt `applied`/`canceled` nie;
+  ein „dabei gewesen" existiert nicht in den Daten, deshalb ist eine
+  Event-Bewertung nicht verifizierbar.
+- **Risiko:** gering – Events sind im Trust-Bereich (Sprint 16) bewusst
+  ausgeschlossen, es wird nichts erfunden.
+- **Lösung:** Check-in/Attendance in der Event-Verwaltung ergänzen und
+  `event` als Kontexttyp nachziehen.
 
 ### K-09 · Ungeprüfte Rechtstexte
 
@@ -258,16 +282,20 @@ P2 mittelfristig · P3 Aufräumen.
 
 ### K-15 · Lint nicht fehlerfrei (vorbestehend)
 
-- `npm run lint` meldet aktuell **12 Probleme**: 5 Fehler („setState in effect"
+- `npm run lint` meldet aktuell **11 Probleme**: 5 Fehler („setState in effect"
   in `SiteHeader`, `StatsSection` und `lib/auth/presence.ts`; „impure function
   during render" (`Date.now()`) in `app/events/page.tsx`; `module`-Zuweisung in
-  `scripts/seed.ts`) und 7 Warnungen (ungenutzte Importe/Variablen).
+  `scripts/seed.ts`) und 6 Warnungen (ungenutzte Importe/Variablen).
+- **Sprint 16:** Baseline vor dem Sprint **11 (5 / 6)**, nach dem Sprint
+  **11 (5 / 6)** – die zwei zunächst neuen Warnungen (ungenutzter
+  `RatingStars`-Import und die nicht mehr benötigte `score`-Variable in
+  `app/people/[handle]/page.tsx`) wurden entfernt, **kein** neuer Befund.
 - **Sprint 12:** vor dem Sprint gemessen **14 (5 / 9)** (die Doku zählte
   zuletzt 13), nach dem Sprint **12 (5 / 7)** – zwei ungenutzte Variablen in
   `actions/network.ts` und `api/webhooks/stripe/route.ts` entfernt, **kein**
   neuer Befund (Abgleich pro Datei/Regel gegen die Baseline).
 - Verlauf: 21 (7 Fehler / 14 Warnungen) → 15 (5 / 10) → 14 (4 / 10) →
-  13 (5 / 8) → 14 (5 / 9) → **12 (5 / 7)**. Sprint 5 hat **keine** neuen Befunde eingeführt; die
+  13 (5 / 8) → 14 (5 / 9) → 12 (5 / 7) → **11 (5 / 6)**. Sprint 5 hat **keine** neuen Befunde eingeführt; die
   Mount-Prüfung der Auth-Formulare nutzt `useSyncExternalStore` statt eines
   Effekts, und zwei Warnungen wurden nebenbei beseitigt. Der `presence.ts`-
   Fehler war bereits vorher vorhanden (Dokumentation zählte ihn bislang nicht).
