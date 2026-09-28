@@ -4,7 +4,7 @@
 KI-Agenten, der an diesem Repository arbeitet.**
 
 - **Neuester Stand (2026-09-28): Mobile-Polish & Cross-Device-QA.**
-  Session-Branch auf Basis von `main` nach dem Merge von PR #33. Auftrag:
+  Session-Branch auf Basis von `main` nach dem Merge von PR #34. Auftrag:
   ausschließlich Mobile-Erlebnis und Cross-Device-QA, keine neuen Features,
   keine funktionierenden Desktop-Bereiche umgebaut. **Öffentliche Seite:**
   der Mobile Hero zeigt dasselbe freigegebene `hero-alpine.jpg` jetzt als
