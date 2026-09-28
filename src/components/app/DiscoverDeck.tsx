@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/app/ui";
 import { ConnectDialog } from "@/components/app/ConnectDialog";
+import { TrustBadge } from "@/components/app/TrustPanel";
 import { DemoConnectDialog } from "@/components/app/DemoConnectDialog";
 import { useI18n } from "@/lib/i18n/context";
 import { followAction } from "@/app/actions/network";
@@ -574,9 +575,10 @@ export function DiscoverDeck({
                 </div>
                 {!isDemo && <p className="mt-1 flex flex-wrap items-center gap-x-2 text-sm text-foreground-subtle">
                   <span>@{current.handle}</span>
-                  {current.verifiedReviewCount && current.verifiedReviewCount > 0 && current.trustScore10 !== null && current.trustScore10 !== undefined && (
-                    <span className="text-xs font-semibold text-forest-700 dark:text-forest-300">★ {(current.trustScore10 / 10).toFixed(1)} Trust</span>
-                  )}
+                  <TrustBadge
+                    score10={current.trustScore10}
+                    verifiedReviewCount={current.verifiedReviewCount}
+                  />
                 </p>}
                 {(current.jobTitle || current.headline) && (
                   <p className="mt-2 text-sm font-medium">{current.jobTitle ?? current.headline}</p>

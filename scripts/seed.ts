@@ -18,6 +18,7 @@ import { eq, inArray, like } from "drizzle-orm";
 import { randomBytes, createHash } from "node:crypto";
 import * as schema from "../src/db/schema";
 import { createId } from "../src/db/ids";
+import { computeTrustScore } from "../src/lib/trust/score";
 import { BADGES, GOALS, INTERESTS } from "./taxonomy";
 
 const url = process.env.DATABASE_URL ?? "file:./dev.db";
@@ -1284,14 +1285,10 @@ async function main() {
 
   /* ------------------------------------------- trust & performance records */
 
-  await db.insert(schema.trustScoreSummaries).values({
-    userId: member1,
-    score10: 47,
-    reviewCount: 2,
-    verifiedReviewCount: 2,
-    breakdownJson: JSON.stringify({ teamwork: 4.8, reliability: 4.7 }),
-    updatedAt: days(3),
-  });
+  // Sprint 16: the two sample reviews stay in the database, but they are
+  // `isDemo` and therefore never count. The cached Trust Score is derived from
+  // them with the very function the product uses, so a demo score can never
+  // look like real reputation in Discover, Network, Marketplace or Jobs.
   await db.insert(schema.trustReviews).values([
     {
       id: createId("rev"),
@@ -1299,7 +1296,7 @@ async function main() {
       authorId: member2,
       contextType: "opportunity",
       contextId: opportunityIds[0],
-      contextLabel: "Gemeinsame Kundeneinführung",
+      contextLabel: "opportunity",
       rating10: 48,
       comment:
         "Sehr strukturierte Zusammenarbeit, klare Kommunikation und verbindliche Zusagen. Gerne wieder.",
@@ -1314,15 +1311,32 @@ async function main() {
       authorId: member3,
       contextType: "connection",
       contextId: null,
-      contextLabel: "Feedback zu Positionierung",
+      contextLabel: "connection",
       rating10: 46,
       comment: "Schnell, präzise und angenehm im Austausch.",
       status: "published",
-      verifiedContext: true,
+      // A connection is not a provable collaboration (see
+      // src/lib/trust/contexts.ts), so this sample review is deliberately
+      // *not* marked as verified – the demo data follows the same rules as
+      // real data instead of looking better than it is.
+      verifiedContext: false,
       isDemo: true,
       createdAt: days(14),
     },
   ]);
+
+  const demoScore = computeTrustScore([
+    { rating10: 48, status: "published", verifiedContext: true, isDemo: true },
+    { rating10: 46, status: "published", verifiedContext: false, isDemo: true },
+  ]);
+  await db.insert(schema.trustScoreSummaries).values({
+    userId: member1,
+    score10: demoScore.score10,
+    reviewCount: demoScore.reviewCount,
+    verifiedReviewCount: demoScore.verifiedReviewCount,
+    breakdownJson: JSON.stringify({ distribution: demoScore.distribution }),
+    updatedAt: days(3),
+  });
 
   const performanceRows: {
     userId: string;

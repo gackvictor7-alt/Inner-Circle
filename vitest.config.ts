@@ -19,7 +19,7 @@ export default defineConfig({
       ENABLE_DEV_OUTBOX: "true",
       ALLOW_DEV_MEMBERSHIP_ACTIVATION: "true",
     },
-    include: ["tests/**/*.test.ts"],
+    include: ["tests/**/*.test.ts", "tests/**/*.test.tsx"],
     setupFiles: ["tests/setup.ts"],
     testTimeout: 20000,
     hookTimeout: 20000,

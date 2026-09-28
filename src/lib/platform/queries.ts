@@ -24,7 +24,6 @@ import {
   posts,
   privacySettings,
   profiles,
-  trustReviews,
   trustScoreSummaries,
   userBadges,
   badges,
@@ -36,6 +35,7 @@ import { idFor } from "@/db/ids";
 import { connectionPair } from "@/db/queries";
 import { listedMemberSql, realParticipantSql } from "@/lib/network/eligibility";
 import { CONNECTION_REQUEST_COOLDOWN_DAYS } from "@/lib/platform/rules";
+import { trustDetailFor } from "@/lib/trust/service";
 
 export type DirectoryMember = {
   id: string;
@@ -770,46 +770,42 @@ export async function feedPosts(viewerId: string, limit = 20) {
     .limit(limit);
 }
 
-export async function trustProfile(userId: string) {
-  const [summary] = await db
-    .select()
-    .from(trustScoreSummaries)
-    .where(eq(trustScoreSummaries.userId, userId))
-    .limit(1);
+/**
+ * Trust & performance of a member.
+ *
+ * Sprint 16: the score is no longer read from a stored column. It is computed
+ * from the member's own review rows (`src/lib/trust/score.ts`), so a removed
+ * or demo review can never keep inflating a score. The cached
+ * `TrustScoreSummary` row is only used by the list views.
+ */
+export async function trustProfile(userId: string, viewerId?: string) {
+  const [detail, performance, earnedBadges] = await Promise.all([
+    trustDetailFor(userId, { viewerId: viewerId ?? null, reviewLimit: 20 }),
+    db
+      .select()
+      .from(performanceRecords)
+      .where(eq(performanceRecords.userId, userId))
+      .orderBy(desc(performanceRecords.updatedAt))
+      .limit(20),
+    db
+      .select({ id: badges.id, titleDe: badges.titleDe, titleEn: badges.titleEn, kind: badges.kind, iconKey: badges.iconKey })
+      .from(userBadges)
+      .innerJoin(badges, eq(badges.id, userBadges.badgeId))
+      .where(eq(userBadges.userId, userId)),
+  ]);
 
-  const reviews = await db
-    .select({
-      id: trustReviews.id,
-      rating10: trustReviews.rating10,
-      comment: trustReviews.comment,
-      contextLabel: trustReviews.contextLabel,
-      createdAt: trustReviews.createdAt,
-      verifiedContext: trustReviews.verifiedContext,
-      isDemo: trustReviews.isDemo,
-      authorFirstName: users.firstName,
-      authorLastName: users.lastName,
-      authorHandle: users.handle,
-    })
-    .from(trustReviews)
-    .innerJoin(users, eq(users.id, trustReviews.authorId))
-    .where(and(eq(trustReviews.subjectId, userId), eq(trustReviews.status, "published")))
-    .orderBy(desc(trustReviews.createdAt))
-    .limit(20);
-
-  const performance = await db
-    .select()
-    .from(performanceRecords)
-    .where(eq(performanceRecords.userId, userId))
-    .orderBy(desc(performanceRecords.updatedAt))
-    .limit(20);
-
-  const earnedBadges = await db
-    .select({ id: badges.id, titleDe: badges.titleDe, titleEn: badges.titleEn, kind: badges.kind, iconKey: badges.iconKey })
-    .from(userBadges)
-    .innerJoin(badges, eq(badges.id, userBadges.badgeId))
-    .where(eq(userBadges.userId, userId));
-
-  return { summary: summary ?? null, reviews, performance, badges: earnedBadges };
+  return {
+    /** Same shape as the old stored row, but always freshly calculated. */
+    summary: {
+      score10: detail.score.score10,
+      reviewCount: detail.score.reviewCount,
+      verifiedReviewCount: detail.score.verifiedReviewCount,
+    },
+    detail,
+    reviews: detail.reviews,
+    performance,
+    badges: earnedBadges,
+  };
 }
 
 export async function upcomingEvents(limit = 20) {

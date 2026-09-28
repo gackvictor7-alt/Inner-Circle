@@ -18,6 +18,7 @@ import { ShareProfileButton } from "@/components/app/ShareProfileButton";
 import { LocalizedEmptyState, Tr } from "@/components/app/localized";
 import { ProfilePostsDemoSection } from "@/components/app/DemoSections";
 import { ProfilePeopleModal } from "@/components/app/ProfilePeopleModal";
+import { TrustScoreBlock } from "@/components/app/TrustPanel";
 import { DEMO_CONTENT_ENABLED } from "@/lib/demo";
 import { getPublicUrl } from "@/lib/env";
 import { Badge } from "@/components/ui/Badge";
@@ -96,9 +97,10 @@ export default async function OwnProfilePage({
 
   const locale = user.locale === "en" ? "en-GB" : "de-DE";
   const dict = dictionaries[user.locale === "en" ? "en" : "de"];
-  const score = trust.summary?.verifiedReviewCount && trust.summary.score10 !== null
-    ? trust.summary.score10 / 10
-    : null;
+  const score =
+    trust.summary.verifiedReviewCount > 0 && trust.summary.score10 !== null
+      ? trust.summary.score10 / 10
+      : null;
 
   const followerUser = alias(users, "profile_follower");
   const followerProfile = alias(profiles, "profile_follower_profile");
@@ -242,26 +244,11 @@ export default async function OwnProfilePage({
             )}
           </section>
 
-          <Link href="/app/trust" className="group border-t border-border bg-surface-muted/50 p-5 transition-colors hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-offset-[-3px] md:border-l md:border-t-0 md:p-7">
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-xs font-bold uppercase tracking-[0.14em] text-foreground-subtle"><Tr k="app.trust.scoreTitle" /></span>
-              <ShieldCheckIcon size={19} className="text-forest-600 dark:text-forest-300" />
-            </div>
-            {score === null ? (
-              <>
-                <h2 className="mt-5 text-lg font-bold tracking-tight sm:text-xl">{user.locale === "en" ? "No Trust Score yet" : "Noch kein Trust Score"}</h2>
-                <p className="mt-2 max-w-sm text-sm leading-6 text-foreground-muted">{user.locale === "en" ? "Your Trust Score grows from verified deals, recommendations and confirmed experiences." : "Der Trust Score entsteht aus verifizierten Deals, Empfehlungen und bestätigten Erfahrungen."}</p>
-                <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-electric-600 dark:text-electric-300">{user.locale === "en" ? "Learn about Trust" : "Mehr über Trust erfahren"}<span aria-hidden="true">→</span></span>
-              </>
-            ) : (
-              <>
-                <div className="mt-4 flex items-end gap-3"><span className="text-3xl font-bold tracking-tight sm:text-4xl">{score.toLocaleString(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}<span className="text-lg font-medium text-foreground-subtle"> / 5</span></span><RatingStars value={score} size={18} /></div>
-                <p className="mt-3 text-sm font-semibold text-forest-700 dark:text-forest-300"><ShieldCheckIcon size={15} className="mr-1 inline" />{user.locale === "en" ? "Verified Trust" : "Verifizierter Trust"}</p>
-                <p className="mt-1 text-xs text-foreground-muted">{trust.summary?.verifiedReviewCount ?? 0} {user.locale === "en" ? "verified reviews" : "verifizierte Bewertungen"}</p>
-                <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-electric-600 dark:text-electric-300">{user.locale === "en" ? "View details" : "Details ansehen"}<span aria-hidden="true">→</span></span>
-              </>
-            )}
-          </Link>
+          <TrustScoreBlock
+            detail={trust.detail}
+            memberName={`${user.firstName} ${user.lastName}`}
+            fullPageHref="/app/trust"
+          />
         </div>
       </Card>
 
@@ -412,10 +399,22 @@ export default async function OwnProfilePage({
                     <Tr k="app.profile.performanceTrustEmpty" />
                   </p>
                 ) : (
-                  <p className="mt-1.5 flex items-center gap-2 text-2xl font-bold tracking-tight">
-                    {score.toFixed(1)}
-                    <RatingStars value={score} size={14} />
-                  </p>
+                  <>
+                    <p className="mt-1.5 flex items-center gap-2 text-2xl font-bold tracking-tight">
+                      {score.toLocaleString(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
+                      <span className="text-sm font-medium text-foreground-subtle">
+                        <Tr k="app.trust.scoreOfMax" />
+                      </span>
+                      <RatingStars value={score} size={14} />
+                    </p>
+                    <p className="mt-1 text-xs text-foreground-muted">
+                      {trust.summary.verifiedReviewCount === 1 ? (
+                        <Tr k="app.trust.verifiedCountOne" />
+                      ) : (
+                        <Tr k="app.trust.verifiedCount" params={{ count: trust.summary.verifiedReviewCount }} />
+                      )}
+                    </p>
+                  </>
                 )}
               </Card>
             </div>
@@ -466,20 +465,29 @@ export default async function OwnProfilePage({
               <ul className="mt-3 space-y-3">
                 {trust.reviews.map((review) => (
                   <li key={review.id} className="rounded-xl border border-border p-3.5">
-                    <div className="flex items-center gap-2">
-                      <RatingStars value={review.rating10 / 10} size={13} />
+                    <div className="flex flex-wrap items-center gap-2">
+                      <RatingStars value={review.stars} size={13} />
                       <span className="text-xs text-foreground-subtle">
                         {review.authorFirstName} {review.authorLastName}
                       </span>
-                      {review.verifiedContext && (
+                      <span className="text-xs text-foreground-subtle">
+                        · <Tr k={`app.trust.context.${review.contextType}` as "app.trust.context.opportunity"} />
+                      </span>
+                      {review.verified && (
                         <Badge variant="forest">
                           <Tr k="app.common.verified" />
                         </Badge>
                       )}
+                      {review.isDemo && <Badge variant="outline"><Tr k="app.common.demo" /></Badge>}
                     </div>
                     {review.comment && (
-                      <p className="mt-2 text-sm leading-6 text-foreground-muted">{review.comment}</p>
+                      <p className="mt-2 text-sm leading-6 break-words text-foreground-muted [overflow-wrap:anywhere]">
+                        {review.comment}
+                      </p>
                     )}
+                    <p className="mt-2 text-xs text-foreground-subtle">
+                      {review.createdAt.toLocaleDateString(locale, { month: "long", year: "numeric" })}
+                    </p>
                   </li>
                 ))}
               </ul>

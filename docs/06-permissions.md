@@ -100,7 +100,7 @@ Zeichen: ✅ erlaubt · ➖ nicht erlaubt · ⚠️ eingeschränkt (siehe Fußno
 | **Events anlegen/bearbeiten (Mitglieder)** | ❌ | ❌ | ❌ | ❌ **bewusst nicht implementiert** | 🔒 Admin/IC-Team (keine Route, keine Action) |
 | Tickets/Check-in | ➖ | ➖ | ➖ | **nicht implementiert** | – |
 | Trust & Performance (eigene Sicht) | ➖ | ➖ | ➖ | ✅ | ✅ |
-| Bewertungen abgeben | ➖ | ➖ | ➖ | ➖ | ➖ (Pipeline fehlt) |
+| **Verifizierte Bewertung abgeben** (Sprint 16) | ➖ | ➖ | ➖ | ✅ nur bei nachweisbarer Zusammenarbeit | ✅ dito (Demo-Konten: ❌ `trustDemoBlocked`) |
 | Mitgliedskarte erhalten/anzeigen | ➖ | ➖ | ➖ | ✅ | ✅ |
 | Eigene Karte öffentlich prüfen lassen | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Billing/Planwahl | ➖ | ✅ | ✅ | ✅ | ✅ |
@@ -110,6 +110,7 @@ Zeichen: ✅ erlaubt · ➖ nicht erlaubt · ⚠️ eingeschränkt (siehe Fußno
 | Nutzer sperren / Founding Member setzen | ➖ | ➖ | ➖ | ➖ | 🔒 |
 | Investments freigeben/ablehnen | ➖ | ➖ | ➖ | ➖ | 🔒 |
 | Mitglieds-/Löschanträge bearbeiten | ➖ | ➖ | ➖ | ➖ | 🔒 |
+| Trust-Bewertung entfernen/wiederherstellen (Sprint 16) | ➖ | ➖ | ➖ | ➖ | 🔒 (`/admin/reviews`) |
 | Audit-Log einsehen (implizit über Admin-Ansichten) | ➖ | ➖ | ➖ | ➖ | 🔒 |
 | Dev-Postausgang `/dev/outbox` | ➖ | ➖ | ➖ | ➖ | 🔒 (zusätzlich `ENABLE_DEV_OUTBOX=true`) |
 
@@ -266,7 +267,7 @@ Profilseite `src/app/(app)/app/people/[handle]/page.tsx`, Listen-Abfragen):
 | `profileVisibility = connections \| private` | Fremde sehen nur die Kopfkarte (Name, Foto, Rolle/Firma) + „Kontakt anfragen“; volles Profil für Kontakte und für Personen, denen das Mitglied selbst eine Anfrage gesendet hat |
 | `contactVisibility` (Standard `connections`) | Website/X/Instagram nur gemäß Einstellung; E-Mail und Telefon werden nie angezeigt |
 | `showLocation = false` | Standort nirgends angezeigt und vom Standortfilter nicht gefunden |
-| `performanceVisibility` | Trust-Block nur für Betrachter mit `trustView` (Mitglieder) und gemäß Einstellung |
+| `performanceVisibility` | Trust-Block nur für Betrachter mit `trustView` (Mitglieder) und gemäß Einstellung; Detailansicht und Bewertungsliste folgen derselben Regel |
 | `allowConnectionRequests = false` | keine Anfragen möglich (`memberUnavailable`), neutraler Hinweis statt Button |
 
 ## 4. Wo die Durchsetzung passiert (niemals nur in der UI)
@@ -282,6 +283,19 @@ Profilseite `src/app/(app)/app/people/[handle]/page.tsx`, Listen-Abfragen):
 | Eigentumsprüfungen | z. B. Opportunity-Owner, Nachrichten nur zwischen verbundenen Konten, Notifications/Applications nur mit passender `userId` |
 | Blockierungen | `Block` wird in Kontakt- und Nachrichtenaktionen geprüft |
 | Admin-Aktionen | `requireAdmin()` **und** `audit()`-Eintrag |
+| Trust-Bewertung (`src/app/actions/trust.ts`, Sprint 16) | angemeldet **und** `entitlements.trustView` **und** nicht `isDemo`; `subjectId !== authorId`; Zielkonto aktiv und nicht `isDemo`; keine Blockierung in beide Richtungen; **Grundlage serverseitig nachgewiesen** (`hasCollaboration()` in `src/lib/trust/contexts.ts`); `stars` strikt `1`–`5`; keine Doppelbewertung derselben Grundlage (Vorprüfung **und** Unique Index `trust_review_basis_unique`); Rate-Limit 10/h; `rating10`/`contextLabel`/`verifiedContext` werden **abgeleitet**, nie aus dem Payload gelesen |
+
+### 4a. Trust-Regeln im Detail (Sprint 16)
+
+| Regel | Umsetzung |
+| ----- | --------- |
+| Score = Durchschnitt aller gültigen verifizierten Bewertungen | `computeTrustScore()` (`src/lib/trust/score.ts`): nur `status = 'published'`, `verifiedContext = true`, `isDemo = false`; ohne solche Zeilen `score10 = null` (**nie** 5,0) |
+| Andere Signale verändern den Sterne-Score nicht | `src/lib/trust/reputation.ts` wird von `computeTrustScore()` nicht gelesen; nur eigene Anzeige |
+| Eine Bewertung je Bewertendem, Bewertetem und Zusammenarbeit | Unique Index `trust_review_basis_unique` (`drizzle/0003_sprint16_trust_reviews.sql`) + Vorprüfung für eine verständliche Fehlermeldung |
+| Grundlage ist nachweisbar | `hasCollaboration()` prüft `OpportunityApplication.status='accepted'`, `Enrollment.completedAt` oder `InvestmentInterest` – **serverseitig**, ein `contextId` aus dem Browser ist nur ein Zeiger |
+| Demo-Daten sind keine Reputation | `isDemo`-Reviews zählen nie; `submitTrustReviewAction` lehnt Demo-Konten und Demo-Ziele ab; der Seed leitet seinen Cache aus denselben Regeln ab |
+| Öffentlich sind nur aggregierte Zahlen | Angezeigt werden Score, Anzahl Bewertungen, Kategorie und Jahr – **kein** Titel, keine Gegenseite, kein Betrag (`contextLabel` ist ein Kategoriecode) |
+| Entfernen wirkt sofort | `moderateTrustReviewAction` setzt `status='hidden'` und ruft `refreshTrustSummaryFor()`; Cache und Anzeige fallen im selben Schritt auf `null` |
 
 **Regel für neue Arbeit:** Eine Berechtigung wird in `src/lib/access/levels.ts`
 ergänzt, serverseitig geprüft und **dieses Dokument aktualisiert**. UI-Prüfungen

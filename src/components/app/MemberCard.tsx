@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { useI18n } from "@/lib/i18n/context";
 import { ConnectDialog } from "@/components/app/ConnectDialog";
+import { TrustBadge } from "@/components/app/TrustPanel";
 import { DemoConnectDialog } from "@/components/app/DemoConnectDialog";
 import {
   followAction,
@@ -153,8 +154,11 @@ export function MemberCard({
           </div>
           <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs text-foreground-subtle">
             <span>@{member.handle}</span>
-            {!isDemoCard && member.verifiedReviewCount && member.verifiedReviewCount > 0 && member.trustScore10 !== null && member.trustScore10 !== undefined && (
-              <span className="font-semibold text-forest-700 dark:text-forest-300">★ {(member.trustScore10 / 10).toFixed(1)} Trust</span>
+            {!isDemoCard && (
+              <TrustBadge
+                score10={member.trustScore10}
+                verifiedReviewCount={member.verifiedReviewCount}
+              />
             )}
           </p>
           {member.headline && <p className="mt-1.5 text-sm leading-6 text-foreground-muted">{member.headline}</p>}

@@ -9,6 +9,7 @@ import {
   devOutbox,
   investmentOpportunities,
   membershipApplications,
+  trustReviews,
   userBadges,
   users,
 } from "@/db/schema";
@@ -16,6 +17,7 @@ import { idFor } from "@/db/ids";
 import { getAccessContext } from "@/lib/access/server";
 import { audit } from "@/lib/admin/audit";
 import { notify } from "@/lib/notifications/service";
+import { refreshTrustSummaryFor } from "@/lib/trust/service";
 import { fail, done, text, type ActionState } from "./state";
 
 const FOUNDING_MEMBER_LIMIT = 50;
@@ -286,4 +288,56 @@ export async function processDeletionRequestAction(
 
   revalidatePath("/admin/applications");
   return done({ messageCode: "processed" });
+}
+
+/* -------------------------------------------------------- trust reviews */
+
+/**
+ * Moderates a verified trust review (Sprint 16).
+ *
+ * The basis itself is server-verified when the review is created, so this
+ * action only removes or restores it – it never rewrites the rating. The
+ * affected member's cached score is recomputed immediately, so a hidden
+ * review disappears from the Trust Score at once.
+ */
+export async function moderateTrustReviewAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const { error, actor } = await requireAdminActor();
+  if (error || !actor) return error ?? fail("unauthorized");
+
+  const reviewId = text(formData, "reviewId", 64);
+  const decision = text(formData, "decision", 16);
+  const note = text(formData, "note", 600);
+  if (!reviewId || !["hide", "restore"].includes(decision)) return fail("validation");
+
+  const [review] = await db.select().from(trustReviews).where(eq(trustReviews.id, reviewId)).limit(1);
+  if (!review) return fail("notFound");
+
+  const status = decision === "hide" ? "hidden" : "published";
+  await db
+    .update(trustReviews)
+    .set({
+      status,
+      moderatedById: actor.id,
+      moderatedAt: new Date(),
+      moderationNote: note || null,
+    })
+    .where(eq(trustReviews.id, reviewId));
+
+  await refreshTrustSummaryFor(review.subjectId);
+
+  await audit({
+    actorId: actor.id,
+    action: decision === "hide" ? "trust_review.hidden" : "trust_review.restored",
+    entityType: "TrustReview",
+    entityId: reviewId,
+    meta: { subjectId: review.subjectId, authorId: review.authorId, status, note },
+  });
+
+  revalidatePath("/admin/reviews");
+  revalidatePath("/app/trust");
+  revalidatePath("/app/profile");
+  return done({ messageCode: decision === "hide" ? "hidden" : "restored" });
 }

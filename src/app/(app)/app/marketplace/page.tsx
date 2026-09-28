@@ -8,6 +8,7 @@ import { formatMoney } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { TrustBadge } from "@/components/app/TrustPanel";
 import { LocalizedEmptyState, LocalizedPageHeader, Tr } from "@/components/app/localized";
 import { MarketplaceDemoSection } from "@/components/app/DemoSections";
 import { DemoAreaNotice } from "@/components/app/DemoAreaNotice";
@@ -135,7 +136,15 @@ export default async function MarketplacePage({
                   <p className="mt-2 text-xs text-foreground-subtle">
                     <Link href={`/app/people/${row.sellerHandle}`} className="hover:text-foreground hover:underline">{row.sellerCompany ?? `${row.sellerFirstName} ${row.sellerLastName}`}</Link>
                     <span aria-hidden="true"> · </span><span className="font-semibold text-foreground">{formatMoney(row.priceCents, row.currency, access.user.locale === "en" ? "en" : "de")}</span>
-                    {!row.isDemo && row.sellerVerifiedReviews && row.sellerVerifiedReviews > 0 && row.sellerTrustScore10 !== null ? ` · ★ ${(row.sellerTrustScore10 / 10).toFixed(1)} Trust` : ""}
+                    {!row.isDemo && (
+                      <>
+                        {" · "}
+                        <TrustBadge
+                          score10={row.sellerTrustScore10}
+                          verifiedReviewCount={row.sellerVerifiedReviews}
+                        />
+                      </>
+                    )}
                   </p>
                 </div>
                 <Button href={`/app/marketplace/${row.id}`} size="sm" variant="secondary" className="h-11 w-full sm:h-9 sm:w-auto"><Tr k="app.marketplace.overviewCta" /></Button>

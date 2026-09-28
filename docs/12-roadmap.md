@@ -54,7 +54,7 @@ machen.
 | **L-1 Deal-Räume & Brokerage** | private Räume, Teilnehmer, Dokumente mit Widerruf, Meilensteine, Abschlussbestätigung, Provisionsvereinbarungen |
 | **L-2 Provisions-Engine** | kategorieabhängige Sätze, Abrechnung, Auszahlungsfreigaben |
 | **L-3 Marktplatz-Bezahlung** | Bestellungen, Zahlungen, Verkäuferauszahlungen (Stripe Connect), Refunds, Freigabe-Workflow erzwingen (K-07) |
-| **L-4 Trust & Verifikation** | abgeschlossene Kollaboration als Bewertungskontext, Aggregation, Badge-Vergabe (K-08) |
+| **L-4 Trust & Verifikation** | ~~abgeschlossene Kollaboration als Bewertungskontext, Aggregation~~ **erledigt in Sprint 16** (`opportunity`/`marketplace`/`investment`, Score = Durchschnitt verifizierter Bewertungen, Admin-Moderation). Offen: Event-Kontext (K-27 – Attendance fehlt technisch) und Badge-Vergabe |
 | **L-5 Event-Backend** | Event-Erstellung, Kapazitäten/Wartelisten erzwingen, Tickets, QR-Check-in |
 | **L-6 Investments-Ausbau** | Datenraum, Dokumente, Anbahnung mit regulierten Partnern – **erst nach Rechtsprüfung** |
 | **L-7 Creator/Referrals** | Referral-Links, Attribution, Provisionen, Auszahlungen |

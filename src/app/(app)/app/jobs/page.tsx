@@ -5,6 +5,7 @@ import { businessOpportunities, profiles, trustScoreSummaries, users } from "@/d
 import { requireUser } from "@/lib/access/server";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { TrustBadge } from "@/components/app/TrustPanel";
 import { LocalizedEmptyState, LocalizedPageHeader, Tr } from "@/components/app/localized";
 import { LockedArea } from "@/components/app/LockedArea";
 import { DemoAreaNotice } from "@/components/app/DemoAreaNotice";
@@ -103,7 +104,12 @@ export default async function JobsPage() {
                   <p className="mt-2 text-xs text-foreground-subtle">
                     {row.ownerCompany ?? `${row.ownerFirstName} ${row.ownerLastName}`} · {[row.location, row.remote ? "Remote" : null].filter(Boolean).join(" · ")}
                     {row.seeking && <><span aria-hidden="true"> · </span>{row.seeking}</>}
-                    {!row.isDemo && row.ownerVerifiedReviews && row.ownerVerifiedReviews > 0 && row.ownerTrustScore10 !== null ? ` · ★ ${(row.ownerTrustScore10 / 10).toFixed(1)} Trust` : ""}
+                    {!row.isDemo && (
+                      <>
+                        {" · "}
+                        <TrustBadge score10={row.ownerTrustScore10} verifiedReviewCount={row.ownerVerifiedReviews} />
+                      </>
+                    )}
                   </p>
                 </div>
                 <Button href={`/app/opportunities/${row.id}`} size="sm" variant="secondary" className="h-11 w-full sm:h-9 sm:w-auto"><Tr k="app.jobs.overviewCta" /></Button>

@@ -526,6 +526,12 @@ export const appCoreDe = {
     betaAlreadyActive: "Dein Beta-Zugang ist bereits aktiv.",
     betaNotNeeded: "Deine Mitgliedschaft enthält bereits alle Networking-Funktionen – der Schlüssel bleibt unverbraucht.",
     betaRateLimited: "Zu viele Versuche. Bitte in {minutes} Minuten erneut versuchen.",
+    trustSelfReview: "Du kannst dich nicht selbst bewerten.",
+    trustRatingInvalid: "Bitte wähle zwischen 1 und 5 Sternen.",
+    trustNoCollaboration:
+      "Diese Bewertung ist nicht möglich – zwischen euch liegt keine nachweisbare Zusammenarbeit.",
+    trustAlreadyRated: "Diese Zusammenarbeit wurde bereits bewertet.",
+    trustDemoBlocked: "Demo-Konten können keine verifizierten Bewertungen abgeben.",
   },
   dev: {
     title: "Entwicklungsbereich",
@@ -1081,6 +1087,12 @@ export const appCoreEn: AppCoreDict = {
     betaAlreadyActive: "Your beta access is already active.",
     betaNotNeeded: "Your membership already includes all networking features – the key stays unused.",
     betaRateLimited: "Too many attempts. Please try again in {minutes} minutes.",
+    trustSelfReview: "You cannot rate yourself.",
+    trustRatingInvalid: "Please choose between 1 and 5 stars.",
+    trustNoCollaboration:
+      "This review is not possible – there is no provable collaboration between you.",
+    trustAlreadyRated: "This collaboration has already been rated.",
+    trustDemoBlocked: "Demo accounts cannot submit verified reviews.",
   },
   dev: {
     title: "Development area",
