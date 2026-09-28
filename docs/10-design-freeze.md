@@ -2,7 +2,7 @@
 
 ## DESIGN STATUS: APPROVED / DO NOT REDESIGN WITHOUT EXPLICIT FOUNDER REQUEST
 
-**Stand:** 2026-09-24 (zuletzt ergänzt: 1.17 Sprint 12) · Der aktuelle visuelle Stand des Projekts ist vom
+**Stand:** 2026-09-28 (zuletzt ergänzt: 1.20 Start-Raster & Dark-Ton) · Der aktuelle visuelle Stand des Projekts ist vom
 Gründer freigegeben und **eingefroren**. Diese Datei schützt ihn.
 
 Ein KI-Agent, eine Entwicklerin oder ein Dienstleister darf die unten
@@ -485,3 +485,56 @@ Trust- und Theme-Strukturen bleiben unverändert:
   Änderungen oder Änderungen am Event-Layout. Desktop und Mobile nutzen
   dieselbe einspaltige Reihenlogik; lange Inhalte erzeugen keinen horizontalen
   Überlauf.
+
+## 1.20 Follow-up: Start-Raster zurück & ruhigerer Dark-Ton (2026-09-28)
+
+Ausdrücklich beauftragter, rein visueller Follow-up nach 1.19 (kein Redesign,
+keine neuen Features). Er ersetzt für `/app` den in 1.19 beschriebenen
+Zeilen-Look und verfeinert den Dark Mode. Nichts anderes wurde angefasst.
+
+**Start `/app` (ersetzt den Listen-Look aus 1.19):**
+
+- Kein „Für dich“-Container, keine leere Personalisierungsbox und keine
+  Personalisierungsabfrage auf `/app` (Zustand aus 1.19 bleibt bestehen).
+- Die sechs Kernbereiche (Network · Business Deals · Jobs & Projekte ·
+  Investments · Marketplace & Academy · Events) sind wieder große, klar
+  voneinander getrennte Karten: Desktop/Tablet **2 Spalten × 3 Reihen**,
+  Mobile **einspaltig** untereinander, ohne horizontale Scrollbar.
+- Jede Karte zeigt Icon-Kachel, Titel, kurze Beschreibung (Mobile: Kurztext),
+  das Status-Badge („Demo“ bzw. „Mitgliedschaft erforderlich“) und den
+  „Öffnen“-Hinweis; die gesamte Karte ist ein Link, Hover mit leichtem Lift
+  und Electric-Border. Keine dünne Ein-Zeilen-Liste mehr.
+- Kompakte Kopfzeile sowie Trial-, Beta- und Mitgliedschafts-Panels bleiben
+  unverändert.
+
+**Dark-Ton (semantische Token in `src/app/globals.css`, Block `.dark`):**
+
+Der Dark Mode bleibt erhalten, die Flächenleiter folgt jetzt aber der
+vorhandenen Midnight-Navy-Markenleiter – keine neue Farbe, kein Gold:
+
+| Token | vorher | jetzt |
+| ----- | ------ | ----- |
+| `--background` | `#0a0e15` | `#10151e` (Midnight 900) |
+| `--surface` | `#10151e` | `#1a212d` (Midnight 800) |
+| `--surface-raised` | `#161d29` | `#202939` |
+| `--surface-muted` | `#1a212d` | `#262f3e` (Midnight 700) |
+| `--border` | `#242e3d` | `#2a3444` |
+| `--border-strong` | `#35435a` | `#3c4a61` |
+| `--foreground` | `#f7f8fa` | `#f2f5fa` (weiches Off-White) |
+| `--foreground-muted` | `rgb(247 248 250 / 0.72)` | `rgb(242 245 250 / 0.78)` |
+| `--foreground-subtle` | `rgb(247 248 250 / 0.5)` | `rgb(242 245 250 / 0.62)` |
+
+Wirkung: Page-Hintergrund und Content-Flächen sind klar, aber ruhig getrennt
+(surface/background 1,13:1 statt 1,06:1), Karten sind nicht mehr „schwarze Box
+auf schwarzem Grund“, Borders wirken relativ zu den helleren Flächen
+zurückhaltender (1,33:1), und Sekundärtext ist besser lesbar (muted 9,4:1,
+subtle 6,5:1 auf einer Kartenfläche). Der `themeColor`-Eintrag (dark) in
+`src/app/layout.tsx` folgt dem neuen `--background`.
+
+Light-Modus-Token, die Markenfarben-Skalen (`midnight-*`, `paper-*`,
+`electric-*`, `forest-*`, `sand-*`), Radien, Schatten und Typografie sind
+unverändert.
+
+**Unverändert geblieben:** Profil, Trust Score, Follower/Folgt/Connections,
+Events, Chancen, Jobs, Investments, Marketplace, Academy, Sidebar, Auth, Beta,
+Resend, Datenbank, DNS und Domain. Keine neue Migration.

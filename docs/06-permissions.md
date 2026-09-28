@@ -147,7 +147,7 @@ Audit-Fix (`tests/integration/access-matrix.test.ts`, 25 Fälle):
 | `/app/people/[handle]` | Locked-State (`NetworkLocked`; eigenes Profil ausgenommen) | Locked-State (eigenes Profil ausgenommen) | ✅ nur für echte, sichtbare Teilnehmer, mit Privatsphäre-Regeln (§3d); Beta-Tester ebenso |
 | `/app/people/demo/[key]` | Locked-State | ✅ Demo-Profil | ✅ (Verzeichnis-Berechtigte) |
 | `/app/events`, `/app/events/[slug]` | ✅ lesen; Sperrkarte statt Anmeldeformular | ✅ lesen; Sperrkarte | ✅ inkl. Anmeldung |
-| `/app` (Dashboard) | Kennzahlen/„Für dich“ nur für freigegebene Bereiche; statt Vollansicht ein Mitgliedschafts-Panel („Deine Discovery-Demo ist beendet“ bzw. „Mitgliedschaft erforderlich“) + Events | Demo-Panel („Willkommen in deiner 48-stündigen Discovery-Demo“) + Kernbereiche mit „Demo“-Kennzeichnung | ✅ |
+| `/app` (Dashboard) | sechs Kernbereichs-Karten (keine „Für dich“-Personalisierung mehr); gesperrte Bereiche bleiben als Karte mit Badge „Mitgliedschaft erforderlich“ sichtbar, Daten laden erst hinter der jeweiligen Bereichsroute; statt Vollansicht ein Mitgliedschafts-Panel („Deine Discovery-Demo ist beendet“ bzw. „Mitgliedschaft erforderlich“) + Events | Demo-Panel („Willkommen in deiner 48-stündigen Discovery-Demo“) + Kernbereiche mit „Demo“-Kennzeichnung | ✅ |
 | `/app/billing` | ✅ – Planwahl-Buttons sind **deaktiviert**, solange weder Stripe konfiguriert noch Dev-Aktivierung erlaubt ist („Zahlung noch nicht freigeschaltet“); Paywall-Hinweis beschreibt den echten Kontostand (Trial-Text nur für aktiven Trial) | ✅ | ✅ |
 
 `LockedArea` (`src/components/app/LockedArea.tsx`) ist der gemeinsame

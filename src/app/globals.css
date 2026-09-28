@@ -159,16 +159,33 @@
   color-scheme: light;
 }
 
+/*
+ * Dark mode surface ladder (founder follow-up 2026-09-28, explicit design
+ * order: "less gloomy, no black box on a black background").
+ *
+ * The ladder is built from the EXISTING Midnight Navy brand scale – no new
+ * colours were invented:
+ *
+ *   page background  Midnight 900  #10151e   (was #0a0e15 – near black)
+ *   content surface  Midnight 800  #1a212d   (clear, calm step from the page)
+ *   raised surface              #202939   (dialogs, popovers)
+ *   muted surface    Midnight 700  #262f3e   (inset panels, hovers)
+ *
+ * Text is off-white `#f2f5fa` instead of the hardest possible white, and the
+ * secondary steps are lifted so muted/subtle text stays clearly readable
+ * (muted ≈ 9.4:1, subtle ≈ 6.5:1 on a card surface). Borders are one notch
+ * more restrained relative to the lighter surfaces.
+ */
 .dark {
-  --background: #0a0e15;
-  --foreground: #f7f8fa;
-  --foreground-muted: rgb(247 248 250 / 0.72);
-  --foreground-subtle: rgb(247 248 250 / 0.5);
-  --surface: #10151e;
-  --surface-raised: #161d29;
-  --surface-muted: #1a212d;
-  --border: #242e3d;
-  --border-strong: #35435a;
+  --background: #10151e;
+  --foreground: #f2f5fa;
+  --foreground-muted: rgb(242 245 250 / 0.78);
+  --foreground-subtle: rgb(242 245 250 / 0.62);
+  --surface: #1a212d;
+  --surface-raised: #202939;
+  --surface-muted: #262f3e;
+  --border: #2a3444;
+  --border-strong: #3c4a61;
   --ring: #6b94f8;
   color-scheme: dark;
 }

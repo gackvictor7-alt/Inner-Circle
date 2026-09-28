@@ -1,5 +1,34 @@
 # 08 – Test- und Qualitätssicherung
 
+**Visueller Follow-up (2026-09-28, `/app`-Raster + Dark-Ton):** `npm test`
+**37 Dateien / 275 Tests grün**, `npx tsc --noEmit` grün, `npm run i18n:audit`
+grün (2612 Schlüssel DE/EN, identische Form), `npm run lint` = **11 Befunde
+(5 Fehler, 6 Warnungen)** = K-15-Baseline (keine neuen Befunde),
+`npm run cf:build` grün, `wrangler deploy --dry-run` grün (Upload 9326,75 KiB /
+gzip 1865,27 KiB; Bindings `DB`, `MEDIA`, `ASSETS`, `NEXTJS_ENV`).
+`/app` zusätzlich im echten lokalen workerd (Port 8787, lokale D1, Demo-Mitglied)
+und im Node-Dev-Server (Mitglied, Trial, Free) per HTTP geprüft: jeweils 200,
+kein „Für dich“-Text, sechs Karten-Links im Grid `grid-cols-1 sm:grid-cols-2`;
+das gebaute CSS enthält die neuen `.dark`-Token und die Grid-Utilities.
+**Browser-/Screenshot-Matrix nicht ausgeführt:** in dieser Umgebung ist kein
+Chromium/Playwright/Puppeteer-Browser vorhanden und Browser-Downloads sind
+blockiert (`Client network socket disconnected`). Deshalb werden keine
+Screenshot-Ergebnisse behauptet; Desktop-/Mobile-Layout und „keine horizontale
+Scrollbar“ sind über das gerenderte HTML plus das generierte CSS
+(`repeat(2, minmax(0,1fr))` ab 40rem, `repeat(1, …)` darunter, `body
+{ overflow-x: hidden }`) belegt, nicht über Pixel-Messung. Das neue Skript
+`tests/e2e/follow-up-dashboard.mjs` prüft genau diese Punkte im Browser
+(2×3-Raster, einspaltig mobil, Klickbarkeit aller sechs Karten, Kontraste,
+Überlauf, Regression anderer Routen) und ist auf einem Rechner mit Browser
+ausführbar – in dieser Umgebung wurde es **nicht** ausgeführt:
+
+```bash
+mkdir -p /tmp/pw && cd /tmp/pw && npm i puppeteer
+PW_MODULES=/tmp/pw/node_modules BASE_URL=http://127.0.0.1:8787 \
+  IC_SESSION=<Session-Token eines lokalen Demo-Kontos> \
+  node tests/e2e/follow-up-dashboard.mjs
+```
+
 **Neueste UX-Konsolidierung (2026-09-27):** `npm test` 37 Dateien / 275 Tests
 grün, Typecheck/i18n-Audit/OpenNext-Build/Wrangler Dry-Run grün; Lint unverändert
 5 Fehler + 6 Warnungen (K-15). Die Profil-/Events-/Business-Listen- und Theme-
