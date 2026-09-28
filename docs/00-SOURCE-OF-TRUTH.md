@@ -3,7 +3,32 @@
 **Diese Datei ist der verbindliche Einstiegspunkt für jeden Menschen und jeden
 KI-Agenten, der an diesem Repository arbeitet.**
 
-- **Neuester Stand (2026-09-27): Follow-up UX-Konsolidierung nach PR #32.**
+- **Neuester Stand (2026-09-28): Visueller Follow-up nach PR #33.**
+  Session-Branch basiert auf `main` nach dem Merge von PR #33. Rein visueller
+  Auftrag, keine neuen Features: `/app` zeigt **keinen** „Für dich“-Bereich und
+  keine Personalisierungsbox mehr (Zustand aus dem Follow-up-Sprint bleibt),
+  die sechs Kernbereiche sind wieder **große, klar getrennte Karten** –
+  Desktop/Tablet 2 Spalten × 3 Reihen, Mobile einspaltig, ganze Karte klickbar
+  (Icon, Titel, Kurzbeschreibung, „Öffnen“, Demo-/Mitgliedschafts-Badge).
+  Zusätzlich wurde der Dark-Ton über die vorhandenen semantischen Token
+  aufgehellt bzw. abgestuft (Page `#10151e`, Karten `#1a212d`, raised
+  `#202939`, muted `#262f3e`, Borders `#2a3444`/`#3c4a61`, Off-White `#f2f5fa`,
+  Secondary-Text stärker) – keine neue Farbpalette, kein Gold, Light-Token und
+  Markenskalen unverändert. Profil, Trust Score, Connections, Events, Chancen,
+  Jobs, Investments, Marketplace, Academy, Sidebar, Auth, Beta, Resend,
+  Datenbank, DNS und Domain wurden **nicht** angefasst. **Keine Migration.**
+  **Nachweise:** `npm test` 37 Dateien / 275 Tests, `tsc --noEmit`, Lint auf
+  der K-15-Baseline (5 Fehler + 6 Warnungen, keine neuen Befunde),
+  `npm run cf:build` (OpenNext) und `wrangler deploy --dry-run` grün.
+  `/app` im echten lokalen workerd (Port 8787) mit Demo-Mitglied geprüft:
+  HTTP 200, kein „Für dich“, sechs Karten-Links im 2-Spalten-Grid; ebenso im
+  Node-Dev-Server für Mitglied, Trial und Free (Demo-/Sperr-Badges intakt).
+  **Screenshot-E2E wurde in dieser Umgebung nicht ausgeführt** – kein
+  Chromium/Playwright-Browser vorhanden und Browser-Downloads blockiert;
+  `tests/e2e/follow-up-dashboard.mjs` liegt deshalb unausgeführt bei
+  (ausführbar auf einem Rechner mit Browser, siehe `docs/08-testing.md`).
+
+- **Vorheriger Stand (2026-09-27): Follow-up UX-Konsolidierung nach PR #32.**
   Session-Branch basiert auf `main` nach dem Merge von PR #32. Die Startseite
   lädt keine „Für dich“-Personalisierungsabfrage mehr und führt direkt über
   ruhige horizontale Bereichszeilen in die Kernbereiche. Profilbeiträge,
@@ -455,7 +480,7 @@ Discover → Profil → Connect (Pflichtnachricht) → Anfrage → Inbox (Anfrag
 - **Notifications** (bestehende Infrastruktur, `notify()`): neue
   Connection-Anfrage, Connection angenommen, neue Chat-Nachricht.
   Deep Links zeigen auf die Inbox-Sub-Views.
-- **Start „Für dich“** (`forYouItems()`): bis zu 5 **echte** Einträge in
+- **„Für dich“-Query** (`forYouItems()`, **seit 2026-09-28 auf `/app` nicht mehr gerendert** – der Startbereich führt direkt über die sechs Kernbereichs-Karten; Query und Tests bleiben unverändert): bis zu 5 **echte** Einträge in
   Priorität: offene Anfrage → ungelesene Nachricht → passendes Mitglied
   (gemeinsames Interesse, ohne offene Anfrage/Connection/Block) → neueste
   Chance → nächstes bestätigtes Event → neueste freigegebene
@@ -733,7 +758,7 @@ Bereiche:**
 
 | # | Bereich | Route | Inhalt |
 | - | ------- | ----- | ------ |
-| 1 | **Start** | `/app` | kompakte Kopfzeile (`Hallo, <Name>` + Trial-Chip + Inbox-Shortcut) und die sechs Kernbereichs-Karten als **2×3-Raster** (Desktop/Tablet große Cards, Mobile kompakte 2-spaltige Tiles mit 1 kurzer Zeile). **Sprint 8:** „Für dich“ zeigt bis zu 5 echte, aktuell relevante Einträge (`forYouItems()`, §1i) statt statischer Links; ohne Daten ehrliche Shortcuts |
+| 1 | **Start** | `/app` | kompakte Kopfzeile (`Hallo, <Name>` + Trial-Chip + Inbox-Shortcut) und die sechs Kernbereiche als **große Karten im 2×3-Raster** (Desktop/Tablet 2 Spalten, **Mobile einspaltig**; Icon, Titel, Kurzbeschreibung, „Öffnen“, Demo-/Sperr-Badge, ganze Karte klickbar). **2026-09-28:** kein „Für dich“-Container und keine Personalisierungsabfrage mehr auf `/app` – `forYouItems()` (§1i) bleibt als geprüfte Query verfügbar, wird dort aber nicht gerendert |
 | 2 | **Discover** | `/app/discover` | Business-Karten mit Pflicht-Connect-Nachricht, Relevanz-Ranking, **kompakte Filterleiste** (Standort, Umkreis, Rolle, Branche) + „Mehr Filter“ (Interesse, Typ, Ich suche, Ich biete, Investmentinteressen), aktive Filter als entfernbare Chips, „Filter zurücksetzen“, ehrliche Leerzustände – echte Treffer haben Vorrang, Demonstration nur im Leerzustand (`DiscoverDemoSection`) |
 | 3 | **Erstellen** | Create-Sheet (Desktop-Button / Mobile `+`) | Business Deal · Job/Projekt · Investment · Marketplace-Angebot · Kurs · Beitrag |
 | 4 | **Inbox** | `/app/inbox` | Nachrichten · Anfragen · Benachrichtigungen (Segmented Control) |

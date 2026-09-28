@@ -27,7 +27,8 @@ export const viewport: Viewport = {
   initialScale: 1,
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#f7f8fa" },
-    { media: "(prefers-color-scheme: dark)", color: "#0a0e15" },
+    // Matches the dark page background token (Midnight Navy 900).
+    { media: "(prefers-color-scheme: dark)", color: "#10151e" },
   ],
 };
 

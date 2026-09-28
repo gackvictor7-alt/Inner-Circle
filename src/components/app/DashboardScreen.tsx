@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { BellIcon, BriefcaseIcon, CalendarIcon, ChartIcon, CompassIcon, GridIcon, InboxIcon, StoreIcon, UsersIcon } from "@/components/ui/icons";
+import { ArrowRightIcon, BellIcon, BriefcaseIcon, CalendarIcon, ChartIcon, CompassIcon, GridIcon, InboxIcon, StoreIcon, UsersIcon } from "@/components/ui/icons";
 import { useI18n } from "@/lib/i18n/context";
 import { formatDate } from "@/lib/datetime";
 
@@ -48,7 +48,9 @@ function useCountdown(ms: number | null) {
 /**
  * Start screen (Sprint 3, spec §2/§3).
  *
- * Deliberately minimal: one compact header line, then the six core areas.
+ * Deliberately minimal: one compact header line, then the six core areas as a
+ * 2×3 grid of large, fully clickable cards (single column on phones). There is
+ * no "Für dich" personalisation container and no personalisation query here.
  * Profile progress lives in Profile, requests/messages/notifications in Inbox,
  * Trust & Performance in Profile → Performance.
  */
@@ -318,29 +320,36 @@ export function DashboardScreen({ data }: { data: DashboardData }) {
           <p className="text-sm text-foreground-muted">{t.app.dashboard.areasLeadShort}</p>
         </div>
 
-        <ul className="divide-y divide-border border-y border-border">
+        {/* Two columns / three rows on tablet and desktop, one column on
+            phones (founder follow-up 2026-09-28): large, clearly separated
+            surfaces instead of thin one-line rows. The whole card is the link. */}
+        <ul className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 sm:gap-5">
           {areas.map((area) => (
-            <li key={area.href}>
+            <li key={area.href} className="flex">
               <Link
                 href={area.href}
-                className="group flex items-center gap-4 py-4 transition-colors hover:bg-surface-muted/50 sm:gap-6 sm:py-5"
+                className="group flex h-full w-full flex-col rounded-2xl border border-border bg-surface p-5 shadow-card transition-all duration-300 hover:-translate-y-0.5 hover:border-electric-500/40 hover:shadow-lift sm:min-h-44 sm:p-6"
               >
-                <span className={`inline-flex shrink-0 rounded-xl p-2.5 ${accents[area.accent]}`}>
-                  <area.icon size={20} />
+                <span className={`inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${accents[area.accent]}`}>
+                  <area.icon size={21} />
                 </span>
-                <span className="min-w-0 flex-1">
+                <span className="mt-4 min-w-0 flex-1">
                   <span className="flex flex-wrap items-center gap-2">
-                    <span className="text-base font-bold tracking-tight">{area.title}</span>
+                    <span className="text-lg font-bold tracking-tight sm:text-xl">{area.title}</span>
                     {area.locked && <Badge variant="outline">{t.app.dashboard.lockedHint}</Badge>}
                     {area.demo && <Badge variant="outline">{t.app.demo.badge}</Badge>}
                   </span>
-                  <span className="mt-1 block text-sm leading-6 text-foreground-muted">
+                  <span className="mt-1.5 block text-sm leading-6 text-foreground-muted">
                     <span className="sm:hidden">{area.short}</span>
                     <span className="hidden sm:inline">{area.desc}</span>
                   </span>
                 </span>
-                <span aria-hidden="true" className="shrink-0 text-lg text-foreground-subtle transition-transform group-hover:translate-x-0.5 group-hover:text-foreground">
-                  →
+                <span className="mt-4 flex items-center gap-1.5 text-sm font-semibold text-electric-600 dark:text-electric-300">
+                  {t.app.dashboard.areaOpen}
+                  <ArrowRightIcon
+                    size={16}
+                    className="shrink-0 transition-transform group-hover:translate-x-0.5"
+                  />
                 </span>
               </Link>
             </li>
