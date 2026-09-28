@@ -528,6 +528,7 @@ export const appCoreDe = {
     betaRateLimited: "Zu viele Versuche. Bitte in {minutes} Minuten erneut versuchen.",
     trustSelfReview: "Du kannst dich nicht selbst bewerten.",
     trustRatingInvalid: "Bitte wähle zwischen 1 und 5 Sternen.",
+    membershipDemo: "Demo-Konten bleiben Demo – für sie kann keine Mitgliedschaft aktiviert werden.",
     trustNoCollaboration:
       "Diese Bewertung ist nicht möglich – zwischen euch liegt keine nachweisbare Zusammenarbeit.",
     trustAlreadyRated: "Diese Zusammenarbeit wurde bereits bewertet.",
@@ -1089,6 +1090,7 @@ export const appCoreEn: AppCoreDict = {
     betaRateLimited: "Too many attempts. Please try again in {minutes} minutes.",
     trustSelfReview: "You cannot rate yourself.",
     trustRatingInvalid: "Please choose between 1 and 5 stars.",
+    membershipDemo: "Demo accounts stay demo – a membership cannot be activated for them.",
     trustNoCollaboration:
       "This review is not possible – there is no provable collaboration between you.",
     trustAlreadyRated: "This collaboration has already been rated.",

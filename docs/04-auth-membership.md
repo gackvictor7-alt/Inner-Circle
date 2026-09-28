@@ -205,16 +205,17 @@ Präsenz-Flag gelöscht, Redirect `/`. Kein reiner Client-Logout. Audit
 | Zustand | Auslöser | Wirkung |
 | ------- | -------- | ------- |
 | `incomplete` | Default | keine Rechte |
-| `active` | `activateMembership()` (Provider `stripe` **oder** `dev`) | Level `member`, Karte wird ausgestellt, Trial → `converted`, Notification |
+| `active` | `activateMembership()` (Provider `stripe` **oder** `dev`) oder `activateMembershipByAdmin()` (Provider `admin`) | Level `member`, Karte wird ausgestellt, Trial → `converted`, Notification |
 | `past_due` | Webhook `invoice.payment_failed` | Level fällt auf `free`/`trial`, Notification |
 | `canceled` | `markMembershipCanceled()` | je nach `cancelAtPeriodEnd`: Rechte bis Periodenende oder sofort |
 | `expired` | `expireMembership()` | Karte wird `expired`, Level fällt zurück |
 | Level-Berechnung | `getAccessContext()` | `admin` > aktive Membership (`active`/`trialing` und `currentPeriodEnd` in der Zukunft und kein `endedAt`) > aktiver Trial > `free` > `visitor` |
 
-**Provider-Achse:** `stripe` (Produktivpfad) und `dev` (nur wenn Stripe nicht
-konfiguriert **und** `NODE_ENV !== production`). Dev-Aktivierungen werden in
-der UI als Entwicklungsmodus gekennzeichnet und über
-`AdminAuditLog.membership.dev_activated` protokolliert.
+**Provider-Achse:** `stripe` (Produktivpfad), `dev` (nur wenn Stripe nicht
+konfiguriert **und** `NODE_ENV !== production`) und `admin` (manuell
+administrativ aktivierte Vollmitgliedschaft, Konsolidierungs-Sprint – siehe
+§4c). Dev-Aktivierungen werden in der UI als Entwicklungsmodus gekennzeichnet
+und über `AdminAuditLog.membership.dev_activated` protokolliert.
 
 **Nebeneffekte einer Aktivierung:** `MembershipEvent`, `MembershipCard`
 (Format `IC-<Jahr>-<5-stellige Nummer>`, öffentliche `publicId`), `Notification`,
@@ -303,6 +304,27 @@ Kein eigener Registrierungsweg, keine Änderung an Mitgliedschaft oder Rolle:
    `member` (Quelle `networkAccessSource = "member"`); der Beta-Datensatz
    bleibt nur als Historie. Mitglieder/Admins können keinen Schlüssel
    verbrauchen (`betaNotNeeded`).
+
+### 4c. Manuelle administrative Mitgliedschaft (Konsolidierungs-Sprint 2026-09-28)
+
+Unter `/admin/users` steuert die Administration pro Konto die **vollständige
+Mitgliedschaft manuell** – getrennt von Founding Member (Auszeichnung) und
+Private Beta (Networking-Freigabe):
+
+| Aktion | Umsetzung |
+| ------ | --------- |
+| „Mitgliedschaft aktivieren“ | `setUserMembershipAction` → `activateMembershipByAdmin()` (`src/lib/membership/service.ts`): Upsert von `Membership` mit `provider = 'admin'`, `status = 'active'`, `priceCents = 0`, **keinem** `currentPeriodEnd` (läuft nicht automatisch ab), `MembershipEvent` Typ `admin_activated`, MembershipCard (aktiv oder reaktiviert), In-App-Notification `membershipAdmin`, Audit `membership.admin_activated` mit dem **Admin** als Actor |
+| „Mitgliedschaft entziehen“ | `revokeMembershipByAdmin()`: `status = 'canceled'`, `endedAt = jetzt`, Karte `revoked`, `MembershipEvent` Typ `admin_revoked`, Notification `membershipAdminRevoked`, Audit `membership.admin_revoked`. **Löscht nichts**: Konto, Profil, Nachrichten, Kontakte, Trust-Daten, Beta-Zugang und Founding-Member-Status bleiben unverändert – nur der Full-Membership-Zugriff endet (Level fällt sofort auf `free`/`trial`) |
+
+Regeln: **keine** Stripe-Anfrage, **keine** `Invoice`-Zeile, **kein**
+vorgetäuschter Zahlungsstatus (`priceCents = 0` + `provider = 'admin'` sind die
+ehrliche Kennzeichnung; die Billing-Seite zeigt „Administrativ aktiviert“ statt
+eines Zahlungsstatus). Die Freischaltung öffnet exakt dieselben Gates wie eine
+bezahlte Mitgliedschaft, weil die Level-Berechnung unverändert nur die
+`Membership`-Zeile liest (`membershipRowIsActive`). Demo-Konten werden von der
+Aktion ausgeschlossen (`app.errors.membershipDemo`). Tests:
+`tests/integration/membership-admin.test.ts`.
+
 
 ## 5. Profile & Social Links
 

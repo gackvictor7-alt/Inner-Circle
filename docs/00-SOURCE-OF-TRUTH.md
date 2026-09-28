@@ -3,7 +3,54 @@
 **Diese Datei ist der verbindliche Einstiegspunkt für jeden Menschen und jeden
 KI-Agenten, der an diesem Repository arbeitet.**
 
-- **Neuester Stand (2026-09-28): Sprint 16 – Trust & Reputation.** Session-Branch
+- **Neuester Stand (2026-09-28): Konsolidierungs-Sprint vor dem Domain-Cutover.**
+  Session-Branch auf Basis von `main` @ `f2932e4` (Merge PR #37). Vier
+  Aufträge, kein Eingriff in DNS/Domain, Cloudflare-Routes, `NEXT_PUBLIC_SITE_URL`,
+  Resend, Stripe, Auth-Flow, Beta-Schlüssel, Chat/Inbox, Networking,
+  Trust-Score/TrustReviews, Events-Struktur, VP-Logo und Sidebar:
+  **(1) Manuelle administrative Mitgliedschaft:** unter `/admin/users` kann die
+  Administration pro Konto die **vollständige Membership aktivieren**
+  („Mitgliedschaft aktivieren“) und **entziehen** („Mitgliedschaft entziehen“) –
+  implementiert über das bestehende `Membership`-Modell mit dem neuen
+  Provider-Wert `admin` (`priceCents = 0`, kein Ablaufdatum; **keine Migration,
+  keine Stripe-Simulation, keine Rechnung**). Sie schaltet exakt dieselben
+  Gates frei wie eine bezahlte Membership (Level `member`), ist in Billing-UI
+  („Administrativ aktiviert“), Admin-UI, `MembershipEvent` (`admin_activated`/
+  `admin_revoked`) und `AdminAuditLog` klar als manuelle Verwaltungsaktion
+  nachvollziehbar und bleibt **strikt getrennt** von Founding Member und
+  Private Beta; der Entzug löscht nichts (Konto, Profil, Nachrichten, Kontakte,
+  Trust, Beta-Historie bleiben; Karte wird `revoked`). Demo-Konten sind
+  ausgeschlossen. **(2) Profil-Editor entdoppelt:** „Berufliche Rollen“ und
+  „Skills“ werden nicht mehr abgefragt („Rolle“ = `jobTitle` bleibt), historische
+  `rolesJson`/`skillsJson` werden serverseitig **erhalten**; das Formular ist in
+  logische Abschnitte gegliedert (Identität → Beruflicher Kontext → Ich suche &
+  Ich biete → Über mich → Links → Interessen & Ziele) mit ruhigerem
+  Fortschrittsblock. **(3) Chance-Erstellen vereinfacht:** genau sechs Felder
+  (Titel, Typ, Kurzfassung, Beschreibung, Branche, Ort); „Was du anbietest/suchst“
+  und „Voraussetzungen“ entfallen (Legacy-Daten bleiben lesbar, Detailansicht
+  rendert keine Leerbereiche mehr, Metadaten nur mit echtem Wert,
+  Typ/Status in Lesesprache); Bewerbungs-/Accept-Logik unverändert.
+  **(4) Anti-AI-Polish** nur auf den betroffenen Seiten (Details
+  `10-design-freeze.md`), Farbsystem/Sidebar/Branding unverändert. Nebenbei
+  gefixt: `issueCardIfNeeded` sucht jetzt die nächste **freie** Kartennummer
+  (count+1 konnte in geseedeten lokalen DBs kollidieren – traf die
+  Dev-Aktivierung ebenso wie den neuen Admin-Pfad). **Keine Migration**
+  (Textspalte `provider` mit dokumentierten Werten ist ausreichend).
+  **Nachweise:** `npm test` **43 Dateien / 346 Tests** grün (neu:
+  `membership-admin.test.ts` 8, `opportunity-create.test.ts` 3,
+  Profil-Test zur Daten-Erhaltung), `npx tsc --noEmit` grün,
+  `npm run i18n:audit` grün (DE/EN 2697 Schlüssel, identische Form),
+  `npm run lint` unverändert **11 Befunde (5 Fehler, 6 Warnungen)** = K-15,
+  `npm run cf:build` + `wrangler deploy --dry-run` grün. Live im Node-Dev-Server
+  geprüft (geseedete lokale DB, Demo-/Testkonten): Admin-Flow aktivieren →
+  `/app/opportunities|jobs|investments|marketplace|learn|events|network|card`
+  offen + Billing zeigt „Administrativ aktiviert“ → entziehen → Gates zu,
+  `/app/profile` und Daten erhalten; Profil-Edit ohne „Berufliche Rollen“/„Skills“;
+  Chance-Formular mit genau sechs Feldern; Legacy-Chance rendert Altfelder weiter.
+  **Browser-/Screenshot-E2E bleibt in dieser Umgebung nicht ausführbar** (K-26).
+  Details: `04` §4c, `05` §3, `06` §3e, `03`, `08`, `10`, `11` K-15.
+
+- **Vorheriger Stand (2026-09-28): Sprint 16 – Trust & Reputation.** Session-Branch
   auf Basis von `main` @ `c472384`. Der Trust-Bereich wird vom Dekorativen zum
   Produktbestandteil: Der **Trust Score ist der Durchschnitt aller gültigen
   verifizierten 1–5-Sterne-Bewertungen** und wird live aus `TrustReview`

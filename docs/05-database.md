@@ -65,7 +65,7 @@ und `drizzle/0000_init.sql` + `drizzle/0001_sprint3_discover_profile.sql` +
 | Tabelle | Zweck | Status |
 | ------- | ----- | ------ |
 | `Trial` | 48-h-Discovery: `status` (`active`\|`expired`\|`converted`), `startedAt`, `expiresAt`, `convertedAt`, `connectionRequestsUsed`, `connectionRequestLimit`, `fingerprintHash` | **aktiv** |
-| `Membership` | `userId` (unique), `plan` (`monthly`\|`annual`), `status`, `provider` (`stripe`\|`dev`), Provider-IDs, `priceCents`, `currency`, `currentPeriodStart/End`, `cancelAtPeriodEnd`, `startedAt`, `canceledAt`, `endedAt` | **aktiv** (Stripe-Pfad braucht Schlüssel) |
+| `Membership` | `userId` (unique), `plan` (`monthly`\|`annual`), `status`, `provider` (`stripe`\|`dev`\|`admin` – `admin` = manuell administrativ aktivierte Vollmitgliedschaft, Konsolidierungs-Sprint: `priceCents = 0`, kein `currentPeriodEnd`, kein Ablauf; **keine Schemaänderung nötig**, Textspalte mit dokumentierten Werten), Provider-IDs, `priceCents`, `currency`, `currentPeriodStart/End`, `cancelAtPeriodEnd`, `startedAt`, `canceledAt`, `endedAt` | **aktiv** (Stripe-Pfad braucht Schlüssel) |
 | `MembershipEvent` | Ereignisprotokoll je Nutzer, `providerEventId` (unique → Idempotenz) | **aktiv** |
 | `Invoice` | Provider-Rechnungen (`providerInvoiceId` unique, Betrag, Status, Zeitraum, `hostedUrl`) | vorbereitet (nur aus Provider-Events) |
 | `MembershipCard` | `cardNumber` (unique, `IC-<Jahr>-<Nr>`), `publicId` (unique, öffentlich prüfbar), `status`, `issuedAt`, `revokedAt` | **aktiv** |

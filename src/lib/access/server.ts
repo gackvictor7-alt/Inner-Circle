@@ -28,6 +28,8 @@ export type MembershipState = {
   currentPeriodEnd: Date | null;
   cancelAtPeriodEnd: boolean;
   isDevelopment: boolean;
+  /** True when the membership was granted manually by an administrator (provider "admin"). */
+  isAdminActivation: boolean;
 };
 
 /**
@@ -77,16 +79,29 @@ function membershipIsActive(membership: {
   currentPeriodEnd: Date | null;
   endedAt: Date | null;
 }): boolean {
-  if (membership.endedAt) return false;
-  if (membership.status !== "active" && membership.status !== "trialing") return false;
-  if (membership.currentPeriodEnd && membership.currentPeriodEnd.getTime() < Date.now()) return false;
-  return true;
+  return membershipRowIsActive(membership);
 }
 
 /** Beta access is active while not revoked and before its end date (server clock). */
 export function betaIsActive(beta: { status: string; endsAt: Date } | null | undefined, now = Date.now()): boolean {
   if (!beta) return false;
   return beta.status === "active" && beta.endsAt.getTime() > now;
+}
+
+/**
+ * The active rule for a raw Membership row, identical to the access layer
+ * (exported for admin tooling so every surface judges "active" the same way):
+ * active/trialing status, not ended, period end not passed.
+ */
+export function membershipRowIsActive(row: {
+  status: string;
+  currentPeriodEnd: Date | null;
+  endedAt: Date | null;
+}, now = Date.now()): boolean {
+  if (row.endedAt) return false;
+  if (row.status !== "active" && row.status !== "trialing") return false;
+  if (row.currentPeriodEnd && row.currentPeriodEnd.getTime() < now) return false;
+  return true;
 }
 
 function profileIsComplete(profile: { headline: string | null; bio: string | null; location: string | null } | null) {
@@ -155,6 +170,7 @@ export const getAccessContext = cache(async (): Promise<AccessContext> => {
         currentPeriodEnd: user.membership.currentPeriodEnd,
         cancelAtPeriodEnd: user.membership.cancelAtPeriodEnd,
         isDevelopment: user.membership.provider === "dev",
+        isAdminActivation: user.membership.provider === "admin",
       }
     : null;
 

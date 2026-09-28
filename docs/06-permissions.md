@@ -270,6 +270,27 @@ Profilseite `src/app/(app)/app/people/[handle]/page.tsx`, Listen-Abfragen):
 | `performanceVisibility` | Trust-Block nur für Betrachter mit `trustView` (Mitglieder) und gemäß Einstellung; Detailansicht und Bewertungsliste folgen derselben Regel |
 | `allowConnectionRequests = false` | keine Anfragen möglich (`memberUnavailable`), neutraler Hinweis statt Button |
 
+### 3e. Manuelle administrative Mitgliedschaft (Konsolidierungs-Sprint 2026-09-28)
+
+`/admin/users` (Rolle `admin`, serverseitig geprüft) steuert pro Konto die
+**vollständige Mitgliedschaft manuell** – getrennt von Founding Member und
+Private Beta:
+
+- **Aktivieren** legt eine `Membership`-Zeile mit `provider = 'admin'` an
+  (`activateMembershipByAdmin`). Die Level-Berechnung ist unverändert: aktive
+  Membership-Zeile ⇒ Level `member` ⇒ exakt dieselben Gates wie bei Zahlung
+  (Deals/Chancen, Jobs & Projekte, Investments, Marketplace, Academy, Events,
+  Netzwerk/Messaging, Member Card, Trust-Detail). Keine Stripe-Anfrage, keine
+  Rechnung, kein Zahlungstatus – `priceCents = 0` und das Billing-Badge
+  „Administrativ aktiviert“ sind die ehrliche Kennzeichnung.
+- **Entziehen** beendet nur die Membership-Zeile und die Karte
+  (`revokeMembershipByAdmin`). Konto, Profil, Nachrichten, Kontakte,
+  Trust-Daten, Beta-Zugang und Founding-Member bleiben unberührt; Beta bleibt
+  eine eigene Achse (der Entzug ändert nichts an `BetaAccess`).
+- Jede Aktion schreibt `AdminAuditLog` (`membership.admin_activated` /
+  `membership.admin_revoked`, Actor = Admin) und ist demo-geschützt
+  (Demo-Konten erhalten keine Membership).
+
 ## 4. Wo die Durchsetzung passiert (niemals nur in der UI)
 
 | Ort | Mechanismus |

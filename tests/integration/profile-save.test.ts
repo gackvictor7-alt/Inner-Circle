@@ -213,4 +213,28 @@ describe("profile save", () => {
     expect(result.status).toBe("error");
     expect(result.errorCode).toBe("storageUnavailable");
   });
+
+  it("keeps historical roles/skills when the simplified form no longer submits them", async () => {
+    const id = await createTestUser({ firstName: "Hanna", lastName: "Historie" });
+    created.push(id);
+    currentUserId = id;
+
+    // Old state: the previous form stored "Berufliche Rollen" and "Skills".
+    const saved = await updateProfileAction(initialActionState, form({ ...base }));
+    expect(saved.status).toBe("success");
+    let [row] = await db.select().from(profiles).where(eq(profiles.userId, id));
+    expect(JSON.parse(row!.rolesJson)).toEqual(["Founder", "Investor"]);
+    expect(JSON.parse(row!.skillsJson)).toEqual(["Vertrieb"]);
+
+    // The deduplicated form saves WITHOUT roles/skills fields – the stored
+    // values must survive (only the input is gone, never the data).
+    const withoutLists: Record<string, string> = { ...base };
+    delete withoutLists.roles;
+    delete withoutLists.skills;
+    const resaved = await updateProfileAction(initialActionState, form(withoutLists));
+    expect(resaved.status).toBe("success");
+    [row] = await db.select().from(profiles).where(eq(profiles.userId, id));
+    expect(JSON.parse(row!.rolesJson)).toEqual(["Founder", "Investor"]);
+    expect(JSON.parse(row!.skillsJson)).toEqual(["Vertrieb"]);
+  });
 });

@@ -54,9 +54,24 @@ async function issueCardIfNeeded(userId: string) {
   }
 
   const year = new Date().getFullYear();
+  // The row count is only the starting point – gaps from removed test rows
+  // (or parallel activations) can make "count + 1" collide with an existing
+  // card number, so the next FREE number is searched (bounded).
   const [row] = await db.select({ value: count() }).from(membershipCards);
   const sequence = (row?.value ?? 0) + 1;
-  const cardNumber = `IC-${year}-${String(sequence).padStart(5, "0")}`;
+  const nextFreeNumber = async (): Promise<string> => {
+    for (let attempt = 0; attempt < 10_000; attempt += 1) {
+      const candidate = `IC-${year}-${String(sequence + attempt).padStart(5, "0")}`;
+      const [clash] = await db
+        .select({ id: membershipCards.id })
+        .from(membershipCards)
+        .where(eq(membershipCards.cardNumber, candidate))
+        .limit(1);
+      if (!clash) return candidate;
+    }
+    throw new Error("no_free_card_number");
+  };
+  const cardNumber = await nextFreeNumber();
   const publicId = randomBytes(12).toString("base64url").replace(/[-_]/g, "").slice(0, 16);
 
   await db.insert(membershipCards).values({
@@ -191,6 +206,145 @@ export async function markMembershipCanceled(params: {
     entityType: "Membership",
     entityId: params.userId,
     meta: { cancelAtPeriodEnd: params.cancelAtPeriodEnd },
+  });
+}
+
+/**
+ * Manually administratively activated full membership (consolidation sprint).
+ *
+ * This is NOT a payment simulation: no Stripe call, no invoice, no payment
+ * status. The membership row reuses the existing `Membership` model with the
+ * dedicated provider value "admin" – so the activation is permanently
+ * traceable as a manual administrative grant (also visible in the billing UI
+ * and the MembershipEvent log). It stays active until an administrator revokes
+ * it; it never renews and never generates money movement.
+ *
+ * Everything a paid membership unlocks (deals, jobs, investments, marketplace,
+ * academy, events, member card, …) is resolved by the normal access layer
+ * (level "member") – no extra gate code paths.
+ */
+export async function activateMembershipByAdmin(input: { userId: string; actorId: string }) {
+  const now = new Date();
+
+  const values = {
+    plan: "monthly" as const,
+    status: "active",
+    provider: "admin" as const,
+    // priceCents is NOT NULL in the schema – 0 records honestly that nothing
+    // was paid (no invoice row is created, no payment status is faked).
+    priceCents: 0,
+    currency: "EUR",
+    // No period end: the grant stays active until it is administratively
+    // revoked (membershipIsActive treats a missing end date as "not expired").
+    currentPeriodStart: now,
+    currentPeriodEnd: null,
+    cancelAtPeriodEnd: false,
+    startedAt: now,
+    canceledAt: null,
+    endedAt: null,
+    updatedAt: now,
+  };
+
+  await db
+    .insert(memberships)
+    .values({
+      id: idFor.membership(),
+      userId: input.userId,
+      providerCustomerId: null,
+      providerSubscriptionId: null,
+      providerCheckoutSessionId: null,
+      createdAt: now,
+      ...values,
+    })
+    .onConflictDoUpdate({ target: memberships.userId, set: values });
+
+  await db.insert(membershipEvents).values({
+    id: idFor.event(),
+    userId: input.userId,
+    type: "admin_activated",
+    provider: "admin",
+    providerEventId: null,
+    metaJson: JSON.stringify({ actorId: input.actorId }),
+    createdAt: now,
+  });
+
+  const cardNumber = await issueCardIfNeeded(input.userId);
+
+  // A completed membership converts an open trial (same rule as paid paths).
+  const [trial] = await db.select().from(trials).where(eq(trials.userId, input.userId)).limit(1);
+  if (trial && trial.status !== "converted") {
+    await db.update(trials).set({ status: "converted", convertedAt: now }).where(eq(trials.id, trial.id));
+  }
+
+  await db.insert(notifications).values({
+    id: idFor.notification(),
+    userId: input.userId,
+    type: "membership",
+    titleKey: "app.notifications.types.membershipAdmin",
+    paramsJson: JSON.stringify({}),
+    url: "/app/billing",
+    dedupeKey: `membership-admin-active-${now.toISOString()}`,
+    createdAt: now,
+  });
+
+  await audit({
+    actorId: input.actorId,
+    action: "membership.admin_activated",
+    entityType: "Membership",
+    entityId: input.userId,
+    meta: { provider: "admin", cardNumber },
+  });
+
+  return { cardNumber };
+}
+
+/**
+ * Administrative revocation of a full membership (consolidation sprint).
+ *
+ * Only the membership access ends: the row is marked canceled/ended, the
+ * membership card is revoked. The account, profile, messages, contacts,
+ * trust data, beta grant and Founding-Member status are NEVER touched.
+ */
+export async function revokeMembershipByAdmin(input: { userId: string; actorId: string }) {
+  const now = new Date();
+
+  await db
+    .update(memberships)
+    .set({ status: "canceled", canceledAt: now, endedAt: now, cancelAtPeriodEnd: false, updatedAt: now })
+    .where(eq(memberships.userId, input.userId));
+
+  await db.insert(membershipEvents).values({
+    id: idFor.event(),
+    userId: input.userId,
+    type: "admin_revoked",
+    provider: "admin",
+    providerEventId: null,
+    metaJson: JSON.stringify({ actorId: input.actorId }),
+    createdAt: now,
+  });
+
+  await db
+    .update(membershipCards)
+    .set({ status: "revoked", revokedAt: now })
+    .where(eq(membershipCards.userId, input.userId));
+
+  await db.insert(notifications).values({
+    id: idFor.notification(),
+    userId: input.userId,
+    type: "membership",
+    titleKey: "app.notifications.types.membershipAdminRevoked",
+    paramsJson: JSON.stringify({}),
+    url: "/app/billing",
+    dedupeKey: `membership-admin-revoked-${now.toISOString()}`,
+    createdAt: now,
+  });
+
+  await audit({
+    actorId: input.actorId,
+    action: "membership.admin_revoked",
+    entityType: "Membership",
+    entityId: input.userId,
+    meta: { provider: "admin" },
   });
 }
 

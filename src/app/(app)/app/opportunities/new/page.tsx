@@ -39,6 +39,10 @@ export default async function NewOpportunityPage({
     );
   }
 
+  // Consolidation sprint: six content fields only – title, type, summary,
+  // description, industry, location. The former "Was du anbietest / suchst /
+  // Voraussetzungen" blocks stay stored on old entries but are no longer
+  // asked for; new opportunities use the short form.
   const fields: FormField[] = [
     { name: "title", labelKey: "app.opportunities.formTitle", required: true, maxLength: 160 },
     {
@@ -61,10 +65,6 @@ export default async function NewOpportunityPage({
     { name: "description", labelKey: "app.opportunities.formDescription", kind: "textarea", rows: 8, required: true, maxLength: 4000 },
     { name: "industry", labelKey: "app.opportunities.industry" },
     { name: "location", labelKey: "app.opportunities.locationField" },
-    { name: "remote", kind: "checkbox", labelKey: "app.opportunities.remote" },
-    { name: "offering", labelKey: "app.opportunities.offering", kind: "textarea", rows: 3, maxLength: 600 },
-    { name: "seeking", labelKey: "app.opportunities.seeking", kind: "textarea", rows: 3, maxLength: 600 },
-    { name: "requirements", labelKey: "app.opportunities.requirements", kind: "textarea", rows: 3, maxLength: 600 },
   ];
 
   return (

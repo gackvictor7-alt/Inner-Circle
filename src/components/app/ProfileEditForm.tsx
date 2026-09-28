@@ -25,22 +25,34 @@ export type ProfileEditFieldValue = {
   maxLength?: number;
   autoComplete?: string;
   rows?: number;
+  /** Spans both columns of the section grid (full width). */
+  wide?: boolean;
+};
+
+export type ProfileEditSection = {
+  titleKey: string;
+  fields: ProfileEditFieldValue[];
 };
 
 /**
- * The ONE form of the profile editor (Sprint 13).
+ * The ONE form of the profile editor (Sprint 13, deduplicated in the
+ * consolidation sprint).
  *
  * Profile fields, profile photo (upload or URL) and interests & goals live in
  * a single <form> with a single "Speichern" button – every change on the page
  * is persisted by one request (`updateProfileAction`), so there is no second
  * save area that could silently swallow changes.
  *
+ * The fields are grouped into one coherent professional profile
+ * (identity → professional context → looking for/offering → about → links →
+ * interests & goals) with clear dividers instead of card-in-card stacking.
+ *
  * Extras: client-side photo validation (type + size + magic bytes, mirroring
  * the server), live preview, replace/remove of the existing photo, an
  * unsaved-changes indicator and a beforeunload guard.
  */
 export function ProfileEditForm({
-  fields,
+  sections,
   nameForAvatar,
   avatarUrl,
   interests,
@@ -51,7 +63,7 @@ export function ProfileEditForm({
   hidden,
   storageConfigured,
 }: {
-  fields: ProfileEditFieldValue[];
+  sections: ProfileEditSection[];
   /** Name used for the initials fallback of the photo preview. */
   nameForAvatar: string;
   avatarUrl: string | null;
@@ -160,14 +172,16 @@ export function ProfileEditForm({
       <input type="hidden" name="saveInterests" value="1" />
       <input type="hidden" name="avatarRemove" value={photoRemoved ? "1" : "0"} />
 
-      {/* ---- Profilfoto ------------------------------------------------------ */}
-      <Card className="p-5 sm:p-6">
+      {/* ONE calm surface: photo, profile sections and interests & goals are
+          separated by hairlines instead of stacked cards. */}
+      <Card className="p-5 sm:p-8">
+        {/* ---- Profilfoto ---------------------------------------------------- */}
         <h2 className="text-sm font-bold tracking-tight">{tr("app.profile.photoSection")}</h2>
         <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center">
           <div className="shrink-0">
             {visibleAvatar ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={visibleAvatar} alt="" className="h-24 w-24 rounded-full border border-border object-cover" />
+              <img src={visibleAvatar} alt="" className="h-20 w-20 rounded-full border border-border object-cover sm:h-24 sm:w-24" />
             ) : (
               <Avatar name={nameForAvatar} size={96} />
             )}
@@ -189,9 +203,6 @@ export function ProfileEditForm({
                 </Button>
               )}
             </div>
-            <p className="text-xs leading-5 text-foreground-subtle">
-              {storageConfigured ? tr("app.profile.photoHint") : tr("app.profile.photoStorageMissing")}
-            </p>
             {photoError && (
               <p role="alert" className="text-xs font-medium text-danger-600 dark:text-danger-300">
                 {photoError}
@@ -219,7 +230,7 @@ export function ProfileEditForm({
             // would wrongly block. The server validates the value.
             key={photoRemoved ? "avatar-url-cleared" : "avatar-url"}
             label={tr("app.profile.avatar")}
-            hint={tr("app.profile.photoUrlHint")}
+            hint={storageConfigured ? tr("app.profile.photoUrlHint") : tr("app.profile.photoStorageMissing")}
             type="text"
             name="avatarUrl"
             defaultValue={photoRemoved ? "" : (avatarUrl ?? "")}
@@ -227,57 +238,61 @@ export function ProfileEditForm({
             onInput={() => setPhotoRemoved(false)}
           />
         </div>
-      </Card>
 
-      {/* ---- Profilfelder ---------------------------------------------------- */}
-      <Card className="p-5 sm:p-6">
-        <div className="grid gap-4 sm:grid-cols-2">
-          {fields.map((field) => {
-            const label = tr(field.labelKey);
-            const hint = field.helpKey ? tr(field.helpKey) : undefined;
-            if (field.kind === "textarea") {
-              return (
-                <div key={field.name} className="sm:col-span-2">
-                  <Textarea
-                    label={label}
-                    hint={hint}
-                    name={field.name}
-                    required={field.required}
-                    rows={field.rows ?? 5}
-                    maxLength={field.maxLength}
-                    defaultValue={field.value || undefined}
-                    placeholder={field.placeholderKey ? tr(field.placeholderKey) : undefined}
-                  />
-                </div>
-              );
-            }
-            return (
-              <Input
-                key={field.name}
-                label={label}
-                hint={hint}
-                type={field.kind ?? "text"}
-                name={field.name}
-                required={field.required}
-                defaultValue={field.value || undefined}
-                placeholder={field.placeholderKey ? tr(field.placeholderKey) : undefined}
-                maxLength={field.maxLength}
-                autoComplete={field.autoComplete}
-              />
-            );
-          })}
-        </div>
-      </Card>
+        {/* ---- Profilabschnitte ---------------------------------------------- */}
+        {sections.map((section) => (
+          <section key={section.titleKey} className="mt-8 border-t border-border pt-7">
+            <h2 className="text-sm font-bold tracking-tight">{tr(section.titleKey)}</h2>
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              {section.fields.map((field) => {
+                const label = tr(field.labelKey);
+                const hint = field.helpKey ? tr(field.helpKey) : undefined;
+                if (field.kind === "textarea") {
+                  return (
+                    <div key={field.name} className="sm:col-span-2">
+                      <Textarea
+                        label={label}
+                        hint={hint}
+                        name={field.name}
+                        required={field.required}
+                        rows={field.rows ?? 5}
+                        maxLength={field.maxLength}
+                        defaultValue={field.value || undefined}
+                        placeholder={field.placeholderKey ? tr(field.placeholderKey) : undefined}
+                      />
+                    </div>
+                  );
+                }
+                return (
+                  <div key={field.name} className={field.wide ? "sm:col-span-2" : undefined}>
+                    <Input
+                      label={label}
+                      hint={hint}
+                      type={field.kind ?? "text"}
+                      name={field.name}
+                      required={field.required}
+                      defaultValue={field.value || undefined}
+                      placeholder={field.placeholderKey ? tr(field.placeholderKey) : undefined}
+                      maxLength={field.maxLength}
+                      autoComplete={field.autoComplete}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        ))}
 
-      {/* ---- Interessen & Ziele (gleicher Speichervorgang) ------------------- */}
-      <Card className="p-5 sm:p-6">
-        <InterestGoalPicker
-          interests={interests}
-          goals={goals}
-          selectedInterests={selectedInterests}
-          selectedGoals={selectedGoals}
-          onSelectionChange={() => setDirty(true)}
-        />
+        {/* ---- Interessen & Ziele (gleicher Speichervorgang) ----------------- */}
+        <section className="mt-8 border-t border-border pt-7">
+          <InterestGoalPicker
+            interests={interests}
+            goals={goals}
+            selectedInterests={selectedInterests}
+            selectedGoals={selectedGoals}
+            onSelectionChange={() => setDirty(true)}
+          />
+        </section>
       </Card>
 
       {errorMessage && (

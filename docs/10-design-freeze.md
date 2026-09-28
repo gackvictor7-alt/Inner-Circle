@@ -440,6 +440,39 @@ wurde deshalb **bewusst geändert** und gilt ab sofort als genehmigter Zustand:
 E-Mail-Verifizierung, Discovery-Trial, Mitgliedschaftslogik, DB-Logik, Auth.
 LinkedIn bleibt entfernt. Keine erfundenen Daten.
 
+## Konsolidierungs-Sprint: Anti-AI-Polish der betroffenen Seiten (2026-09-28, ausdrücklicher Gründerauftrag)
+
+Der Gründer hat im Konsolidierungs-Sprint ausdrücklich einen **gezielten
+visuellen Polish** der betroffenen Plattformseiten beauftragt („weniger
+KI-Look“): klarere Hierarchie, weniger Container-in-Container, ruhige
+Flächen, klare Linien/Trennungen, weniger Erklärungstexte, konsistente
+Button-Größen – **ohne** neue Farbwelt, ohne Gold, ohne Verläufe/Glow, ohne
+Redesign und unter Beibehaltung des Navy/Off-White/Blau/Dunkelgrün-Systems,
+der Sidebar, des VP-Brandings und der Listenstrukturen. Umgesetzt, begrenzt
+auf die vom Sprint betroffenen Seiten:
+
+- **`/app/profile/edit`:** die Profilfelder sind jetzt in logische Abschnitte
+  mit Trennlinien gegliedert (Identität → Beruflicher Kontext → Ich suche &
+  Ich biete → Über mich → Links → Interessen & Ziele) statt drei
+  aneinandergereihter Karten; der Fortschrittsblock zeigt Balken + Prozent +
+  eine ruhige Zeile der offenen Punkte statt Pillen-Chips; redundante
+  Foto-Hinweiszeile entfernt; doppelte Felder („Berufliche Rollen“, „Skills“)
+  aus dem Formular entfernt. Die Beta-Welcome-Karte (inkl. Hakenliste) blieb
+  erhalten.
+- **`/app/opportunities/new`:** Formular auf sechs Felder reduziert; ruhige
+  2-Spalten-Struktur; kürzere, ehrliche Intro-Zeile.
+- **`/app/opportunities/[id]`:** Typ und Status werden in lesbarer Sprache
+  statt als Rohwerte angezeigt; Metadaten erscheinen nur mit echtem Wert
+  (keine „–“-Boxen); Legacy-Blöcke (Angebot/Suchen/Voraussetzungen) rendern
+  nur bei vorhandenen Altdaten.
+- **`/admin/users`:** ruhigere Zeilen – die drei Status (Mitglied, Private
+  Beta, Founding Member) stehen getrennt als Badges, ergänzt um eine dezente
+  Membership-Detailzeile statt Badge-Anhäufung; Aktionen rechtsbündig mit
+  konsistenter `sm`-Größe.
+
+Nicht berührt: Startseite, öffentliche Seiten, Sidebar, Navigation, Events,
+Discover/Networking, Inbox/Chat, Trust, Theme-Tokens, Mobile-Richtung.
+
 ## Private-Beta-Auftrag: Theme-/Hover-Reparatur (2026-09-27)
 
 Explizit beauftragte Korrektur, kein Redesign: Desktop-Nav verwendet
