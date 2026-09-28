@@ -138,7 +138,7 @@ export default async function MarketplacePage({
                     {!row.isDemo && row.sellerVerifiedReviews && row.sellerVerifiedReviews > 0 && row.sellerTrustScore10 !== null ? ` · ★ ${(row.sellerTrustScore10 / 10).toFixed(1)} Trust` : ""}
                   </p>
                 </div>
-                <Button href={`/app/marketplace/${row.id}`} size="sm" variant="secondary" className="w-full sm:w-auto"><Tr k="app.marketplace.overviewCta" /></Button>
+                <Button href={`/app/marketplace/${row.id}`} size="sm" variant="secondary" className="h-11 w-full sm:h-9 sm:w-auto"><Tr k="app.marketplace.overviewCta" /></Button>
               </div>
             </li>
           ))}

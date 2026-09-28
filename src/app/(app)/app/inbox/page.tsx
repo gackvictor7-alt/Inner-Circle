@@ -69,17 +69,19 @@ export default async function InboxPage({
         </div>
       </header>
 
-      {/* Segmented control – one destination, three views, real counters */}
+      {/* Segmented control – one destination, three views, real counters.
+          One row that scrolls sideways on narrow phones; a wrapping pill box
+          broke the stadium shape at 360 px. */}
       <nav
         aria-label="Inbox"
-        className={`${chatOpen ? "hidden lg:inline-flex" : "inline-flex"} max-w-full flex-wrap gap-1 rounded-full border border-border bg-surface p-1`}
+        className={`${chatOpen ? "hidden lg:inline-flex" : "inline-flex"} max-w-full gap-1 overflow-x-auto no-scrollbar rounded-full border border-border bg-surface p-1`}
       >
         {tabs.map((item) => (
           <Link
             key={item.key}
             href={item.href}
             aria-current={tab === item.key ? "page" : undefined}
-            className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-semibold transition-colors ${
+            className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-semibold transition-colors ${
               tab === item.key ? "bg-electric-500 text-white" : "text-foreground-muted hover:text-foreground"
             }`}
           >

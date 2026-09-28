@@ -106,7 +106,7 @@ export default async function JobsPage() {
                     {!row.isDemo && row.ownerVerifiedReviews && row.ownerVerifiedReviews > 0 && row.ownerTrustScore10 !== null ? ` · ★ ${(row.ownerTrustScore10 / 10).toFixed(1)} Trust` : ""}
                   </p>
                 </div>
-                <Button href={`/app/opportunities/${row.id}`} size="sm" variant="secondary" className="w-full sm:w-auto"><Tr k="app.jobs.overviewCta" /></Button>
+                <Button href={`/app/opportunities/${row.id}`} size="sm" variant="secondary" className="h-11 w-full sm:h-9 sm:w-auto"><Tr k="app.jobs.overviewCta" /></Button>
               </div>
             </li>
           ))}

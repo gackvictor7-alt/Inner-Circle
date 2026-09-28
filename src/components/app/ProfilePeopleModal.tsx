@@ -56,7 +56,9 @@ export function ProfilePeopleModal({
       </button>
 
       <Dialog open={open} onClose={() => setOpen(false)} title={title} closeLabel={closeLabel}>
-        <div className="max-h-[min(60vh,30rem)] overflow-y-auto pr-1">
+        {/* The dialog itself owns the scrolling (and keeps title + X pinned), so
+            the list is never cut off by a second, smaller scroll area. */}
+        <div>
           {members.length > 0 ? (
             <ul className="divide-y divide-border">
               {members.map((member) => {

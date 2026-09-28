@@ -199,6 +199,25 @@ P2 mittelfristig · P3 Aufräumen.
   Resend-Logs (Anzahl/Einwilligungen) prüfen; inhaltlich ist kein weiterer
   Hebel im Code bekannt.
 
+### K-26 · Kein Browser/Screenshot in dieser Umgebung — **OFFEN (Umgebung)**
+
+- **Symptom (Stand 2026-09-28, Mobile-Polish-Sprint):** In der Arena-Sandbox
+  ist weder Chromium/Chrome installiert noch lässt sich eines beschaffen –
+  `npx playwright install chromium` schlägt am CDN-Download fehl
+  (`cdn.playwright.dev` und der Mirror `cdn.npmmirror.com` beide `ECONNRESET`).
+- **Folge:** Die Mobile-Arbeit wurde **code- und markupseitig** geprüft
+  (Klassen-/Breakpoint-Audit, gerenderte HTML-Struktur aus dem Dev-Server und
+  aus dem echten lokalen workerd, HTTP 200 auf allen App-Seiten, CSS-Bundle
+  geprüft), aber **es wird keine visuelle Abnahme behauptet**. Die
+  Bildschirmfotos der früheren Sprints unter `preview/` sind unverändert und
+  zeigen den Stand **vor** diesem Sprint.
+- **Lösung:** Auf einem Rechner mit Browser
+  `node tests/e2e/sprint15-browser.mjs` bzw. die Rezepte in
+  [`08-testing.md`](08-testing.md) §3 gegen `npm run dev` bzw.
+  `npm run cf:preview` laufen lassen; für diesen Sprint genügt ein manueller
+  Durchlauf der Mobile-Punkte (Hero, Header, Menü, CTA, Drawer, Overlays,
+  DE/EN, Light/Dark) bei 360 px, 390–430 px, Tablet und Desktop.
+
 ## P2 – mittelfristig
 
 ### K-10 · Keine Uploads (Cover, Kursvideos, Anhänge) – Profilfotos gelöst

@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useI18n } from "@/lib/i18n/context";
 import Image from "next/image";
-import { Logo } from "./Logo";
+import { BrandLockup } from "./BrandLockup";
 import { ThemeLanguageControls, localeFlags, localeLabels } from "./ThemeLanguageControls";
 import { Button } from "@/components/ui/Button";
 import { MenuIcon, XIcon } from "@/components/ui/icons";
@@ -167,13 +167,17 @@ export function SiteHeader({ level = "visitor" as AccessLevel }: { level?: Acces
           </div>
         </div>
 
-        {/* Compact header (phones, tablets and laptops below 1280 px) – unchanged
-            apart from the breakpoint: hamburger menu instead of the old inline
-            navigation, so nothing is ever clipped. */}
-        <div className="ic-shell flex h-16 items-center justify-between gap-4 xl:hidden">
-          <Logo />
+        {/* Compact header (phones, tablets and laptops below 1280 px) – the
+            approved VENTURE & PARTNERS / INNER CIRCLE branding in its compact
+            form (see `BrandLockup`), hamburger menu instead of the old inline
+            navigation, so nothing is ever clipped.
+            `min-h-16` + vertical padding instead of a fixed `h-16`: the row can
+            grow with the safe-area inset (standalone / notch) and stays 64 px
+            on every device without one. */}
+        <div className="ic-shell ic-safe-top flex min-h-16 items-center justify-between gap-3 py-2.5 xl:hidden sm:gap-4">
+          <BrandLockup />
 
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2">
             <ThemeLanguageControls />
 
             <div className="hidden items-center gap-2 md:flex">
@@ -226,9 +230,9 @@ export function SiteHeader({ level = "visitor" as AccessLevel }: { level?: Acces
           onClick={() => setMenuOpen(false)}
           className="absolute inset-0 h-full w-full cursor-default bg-midnight-950/40 backdrop-blur-sm"
         />
-        <div className="absolute inset-x-0 top-0 max-h-[svh] overflow-y-auto rounded-b-3xl border-b border-border bg-background p-4 shadow-pop sm:p-6">
-          <div className="flex items-center justify-between">
-            <Logo />
+        <div className="absolute inset-x-0 top-0 max-h-[100svh] overflow-y-auto overscroll-contain rounded-b-2xl border-b border-border bg-background p-4 pb-[max(1rem,env(safe-area-inset-bottom,0px))] shadow-pop sm:p-6">
+          <div className="flex items-center justify-between gap-3">
+            <BrandLockup />
             <button
               type="button"
               onClick={() => {
