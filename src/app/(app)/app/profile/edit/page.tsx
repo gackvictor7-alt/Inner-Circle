@@ -1,6 +1,6 @@
 import { requireUser } from "@/lib/access/server";
 import { interestTaxonomy } from "@/app/actions/profile";
-import { ProfileEditForm, type ProfileEditFieldValue } from "@/components/app/ProfileEditForm";
+import { ProfileEditForm, type ProfileEditFieldValue, type ProfileEditSection } from "@/components/app/ProfileEditForm";
 import { LocalizedPageHeader, LocalizedEmptyState, Tr } from "@/components/app/localized";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -21,15 +21,14 @@ function parseList(json: string | null | undefined): string[] {
 }
 
 /**
- * Profile editing & guided onboarding (Sprint 13).
+ * Profile editing & guided onboarding (Sprint 13, deduplicated in the
+ * consolidation sprint).
  *
- * ONE form for everyone (no duplicate onboarding form, ONE save button):
- * photo (direct upload or URL), name, role, company/project, location,
- * industry & interests, goals, "Ich suche", "Ich biete" and a short bio – the
- * existing fields and taxonomies. Every field except the name is optional and
- * can be completed later; the progress indicator shows what is still missing.
- * After a beta key was redeemed the page opens with a welcome note and
- * continues into Discover on save.
+ * ONE form for everyone (no duplicate onboarding form, ONE save button). The
+ * duplicated inputs ("Berufliche Rollen" next to "Rolle", "Skills") are no
+ * longer asked – stored historical values are preserved server-side, only the
+ * input is gone. Groups: identity → professional context → looking for &
+ * offering → about → links → interests & goals.
  */
 export default async function ProfileEditPage({
   searchParams,
@@ -43,14 +42,13 @@ export default async function ProfileEditPage({
 
   const profile = user.profile;
   const taxonomy = await interestTaxonomy();
-  const roles = parseList(profile?.rolesJson);
   const lookingFor = parseList(profile?.lookingForJson);
   const offering = parseList(profile?.offeringJson);
 
   const steps: { key: string; done: boolean }[] = [
     { key: "app.beta.stepPhoto", done: Boolean(profile?.avatarUrl) },
     { key: "app.beta.stepName", done: Boolean(user.firstName && user.lastName) },
-    { key: "app.beta.stepRole", done: Boolean(profile?.headline || profile?.jobTitle || roles.length > 0) },
+    { key: "app.beta.stepRole", done: Boolean(profile?.headline || profile?.jobTitle) },
     { key: "app.beta.stepCompany", done: Boolean(profile?.company) },
     { key: "app.beta.stepLocation", done: Boolean(profile?.location) },
     { key: "app.beta.stepInterests", done: user.interests.length > 0 },
@@ -60,23 +58,38 @@ export default async function ProfileEditPage({
     { key: "app.beta.stepBio", done: Boolean(profile?.bio) },
   ];
   const percent = Math.round((steps.filter((step) => step.done).length / steps.length) * 100);
+  const missingSteps = steps.filter((step) => !step.done);
   const welcome = params.welcome === "beta" && access.beta?.active;
 
-  const fields: ProfileEditFieldValue[] = [
+  const identity: ProfileEditFieldValue[] = [
     { name: "firstName", labelKey: "app.auth.firstName", required: true, value: user.firstName, autoComplete: "given-name" },
     { name: "lastName", labelKey: "app.auth.lastName", required: true, value: user.lastName, autoComplete: "family-name" },
-    { name: "headline", labelKey: "app.profile.headline", placeholderKey: "app.profile.headlinePlaceholder", value: profile?.headline ?? "", maxLength: 140 },
+  ];
+  const professional: ProfileEditFieldValue[] = [
+    { name: "headline", labelKey: "app.profile.headline", placeholderKey: "app.profile.headlinePlaceholder", value: profile?.headline ?? "", maxLength: 140, wide: true },
     { name: "jobTitle", labelKey: "app.profile.jobTitle", value: profile?.jobTitle ?? "", maxLength: 120 },
     { name: "company", labelKey: "app.profile.company", value: profile?.company ?? "", maxLength: 120 },
     { name: "location", labelKey: "app.profile.location", value: profile?.location ?? "", maxLength: 120, autoComplete: "address-level2" },
+  ];
+  const searchOffer: ProfileEditFieldValue[] = [
     { name: "lookingFor", labelKey: "app.profile.lookingFor", helpKey: "app.profile.rolesHint", value: lookingFor.join(", ") },
     { name: "offering", labelKey: "app.profile.offering", helpKey: "app.profile.offeringHint", value: offering.join(", ") },
+  ];
+  const about: ProfileEditFieldValue[] = [
     { name: "bio", labelKey: "app.profile.bio", placeholderKey: "app.profile.bioPlaceholder", kind: "textarea", rows: 5, value: profile?.bio ?? "", maxLength: 1200 },
-    { name: "roles", labelKey: "app.profile.roles", helpKey: "app.profile.rolesHint", value: roles.join(", ") },
-    { name: "skills", labelKey: "app.profile.skills", helpKey: "app.profile.skillsHint", value: parseList(profile?.skillsJson).join(", ") },
+  ];
+  const links: ProfileEditFieldValue[] = [
     { name: "website", labelKey: "app.profile.website", kind: "url", value: profile?.websiteUrl ?? "" },
     { name: "xHandle", labelKey: "app.profile.x", value: profile?.xUrl ?? "" },
     { name: "instagram", labelKey: "app.profile.instagram", value: profile?.instagramUrl ?? "" },
+  ];
+
+  const sections: ProfileEditSection[] = [
+    { titleKey: "app.profile.sectionIdentity", fields: identity },
+    { titleKey: "app.profile.sectionProfessional", fields: professional },
+    { titleKey: "app.profile.sectionSearchOffer", fields: searchOffer },
+    { titleKey: "app.profile.sectionBio", fields: about },
+    { titleKey: "app.profile.sectionLinks", fields: links },
   ];
 
   return (
@@ -131,13 +144,13 @@ export default async function ProfileEditPage({
         </p>
       )}
 
-      {/* Progress – every step is optional; the list shows what is missing. */}
+      {/* Progress – every step is optional; the line names what is still open. */}
       <Card className="p-5">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h2 className="text-sm font-bold tracking-tight">
             <Tr k="app.beta.progressTitle" />
           </h2>
-          <span className="text-sm font-semibold">
+          <span className="text-sm font-semibold tabular-nums">
             <Tr k="app.beta.progressLabel" params={{ percent }} />
           </span>
         </div>
@@ -150,28 +163,22 @@ export default async function ProfileEditPage({
         >
           <div className="h-full rounded-full bg-electric-500" style={{ width: `${percent}%` }} />
         </div>
-        <ul className="mt-3 flex flex-wrap gap-1.5">
-          {steps.map((step) => (
-            <li
-              key={step.key}
-              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${
-                step.done ? "bg-forest-500/10 text-forest-700 dark:text-forest-200" : "bg-surface-muted text-foreground-muted"
-              }`}
-            >
-              {step.done && <CheckIcon size={12} />}
-              <Tr k={step.key} />
-            </li>
-          ))}
-        </ul>
-        <p className="mt-3 text-xs leading-5 text-foreground-subtle">
-          <Tr k="app.beta.progressHint" /> <Tr k="app.beta.laterHint" />
-        </p>
+        {missingSteps.length > 0 && (
+          <p className="mt-3 text-xs leading-5 text-foreground-subtle">
+            {missingSteps.map((step, index) => (
+              <span key={step.key}>
+                <Tr k={step.key} />
+                {index < missingSteps.length - 1 ? " · " : ""}
+              </span>
+            ))}
+          </p>
+        )}
       </Card>
 
-      {/* ONE form for the whole page: profile fields + photo + interests &
+      {/* ONE form for the whole page: photo + profile sections + interests &
           goals. The single submit button persists every change together. */}
       <ProfileEditForm
-        fields={fields}
+        sections={sections}
         nameForAvatar={`${user.firstName} ${user.lastName}`}
         avatarUrl={profile?.avatarUrl ?? null}
         interests={taxonomy.interests.map((row) => ({

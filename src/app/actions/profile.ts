@@ -25,6 +25,17 @@ import { PROFILE_METRIC_KEYS, VISIBILITY_LEVELS, type ProfileMetricKey } from "@
 
 const VISIBILITY = VISIBILITY_LEVELS;
 
+/** Reads a stored JSON string list (never throws, never returns non-strings). */
+function parseListJson(json: string | null | undefined): string[] {
+  if (!json) return [];
+  try {
+    const value = JSON.parse(json);
+    return Array.isArray(value) ? value.map(String).filter(Boolean) : [];
+  } catch {
+    return [];
+  }
+}
+
 /**
  * Reads the per-metric visibility selections. An absent field means "keep the
  * global performance visibility", so the stored object stays small.
@@ -114,14 +125,23 @@ export async function updateProfileAction(_prev: ActionState, formData: FormData
       .filter(Boolean)
       .slice(0, max);
 
-  const roles = listFrom("roles", 8);
-  const skills = listFrom("skills", 12);
-  const lookingFor = listFrom("lookingFor", 8);
-  const offering = listFrom("offering", 8);
-
   const complete = Boolean(headline && bio && location);
 
   const existing = access.user.profile;
+
+  // Consolidation sprint: the editor no longer asks for "Berufliche Rollen"
+  // and "Skills" (duplicates of "Rolle"). Fields the form does not submit keep
+  // their stored values – historical data is never destroyed, only the input
+  // is gone. Older callers that still send the fields behave as before.
+  const roles = formData.has("roles")
+    ? listFrom("roles", 8)
+    : parseListJson(existing?.rolesJson);
+  const skills = formData.has("skills")
+    ? listFrom("skills", 12)
+    : parseListJson(existing?.skillsJson);
+  const lookingFor = listFrom("lookingFor", 8);
+  const offering = listFrom("offering", 8);
+
   // Sprint 12 fix: the column names are websiteUrl / xUrl. The previous keys
   // (`website`, `xHandle`) were silently dropped by Drizzle, so website and X
   // were never saved. Every field is written as submitted – an emptied field

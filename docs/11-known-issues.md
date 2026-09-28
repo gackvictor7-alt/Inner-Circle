@@ -290,6 +290,13 @@ P2 mittelfristig · P3 Aufräumen.
   **11 (5 / 6)** – die zwei zunächst neuen Warnungen (ungenutzter
   `RatingStars`-Import und die nicht mehr benötigte `score`-Variable in
   `app/people/[handle]/page.tsx`) wurden entfernt, **kein** neuer Befund.
+- **Konsolidierungs-Sprint (2026-09-28):** Baseline **11 (5 / 6)**, Endstand
+  **11 (5 / 6)** – zwischenzeitlich aufgetretene neue Befunde (`prefer-const`
+  in `membership/service.ts`, ungenutzter Import in `admin/users/page.tsx`,
+  Impurity-Fehler `Date.now()` beim Rendern in `admin/users/page.tsx`,
+  Destrukturierungs-Warnungen im Profiltest) wurden korrigiert bzw. durch
+  serverseitige Helper (`betaIsActive`, `membershipRowIsActive`) vermieden,
+  **kein** neuer Befund.
 - **Sprint 12:** vor dem Sprint gemessen **14 (5 / 9)** (die Doku zählte
   zuletzt 13), nach dem Sprint **12 (5 / 7)** – zwei ungenutzte Variablen in
   `actions/network.ts` und `api/webhooks/stripe/route.ts` entfernt, **kein**

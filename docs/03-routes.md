@@ -92,7 +92,7 @@ Alle Routen liegen unter dem App-Layout `src/app/(app)/app/layout.tsx`, das
 | URL | Zweck | Zugriff | Status | Daten | Berechtigungen |
 | --- | ----- | ------- | ------ | ----- | -------------- |
 | `/admin` | Kennzahlen-Übersicht (Sprint 12: Link „Private Beta“ in der Admin-Navigation) | admin | WORKING | `User`, `Membership`, `Trial`, `BusinessOpportunity`, `MembershipApplication`, `InvestmentOpportunity`, `Report`, `AdminAuditLog` | `requireAdmin()` in Layout + Seite |
-| `/admin/users` | Nutzersuche, Sperre, Founding Member | admin | WORKING | `User`, Aktionen schreiben `AdminAuditLog` | `setUserSuspendedAction`, `setFoundingMemberAction` |
+| `/admin/users` | Nutzersuche, Sperre, Founding Member, **manuelle Membership-Steuerung** (aktivieren/entziehen, Provider `admin`) | admin | WORKING | `User`, `Membership`, `BetaAccess`, Aktionen schreiben `AdminAuditLog` | `setUserSuspendedAction`, `setFoundingMemberAction`, `setUserMembershipAction` |
 | `/admin/investments` | Investment-Prüfung (Freigabe/Ablehnung) | admin | WORKING | `InvestmentOpportunity` | `reviewInvestmentAction` |
 | `/admin/applications` | Mitgliedsanträge + Löschanträge | admin | WORKING | `MembershipApplication`, `AccountDeletionRequest` | `reviewMembershipApplicationAction`, `processDeletionRequestAction` |
 | `/admin/reviews` | **Trust-Moderation** (Sprint 16): alle Bewertungen mit bewertender Person, bewertetem Mitglied, Grundlage, Datum, Status und Moderationsspur; entfernen/wiederherstellen | admin | WORKING | `TrustReview`, `AdminAuditLog`, `TrustScoreSummary` | `moderateTrustReviewAction` – serverseitige Score-Neu Berechnung, Audit-Eintrag |
@@ -126,7 +126,7 @@ Alle Actions liegen in `src/app/actions/` und sind `"use server"`.
 | `profile.ts` | `updateProfileAction` (inkl. „Ich biete"), `updatePrivacyAction` (inkl. Kennzahlen-Sichtbarkeit), `updateNotificationPreferencesAction`, `updateInterestsAction`, `interestTaxonomy`, `skipInterestsAction`, `markOnboardingComplete`, `requestAccountDeletionAction` | Profil/Einstellungen | WORKING |
 | `business.ts` | `createOpportunityAction`, `updateOpportunityStatusAction`, `applyToOpportunityAction`, `withdrawApplicationAction`, `respondApplicationAction`, `createListingAction`, `enrollInCourseAction`, `completeLessonAction`, `submitInvestmentAction`, `expressInvestmentInterestAction`, `applyToEventAction`, `cancelEventApplicationAction`, `publishedJobOpportunities` | Business, Marketplace, Kurse, Investments, Events | WORKING (Bezahlpfade NOT IMPLEMENTED) |
 | `membership.ts` | `submitMembershipApplicationAction` | Mitgliedsantrag | WORKING |
-| `admin.ts` | `reviewInvestmentAction`, `setFoundingMemberAction`, `setUserSuspendedAction`, `clearDevOutboxAction`, `reviewMembershipApplicationAction`, `processDeletionRequestAction` | Admin-Aktionen (jeweils Rolle + Audit) | WORKING |
+| `admin.ts` | `reviewInvestmentAction`, `setFoundingMemberAction`, `setUserSuspendedAction`, `setUserMembershipAction` (manuelle Membership aktivieren/entziehen, Demo-Konten ausgeschlossen), `clearDevOutboxAction`, `reviewMembershipApplicationAction`, `processDeletionRequestAction` | Admin-Aktionen (jeweils Rolle + Audit) | WORKING |
 | `state.ts` | `fail`, `done`, `text`, `bool`, Typen | gemeinsame Action-Helfer | WORKING |
 
 ## 7. Rate-Limits pro Route/Action

@@ -79,18 +79,26 @@ export default async function BillingPage({
             <InfoRow
               label={<Tr k="app.billing.title" />}
               value={
-                membership
-                  ? membership.plan === "annual"
-                    ? <Tr k="app.billing.annual" />
-                    : <Tr k="app.billing.monthly" />
-                  : <Tr k="app.billing.statusNone" />
+                membership ? (
+                  membership.isAdminActivation ? (
+                    <Tr k="app.billing.adminPlan" />
+                  ) : membership.plan === "annual" ? (
+                    <Tr k="app.billing.annual" />
+                  ) : (
+                    <Tr k="app.billing.monthly" />
+                  )
+                ) : (
+                  <Tr k="app.billing.statusNone" />
+                )
               }
             />
             <InfoRow
               label={<Tr k="app.common.status" />}
               value={
                 membership ? (
-                  membership.isDevelopment ? (
+                  membership.isAdminActivation ? (
+                    <Badge variant="forest"><Tr k="app.billing.adminBadge" /></Badge>
+                  ) : membership.isDevelopment ? (
                     <Badge variant="warning"><Tr k="app.billing.devBadge" /></Badge>
                   ) : (
                     <Badge variant="forest">{membership.status}</Badge>
@@ -257,7 +265,7 @@ export default async function BillingPage({
         </section>
       )}
 
-      {membership?.active && !membership.isDevelopment && (
+      {membership?.active && !membership.isDevelopment && !membership.isAdminActivation && (
         <Card className="p-6">
           <h2 className="text-lg font-bold tracking-tight"><Tr k="app.billing.portal" /></h2>
           <p className="mt-2 text-sm text-foreground-muted"><Tr k="app.billing.portalNote" /></p>

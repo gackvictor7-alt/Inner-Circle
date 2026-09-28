@@ -15,6 +15,7 @@ import {
 } from "@/db/schema";
 import { idFor } from "@/db/ids";
 import { getAccessContext } from "@/lib/access/server";
+import { activateMembershipByAdmin, revokeMembershipByAdmin } from "@/lib/membership/service";
 import { audit } from "@/lib/admin/audit";
 import { notify } from "@/lib/notifications/service";
 import { refreshTrustSummaryFor } from "@/lib/trust/service";
@@ -164,6 +165,40 @@ export async function setUserSuspendedAction(_prev: ActionState, formData: FormD
 
   revalidatePath("/admin/users");
   return done({ messageCode: "saved" });
+}
+
+/**
+ * Manual, administrative full-membership control (consolidation sprint).
+ *
+ * Strictly separate from Founding Member (an honour) and from the private
+ * beta (a networking grant): activating a membership changes ONLY the
+ * Membership row (provider "admin"), revoking it only ends that row and the
+ * membership card. No Stripe call, no invoice, no payment status, no deletion
+ * of any account data. Demo accounts are excluded – they must stay demo.
+ */
+export async function setUserMembershipAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const { error, actor } = await requireAdminActor();
+  if (error || !actor) return error ?? fail("unauthorized");
+
+  const userId = text(formData, "userId", 64);
+  const grant = text(formData, "grant", 8);
+  if (!userId || !["0", "1"].includes(grant)) return fail("validation");
+
+  const [target] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+  if (!target) return fail("notFound");
+  if (target.isDemo) return fail("membershipDemo");
+
+  if (grant === "1") {
+    await activateMembershipByAdmin({ userId, actorId: actor.id });
+  } else {
+    await revokeMembershipByAdmin({ userId, actorId: actor.id });
+  }
+
+  revalidatePath("/admin/users");
+  revalidatePath("/app/billing");
+  revalidatePath("/app/card");
+  revalidatePath(`/app/people/${target.handle}`);
+  return done({ messageCode: grant === "1" ? "membershipGranted" : "membershipRevoked" });
 }
 
 /* ------------------------------------------------------------------ dev */

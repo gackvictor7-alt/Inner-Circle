@@ -13,6 +13,34 @@ import { LockedArea } from "@/components/app/LockedArea";
 
 export const dynamic = "force-dynamic";
 
+/** Known type labels – legacy entries with an unknown value fall back to the raw string. */
+const KNOWN_OPPORTUNITY_TYPES = [
+  "co_founder",
+  "strategic_partnership",
+  "joint_venture",
+  "freelance",
+  "customers",
+  "job",
+  "investment",
+  "other",
+] as const;
+
+function OpportunityTypeLabel({ type }: { type: string }) {
+  return (KNOWN_OPPORTUNITY_TYPES as readonly string[]).includes(type) ? (
+    <Tr k={`app.opportunities.type.${type}`} />
+  ) : (
+    <>{type}</>
+  );
+}
+
+/** Human-readable status instead of a raw state string (legacy values fall back). */
+function OpportunityStatusLabel({ status }: { status: string }) {
+  if (status === "draft") return <Tr k="app.opportunities.statusLabels.draft" />;
+  if (status === "published") return <Tr k="app.opportunities.statusLabels.published" />;
+  if (status === "closed") return <Tr k="app.opportunities.statusLabels.closed" />;
+  return <>{status}</>;
+}
+
 export default async function OpportunityDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const access = await requireUser(`/app/opportunities/${id}`);
@@ -111,28 +139,36 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
 
       <Card className="p-6">
         <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="electric">{opportunity.type}</Badge>
-          <Badge variant={opportunity.status === "published" ? "forest" : "warning"}>{opportunity.status}</Badge>
+          <Badge variant="electric"><OpportunityTypeLabel type={opportunity.type} /></Badge>
+          <Badge variant={opportunity.status === "published" ? "forest" : "warning"}>
+            <OpportunityStatusLabel status={opportunity.status} />
+          </Badge>
           {opportunity.isDemo && <Badge variant="outline"><Tr k="app.common.demo" /></Badge>}
         </div>
         <h2 className="mt-4 text-2xl font-bold tracking-tight">{opportunity.title}</h2>
         <p className="mt-3 text-base leading-7 text-foreground-muted">{opportunity.summary}</p>
 
-        <dl className="mt-5 grid gap-3 sm:grid-cols-3">
+        {/* Only meta with a real value is rendered – new (simplified) entries
+            have no empty industry/location boxes. The date always shows. */}
+        <dl className="mt-5 flex flex-wrap gap-x-8 gap-y-3">
           {[
             { key: "app.opportunities.industry", value: opportunity.industry },
             { key: "app.common.location", value: [opportunity.location, opportunity.remote ? "Remote" : null].filter(Boolean).join(" · ") },
             { key: "app.common.date", value: (opportunity.publishedAt ?? opportunity.createdAt).toLocaleDateString("de-DE") },
-          ].map((item) => (
-            <div key={item.key} className="rounded-xl bg-surface-muted px-3 py-2">
-              <dt className="text-xs text-foreground-muted"><Tr k={item.key} /></dt>
-              <dd className="text-sm font-medium">{item.value || "–"}</dd>
-            </div>
-          ))}
+          ]
+            .filter((item) => item.value)
+            .map((item) => (
+              <div key={item.key}>
+                <dt className="text-xs text-foreground-muted"><Tr k={item.key} /></dt>
+                <dd className="mt-0.5 text-sm font-medium">{item.value}</dd>
+              </div>
+            ))}
         </dl>
 
         <div className="mt-6 whitespace-pre-wrap text-sm leading-7">{opportunity.description}</div>
 
+        {/* Legacy entries may still carry offering/seeking/requirements – they
+            keep rendering; simplified entries (null) render nothing here. */}
         <div className="mt-6 grid gap-4 sm:grid-cols-3">
           {[
             { key: "app.opportunities.offering", value: opportunity.offering },
