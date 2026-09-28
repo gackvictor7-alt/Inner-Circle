@@ -109,8 +109,8 @@ Präsenz-Flag gelöscht, Redirect `/`. Kein reiner Client-Logout. Audit
   Hash des 32-Byte-Tokens (`hashAuthToken` = SHA-256 mit `AUTH_SECRET`-Präfix),
   Gültigkeit 60 min, Versand per E-Mail-Template.
 - **Reset-Link (Sprint 15):** `passwordResetLink()` baut eine **absolute
-  HTTPS-URL** aus `getAppUrl()` (= `NEXT_PUBLIC_SITE_URL`, Fallback `APP_URL`,
-  zuletzt `http://localhost:3000`) + `/reset-password?token=` + URL-kodiertem
+  HTTPS-URL** aus `getPublicUrl()` auf Basis von `getAppUrl()` (= `NEXT_PUBLIC_SITE_URL`,
+  Fallback `APP_URL`, zuletzt `http://localhost:3000`) + `/reset-password?token=` + URL-kodiertem
   Token. In Produktion (`NEXTJS_ENV=production`) wird der Versand gestoppt und
   nur die Kategorie geloggt (`password_reset_email_skipped reason=invalid_site_url|insecure_site_url`),
   wenn die Basis-URL nicht `https://` ist oder auf `localhost` zeigt – ein

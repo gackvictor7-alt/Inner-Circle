@@ -29,7 +29,7 @@ import { startTrial } from "@/lib/trial/service";
 import { sendPasswordResetEmail } from "@/lib/messages/templates";
 import { EMAIL_RE, handleify, maskEmail } from "@/lib/utils";
 import { getAccessContext } from "@/lib/access/server";
-import { canOpenDevOutbox, getAppUrl } from "@/lib/env";
+import { canOpenDevOutbox, getPublicUrl } from "@/lib/env";
 
 // Form state type lives in ./auth-state (a "use server" file may only export async functions).
 import type { AuthState } from "./auth-state";
@@ -316,10 +316,9 @@ export async function resendCodeAction(_prev: AuthState, formData: FormData): Pr
  * sent – when production would fall back to localhost or plain http.
  */
 function passwordResetLink(token: string): { link: string; reason?: string } {
-  const base = getAppUrl().replace(/\/+$/, "");
   let url: URL;
   try {
-    url = new URL(`/reset-password?token=${encodeURIComponent(token)}`, `${base}/`);
+    url = new URL(getPublicUrl(`/reset-password?token=${encodeURIComponent(token)}`));
   } catch {
     return { link: "", reason: "invalid_site_url" };
   }

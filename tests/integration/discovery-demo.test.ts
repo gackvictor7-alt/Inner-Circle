@@ -492,9 +492,10 @@ describe("6 · membership only after a confirmed payment", () => {
     currentUserId = discoveryUser;
     const body = new FormData();
     body.set("plan", "annual");
-    const response = await checkoutRoute(new Request("http://localhost:3000/api/billing/checkout", { method: "POST", body }));
+    // Error redirects use the configured public base, not the request Host.
+    const response = await checkoutRoute(new Request("https://request-host.example.test/api/billing/checkout", { method: "POST", body }));
     expect(response.status).toBe(303);
-    expect(response.headers.get("location")).toContain("/app/billing?error=stripeNotConfigured");
+    expect(response.headers.get("location")).toBe("http://localhost:3000/app/billing?error=stripeNotConfigured");
     expect(await membershipFor(discoveryUser)).toBeNull();
     expect((await getAccessContext()).level).toBe("free");
     const rows = await db.select().from(memberships).where(eq(memberships.userId, discoveryUser));

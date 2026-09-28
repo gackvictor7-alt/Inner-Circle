@@ -124,7 +124,7 @@ KI-Agenten, der an diesem Repository arbeitet.**
   einen *relativen* Link (`/reset-password?token=…`), den Mailclient/Link-Proxy gegen dessen
   eigenen Origin auflösten (daraus entstand der „versucht dich … weiterzuleiten“-Hinweis);
   die Mail baut den Link jetzt **absolut** über `passwordResetLink()` =
-  `getAppUrl()` (= `NEXT_PUBLIC_SITE_URL`) + URL-kodiertem Token, in Produktion ohne
+  `getPublicUrl()` auf Basis von `getAppUrl()` / `NEXT_PUBLIC_SITE_URL` + URL-kodiertem Token, in Produktion ohne
   localhost-Fallback (Prod-Guard loggt nur die Kategorie `invalid_site_url`/`insecure_site_url`,
   nie den Token), Betreff DE „Passwort für INNER CIRCLE zurücksetzen“ / EN „Reset your
   password for INNER CIRCLE“, HTML-Mail mit Button **und** sichtbarem Fallback-Link
@@ -140,9 +140,12 @@ KI-Agenten, der an diesem Repository arbeitet.**
   Browser-E2E `tests/e2e/sprint15-browser.mjs` **93/93** (inkl. kompletter Reset-Flow und
   Beta-Einlöse-Flow gegen den Worker-Preview; Rezepte `08-testing.md` §3c), `npm test`
   **36 Dateien / 267 grün**, Typecheck, i18n-Audit, `cf:build` und `cf:dry-run` grün,
-  Lint unverändert auf Baseline (K-15). **Kein DNS-/Domainwechsel in diesem PR:**
-  `innercirclevp.com` ist nur die verifizierte Resend-Absenderdomain, die Website läuft
-  weiter auf `workers.dev`; Domain-Bindungs-Checkliste in `09-deployment.md`/`14-environment.md`.
+  Lint unverändert auf Baseline (K-15). **Kein DNS-/Domainwechsel in diesem damaligen PR:** `innercirclevp.com` ist die
+  verifizierte Resend-Sending-Domain. Stand 2026-09-28 läuft die Nameserver-
+  Propagation bei Cloudflare laut Projektkontext; die Website bleibt bis zum
+  freigegebenen Cutover auf `workers.dev`. DNS/Custom-Domain wurden in diesem
+  Cutover-Vorbereitungssprint nicht geändert. Ausführbare Reihenfolge:
+  [`DOMAIN-CUTOVER-CHECKLIST.md`](DOMAIN-CUTOVER-CHECKLIST.md).
   Davor: Sprint 13 – **Profil: einheitliches Speichern & Foto-Upload** (Gründerauftrag):
   `/app/profile/edit` hat **einen** Speicherbutton für die ganze Seite – ein Klick speichert
   Profilfelder **und** Interessen & Ziele gemeinsam (`updateProfileAction` mit `saveInterests`-Marker,
@@ -587,7 +590,7 @@ existiert. Backend + Daten + Berechtigungen + Nachweis gehören dazu.
 | Logout (Session-Widerruf serverseitig) | WORKING | `logoutAction`, `/api/auth/logout` |
 | Sessions (30 Tage, httpOnly, gehasht) | WORKING | `src/lib/auth/session.ts`; zusätzlich nicht-httpOnly-Präsenz-Flag `ic_presence` in Lockstep mit `ic_session` (nur für den „Zur App\"-CTA der öffentlichen Seiten, keine Identität, keine Autorisierung) |
 | E-Mail-Verifizierung (Code-Erzeugung, Hash, Ablauf, Versuche) | WORKING | `src/lib/auth/otp.ts`, `onboarding.test.ts` |
-| **Echter E-Mail-Versand (Resend)** | **WORKING (Sender-Domain verifiziert) / PARTIAL (Website-Domain offen)** | `RESEND_API_KEY` aktiv; responsive Multipart-Templates (HTML+Text DE/EN); Absender `INNER CIRCLE <noreply@innercirclevp.com>` (via `EMAIL_FROM`), Verifizierungs-Mail optional über dedizierten `EMAIL_FROM_VERIFICATION` (empfohlen `verify@…`, Fallback `EMAIL_FROM`) – Betreff ohne Code, Code nur im Body; Domain bei Resend verifiziert (Nur-Senden, **kein** DNS-/Namensserverwechsel in diesem PR); offene Abhängigkeit: Website-Domain (heute `workers.dev`) erst bei bewusstem Umzug auf `innercirclevp.com` binden, Checkliste `09-deployment.md`/`14-environment.md`; Gmail-Inbox-Platzierung: Beobachtung K-25 |
+| **Echter E-Mail-Versand (Resend)** | **WORKING (Sender-Domain verifiziert) / PARTIAL (Website-Cutover offen)** | `RESEND_API_KEY` aktiv; responsive Multipart-Templates (HTML+Text DE/EN); Absender `INNER CIRCLE <noreply@innercirclevp.com>` (via `EMAIL_FROM`), Verifizierungs-Mail optional über dedizierten `EMAIL_FROM_VERIFICATION` (empfohlen `verify@…`, Fallback `EMAIL_FROM`) – Betreff ohne Code, Code nur im Body; Domain bei Resend verifiziert (Nur-Senden). Die Website bleibt bis zum Cutover auf `workers.dev`; Nameserver-Propagation bei Cloudflare läuft laut Projektkontext, aber weder DNS noch Worker-Custom-Domain wurden in diesem Vorbereitungssprint geändert. Cutover-Runbook: `DOMAIN-CUTOVER-CHECKLIST.md`; Gmail-Inbox-Platzierung: Beobachtung K-25 |
 | Verifizierung im Dev-Postausgang | WORKING | `ENABLE_DEV_OUTBOX` + Admin-Rolle, Testabdeckung `message-delivery.test.ts` |
 | SMS-Verifizierung (Twilio) | BLOCKED | kein Twilio-Konto/Schlüssel |
 | Registrierung per Telefonnummer | NOT IMPLEMENTED | UI-Umschalter existiert, Übermittlung schlägt fehl (Known Issue K-05) |

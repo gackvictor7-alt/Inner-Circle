@@ -49,10 +49,13 @@ werden in `/app/settings` (Admin-Sicht) bzw. `/dev/outbox` angezeigt.
 (DKIM/SPF/DMARC-Records liegen im Resend-Konto) und
 `EMAIL_FROM="INNER CIRCLE <noreply@innercirclevp.com>"` ist gesetzt – der
 Versand läuft über die eigene Domain, nicht mehr über `onboarding@resend.dev`.
-**Noch offen / bewusst nicht Teil des Sprints:** die Website-Domain (heute
-`workers.dev`, DNS weiter bei STRATO) – Checkliste für den späteren Umzug in
-`09-deployment.md` §7a. Für Rücklauf-Mails (MX) und eigene DMARC-RUAs die
-Records bei Bedarf nach Resend-Vorgabe ergänzen.
+**Noch offen / bewusst nicht Teil dieses Sprints:** die Website-Domain
+(Production bleibt bis zum kontrollierten Cutover auf `workers.dev`). Laut
+Projektkontext läuft die Nameserver-Propagation bei Cloudflare; die Zone wurde
+hier weder geprüft noch verändert. Die spätere Cutover- und `www`-Strategie steht
+in [`DOMAIN-CUTOVER-CHECKLIST.md`](DOMAIN-CUTOVER-CHECKLIST.md) und
+`09-deployment.md` §7a. Für Rücklauf-Mails (MX) und eigene DMARC-RUAs Records
+bei Bedarf nach Resend-Vorgabe ergänzen.
 
 **Inbox-Deliverability der Verifizierungs-Mail (2026-09-27):** Resends
 Deliverability Insights monieren `no-reply`-Absender. Der Code hält dafür eine

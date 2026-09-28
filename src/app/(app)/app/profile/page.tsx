@@ -19,6 +19,7 @@ import { LocalizedEmptyState, Tr } from "@/components/app/localized";
 import { ProfilePostsDemoSection } from "@/components/app/DemoSections";
 import { ProfilePeopleModal } from "@/components/app/ProfilePeopleModal";
 import { DEMO_CONTENT_ENABLED } from "@/lib/demo";
+import { getPublicUrl } from "@/lib/env";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -77,6 +78,7 @@ export default async function OwnProfilePage({
   const access = await requireUser("/app/profile");
   const user = access.user;
   const profile = user.profile;
+  const shareUrl = getPublicUrl(`/app/people/${encodeURIComponent(user.handle)}`);
   const params = await searchParams;
   const tab: ProfileTab =
     params.tab === "overview" || params.tab === "performance" || params.tab === "offers"
@@ -223,7 +225,7 @@ export default async function OwnProfilePage({
 
             <div className="mt-5 flex flex-wrap items-center gap-2">
               <Button href="/app/profile/edit" size="sm"><SparkleIcon size={15} /><Tr k="app.profile.editTitle" /></Button>
-              <ShareProfileButton path={`/app/people/${user.handle}`} />
+              <ShareProfileButton url={shareUrl} />
               <Button href="/app/settings" size="sm" variant="ghost"><SettingsIcon size={15} /><Tr k="app.settings.title" /></Button>
             </div>
 

@@ -5,22 +5,28 @@ import { ThemeInitScript, ThemeProvider } from "@/components/ThemeProvider";
 import { I18nProvider } from "@/lib/i18n/context";
 import { dictionaries } from "@/lib/i18n/dictionaries";
 import { Toaster } from "@/components/ui/Toaster";
+import { getAppUrl } from "@/lib/env";
 
-export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://inner-circle.example"),
-  title: {
-    default: dictionaries.de.meta.title,
-    template: "%s | INNER CIRCLE",
-  },
-  description: dictionaries.de.meta.description,
-  openGraph: {
-    title: dictionaries.de.meta.title,
+export function generateMetadata(): Metadata {
+  return {
+    // Resolve when metadata is generated, not at module import. OpenNext
+    // exposes Worker environment values lazily per request; static routes also
+    // receive the build-time value when Next prerenders their metadata.
+    metadataBase: new URL(getAppUrl()),
+    title: {
+      default: dictionaries.de.meta.title,
+      template: "%s | INNER CIRCLE",
+    },
     description: dictionaries.de.meta.description,
-    siteName: "INNER CIRCLE",
-    type: "website",
-    images: [{ url: "/images/hero.jpg", width: 1344, height: 768 }],
-  },
-};
+    openGraph: {
+      title: dictionaries.de.meta.title,
+      description: dictionaries.de.meta.description,
+      siteName: "INNER CIRCLE",
+      type: "website",
+      images: [{ url: "/images/hero.jpg", width: 1344, height: 768 }],
+    },
+  };
+}
 
 export const viewport: Viewport = {
   width: "device-width",

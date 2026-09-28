@@ -26,7 +26,7 @@
 | Variable | Build/Runtime | Secret | erforderlich | Zweck | Entwicklungswert erlaubt | Produktionsanforderung |
 | -------- | ------------- | ------ | ------------ | ----- | ------------------------ | ---------------------- |
 | `AUTH_SECRET` | Runtime | **ja** | **Pflicht** | Pepper/Signatur für Session-Token, OTP-Hashes und (seit Sprint 12) die HMAC-Hashes der Beta-Schlüssel | lokal Fallback erlaubt (`authSecretIsFallback`) | **zwingend** setzen, ≥ 32 Zufallszeichen (`openssl rand -base64 48`); Fallback ist in Produktion unzulässig. **Rotation** beendet alle Sessions und entwertet alle noch nicht eingelösten Beta-Schlüssel (laufende Beta-Zugänge bleiben) |
-| `NEXT_PUBLIC_SITE_URL` | Build **und** Runtime | nein | **Pflicht** | öffentliche Origin: Links in E-Mails (Passwort-Reset `passwordResetLink()`), Beta-Einladungstext (`getAppUrl()`), Stripe-Rückleitungen, Logout-Redirect; in Produktion **muss** der Wert `https://`-URL und kein `localhost` sein – sonst stoppt der Reset-Versand mit Kategorie-Log (`invalid_site_url`/`insecure_site_url`) | `http://localhost:3000` | echte Worker-/Domain-URL, heute `https://inner-circle.gackvictor7.workers.dev`; Umzug auf `innercirclevp.com` = nur dieser Wert ändern (Sprint-15-Checkliste `09-deployment.md` §7a) |
+| `NEXT_PUBLIC_SITE_URL` | Build **und** Runtime | nein | **Pflicht** | Zentrale öffentliche Origin für absolute Links: Reset-Mail, Beta-Einladung, Profil teilen, Mitgliedskarten-QR, Stripe-Rückleitungen, Logout/Billing-Redirects sowie `metadataBase`/OpenGraph-Bildauflösung (`getPublicUrl()` / `getAppUrl()`); in Produktion HTTPS und kein localhost | `http://localhost:3000` | Bis zum Cutover bisherige Worker-Origin `https://inner-circle.gackvictor7.workers.dev`; erst beim freigegebenen Cutover Build **und** Runtime auf `https://innercirclevp.com` setzen (Checkliste `DOMAIN-CUTOVER-CHECKLIST.md`) |
 | `NODE_VERSION` | Build (Dashboard) | nein | empfohlen | Node-Version im Cloudflare-Build | – | `22` (≥ 20 nötig) |
 | `NEXTJS_ENV` | Runtime | nein | ja (Worker) | unterscheidet Produktions-/Entwicklungsverhalten in OpenNext | `production` (in `.dev.vars`) | `production` (in `wrangler.jsonc` gesetzt) |
 
@@ -68,7 +68,7 @@ D1-Binding (kein Secret, in `wrangler.jsonc`): Binding-Name **`DB`**,
 | `STRIPE_SECRET_KEY` | Runtime | **ja** | für Bezahlung | Checkout, Portal, Webhook-Verifikation | Testschlüssel `sk_test_…` | Live erst nach Freigabe |
 | `STRIPE_PUBLISHABLE_KEY` | Build/Runtime | nein (öffentlich) | optional | Client-seitige Stripe-Nutzung | `pk_test_…` | `pk_live_…` |
 | `STRIPE_WEBHOOK_SECRET` | Runtime | **ja** | **Pflicht mit Stripe** | Signaturprüfung der Webhooks | `whsec_…` der Testendpoint-URL | `whsec_…` des Produktionsendpoints |
-| `STRIPE_PORTAL_RETURN_URL` | Runtime | nein | optional | Rückkehr aus dem Billing-Portal | leer | echte App-URL |
+| `STRIPE_PORTAL_RETURN_URL` | Runtime | nein | legacy/optional | Der aktuelle Billing-Portal-Rückweg wird über `getPublicUrl()` aus `NEXT_PUBLIC_SITE_URL` gebaut; diese Legacy-Variable wird derzeit nicht ausgewertet | leer | nicht für den Domain-Cutover ändern; prüfen/entfernen nur in einem separaten Konfigurations-Sprint |
 | `ALLOW_STRIPE_LIVE` | Runtime | nein | optional | gibt Live-Keys explizit frei (`"true"`) | **nicht setzen** | erst nach vollständiger Prüfung |
 
 **Sicherheitsregel im Code:** Ein `sk_live_…`-Schlüssel wird ohne
@@ -121,10 +121,12 @@ weiterhin als unverändert optional an.
 **Empfohlen, technisch aber optional:** `EMAIL_FROM`. Fehlt sie, sendet der
 Code über den Resend-Testabsender `INNER CIRCLE <onboarding@resend.dev>`
 (`src/lib/env.ts`). Der Testabsender stellt **nur an die E-Mail-Adresse des
-Resend-Kontos** zu. **Stand Sprint 15:** die Domain `innercirclevp.com` ist bei
+Resend-Kontos** zu. **Stand 2026-09-28:** die Domain `innercirclevp.com` ist bei
 Resend verifiziert und `EMAIL_FROM="INNER CIRCLE <noreply@innercirclevp.com>"`
-ist gesetzt – die verifizierte Domain dient weiterhin **nur** dem Versand, die
-Website bleibt auf `workers.dev` (Umzug: `09-deployment.md` §7a). Für die
+ist gesetzt – die verifizierte Domain dient weiterhin dem Versand. Die Website
+bleibt bis zum freigegebenen Cutover auf `workers.dev`; die Nameserver-
+Propagation bei Cloudflare läuft laut Projektkontext (Umzug: `09-deployment.md`
+§7a und `DOMAIN-CUTOVER-CHECKLIST.md`). Für die
 Verifizierungs-Code-Mail kann zusätzlich `EMAIL_FROM_VERIFICATION` gesetzt
 werden (empfohlen: `INNER CIRCLE <verify@innercirclevp.com>` – Resend
 Deliverability rät bei transaktionaler Mail von `no-reply` ab); ohne sie greift
