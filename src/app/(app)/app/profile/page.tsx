@@ -159,9 +159,16 @@ export default async function OwnProfilePage({
       <Card className="p-0">
         <div className="grid md:grid-cols-[minmax(0,1.65fr)_minmax(17rem,1fr)]">
           <section className="min-w-0 p-5 sm:p-7" aria-label={dict.app.profile.title}>
-            <div className="flex min-w-0 items-center gap-4">
-              <Avatar user={{ firstName: user.firstName, lastName: user.lastName, avatarUrl: profile?.avatarUrl ?? null }} size={72} />
-              <div className="min-w-0">
+            <div className="flex min-w-0 items-center gap-3.5 sm:gap-4">
+              {/* Mobile: a smaller avatar leaves the name/role block its full
+                  width, so nothing is squeezed on 360 px screens. */}
+              <span className="sm:hidden">
+                <Avatar user={{ firstName: user.firstName, lastName: user.lastName, avatarUrl: profile?.avatarUrl ?? null }} size={56} />
+              </span>
+              <span className="hidden sm:flex">
+                <Avatar user={{ firstName: user.firstName, lastName: user.lastName, avatarUrl: profile?.avatarUrl ?? null }} size={72} />
+              </span>
+              <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <h1 className="text-xl font-bold tracking-tight sm:text-2xl">{user.firstName} {user.lastName}</h1>
                   {user.foundingMember && <Badge variant="sand"><Tr k="app.card.founding" /></Badge>}
@@ -169,12 +176,22 @@ export default async function OwnProfilePage({
                   {user.isDemo && <Badge variant="outline"><Tr k="app.common.demo" /></Badge>}
                 </div>
                 <p className="text-sm text-foreground-subtle">@{user.handle}</p>
-                {profile?.headline && <p className="mt-1 truncate text-sm font-medium">{profile.headline}</p>}
+                {/* Up to two lines on phones, one line from `sm` – the role is
+                    the most important line after the name, so on a narrow
+                    screen it wraps instead of disappearing behind an ellipsis.
+                    Two elements instead of `line-clamp-2 sm:truncate`, because
+                    `truncate` does not reset `-webkit-box` reliably. */}
+                {profile?.headline && (
+                  <>
+                    <p className="mt-1 line-clamp-2 text-sm font-medium sm:hidden">{profile.headline}</p>
+                    <p className="mt-1 hidden truncate text-sm font-medium sm:block">{profile.headline}</p>
+                  </>
+                )}
                 <p className="mt-0.5 truncate text-sm text-foreground-subtle">{[profile?.jobTitle, profile?.company, profile?.location].filter(Boolean).join(" · ")}</p>
               </div>
             </div>
 
-            <div className="mt-5 flex flex-wrap gap-x-5 gap-y-3 border-t border-border pt-4">
+            <div className="mt-5 flex flex-wrap gap-x-4 gap-y-3 border-t border-border pt-4 sm:gap-x-5">
               <ProfilePeopleModal
                 locale={user.locale === "en" ? "en" : "de"}
                 label={dict.app.profile.metricFollowers}
@@ -230,13 +247,13 @@ export default async function OwnProfilePage({
             </div>
             {score === null ? (
               <>
-                <h2 className="mt-5 text-xl font-bold tracking-tight">{user.locale === "en" ? "No Trust Score yet" : "Noch kein Trust Score"}</h2>
+                <h2 className="mt-5 text-lg font-bold tracking-tight sm:text-xl">{user.locale === "en" ? "No Trust Score yet" : "Noch kein Trust Score"}</h2>
                 <p className="mt-2 max-w-sm text-sm leading-6 text-foreground-muted">{user.locale === "en" ? "Your Trust Score grows from verified deals, recommendations and confirmed experiences." : "Der Trust Score entsteht aus verifizierten Deals, Empfehlungen und bestätigten Erfahrungen."}</p>
                 <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-electric-600 dark:text-electric-300">{user.locale === "en" ? "Learn about Trust" : "Mehr über Trust erfahren"}<span aria-hidden="true">→</span></span>
               </>
             ) : (
               <>
-                <div className="mt-4 flex items-end gap-3"><span className="text-4xl font-bold tracking-tight">{score.toLocaleString(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}<span className="text-lg font-medium text-foreground-subtle"> / 5</span></span><RatingStars value={score} size={18} /></div>
+                <div className="mt-4 flex items-end gap-3"><span className="text-3xl font-bold tracking-tight sm:text-4xl">{score.toLocaleString(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}<span className="text-lg font-medium text-foreground-subtle"> / 5</span></span><RatingStars value={score} size={18} /></div>
                 <p className="mt-3 text-sm font-semibold text-forest-700 dark:text-forest-300"><ShieldCheckIcon size={15} className="mr-1 inline" />{user.locale === "en" ? "Verified Trust" : "Verifizierter Trust"}</p>
                 <p className="mt-1 text-xs text-foreground-muted">{trust.summary?.verifiedReviewCount ?? 0} {user.locale === "en" ? "verified reviews" : "verifizierte Bewertungen"}</p>
                 <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-electric-600 dark:text-electric-300">{user.locale === "en" ? "View details" : "Details ansehen"}<span aria-hidden="true">→</span></span>
@@ -247,7 +264,7 @@ export default async function OwnProfilePage({
       </Card>
 
       {/* ------------------------- tabs as central horizontal navigation */}
-      <nav aria-label={dict.app.profile.title} className="-mt-2 flex w-full overflow-x-auto border-b border-border">
+      <nav aria-label={dict.app.profile.title} className="-mt-2 flex w-full overflow-x-auto no-scrollbar border-b border-border">
         <div className="flex min-w-max items-center gap-2">
           {tabs.map((item) => (
             <Link

@@ -130,7 +130,7 @@ export default async function EventsPage({
                     {" · "}{[event.location, event.city].filter(Boolean).join(", ")}
                     {event.capacity ? ` · max. ${event.capacity}` : ""}
                   </p>
-                  <div className="mt-5"><Button href={`/app/events/${event.slug}`} size="sm" variant="secondary"><Tr k="app.events.viewEvent" /></Button></div>
+                  <div className="mt-5"><Button href={`/app/events/${event.slug}`} size="sm" variant="secondary" className="h-11 w-full sm:h-9 sm:w-auto"><Tr k="app.events.viewEvent" /></Button></div>
                 </div>
               </article>
             </li>

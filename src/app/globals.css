@@ -230,6 +230,22 @@ summary {
   list-style: none;
 }
 
+/* ---------- Mobile form controls ----------
+ *
+ * iOS Safari (and the Instagram in-app browser) zoom the whole page as soon as
+ * a focused field is rendered smaller than 16 px, and the user then has to
+ * zoom back out to reach the submit button. On phones every text control is
+ * therefore rendered at 16 px; from `sm` up the designed 14 px size is used.
+ * This is a size rule only – layout, validation and behaviour are untouched.
+ */
+@media (max-width: 639px) {
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea {
+    font-size: 1rem;
+  }
+}
+
 /* ---------- Layout helpers ----------
  *
  * Width system for the public site (compression + width sprint). Three
@@ -425,6 +441,12 @@ summary {
 
 .ic-safe-bottom {
   padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Top safe area (standalone / notched devices). `env()` resolves to 0 in a
+   normal browser tab, so the row keeps its designed height everywhere else. */
+.ic-safe-top {
+  padding-top: env(safe-area-inset-top, 0px);
 }
 
 .no-scrollbar {

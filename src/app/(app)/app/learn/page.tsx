@@ -57,7 +57,7 @@ export default async function LearnPage({ searchParams }: { searchParams: Promis
     <div className="space-y-8">
       <LocalizedPageHeader titleKey="app.learn.title" leadKey="app.learn.lead" />
 
-      <nav aria-label="Academy" className="flex w-full overflow-x-auto border-b border-border">
+      <nav aria-label="Academy" className="flex w-full overflow-x-auto no-scrollbar border-b border-border">
         <div className="flex min-w-max gap-2">
           {[
             { key: "my-courses", href: "/app/learn", label: "app.learn.myCourses", description: "app.learn.myCoursesLead" },
@@ -98,7 +98,7 @@ export default async function LearnPage({ searchParams }: { searchParams: Promis
                       <Progress value={course.progress} label={`${course.progress}%`} />
                     </div>
                   </div>
-                  <Button href={`/app/learn/${course.listingId}`} size="sm" className="w-full sm:w-auto">
+                  <Button href={`/app/learn/${course.listingId}`} size="sm" className="h-11 w-full sm:h-9 sm:w-auto">
                     <Tr k="app.learn.continueLearning" />
                   </Button>
                 </div>
@@ -136,7 +136,7 @@ export default async function LearnPage({ searchParams }: { searchParams: Promis
                       {course.sellerCompany ?? `${course.sellerFirstName} ${course.sellerLastName}`} · <Tr k="app.learn.moduleCount" params={{ count: Number(course.moduleCount) }} />
                     </p>
                   </div>
-                  <Button href={`/app/marketplace/${course.listingId}`} size="sm" variant="secondary" className="w-full sm:w-auto">
+                  <Button href={`/app/marketplace/${course.listingId}`} size="sm" variant="secondary" className="h-11 w-full sm:h-9 sm:w-auto">
                     <Tr k="app.learn.viewCourse" />
                   </Button>
                 </div>

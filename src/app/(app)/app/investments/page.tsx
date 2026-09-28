@@ -151,7 +151,7 @@ export default async function InvestmentsPage({
                     {" · "}<Tr k="app.investments.detail.minTicket" />: {formatMoney(row.minTicketCents, row.currency, "de")}
                   </p>
                 </div>
-                <Button href={`/app/investments/${row.id}`} size="sm" variant="secondary" className="w-full sm:w-auto"><Tr k="app.common.details" /></Button>
+                <Button href={`/app/investments/${row.id}`} size="sm" variant="secondary" className="h-11 w-full sm:h-9 sm:w-auto"><Tr k="app.common.details" /></Button>
               </div>
             </li>
           ))}

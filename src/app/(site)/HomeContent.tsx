@@ -4,7 +4,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { useI18n, usePageMeta } from "@/lib/i18n/context";
 import { Button } from "@/components/ui/Button";
-import { Badge } from "@/components/ui/Badge";
 import {
   ArrowRightIcon,
   CalendarIcon,
@@ -160,34 +159,43 @@ export function HomeContent() {
       </section>
 
       {/* ------------------------------------------- mobile/tablet hero
-          Same approved imagery as the desktop hero (`hero-alpine.jpg`, 2026-09-23);
-          layout, copy, CTAs and compact height unchanged. The 2.33:1 asset is
-          cropped towards the group on the right so the people – not an empty
-          mountain slope – carry the 390 px viewport. */}
-      <div className="relative isolate overflow-hidden border-b border-border/70 lg:hidden">
-        <Image
-          src="/images/hero-alpine.jpg"
-          alt={t.home2.heroV3ImageAlt}
-          priority
-          width={1915}
-          height={821}
-          sizes="100vw"
-          className="absolute inset-0 -z-10 h-full w-full object-cover object-[55%_50%] sm:object-[60%_45%]"
-        />
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 -z-10 bg-gradient-to-r from-midnight-950/92 via-midnight-950/70 to-midnight-950/25"
-        />
-        <div className="ic-shell-wide py-10 sm:py-24 lg:py-32">
-          {/* Desktop: nudged toward the screen centre without being centred. */}
-          <div className="max-w-3xl animate-fade-up lg:ml-[6%] xl:ml-[10%]">
-            <Badge variant="electric" className="backdrop-blur-sm">
-              <SparkleIcon size={14} />
+          Same approved imagery as the desktop hero (`hero-alpine.jpg`, 2026-09-23) –
+          no second file, no new crop of the subject, only a different *frame*.
+
+          Mobile polish (founder request 2026-09-28): the picture used to be a
+          full-bleed background behind a ~500 px tall text block. At 360–430 px
+          that meant a 2.3× zoom that showed barely a third of the 2.33:1
+          asset and cut the group of people. The image is now its own band with
+          the asset's own aspect ratio, so the whole scene (lake, mountains and
+          the complete group) is visible, and the text stands on a calm dark
+          surface below it instead of fighting the photo. Desktop is a separate,
+          unchanged block above. */}
+      <div className="relative isolate overflow-hidden bg-midnight-950 lg:hidden">
+        <div className="relative w-full overflow-hidden">
+          <Image
+            src="/images/hero-alpine.jpg"
+            alt={t.home2.heroV3ImageAlt}
+            priority
+            width={1915}
+            height={821}
+            sizes="100vw"
+            className="h-[clamp(150px,44vw,320px)] w-full object-cover object-[62%_45%] sm:h-[clamp(220px,36vw,320px)]"
+          />
+          {/* Blend into the text surface; the lower edge is the section edge,
+              so the picture reads as a band, not as a washed-out background. */}
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 bg-gradient-to-t from-midnight-950 via-midnight-950/35 to-midnight-950/15"
+          />
+        </div>
+        <div className="ic-shell-wide pt-7 pb-9 sm:pt-10 sm:pb-12">
+          <div className="max-w-3xl animate-fade-up">
+            {/* Editorial kicker line instead of the previous pill badge –
+                same wording as the desktop hero, one container less. */}
+            <p className="text-[11px] font-medium uppercase tracking-[0.24em] text-paper-50/85 sm:text-[13px] sm:tracking-[0.35em]">
               {t.home2.heroV3Kicker}
-            </Badge>
-            {/* Sprint 10 (founder decision, option A): kicker + headline share the
-                approved desktop wording; lead, CTAs, hint and styling unchanged. */}
-            <h1 className="mt-4 text-[1.85rem] font-bold leading-[1.12] tracking-tight text-paper-50 sm:mt-6 sm:text-6xl sm:leading-[1.05] lg:text-7xl">
+            </p>
+            <h1 className="mt-4 text-[1.9rem] font-bold leading-[1.12] tracking-tight text-paper-50 sm:mt-6 sm:text-6xl sm:leading-[1.05] lg:text-7xl">
               {t.home2.heroV3TitleA}
               <br />
               <span className="text-electric-300">{t.home2.heroV3TitleB}</span>
@@ -195,38 +203,27 @@ export function HomeContent() {
             <p className="mt-4 max-w-2xl text-[15px] leading-6 text-paper-50/85 sm:mt-6 sm:text-lg sm:leading-8">
               {t.home2.heroLead}
             </p>
-            {/* Mobile (Sprint 14): primär „Mehr erfahren" (scrollt zu den
-                Ergebnissen), sekundär „Zur INNER CIRCLE Plattform" als
-                dezenten Link – kein direkter Drücker zur Registrierung. */}
-            <div className="mt-6 flex flex-col items-start gap-2.5 sm:mt-8 lg:hidden">
-              <Button href="#outcomes" size="lg" className="w-full sm:w-auto">
+            {/* Mobile (Sprint 14, polished 2026-09-28): primär „Mehr erfahren"
+                (scrollt zu den Ergebnissen), sekundär „Zur INNER CIRCLE
+                Plattform". Both are real buttons in the required order; the
+                secondary one is a quiet outline, not a plain text link, so it
+                stays recognisable. Price note keeps its own line below. */}
+            <div className="mt-7 flex flex-col items-stretch gap-3 sm:mt-8 sm:flex-row sm:flex-wrap sm:items-center">
+              <Link
+                href="#outcomes"
+                className="inline-flex h-12 w-full items-center justify-center gap-2.5 whitespace-nowrap rounded-full bg-electric-500 px-5 font-serif text-[16px] text-white transition-colors hover:bg-electric-600 sm:w-auto sm:px-7 sm:text-[17px]"
+              >
                 {t.home2.heroCtaPrimary}
                 <ArrowRightIcon size={18} />
-              </Button>
+              </Link>
               <Link
                 href="/app"
-                className="text-[13px] font-semibold text-paper-50/75 underline-offset-4 hover:text-paper-50 hover:underline"
+                className="inline-flex h-12 w-full items-center justify-center whitespace-nowrap rounded-full border border-paper-50/50 px-5 font-serif text-[16px] text-paper-50/90 transition-colors hover:border-paper-50/80 hover:bg-white/10 hover:text-paper-50 sm:w-auto sm:px-7 sm:text-[17px]"
               >
                 {t.home2.heroCtaSecondary}
               </Link>
             </div>
-            {/* Tablet (sm-md): primär blau = Mehr erfahren, sekundär = Plattform.
-                lg+ wird durch den dunklen V3-Hero oben ersetzt. */}
-            <div className="mt-6 hidden flex-wrap items-center gap-3 sm:mt-8 sm:flex lg:hidden">
-              <Button href="#outcomes" size="lg">
-                {t.home2.heroCtaPrimary}
-                <ArrowRightIcon size={18} />
-              </Button>
-              <Button
-                href="/app"
-                size="lg"
-                variant="ghost"
-                className="text-paper-50/80 hover:bg-white/10 hover:text-paper-50"
-              >
-                {t.home2.heroCtaSecondary}
-              </Button>
-            </div>
-            <p className="mt-4 text-[13px] font-medium text-paper-50/70 sm:mt-5 sm:text-sm">{t.home2.heroMembershipHint}</p>
+            <p className="mt-5 text-[13px] font-medium text-paper-50/75 sm:mt-5 sm:text-sm">{t.home2.heroMembershipHint}</p>
             <ul className="mt-6 hidden grid-cols-2 gap-x-5 gap-y-2 border-t border-white/15 pt-4 sm:grid sm:mt-9 sm:gap-x-6 sm:pt-5 lg:grid-cols-5">
               {Object.entries(t.home2.heroFacts).map(([key, label]) => (
                 <li key={key} className="flex items-center gap-2 text-[12px] text-paper-50/70 sm:text-[13px]">
@@ -384,7 +381,7 @@ export function HomeContent() {
         <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-paper-200 dark:from-[#050b16] to-transparent" />
         <div className="relative ic-shell-wide pt-12 pb-10 sm:pt-16 sm:pb-14">
           <div aria-hidden="true" className="mx-auto mb-10 h-14 w-px bg-gradient-to-b from-transparent via-border-strong to-border dark:via-white/40 dark:to-white/15" />
-          <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-electric-600 dark:text-electric-300">{t.home2.enablesKicker}</p>
+          <p className="text-xs font-medium uppercase tracking-[0.24em] text-electric-600 dark:text-electric-300">{t.home2.enablesKicker}</p>
           <h2 className="mt-3 font-serif text-[2.1rem] leading-[1.12] tracking-[-0.01em] sm:text-[2.6rem]">
             {t.home2.enablesTitle}
           </h2>
@@ -416,7 +413,7 @@ export function HomeContent() {
                     </span>
                     <span className="mt-3 block font-serif text-[1.65rem] leading-tight sm:text-[1.9rem]">{item.title}</span>
                     <span className="mt-2 block max-w-md text-[14px] leading-6 text-foreground-muted dark:text-white/70 sm:text-[15px]">{item.text}</span>
-                    <span className="mt-3.5 inline-flex items-center gap-2 text-[13.5px] font-medium text-electric-600 dark:text-electric-300 group-hover:text-electric-700 dark:group-hover:text-white">
+                    <span className="mt-3.5 inline-flex items-center gap-2 text-sm font-medium text-electric-600 dark:text-electric-300 group-hover:text-electric-700 dark:group-hover:text-white">
                       {t.home2.areasV3Cta}
                       <ArrowRightIcon size={14} className="transition-transform group-hover:translate-x-0.5" />
                     </span>

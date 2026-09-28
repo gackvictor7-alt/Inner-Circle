@@ -506,3 +506,32 @@ Chromium-/Playwright-Browser vorhanden ist. Daher werden für die Modal-
 Interaktionen (X, Outside-Klick, Escape, erneuter Trigger) keine neuen
 Screenshot-/Browserzahlen behauptet; die Implementierung nutzt den bestehenden
 `Dialog`-Mechanismus mit Portal, Backdrop, Fokusbehandlung und Escape.
+
+## 3f. Mobile-Polish & Cross-Device-QA (2026-09-28)
+
+Ausgeführt und grün:
+
+| Prüfung | Befehl / Weg | Ergebnis |
+| ------- | ------------- | -------- |
+| Typecheck | `npm run typecheck` | 0 Fehler |
+| Unit/Integration | `npm test` | **37 Dateien / 275 Tests** grün |
+| i18n | `npm run i18n:audit` | DE 2612 / EN 2612, gleiche Form, alle referenzierten Keys vorhanden |
+| Lint-Baseline | `npm run lint` | unverändert **5 Fehler + 6 Warnungen** (K-15), keine neuen Befunde |
+| Next/OpenNext-Produktionsbuild | `npm run cf:build` | grün, Route-Manifest unverändert (öffentliche Seiten `○` statisch) |
+| Wrangler | `npx wrangler deploy --dry-run` | grün, Upload 9329,64 KiB / gzip 1866,32 KiB, Bindings `DB`, `MEDIA`, `ASSETS`, `NEXTJS_ENV` |
+| Laufzeit Node-Dev | `npm run dev` + HTTP | `/`, alle 7 Preview-Seiten, `/login`, `/register`, `/forgot-password`, `/reset-password`, `/imprint`, `/privacy`, `/terms`, `/design` = 200 |
+| Laufzeit Node-Dev (Member) | Session-Mitglied | `/app`, Discover, Inbox, Events, Profil (alle 4 Tabs), Network, Chancen, Jobs, Investments, Marketplace, Academy (+Discover), Settings, Card, Billing, Trust, Beta, Profil-Edit, Mitgliedschaft = 200 |
+| Laufzeit Node-Dev (Zustände) | Trial / Free / Admin | alle Kernbereiche = 200 (Demo- und Sperrzustände rendern) |
+| Laufzeit workerd | `npm run cf:preview` (Port 8787), lokale D1 migriert + geseedet | öffentliche Seiten 200, `/app` + alle App-Seiten mit Session = 200, `/brand/vp-monogram.png` = 200, Brand-Lockup und Hero-Band-Klassen im ausgelieferten HTML/CSS vorhanden |
+| Responsive-Audit | Code-Review der Breakpoints | 360 px (`clamp(150px,…)`-Hero, kompakter Lockup, einzeilige Hero-CTAs, Scroll-Tabs), 390–430 px (gleiche Regeln, mehr Raum), `sm` 640 px (doppeltes CTA-Band, 2-Spalten-Startraster), `lg`/`xl` unverändert |
+| Themes | Code-Review | alle neuen Farben über bestehende semantische Token bzw. die ohnehin dunklen Hero-Flächen; Monogramm mit `dark:invert` wie der Desktop-Header; Dialog/Menü nutzen `bg-surface`/`bg-background` |
+
+**Nicht ausgeführt – und deshalb auch nicht behauptet:** Browser-/Screenshot-E2E.
+In dieser Umgebung ist kein Chromium installierbar (Playwright-Download wird
+vom Netz blockiert, siehe K-26). Es wurden daher **keine** neuen Screenshot- oder
+Browser-Zahlen in die Dokumentation geschrieben; die vorhandenen
+`preview/`-Bilder zeigen den Stand **vor** diesem Sprint. Für die manuelle
+Abnahme auf einem Rechner mit Browser: `node tests/e2e/sprint15-browser.mjs`
+gegen `npm run cf:preview` (Rezepte in §3d) plus ein manueller Mobile-Durchlauf
+der in §3f genannten Seiten bei 360 px, 390–430 px, Tablet und Desktop, jeweils
+DE/EN und Light/Dark.

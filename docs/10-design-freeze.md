@@ -2,7 +2,7 @@
 
 ## DESIGN STATUS: APPROVED / DO NOT REDESIGN WITHOUT EXPLICIT FOUNDER REQUEST
 
-**Stand:** 2026-09-28 (zuletzt ergänzt: 1.20 Start-Raster & Dark-Ton) · Der aktuelle visuelle Stand des Projekts ist vom
+**Stand:** 2026-09-28 (zuletzt ergänzt: 1.21 Mobile-Polish & Cross-Device-QA) · Der aktuelle visuelle Stand des Projekts ist vom
 Gründer freigegeben und **eingefroren**. Diese Datei schützt ihn.
 
 Ein KI-Agent, eine Entwicklerin oder ein Dienstleister darf die unten
@@ -538,3 +538,115 @@ unverändert.
 **Unverändert geblieben:** Profil, Trust Score, Follower/Folgt/Connections,
 Events, Chancen, Jobs, Investments, Marketplace, Academy, Sidebar, Auth, Beta,
 Resend, Datenbank, DNS und Domain. Keine neue Migration.
+
+---
+
+## 1.21 Mobile-Polish & Cross-Device-QA (2026-09-28)
+
+Ausdrücklich beauftragter Sprint **ausschließlich für kleine Viewports**
+(„Auf dem Smartphone nicht wie eine verkleinerte Desktop-/AI-Website wirken").
+Desktop (`lg`/`xl` und alles darüber) bleibt unverändert; es wurde **kein**
+Desktop-Bereich umgebaut, kein Feature hinzugefügt, keine Bilddatei
+ausgetauscht.
+
+**1. Mobile Hero der öffentlichen Startseite (`lg:hidden`)**
+
+- **Gleiche Datei** `hero-alpine.jpg` (2,33:1), keine neue Bilddatei, keine
+  KI-Bilder.
+- Vorher: vollflächiges Hintergrundbild hinter einem ~500 px hohen Textblock
+  (`object-[55%_50%]`). Bei 360–430 pxViewport ergab das einen ~2,3-fachen Zoom,
+  der nur ~31 % der Bildbreite zeigte und die Personengruppe anschnitt.
+- Jetzt: das Bild ist ein **eigenes Band** mit der Seitenverhältnis-Nähe der
+  Datei (`h-[clamp(150px,44vw,320px)]` phones, `sm:h-[clamp(220px,36vw,320px)]`
+  Tablet, `object-[62%_45%]`), unten mit einem Verlauf in die dunkle
+  Textfläche auslaufend. Dadurch ist bei 360 px rund **97 % der Bildbreite**
+  sichtbar (Berge, See und die vollständige Gruppe), der Hintergrund ist nicht
+  mehr dominant und der Text steht auf ruhigem Navy statt auf dem Foto.
+- Eyebrow-Pill (Badge + Sparkle) → **Kicker-Zeile** im Desktop-Schema
+  (`PEOPLE · OPPORTUNITIES · PROGRESS`, uppercase, getrackt). Desktop-Hero
+  unverändert.
+
+**2. Branding Header/Footer (mobile, `<xl`)**
+
+- Neuer Baustein `src/components/site/BrandLockup.tsx` mit dem **bereits
+  vorhandenen** Asset `public/brand/vp-monogram.png` (identisch zur Datei, die
+  Desktop-Header und App-Shell nutzen). Keine neue Logo-Interpretation.
+- `< 400 px` (kompakte Variante): `[VP] INNER CIRCLE` / `by VENTURE & PARTNERS`.
+- `≥ 400 px`: `[VP] VENTURE & PARTNERS` / `INNER CIRCLE` – dieselbe
+  Reihenfolge und Typografie wie der Desktop-Header.
+- Ersetzt das alte `IC`-Kachel-Branding in Header, Mobil-Menü **und** Footer
+  (`Logo.tsx` ist entfallen). Der Desktop-Header (`xl`) bleibt unangetastet;
+  die Desktop-Sidebar der App behält ihre bisherige Monogramm-Darstellung.
+- Rendering-Regel der Marke (`BrandMonogram`): Die PNG hat einen breiten
+  transparenten Rand (sichtbare Deckkraft-Bounding-Box x 12,8–87,6 %,
+  y 27,6–79,7 %). Sie wird 1,3-fach in ihre Box gerendert, die Box schneidet
+  nur den transparenten Rand ab – die Marke ist dadurch nie abgeschnitten und
+  optisch zentriert (0,4–1,5 px Nudge nach oben).
+
+**3. Weniger AI-Look auf der mobilen Startseite**
+
+- Eyebrow-Pill entfallen (siehe 1), Hero-CTA ohne Glow-Shadow und im
+  Desktop-Hero-Schema (flach, Serifenschrift, 16 px auf Phones / 17 px ab
+  `sm`, Höhe 48 px auf Phones / 52 px wie Desktop ab `sm`; `px-5` unter
+  400 px, damit der englische Button „Go to the INNER CIRCLE platform" auch
+  bei 360 px ohne Umbruch und ohne horizontalen Überlauf passt).
+- Mobil-Menü-Panel: `rounded-b-3xl` → `rounded-b-2xl`, `100svh` +
+  `overscroll-contain` + Safe-Area-Bottom.
+- Typografie mobil geprüft und korrigiert: Hero-Eyebrow 11 px/0,24 em
+  (einzeilig bis 360 px), Kernbereichs-Eyebrow 11 px → 12 px, Bereichs-CTA
+  13,5 px → 14 px. Headlines bleiben 2–3 Zeilen, es wurde keine Schriftgröße
+  oder Farbe des Design-Systems geändert.
+
+**4. App-Shell mobil**
+
+- Top-Bar: `min-h-14` + `py-1.5` + `.ic-safe-top` statt festem `h-14`;
+  gemeinsames `BrandMonogram`; Inbox-Button 40 px Touch-Ziel.
+- Konto-/Bereiche-Blatt: aktive Seite wird jetzt hervorgehoben
+  (`aria-current` +Electric-Fläche), sonst unverändert (Dialog liefert X,
+  Backdrop-Klick, Escape, Scroll-Lock, Fokusfalle).
+- **Kein Umbau der Navigation**: Desktop-Sidebar bleibt ab `xl`, darunter
+  Bottom-Navigation + Konto-Blatt wie bisher.
+
+**5. Overlays (`src/components/ui/Dialog.tsx`, appweit)**
+
+- Unter `sm` jetzt Bottom-Sheet: `max-h-[88svh]`, eigener Scrollbereich
+  (`overscroll-contain`), **gekoppelter Kopf mit Titel + X** und optional
+  gepinnter Footer. Vorher konnte eine lange Liste (z. B. 40 Follower) unter
+  dem Bildschirmrand verschwinden und der Schließen-Button mitwandern.
+- Ab `sm` bleibt die zentrierte Karte unverändert (nur `max-h-[85svh]` +
+  Scrollschutz).
+- `ProfilePeopleModal` hat seinen zweiten, kleineren Scrollbereich entfernt –
+  das Dialog scrollt jetzt selbst.
+
+**6. Formulare/Inputs (global, nur < 640 px)**
+
+- `@media (max-width: 639px) { input/select/textarea { font-size: 1rem } }`:
+  verhindert den iOS-Safari-Zoom (Fokus auf ein Feld < 16 px zoomt die ganze
+  Seite). Reine Größenregel, keine Verhaltens- oder Validierungsänderung.
+- Listen-CTAs (Events, Chancen, Jobs, Investments, Marketplace, Academy) auf
+  Mobil 44 px (`h-11 sm:h-9`).
+
+**7. Profil / Tabs / Inbox**
+
+- Profilkopf: Avatar 56 px (< `sm`) / 72 px (ab `sm`), Rolle darf auf Mobil
+  zweizeilig umbrechen (`line-clamp-2` < `sm`, einzeilig mit Ellipse ab `sm` –
+  zwei Elemente statt `line-clamp-2 sm:truncate`, weil `truncate` den
+  `-webkit-box`-Display nicht zuverlässig zurücksetzt), Trust-Block mobil
+  etwas kleiner (Score 3xl/4xl statt 4xl).
+- Profil-Tabs: horizontal scrollbar (`no-scrollbar`), kein Zeilenumbruch.
+- Academy-Tabs: ebenfalls `no-scrollbar`.
+- Inbox-Segment-Control: eine scrollende Zeile statt Umbruch – vorher
+  zerbrach das `rounded-full` bei 360 px in zwei Reihen.
+
+**8. Safe Areas / Viewport**
+
+- `.ic-safe-top` (neu) für die beiden mobilen Top-Bars.
+- `viewport-fit=cover` bleibt **bewusst aus**: die Links/Rechts-Inset-Werte
+  im Querformat wären dann aktiv, ohne dass Container/Gutters darauf
+  reagieren. Im normalen Browser (auch Instagram-In-App) sind die Insets 0,
+  Header und Bottom-Navigation stehen daher nie unter Status- oder
+  Browserleiste; die vorhandenen `env(safe-area-inset-bottom)`-Regeln bleiben.
+
+**Unverändert:** Desktop-Startseite, Desktop-Header, Sidebar, Events-Desktop,
+Datenmodell, Auth, Resend, Beta, Trust-Berechnung, Payment, Membership, DNS,
+Domain. Keine Migration.

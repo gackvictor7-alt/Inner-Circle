@@ -8,6 +8,7 @@ import { useI18n } from "@/lib/i18n/context";
 import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
 import { LocaleSwitch } from "@/components/app/LocaleSwitch";
+import { BrandMonogram } from "@/components/site/BrandLockup";
 import { formatDate } from "@/lib/datetime";
 import {
   BriefcaseIcon,
@@ -220,21 +221,23 @@ export function AppShell({
     <div className="min-h-svh bg-background">
       {/* Mobile top bar */}
       <header className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur-xl xl:hidden">
-        <div className="flex h-14 items-center justify-between gap-2 px-3 sm:px-4">
-          <Link href="/app" aria-label="INNER CIRCLE by Venture & Partners" className="flex items-center gap-2 shrink-0">
-            <Image src="/brand/vp-monogram.png" alt="" width={34} height={34} className="h-8 w-8 object-contain dark:brightness-0 dark:invert" />
-            <span className="text-sm font-bold tracking-[0.12em]">INNER CIRCLE</span>
+        <div className="ic-safe-top flex min-h-14 items-center justify-between gap-2 px-3 py-1.5 sm:px-4">
+          <Link href="/app" aria-label="INNER CIRCLE by Venture & Partners" className="flex shrink-0 items-center gap-2">
+            {/* The real VENTURE & PARTNERS mark, sized so the visible glyph is
+                not smaller than the wordmark next to it. */}
+            <BrandMonogram size={26} />
+            <span className="text-[13px] font-bold tracking-[0.12em] sm:text-sm">INNER CIRCLE</span>
           </Link>
-          <div className="flex items-center gap-1.5 shrink-0">
+          <div className="flex shrink-0 items-center gap-1.5">
             {countdown && (
-              <span className="rounded-full bg-electric-500/10 px-2 py-0.5 text-[10px] sm:text-[11px] font-semibold text-electric-600 dark:text-electric-300">
+              <span className="rounded-full bg-electric-500/10 px-2 py-0.5 text-[10px] font-semibold text-electric-600 sm:text-[11px] dark:text-electric-300">
                 {countdown}
               </span>
             )}
             <Link
               href="/app/inbox"
               aria-label={t.app.nav.inbox}
-              className="relative inline-flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full border border-border text-foreground-muted"
+              className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-border text-foreground-muted sm:h-9 sm:w-9"
             >
               <InboxIcon size={17} />
               {inboxBadge > 0 && <BadgeDot count={inboxBadge} />}
@@ -259,6 +262,8 @@ export function AppShell({
         {/* Desktop sidebar – six primary areas only */}
         <aside className="sticky top-0 hidden h-svh w-64 shrink-0 flex-col border-r border-border bg-surface px-4 py-5 xl:flex">
           <Link href="/app" aria-label="INNER CIRCLE by Venture & Partners" className="flex items-center gap-2.5 px-2">
+            {/* Desktop sidebar keeps its original mark rendering (pure white in
+                dark mode); only the mobile top bar uses the shared monogram. */}
             <Image src="/brand/vp-monogram.png" alt="" width={38} height={38} className="h-9 w-9 shrink-0 object-contain dark:brightness-0 dark:invert" />
             <span className="text-sm font-bold tracking-[0.12em]">INNER CIRCLE</span>
           </Link>
@@ -495,18 +500,29 @@ export function AppShell({
             },
             { href: "/app/trust", label: t.app.nav.trust, icon: ChartIcon },
             { href: "/app/settings", label: t.app.nav.settings, icon: SettingsIcon },
-          ].map((entry) => (
-            <li key={entry.href}>
-              <Link
-                href={entry.href}
-                onClick={() => setAccountOpen(false)}
-                className="flex items-center gap-3 rounded-xl border border-border px-3.5 py-2.5 text-sm font-medium transition-colors hover:border-electric-500/40 hover:bg-surface-muted"
-              >
-                <entry.icon size={16} />
-                {entry.label}
-              </Link>
-            </li>
-          ))}
+          ].map((entry) => {
+            /* The sheet is the only navigation on a phone, so the page you are
+               on has to be recognisable here as well (bottom nav and sidebar
+               already mark it). */
+            const active = isActive(entry.href);
+            return (
+              <li key={entry.href}>
+                <Link
+                  href={entry.href}
+                  onClick={() => setAccountOpen(false)}
+                  aria-current={active ? "page" : undefined}
+                  className={`flex items-center gap-3 rounded-xl border px-3.5 py-2.5 text-sm font-medium transition-colors ${
+                    active
+                      ? "border-electric-500/40 bg-electric-500/10 text-electric-600 dark:text-electric-300"
+                      : "border-border hover:border-electric-500/40 hover:bg-surface-muted"
+                  }`}
+                >
+                  <entry.icon size={16} />
+                  {entry.label}
+                </Link>
+              </li>
+            );
+          })}
           {user.isAdmin && (
             <li>
               <Link

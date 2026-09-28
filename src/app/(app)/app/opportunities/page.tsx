@@ -173,8 +173,8 @@ export default async function OpportunitiesPage({
                   </p>
                 </div>
                 <div className="flex flex-col gap-2 sm:min-w-36">
-                  <Button href={`/app/opportunities/${row.id}`} size="sm" variant="secondary" className="w-full"><Tr k="app.opportunities.overviewCta" /></Button>
-                  {row.ownerId !== access.user.id && access.entitlements.opportunitiesApply && <Button href={`/app/opportunities/${row.id}#apply`} size="sm" className="w-full"><Tr k="app.opportunities.apply.cta" /></Button>}
+                  <Button href={`/app/opportunities/${row.id}`} size="sm" variant="secondary" className="h-11 w-full sm:h-9"><Tr k="app.opportunities.overviewCta" /></Button>
+                  {row.ownerId !== access.user.id && access.entitlements.opportunitiesApply && <Button href={`/app/opportunities/${row.id}#apply`} size="sm" className="h-11 w-full sm:h-9"><Tr k="app.opportunities.apply.cta" /></Button>}
                 </div>
               </div>
             </li>

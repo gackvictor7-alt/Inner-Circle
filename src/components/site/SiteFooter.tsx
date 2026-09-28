@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useI18n } from "@/lib/i18n/context";
+import { BrandLockup } from "./BrandLockup";
 
 export function SiteFooter() {
   const { t } = useI18n();
@@ -37,15 +38,9 @@ export function SiteFooter() {
             unchanged four-column structure. */}
         <div className="grid gap-x-6 gap-y-8 sm:grid-cols-2 sm:gap-10 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
           <div className="flex flex-col items-start gap-4 sm:col-span-2 md:col-span-1">
-            <div className="flex items-center gap-3">
-              <span
-                aria-hidden="true"
-                className="flex h-9 w-9 items-center justify-center rounded-full border border-sand-400/60 bg-midnight-800 text-[13px] font-bold text-sand-400"
-              >
-                IC
-              </span>
-              <span className="text-[15px] font-bold tracking-[0.14em]">INNER CIRCLE</span>
-            </div>
+            {/* Same real branding as the header (VENTURE & PARTNERS /
+                INNER CIRCLE) instead of the old IC-only badge. */}
+            <BrandLockup href={null} size={32} />
             <p className="max-w-xs text-sm leading-6 text-foreground-muted">{t.footer.tagline}</p>
           </div>
 

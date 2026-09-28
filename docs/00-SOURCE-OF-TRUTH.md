@@ -3,6 +3,42 @@
 **Diese Datei ist der verbindliche Einstiegspunkt für jeden Menschen und jeden
 KI-Agenten, der an diesem Repository arbeitet.**
 
+- **Neuester Stand (2026-09-28): Mobile-Polish & Cross-Device-QA.**
+  Session-Branch auf Basis von `main` nach dem Merge von PR #34. Auftrag:
+  ausschließlich Mobile-Erlebnis und Cross-Device-QA, keine neuen Features,
+  keine funktionierenden Desktop-Bereiche umgebaut. **Öffentliche Seite:**
+  der Mobile Hero zeigt dasselbe freigegebene `hero-alpine.jpg` jetzt als
+  eigenes Band mit bildnahem Seitenverhältnis statt als 2,3-fach gezoomtes
+  Vollbild – bei 360 px sind rund 97 % der Bildbreite inklusive der
+  vollständigen Personengruppe sichtbar, der Text steht auf ruhigem Navy;
+  Header, Mobil-Menü und Footer zeigen das echte **VENTURE & PARTNERS /
+  INNER CIRCLE**-Branding aus dem vorhandenen `public/brand/vp-monogram.png`
+  (kompakte Variante < 400 px, Doppel-Lockup ab 400 px; Desktop-Header
+  unverändert); Eyebrow-Pill und Hero-Glow sind weg, CTAs folgen dem
+  Desktop-Hero-Schema (Reihenfolge „Mehr erfahren“ → „Zur INNER CIRCLE
+  Plattform“ bleibt); Typografie mobil auf Einzeiler und ≥ 12 px
+  Eyebrows geprüft. **App:** Top-Bar und Konto-Blatt mit Safe-Area-Padding,
+  gemeinsamem Monogramm, 40-px-Inbox-Touch-Ziel und hervorgehobener
+  aktiver Seite; `Dialog` ist unter `sm` ein scrollendes Bottom-Sheet mit
+  **gekoppelter Kopfzeile (Titel + X)** und gepinntem Footer, damit
+  Follower/Following/Connections-Listen nie mehr abgeschnitten werden
+  (ProfilePeopleModal ohne zweiten Scrollbereich); Listen-CTAs auf Mobil
+  44 px; Formularfelder < 640 px mit 16 px Schrift gegen den iOS-Zoom;
+  Inbox-Segment-Control scrollt statt umzubrechen; Profilkopf mit
+  kleinerem Avatar und umbrechender Rolle. **Desktop blieb unverändert**
+  (kein Eingriff in `lg`/`xl`-Blöcke, Sidebar, Desktop-Header, Hero,
+  Events). `viewport-fit=cover` bleibt bewusst aus (siehe
+  `10-design-freeze.md` 1.21). **Keine Migration.** Nachweise: `npm test`
+  37 Dateien / 275 Tests grün, `tsc --noEmit`, i18n-Audit (DE/EN 2612
+  Schlüssel, identische Form), Lint unverändert auf der K-15-Baseline
+  (5 Fehler + 6 Warnungen), `npm run cf:build` (OpenNext) und
+  `wrangler deploy --dry-run` grün. Zusätzlich im echten lokalen workerd
+  (Port 8787, lokale D1 migriert + geseedet) alle App-Seiten mit
+  Demo-Mitglied HTTP 200. **Screenshot-/Browser-E2E wurde nicht
+  ausgeführt** – Chromium/Playwright ist in dieser Umgebung nicht
+  installierbar (Download blockiert); es wird daher **keine visuelle
+  Abnahme** behauptet, siehe `docs/08-testing.md` und K-26.
+
 - **Neuester Stand (2026-09-28): Visueller Follow-up nach PR #33.**
   Session-Branch basiert auf `main` nach dem Merge von PR #33. Rein visueller
   Auftrag, keine neuen Features: `/app` zeigt **keinen** „Für dich“-Bereich und
