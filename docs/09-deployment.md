@@ -1,7 +1,7 @@
 # 09 – Deployment & Betrieb (Cloudflare Workers + D1)
 
-**Stand:** 2026-09-21 · geprüft gegen `package.json`, `wrangler.jsonc`,
-`open-next.config.ts` und `next.config.ts` auf `main` @ `f22c19e`.
+**Stand:** 2026-09-28 · geprüft gegen `package.json`, `wrangler.jsonc`,
+`open-next.config.ts` und `next.config.ts` auf `main` @ `0c67309`.
 
 **Ziel-Plattform: Cloudflare Workers** (OpenNext-Adapter) mit **Cloudflare D1**
 als Produktionsdatenbank. Vercel/Postgres (ADR-007) ist ersetzt (ADR-008).
@@ -188,37 +188,28 @@ Binding `MEDIA`. Für Produktion sind **keine Secrets** nötig:
 | `npm run dev` von außen nicht erreichbar | Bind-Adresse | Skripte binden bereits `0.0.0.0` |
 | Build bricht mit DB-Zugriff ab | `.env` im Cloudflare-Build sichtbar | im Repo liegt keine `.env`; OpenNext würde Werte einbetten – keine `.env` committen |
 
-## 7a. Eigene Domain `innercirclevp.com` – vorbereitet, bewusst nicht umgesetzt (Sprint 15)
+## 7a. Eigene Domain `innercirclevp.com` – Cutover vorbereitet, nicht ausgeführt (2026-09-28)
 
-**Stand:** `innercirclevp.com` ist bei Resend **nur zum Senden** verifiziert
-(`EMAIL_FROM="INNER CIRCLE <noreply@innercirclevp.com>"`), das DNS liegt weiterhin
-bei STRATO, die Website läuft auf `https://inner-circle.gackvictor7.workers.dev`.
-**Dieser Sprint hat an DNS/Namensservern und an der Produktionsdomain nichts
-geändert.** Die App ist umzugsfertig: alle absoluten Links (Passwort-Reset-Mail,
-Beta-Einladung) werden zentral über `getAppUrl()` aus `NEXT_PUBLIC_SITE_URL`
-gebaut; im Repository gibt es keine hartkodierten `workers.dev`-URLs im
-Quellcode (nur in der gitignorierten lokalen `.dev.vars`).
+**Ist-Zustand laut Projektkontext:** Die Nameserver-Propagation bei Cloudflare
+läuft; eine aktive Zone wurde in diesem Sprint nicht überprüft. Die Production
+bleibt bis zum freigegebenen Cutover unter
+`https://inner-circle.gackvictor7.workers.dev`. Die Website-Domain wurde weder
+mit dem Worker verbunden noch in der Production-Konfiguration geändert.
 
-**Checkliste für den späteren Umzug (manuell, kontrolliert):**
-1. Domain bei Cloudflare als Zone anlegen (Namensserver bei STRATO umstellen)
-   **oder** die Zone bei STRATO belassen und `innercirclevp.com` als Custom
-   Domain am Worker `inner-circle` binden (Workers → Domains → *Add custom
-   domain*); A-Record/CNAME auf den Worker, TLS automatisch.
-2. `NEXT_PUBLIC_SITE_URL` (Build **und** Runtime des Workers) auf
-   `https://inner-circle-gackvictor7...` → korrekt: `https://<neue-domain>`
-   setzen – **vor** dem nächsten Build, da der Wert eingebettet wird.
-3. Einmal-Prüfung nach dem Deploy: Passwort-Reset-Mail (Link zeigt auf die neue
-   Domain), Beta-Einladungstext, Stripe-Redirects (`STRIPE_PORTAL_RETURN_URL`),
-   Logo/Media-URLs.
-4. `EMAIL_FROM` bleibt unverändert (bereits die verifizierte Domain); falls
-   `EMAIL_FROM_VERIFICATION` gesetzt ist (Empfehlung:
-   `INNER CIRCLE <verify@innercirclevp.com>`), gilt es nur für die
-   Verifizierungs-Code-Mail und muss bei einem Domain-Umzug ebenfalls auf die
-   neue Absenderpraxis geprüft werden; Resend
-   DKIM/SPF/DMARC prüfen, sobald dieselbe Domain auch als Webdomain dient
-   (TXT-Records dann im neuen Zone-Halter).
-5. Alte `workers.dev`-URL nicht mehr als Basis in Secrets führen; Dev-Postausgang
-   (`ENABLE_DEV_OUTBOX`) in Produktion entfernt halten.
+Die absoluten öffentlichen App-URLs werden zur Laufzeit über `getPublicUrl()` /
+`getAppUrl()` und `NEXT_PUBLIC_SITE_URL` aufgelöst: Passwort-Reset, Beta-
+Einladung, Profil teilen, Mitgliedskarten-QR, Stripe-Rückleitungen, Logout,
+Billing-Weiterleitungen und `metadataBase`. Das Root-Metadata verwendet dieselbe
+Basis; relative OpenGraph-Bilder werden darüber aufgelöst. Im archivierten
+E2E-Ergebnis `preview/sprint15/e2e-results-final.json` und in historischen
+Dokumentations-/Teststellen bleibt die alte Adresse als Testbeleg erhalten;
+sie ist kein aktiver Host-Fallback im Produktcode. Interne Auth-Navigation
+(`/verify`, Login, Onboarding, `/app`, `/app/beta`) bleibt pfadbasiert.
+
+Die vollständige ausführbare Reihenfolge einschließlich der optionalen
+`www`-Weiterleitungsstrategie steht in
+[`DOMAIN-CUTOVER-CHECKLIST.md`](DOMAIN-CUTOVER-CHECKLIST.md). Sie ist nur
+Dokumentation; keine DNS-/Redirect-Regel ist angelegt.
 
 ## 8. Produktions-Checkliste
 

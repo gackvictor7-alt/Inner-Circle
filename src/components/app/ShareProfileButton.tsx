@@ -6,7 +6,7 @@ import { useTr } from "@/components/app/localized";
 import { ShareIcon } from "@/components/ui/icons";
 
 /** Copies the public member link – no external service involved. */
-export function ShareProfileButton({ path }: { path: string }) {
+export function ShareProfileButton({ url }: { url: string }) {
   const tr = useTr();
   const [copied, setCopied] = useState(false);
 
@@ -15,7 +15,6 @@ export function ShareProfileButton({ path }: { path: string }) {
       size="sm"
       variant="secondary"
       onClick={async () => {
-        const url = `${window.location.origin}${path}`;
         try {
           await navigator.clipboard.writeText(url);
         } catch {

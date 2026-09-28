@@ -37,14 +37,39 @@ export const authSecretIsFallback = (): boolean => !read("AUTH_SECRET");
 
 /**
  * Public origin of the site – used for links in e-mails, Stripe return URLs,
- * and generated admin beta invitation text. Reads at access time so that a
- * Workers deployment picks up `NEXT_PUBLIC_SITE_URL` from the Worker env
- * instead of the build-time / development fallback.
+ * metadata and generated sharing/invitation links. Reads at access time so a
+ * Workers request uses `NEXT_PUBLIC_SITE_URL` from the Worker environment,
+ * rather than a value captured during module initialization.
  */
 export function getAppUrl(): string {
-  // Prefer the explicit public site URL; fall back to APP_URL; finally the
-  // Next.js request-relative default (safe only in dev).
-  return read("NEXT_PUBLIC_SITE_URL") ?? read("APP_URL") ?? "http://localhost:3000";
+  // Prefer the explicit public site URL; fall back to APP_URL; finally use the
+  // local Node development origin. Production configuration must set the
+  // explicit URL; the local fallback is not a production domain.
+  const configured = read("NEXT_PUBLIC_SITE_URL") ?? read("APP_URL") ?? "http://localhost:3000";
+  try {
+    const url = new URL(configured);
+    if (url.protocol === "http:" || url.protocol === "https:") return url.origin;
+  } catch {
+    // Keep an invalid value observable to callers that validate/parse it.
+  }
+  return configured.replace(/\/+$/, "");
+}
+
+/**
+ * Resolve a root-relative application path against the one configured public
+ * origin. Requiring a single leading slash prevents protocol-relative paths
+ * from silently changing the host.
+ */
+export function getPublicUrl(path: string): string {
+  if (!path.startsWith("/") || path.startsWith("//") || path.includes("\\")) {
+    throw new TypeError("Public URLs must use a root-relative application path");
+  }
+
+  const base = new URL(getAppUrl());
+  if (base.protocol !== "http:" && base.protocol !== "https:") {
+    throw new TypeError("NEXT_PUBLIC_SITE_URL must use http or https");
+  }
+  return new URL(path, `${base.origin}/`).toString();
 }
 
 /**

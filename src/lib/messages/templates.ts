@@ -151,8 +151,8 @@ function renderPasswordResetHtml(params: { link: string; firstName: string; loca
     ? "Falls du das nicht warst, ignoriere diese E-Mail – dein Passwort bleibt unverändert."
     : "If you did not request this, you can safely ignore this email – your password stays unchanged.";
   const slogan = isDe ? "Zugang schafft Chancen." : "Access creates opportunity.";
-  // The link comes from `NEXT_PUBLIC_SITE_URL` + token; escaping keeps the
-  // attribute safe regardless of what the environment supplies.
+  // The link is built by the shared public-URL resolver; escaping keeps the
+  // attribute safe regardless of the configured site origin.
   const href = params.link
     .replace(/&/g, "&amp;")
     .replace(/"/g, "&quot;")
