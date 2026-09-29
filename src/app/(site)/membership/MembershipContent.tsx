@@ -20,7 +20,7 @@ import { CtaBand } from "@/components/site/CtaBand";
  * Membership page: exactly one membership, two billing periods.
  *
  * Prices are read from `PLANS` (`src/lib/membership/plans.ts`) – the page can
- * no longer claim "annual price to follow" while billing charges 249,90 €
+ * no longer claim "annual price to follow" while billing charges 249,99 €
  * (known issue K-03, resolved by founder decision 2026-09-21). The annual
  * advantage is labelled quietly as "Preisvorteil", not as a discount badge.
  */

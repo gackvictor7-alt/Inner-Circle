@@ -1,7 +1,6 @@
 # 03 – Route Map, Server Actions & API-Routen
 
-**Stand:** 2026-09-24 (Sprint 12: Private Beta & echtes Networking – `/app/beta`, `/admin/beta`, geänderte Netzwerk-/Inbox-Zeilen) · davor 2026-09-22 (Sprint 8) · Basis: Branch `arena/01a0cad6-inner-circle`
-(Basis `main` @ `128295a`).
+**Stand:** 2026-09-29 (Stripe-Sandbox-Billing, Portal, Profil-/Opportunity-UX) · Basis: aktuelles `main` @ `98814bc`; keine Produktionskonfiguration geändert.
 Quelle: `src/app/**` plus Build-Ausgabe von `npm run cf:build`
 (58 Einträge: 57 dynamische Routen + `/_not-found`).
 
@@ -27,7 +26,7 @@ nur konsolidiert wenn Verhalten 100% erhalten bleibt.
 | `/investments` | Preview Investments | public | WORKING | keine DB | Hinweis „Discovery, keine Ausführung"; kein Rendite-Wording |
 | `/marketplace` | Preview Marktplatz & Academy | public | WORKING | keine DB | Tabs Marktplatz/Academy |
 | `/events` | Preview Events | public | WORKING | keine DB | ehrlicher Leerzustand, keine erfundenen Termine |
-| `/membership` | Preismodell 24,99 €/Monat und 249,90 €/Jahr, Leistungen, Trust-Rechtliches | public | WORKING | keine DB | Checkout läuft über Dev-Aktivierung, Stripe scharf = Roadmap S-1 |
+| `/membership` | Preismodell 24,99 €/Monat und 249,99 €/Jahr, Leistungen, Trust-Rechtliches | public | WORKING | keine DB | Preisquelle `PLANS`; Checkout im Mitgliederbereich nutzt die konfigurierte Stripe-Sandbox |
 | `/imprint`, `/privacy`, `/terms` | Rechtliche Platzhalter | public | PARTIAL | keine DB | bewusst ohne Fake-Rechtstext, vor Launch zu ersetzen |
 | `/design` | internes Design-System (Styleguide) | public (intern verlinkt) | WORKING | keine DB | kein Produktfeature; Design-Freeze beachten |
 | `/_not-found` | 404-Seite | public | WORKING | keine DB | einzige statisch vorgerenderte Route |
@@ -62,15 +61,15 @@ Alle Routen liegen unter dem App-Layout `src/app/(app)/app/layout.tsx`, das
 | `/app/messages` | 1:1-Nachrichten | member (Messaging-Entitlement) | WORKING | `Conversation`, `ConversationParticipant`, `Message` | nur mit bestätigter Verbindung; sonst Redirect auf Verbindungen; Trial sieht Hinweis statt Eingabe |
 | `/app/notifications` | **Umleitung** → `/app/inbox?tab=notifications` | free+ | WORKING | – | – |
 | `/app/profile` | **Profil-Hauptbereich** – kompakten Header (Avatar/Name/Handle/Positionierung, Statistikzeile, Action-Zeile) + `?tab=activity\|overview\|performance\|offers` (Standard: Beiträge) | free | WORKING | `Profile`, `User`, `Post`, `Follow`, `Connection`, `TrustScoreSummary`, `PerformanceRecord`, `BusinessOpportunity`, `MarketplaceListing`, `InvestmentOpportunity`, `PrivacySettings` | Übersicht zeigt sekundäre Infos als Accordions (`<details>`); Trust & Performance, Konto-Links und schmaler Profilfortschritt leben hier |
-| `/app/profile/edit` | Profil bearbeiten **inkl. Interessen & Ziele** | free | WORKING | `Profile`, `User`, `UserInterest`, `UserGoal` | Rate-Limit 40/h; dieselbe Taxonomie wie das Onboarding – Sprint 13: EIN Formular/ Speicherbutton (Profilfelder + Foto-Upload + Interessen & Ziele, `updateProfileAction`), Success `?saved=all` |
+| `/app/profile/edit` | Profil bearbeiten **inkl. Interessen & Ziele** | free | WORKING | `Profile`, `User`, `UserInterest`, `UserGoal` | Rate-Limit 40/h; dieselbe Taxonomie wie das Onboarding – ein Formular/Speicherbutton (Profilfelder + Foto-Upload + Interessen & Ziele, `updateProfileAction`), historische `rolesJson`/`skillsJson` bleiben erhalten, Success `?saved=all` |
 | `/app/settings` | **Darstellung (Hell/Dunkel/System)**, Datenschutz, Kennzahlen-Sichtbarkeit, Benachrichtigungen, Blockierte, Löschantrag, Dev-Link | free | WORKING | `PrivacySettings` (inkl. `metricsVisibilityJson`), `NotificationPreference`, `Block`, `AccountDeletionRequest` | Theme über die bestehende `ThemeProvider`-Infrastruktur |
 | `/app/card` | digitale Mitgliedskarte + QR | member (Karte) | WORKING | `MembershipCard`, `Membership`, `User` | Free/Trial sieht Sperrhinweis; `entitlements.memberCard` |
-| `/app/billing` | Mitgliedschaft, Planwahl, Abrechnung, Paywall | free | WORKING | `Membership`, `Invoice` | Checkout-POST `/api/billing/checkout`; Dev-Aktivierung nur ohne Stripe & außerhalb Produktion; **Sprint 12:** Karte „Private Beta“ (Einstieg „Beta-Zugang aktivieren“ bzw. Status „aktiv bis …, keine Mitgliedschaft“) |
+| `/app/billing` | Mitgliedschaft, Planwahl, Abrechnung, Paywall | free | WORKING | `Membership`, `Invoice` | Checkout-POST `/api/billing/checkout` mit serverseitiger Stripe-Price-ID; `/api/billing/portal` für Stripe-Kunden; Dev-Aktivierung nur ohne Stripe & außerhalb Produktion; **Sprint 12:** Karte „Private Beta“ (Einstieg „Beta-Zugang aktivieren“ bzw. Status „aktiv bis …, keine Mitgliedschaft“) |
 | `/app/beta` | **Beta-Zugang aktivieren** (Sprint 12): persönlichen Schlüssel einlösen bzw. Status (aktiv bis / abgelaufen / beendet) | free/trial (verifiziert) | WORKING | `BetaInvite`, `BetaAccess`, `RateLimit`, `AdminAuditLog` | `redeemBetaKeyAction`; Erfolg ⇒ Redirect `/app/profile/edit?welcome=beta` (geführte Profilfelder mit Fortschritt, danach Discover); Mitglieder/Admins sehen „nicht nötig“; erreichbar über Profil-Menü, Billing-Karte, Hinweise in Demo/Locked-States |
 | `/app/membership-application` | Antrag auf Voll-Mitgliedschaft | member | WORKING | `MembershipApplication` | Free/Trial sieht Sperrhinweis; Prüfung durch Admin |
 | `/app/trust` | Trust & Performance (Detailseite; kein Navigationspunkt mehr) | member+ | WORKING (Sprint 16) | `TrustReview` (Quelle der Wahrheit), `TrustScoreSummary` (Cache), `PerformanceRecord` | Score live aus verifizierten Bewertungen; ohne Bewertung „Noch keine verifizierten Bewertungen“; **Bewertungsformular nur bei serverseitig nachgewiesener Zusammenarbeit**; zusätzlich nachweisbare Erfolge |
 | `/app/opportunities` | Business-Chancen (Liste, Filter) | member+ (Demo-Zweig für `trial`) | WORKING | `BusinessOpportunity`, `OpportunityApplication`, `User`, `Profile` | Free sieht Locked-State; Discovery-Demo sieht nur Demo-Deals (`DemoAreaNotice`); Demo-Inhalte markiert |
-| `/app/opportunities/new` | Chance anlegen (`?type=job` wählt den Typ vor) | member | WORKING | schreibt `BusinessOpportunity` | Ratelimit 10/h; `entitlements.opportunitiesManage` |
+| `/app/opportunities/new` | Chance anlegen (`?type=job` wählt den Typ vor) | member | WORKING | schreibt `BusinessOpportunity` | Titel, Typ, Kurzfassung, Beschreibung, Branche, Ort + vorhandene Remote-Option; Legacy-Felder bleiben schema-lesbar; Ratelimit 10/h; `entitlements.opportunitiesManage` |
 | `/app/opportunities/[id]` | Detail + Bewerbung, Antworten des Owners | member (Free/Demo: `LockedArea`, Owner ausgenommen) | WORKING | `BusinessOpportunity`, `OpportunityApplication` | Bewerbung nur mit `opportunitiesApply`; Owner sieht Bewerbungen |
 | `/app/jobs` | Jobs & Projekte (gefilterte Chancen `job`/`freelance`) | member+ (Demo-Zweig für `trial`) | WORKING | `BusinessOpportunity`, `User`, `Profile` | CTA nur mit `opportunitiesManage`; Discovery-Demo sieht nur Demo-Jobs |
 | `/app/marketplace` | Marktplatz-Listings (Produkte, Services, Kurse) | public im Mitgliederbereich (free/trial sehen Liste) | WORKING | `MarketplaceListing`, `Profile`, `User` | CTA „Angebot erstellen" nur mit `marketplaceSell` |
@@ -105,8 +104,9 @@ Alle Routen liegen unter dem App-Layout `src/app/(app)/app/layout.tsx`, das
 | --- | ------- | ----- | ------- | ------ | -------- |
 | `/api/auth/logout` | POST/GET | Session widerrufen + Redirect `/` | free+ | WORKING | für reine HTML-Formulare ohne Client-JS |
 | `/api/media/[...key]` | GET | liefert hochgeladene Profilfotos aus dem R2 `MEDIA`-Binding aus (nur `avatars/<userId>/<datei>.jpg|png|webp`) | öffentlich (unerratbare Keys, wie bisherige Bild-URLs) | WORKING | Sprint 13; `Cache-Control: immutable`, ohne Binding 404; alternative Auslieferung via `R2_PUBLIC_BASE_URL` |
-| `/api/billing/checkout` | POST | Start des Checkout (Stripe) oder Dev-Aktivierung | free+ (angemeldet) | BLOCKED (Stripe) / WORKING (Dev) | Ratelimit 10/10 min; `GET` leitet auf `/app/billing` |
-| `/api/webhooks/stripe` | POST | einzig erlaubter Produktiv-Pfad für Mitgliedschaftsänderungen | öffentlich, **signaturgeprüft** | BLOCKED (kein Stripe) | Idempotenz über `MembershipEvent.providerEventId`; ohne Secret 400 |
+| `/api/billing/checkout` | POST | Start des serverseitigen Stripe-Sandbox-Checkout (oder klar markierte Dev-Aktivierung) | free+ (angemeldet) | WORKING (Sandbox-Konfiguration erforderlich) | Ratelimit 10/10 min; Browser liefert nur den Plan-Namen; `GET` leitet auf `/app/billing` |
+| `/api/billing/portal` | POST | Stripe Customer Portal für die serverseitig zugeordnete Customer-ID | free+ (angemeldet) | WORKING (Sandbox-Konfiguration erforderlich) | Keine Customer-ID aus dem Browser; `GET` leitet auf `/app/billing` |
+| `/api/webhooks/stripe` | POST | einzig erlaubter Aktivierungs-/Lifecycle-Pfad für Stripe-Mitgliedschaften | öffentlich, **raw-body/signaturgeprüft** | WORKING (Secret erforderlich) | Idempotenz über `MembershipEvent.providerEventId`; ohne Secret/Signatur 400; sechs verbindliche Events |
 | `/api/auth/oauth/google` | – | – | – | **NOT IMPLEMENTED** | Route existiert **nicht**; Login-/Register-Buttons sind seit Sprint 5 echte `disabled`-Elemente ohne Link (K-04 behoben) |
 | `/api/auth/oauth/apple` | – | – | – | **NOT IMPLEMENTED** | wie oben |
 
@@ -165,7 +165,7 @@ Für jede wichtige Route dokumentiert: Route, Public/Auth Required, Zweck, echte
 | `/investments` (public) | Public | Preview Investments | statisch, Hinweis Discovery keine Ausführung | „Investments erklären" | WORKING (statisch) | visitor | Keine |
 | `/marketplace` (public) | Public | Preview Marketplace & Academy | statisch | „Marketplace ansehen" | WORKING (statisch) | visitor | Keine |
 | `/events` (public) | Public | Preview Events | statisch, ehrlicher Leerzustand | „Events ansehen" | WORKING (statisch) | visitor | Keine |
-| `/membership` | Public | Preise, Leistungen, Trust, Rechtliches | statisch, Preise 24,99/249,90 konsistent | „Zugang starten" | WORKING (statisch) | visitor | Stripe nicht scharf (K-03 offen bleibt nur Stripe-Produkt) |
+| `/membership` | Public | Preise, Leistungen, Trust, Rechtliches | statisch, Preise 24,99/249,99 konsistent | „Zugang starten" | WORKING (statisch) | visitor | Stripe nicht scharf (K-03 offen bleibt nur Stripe-Produkt) |
 | `/portfolio` | Public | IC Portfolio Zielmodell 20%→25%/75%=5%/15% | statisch, 100€ Beispiel, kein Fonds, keine Rendite | „Mitglied werden" | WORKING (statisch) | visitor | Keine |
 | `/member/[publicId]` | Public | Öffentliche Karten-Verifikation | echt (MembershipCard + User/Profile) | – | WORKING (force-dynamic) | visitor | Keine |
 | `/login` | Public | Anmeldung | echt | „Anmelden" | WORKING | visitor | – |
@@ -187,10 +187,10 @@ Für jede wichtige Route dokumentiert: Route, Public/Auth Required, Zweck, echte
 | `/app/messages` | Auth member | 1:1 Nachrichten | echt (nur verbundene) | Senden | WORKING | member messaging | Umleitung nach inbox |
 | `/app/notifications` | Auth free | Umleitung → inbox notifications | – | – | WORKING | free | Umleitung |
 | `/app/profile` | Auth free | Profil Hauptbereich, Header, Stats, Actions, Vollständigkeit, Tabs Beiträge/Übersicht/Performance/Angebote | echt + Demo-Beiträge unten (3-6 hochwertige, Demo-Badge) | „Profil bearbeiten", „Profil teilen", „Einstellungen" | WORKING | free | Avatar Upload NOT IMPLEMENTED |
-| `/app/profile/edit` | Auth free | Profil bearbeiten inkl. Interessen/Ziele | echt | „Speichern" | WORKING | free | Keine |
+| `/app/profile/edit` | Auth free | Profil bearbeiten inkl. Interessen/Ziele | echt | „Speichern" | WORKING | free | Ein Formular; historische Rollen/Skills bleiben erhalten |
 | `/app/settings` | Auth free | Darstellung Hell/Dunkel/System, Sprache, Datenschutz, Kennzahlen-Sichtbarkeit, Benachrichtigungen, Blockierte, Löschantrag | echt | – | WORKING | free | – |
 | `/app/card` | Auth member | Mitgliedskarte + QR | echt | – | WORKING | member memberCard | Free/Trial locked |
-| `/app/billing` | Auth free | Mitgliedschaft, Planwahl, Abrechnung, Paywall | echt (Membership, Invoice) | „Mitglied werden", Checkout | WORKING | free | Stripe BLOCKED, Dev-Aktivierung nur lokal |
+| `/app/billing` | Auth free | Mitgliedschaft, Planwahl, Abrechnung, Paywall | echt (Membership, Invoice) | „Mitglied werden", Checkout/Portal | WORKING | free | Stripe-Sandbox mit Price-IDs erforderlich; Aktivierung nur via verifiziertem Webhook |
 | `/app/membership-application` | Auth member | Antrag Voll-Mitgliedschaft | echt | „Antrag stellen" | WORKING | member | – |
 | `/app/trust` | Auth trial+ | Trust & Performance Detail + verifizierte Bewertungen | echt, leer ohne Bewertungen (Sprint 16) | – | WORKING | trial+ (`trustView` = member/admin) | K-27 Event-Kontext fehlt (kein Attendance) |
 | `/app/opportunities` | Auth trial+ | Business-Chancen Liste Filter | echt + Demo wenn leer (Demo-Detail-Dialog funktional) | „Details", „Deal ansehen" → Detail oder Demo-Dialog | WORKING (Sprint 6: jeder CTA funktional) | trial+ opportunitiesBrowse | Keine |
@@ -217,7 +217,8 @@ Für jede wichtige Route dokumentiert: Route, Public/Auth Required, Zweck, echte
 | `/admin/reviews` | Auth admin | Trust-Bewertungen moderieren | echt | Entfernen / Wiederherstellen | WORKING (Sprint 16) | admin | – |
 | `/api/auth/logout` | Auth free+ | Session Widerruf | echt | – | WORKING | free+ | – |
 | `/api/media/[...key]` | öffentlich | Profilfotos aus R2 ausliefern | echt | – | WORKING | free+ | Sprint 13 |
-| `/api/billing/checkout` | Auth free+ | Checkout Stripe oder Dev | echt | – | BLOCKED Stripe / WORKING Dev | free+ | Ratelimit 10/10min |
-| `/api/webhooks/stripe` | Public signaturgeprüft | Membership Änderungen nur via Webhook | echt | – | BLOCKED (kein Secret) | public signiert | – |
+| `/api/billing/checkout` | Auth free+ | Serverseitiger Stripe-Sandbox-Checkout oder klar markierte Dev-Aktivierung | echt | – | WORKING (Sandbox-Konfiguration erforderlich) | free+ | Ratelimit 10/10min; Browser liefert nur `monthly`/`annual` |
+| `/api/billing/portal` | Auth free+ | Stripe Customer Portal | echt | – | WORKING (Sandbox-Konfiguration erforderlich) | free+ | Customer-ID nur aus serverseitiger Membership-Zuordnung |
+| `/api/webhooks/stripe` | Public signaturgeprüft | Membership-Änderungen nur via Webhook | echt | – | WORKING (Secret erforderlich) | public signiert | Raw body, Idempotenz, sechs verbindliche Ereignisse |
 
 **Hinweis doppelte Routen:** `/app/messages`, `/app/connections`, `/app/notifications` leiten nach `/app/inbox?tab=…` um – Verhalten 100% erhalten, keine Löschung. `/app/opportunities` und `/app/jobs` teilen Datenmodell `BusinessOpportunity` (Filter `job`/`freelance`), aber unterschiedliche Zweck – dokumentiert, nicht konsolidiert.

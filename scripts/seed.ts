@@ -19,6 +19,7 @@ import { randomBytes, createHash } from "node:crypto";
 import * as schema from "../src/db/schema";
 import { createId } from "../src/db/ids";
 import { computeTrustScore } from "../src/lib/trust/score";
+import { PLANS } from "../src/lib/membership/plans";
 import { BADGES, GOALS, INTERESTS } from "./taxonomy";
 
 const url = process.env.DATABASE_URL ?? "file:./dev.db";
@@ -507,7 +508,7 @@ async function main() {
 
     if (input.level === "member" || input.level === "admin") {
       const plan = input.membershipPlan ?? "monthly";
-      const priceCents = plan === "annual" ? 24990 : 2499;
+      const priceCents = PLANS[plan].priceCents;
       await db.insert(schema.memberships).values({
         id: createId("mbs"),
         userId,

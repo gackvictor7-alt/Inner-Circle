@@ -64,7 +64,7 @@ export function ActionForm({
   }, [state, router]);
 
   const errorMessage =
-    state.status === "error"
+    state.status === "error" && Object.keys(state.fieldErrors ?? {}).length === 0
       ? tr(`app.errors.${state.errorCode ?? "generic"}`, state.errorParams)
       : null;
 
@@ -79,6 +79,8 @@ export function ActionForm({
         {fields.map((field) => {
           const label = tr(field.labelKey);
           const hint = field.helpKey ? tr(field.helpKey) : undefined;
+          const fieldErrorCode = state.fieldErrors?.[field.name];
+          const fieldError = fieldErrorCode ? tr(`app.errors.${fieldErrorCode}`, state.errorParams) : undefined;
           const defaultValue =
             typeof field.defaultValue === "boolean"
               ? undefined
@@ -94,6 +96,7 @@ export function ActionForm({
                   required={field.required}
                   rows={field.rows ?? 6}
                   maxLength={field.maxLength}
+                  error={fieldError}
                   defaultValue={defaultValue as string | undefined}
                   placeholder={field.placeholderKey ? tr(field.placeholderKey) : undefined}
                 />
@@ -109,7 +112,8 @@ export function ActionForm({
                   name={field.name}
                   required={field.required}
                   defaultValue={(field.defaultValue as string) ?? ""}
-                  className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-electric-500"
+                  aria-invalid={fieldError ? true : undefined}
+                  className={`h-11 w-full rounded-xl border px-3 text-sm outline-none focus:border-electric-500 ${fieldError ? "border-danger-500/60" : "border-border"}`}
                 >
                   {(field.options ?? []).map((option) => (
                     <option key={option.value} value={option.value}>
@@ -117,7 +121,13 @@ export function ActionForm({
                     </option>
                   ))}
                 </select>
-                {hint && <span className="mt-1 block text-xs text-foreground-subtle">{hint}</span>}
+                {fieldError ? (
+                  <span role="alert" className="mt-1 block text-xs font-medium text-danger-600 dark:text-danger-300">
+                    {fieldError}
+                  </span>
+                ) : hint ? (
+                  <span className="mt-1 block text-xs text-foreground-subtle">{hint}</span>
+                ) : null}
               </label>
             );
           }
@@ -149,6 +159,7 @@ export function ActionForm({
               required={field.required}
               defaultValue={defaultValue as string | undefined}
               placeholder={field.placeholderKey ? tr(field.placeholderKey) : undefined}
+              error={fieldError}
               maxLength={field.maxLength}
               min={field.min}
               max={field.max}

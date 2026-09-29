@@ -5,20 +5,21 @@ kontrollierten Wechsel. In diesem Sprint wurden weder DNS/Nameserver geändert,
 noch eine Cloudflare-Custom-Domain oder Redirect-Regel angelegt, Production-
 Variablen geändert oder ein Deployment ausgeführt.
 
-**Ist-Zustand laut Projektkontext vom 2026-09-28:** `innercirclevp.com` befindet
-sich in der Nameserver-Propagation bei Cloudflare. Die bestehende Production
-bleibt bis zum ausdrücklich freigegebenen Cutover unter
-`https://inner-circle.gackvictor7.workers.dev` erreichbar. Der Resend-Versand
-über die bei Resend verifizierte Sending Domain ist davon unabhängig.
+**Ist-Zustand:** `https://innercirclevp.com` ist die kanonische öffentliche
+URL der Anwendung. Diese Checkliste ist nur für eine separat freigegebene
+Cloudflare-/DNS-Abnahme gedacht; in diesem Sprint wurden weder die Zone noch
+Custom-Domain-Routen, Produktionsvariablen oder Deployments verändert. Der
+Resend-Versand über die verifizierte Sending Domain ist davon unabhängig.
 
 ## Reihenfolge am Cutover-Tag
 
 1. [ ] **Cloudflare-Zone `innercirclevp.com` ist Active.** In Cloudflare den
    Nameserver-Status prüfen; erst fortfahren, wenn Cloudflare die Zone als
    aktiv meldet. DNS-Zustand nicht allein aus lokaler Auflösung ableiten.
-2. [ ] **Apex-Domain verbinden.** Den Worker `inner-circle` in Cloudflare
-   Workers → Settings/ Domains & Routes mit `innercirclevp.com` verbinden.
-   Die bestehende `workers.dev`-Adresse vorerst aktiviert lassen.
+2. [ ] **Apex-Domain prüfen.** Den Worker `inner-circle` in Cloudflare
+   Workers → Settings/ Domains & Routes mit `innercirclevp.com` verbinden bzw.
+   die bestehende Custom-Domain-Zuordnung verifizieren. Keine andere Host-URL
+   zur primären Anwendung machen.
 3. [ ] **`www`-Strategie (optional, primäre URL bleibt ohne `www`).** Falls
    `www.innercirclevp.com` angeboten werden soll, den Host für Cloudflare
    erreichbar machen und eine einzige permanente Cloudflare-Weiterleitung
@@ -51,7 +52,7 @@ bleibt bis zum ausdrücklich freigegebenen Cutover unter
 11. [ ] **Passwort-Reset** anfordern. Button- und Fallback-Link der Resend-Mail
     müssen direkt auf `https://innercirclevp.com/reset-password?...` zeigen;
     Link öffnen und prüfen, dass keine falsche Zwischen-/Weiterleitungsseite
-    oder Workers.dev-Host dazwischenliegt.
+    oder alternative Host-URL dazwischenliegt.
 12. [ ] **`/app`** mit verifiziertem Testkonto öffnen; geschützte Bereiche und
     Reload prüfen.
 13. [ ] **Beta** prüfen (`/app/beta` und – mit geeignetem Canary-Konto –
@@ -66,15 +67,14 @@ bleibt bis zum ausdrücklich freigegebenen Cutover unter
     Beta-Einladungstext, Profil teilen, Mitgliedskarten-QR und – falls
     verwendet – Stripe-Checkout-/Billing-Rückkehr. Jede erzeugte öffentliche
     Basis muss `https://innercirclevp.com` verwenden.
-18. [ ] **Alte URL kontrollieren, nicht abschalten:**
-    `https://inner-circle.gackvictor7.workers.dev` weiterhin laden und die
-    bisherige Production prüfen. `workers.dev` erst nach separater Freigabe
-    abschalten; die Domainumstellung erfordert das nicht.
+18. [ ] **Kanonische URL kontrollieren:** ausschließlich
+    `https://innercirclevp.com` als öffentliche Produkt- und Stripe-Rückleitungs-
+    URL verwenden; technische Preview-/Provider-Hosts nicht als primäre URL
+    in `NEXT_PUBLIC_SITE_URL` eintragen.
 
 ## Abbruch-/Rollback-Hinweis
 
 Wenn Apex, TLS oder ein kritischer Smoke-Test fehlschlägt, keine Redirects auf
-`www` erzwingen und `workers.dev` nicht deaktivieren. Den Cutover stoppen und
-nach Freigabe den `NEXT_PUBLIC_SITE_URL`-Wert auf die bisherige Worker-URL
-zurücksetzen sowie regulär neu deployen. DNS-/Zone-Zustand und Mail-Sender-
-Konfiguration dabei nicht improvisiert ändern.
+`www` erzwingen. Den Cutover stoppen und `NEXT_PUBLIC_SITE_URL` nicht
+improvisiert ändern; DNS-/Zone-Zustand und Mail-Sender-Konfiguration bleiben
+unangetastet, bis die zuständige Freigabe vorliegt.

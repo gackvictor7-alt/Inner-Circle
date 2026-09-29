@@ -10,6 +10,8 @@ export type ActionState = {
   errorCode?: string;
   /** Optional parameters for the error message. */
   errorParams?: Record<string, string | number>;
+  /** Field-level error codes, resolved against `app.errors`. */
+  fieldErrors?: Record<string, string>;
   /** Success message code, resolved against the feature namespace. */
   messageCode?: string;
   /** Where the client should navigate after a successful submit. */
@@ -20,8 +22,12 @@ export type ActionState = {
 
 export const initialActionState: ActionState = { status: "idle" };
 
-export function fail(errorCode: string, errorParams?: Record<string, string | number>): ActionState {
-  return { status: "error", errorCode, errorParams };
+export function fail(
+  errorCode: string,
+  errorParams?: Record<string, string | number>,
+  fieldErrors?: Record<string, string>,
+): ActionState {
+  return { status: "error", errorCode, errorParams, fieldErrors };
 }
 
 export function done(options?: {

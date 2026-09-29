@@ -1,6 +1,6 @@
 # 14 – Umgebungsvariablen und Secrets (die eine Wahrheit)
 
-**Stand:** 2026-09-24 (Sprint 12: `AUTH_SECRET` sichert auch die Beta-Schlüssel) · davor 2026-09-21 · Abgeglichen mit `.env.example`, `.dev.vars.example`,
+**Stand:** 2026-09-29 (Sprint 17: Stripe-Sandbox-Checkout, Webhooks, Portal und zentrale Site-URL) · davor 2026-09-24 · Abgeglichen mit `.env.example`, `.dev.vars.example`,
 `src/lib/env.ts`, `wrangler.jsonc`, `vitest.config.ts` und `tests/setup.ts`.
 **Keine echten Secrets in diesem Dokument – nur Variablennamen.**
 
@@ -26,7 +26,7 @@
 | Variable | Build/Runtime | Secret | erforderlich | Zweck | Entwicklungswert erlaubt | Produktionsanforderung |
 | -------- | ------------- | ------ | ------------ | ----- | ------------------------ | ---------------------- |
 | `AUTH_SECRET` | Runtime | **ja** | **Pflicht** | Pepper/Signatur für Session-Token, OTP-Hashes und (seit Sprint 12) die HMAC-Hashes der Beta-Schlüssel | lokal Fallback erlaubt (`authSecretIsFallback`) | **zwingend** setzen, ≥ 32 Zufallszeichen (`openssl rand -base64 48`); Fallback ist in Produktion unzulässig. **Rotation** beendet alle Sessions und entwertet alle noch nicht eingelösten Beta-Schlüssel (laufende Beta-Zugänge bleiben) |
-| `NEXT_PUBLIC_SITE_URL` | Build **und** Runtime | nein | **Pflicht** | Zentrale öffentliche Origin für absolute Links: Reset-Mail, Beta-Einladung, Profil teilen, Mitgliedskarten-QR, Stripe-Rückleitungen, Logout/Billing-Redirects sowie `metadataBase`/OpenGraph-Bildauflösung (`getPublicUrl()` / `getAppUrl()`); in Produktion HTTPS und kein localhost | `http://localhost:3000` | Bis zum Cutover bisherige Worker-Origin `https://inner-circle.gackvictor7.workers.dev`; erst beim freigegebenen Cutover Build **und** Runtime auf `https://innercirclevp.com` setzen (Checkliste `DOMAIN-CUTOVER-CHECKLIST.md`) |
+| `NEXT_PUBLIC_SITE_URL` | Build **und** Runtime | nein | **Pflicht** | Zentrale öffentliche Origin für absolute Links: Reset-Mail, Beta-Einladung, Profil teilen, Mitgliedskarten-QR, Stripe-Rückleitungen, Logout/Billing-Redirects sowie `metadataBase`/OpenGraph-Bildauflösung (`getPublicUrl()` / `getAppUrl()`); in Produktion HTTPS und kein localhost | `http://localhost:3000` | Kanonisch `https://innercirclevp.com`; DNS/Cloudflare werden von diesem Sprint nicht geändert |
 | `NODE_VERSION` | Build (Dashboard) | nein | empfohlen | Node-Version im Cloudflare-Build | – | `22` (≥ 20 nötig) |
 | `NEXTJS_ENV` | Runtime | nein | ja (Worker) | unterscheidet Produktions-/Entwicklungsverhalten in OpenNext | `production` (in `.dev.vars`) | `production` (in `wrangler.jsonc` gesetzt) |
 
@@ -65,14 +65,17 @@ D1-Binding (kein Secret, in `wrangler.jsonc`): Binding-Name **`DB`**,
 
 | Variable | Build/Runtime | Secret | erforderlich | Zweck | Entwicklung | Produktion |
 | -------- | ------------- | ------ | ------------ | ----- | ----------- | ---------- |
-| `STRIPE_SECRET_KEY` | Runtime | **ja** | für Bezahlung | Checkout, Portal, Webhook-Verifikation | Testschlüssel `sk_test_…` | Live erst nach Freigabe |
-| `STRIPE_PUBLISHABLE_KEY` | Build/Runtime | nein (öffentlich) | optional | Client-seitige Stripe-Nutzung | `pk_test_…` | `pk_live_…` |
-| `STRIPE_WEBHOOK_SECRET` | Runtime | **ja** | **Pflicht mit Stripe** | Signaturprüfung der Webhooks | `whsec_…` der Testendpoint-URL | `whsec_…` des Produktionsendpoints |
-| `STRIPE_PORTAL_RETURN_URL` | Runtime | nein | legacy/optional | Der aktuelle Billing-Portal-Rückweg wird über `getPublicUrl()` aus `NEXT_PUBLIC_SITE_URL` gebaut; diese Legacy-Variable wird derzeit nicht ausgewertet | leer | nicht für den Domain-Cutover ändern; prüfen/entfernen nur in einem separaten Konfigurations-Sprint |
-| `ALLOW_STRIPE_LIVE` | Runtime | nein | optional | gibt Live-Keys explizit frei (`"true"`) | **nicht setzen** | erst nach vollständiger Prüfung |
+| `STRIPE_SECRET_KEY` | Runtime | **ja** | **Pflicht mit Stripe** | Checkout, Portal, Webhook-Verifikation | nur ein `sk_test_…`-Schlüssel | Auch im Worker nur Sandbox/Testmodus; Live-Schlüssel werden abgewiesen |
+| `STRIPE_WEBHOOK_SECRET` | Runtime | **ja** | **Pflicht mit Stripe** | Raw-body-Signaturprüfung der Webhooks | `whsec_…` des Testendpoint-URL | Sandbox-Endpoint; kein Live-Endpoint in diesem Sprint |
+| `STRIPE_PRICE_MONTHLY` | Runtime | nein (ID) | **Pflicht mit Checkout** | Server-Mapping für 24,99 €/Monat | vorhandene Test-Price-ID | vorhandene Test-Price-ID; keine Live-Preise |
+| `STRIPE_PRICE_YEARLY` | Runtime | nein (ID) | **Pflicht mit Checkout** | Server-Mapping für 249,99 €/Jahr | vorhandene Test-Price-ID | vorhandene Test-Price-ID; keine Live-Preise |
+| `STRIPE_PUBLISHABLE_KEY` | Build/Runtime | nein (öffentlich) | nicht erforderlich | Legacy/optionale Client-Nutzung; dieser Checkout nutzt Hosted Checkout ohne sie | leer oder `pk_test_…` | keine Live-Nutzung |
+| `STRIPE_PORTAL_RETURN_URL` | Runtime | nein | legacy/optional | wird nicht ausgewertet; der Rückweg kommt zentral aus `NEXT_PUBLIC_SITE_URL` | leer | nicht ändern |
+| `ALLOW_STRIPE_LIVE` | Runtime | nein | ignoriert für Stripe | historisches Opt-in; der Sandbox-Code weist Live-Schlüssel unabhängig davon ab | nicht setzen | nicht setzen |
 
-**Sicherheitsregel im Code:** Ein `sk_live_…`-Schlüssel wird ohne
-`ALLOW_STRIPE_LIVE=true` ignoriert (`getStripe()` → `null`).
+**Sicherheitsregel im Code:** `getStripe()` akzeptiert nur einen
+`sk_test_`-Schlüssel; ein `sk_live_…`-Schlüssel bleibt auch bei gesetztem
+`ALLOW_STRIPE_LIVE` inaktiv.
 
 ## 6. Social Login (vorbereitet, Funktion fehlt)
 
@@ -124,8 +127,8 @@ Code über den Resend-Testabsender `INNER CIRCLE <onboarding@resend.dev>`
 Resend-Kontos** zu. **Stand 2026-09-28:** die Domain `innercirclevp.com` ist bei
 Resend verifiziert und `EMAIL_FROM="INNER CIRCLE <noreply@innercirclevp.com>"`
 ist gesetzt – die verifizierte Domain dient weiterhin dem Versand. Die Website
-bleibt bis zum freigegebenen Cutover auf `workers.dev`; die Nameserver-
-Propagation bei Cloudflare läuft laut Projektkontext (Umzug: `09-deployment.md`
+nutzt als kanonische öffentliche URL `https://innercirclevp.com`; DNS und
+Cloudflare-Routing bleiben außerhalb dieses Sprints (siehe `09-deployment.md`
 §7a und `DOMAIN-CUTOVER-CHECKLIST.md`). Für die
 Verifizierungs-Code-Mail kann zusätzlich `EMAIL_FROM_VERIFICATION` gesetzt
 werden (empfohlen: `INNER CIRCLE <verify@innercirclevp.com>` – Resend
@@ -133,8 +136,9 @@ Deliverability rät bei transaktionaler Mail von `no-reply` ab); ohne sie greift
 `EMAIL_FROM`. Alle übrigen Mails (Passwort-Reset, Beta-Einladung) nutzen
 unabhängig davon immer `EMAIL_FROM`.
 
-**Muss zusätzlich für Bezahlung gesetzt sein:**
-`STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`.
+**Muss zusätzlich für Stripe-Sandbox-Bezahlung gesetzt sein:**
+`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_MONTHLY`,
+`STRIPE_PRICE_YEARLY`.
 
 **Darf in Produktion nicht gesetzt sein:**
 `ALLOW_DEV_MEMBERSHIP_ACTIVATION`, `TWILIO_TEST_MODE=true`,

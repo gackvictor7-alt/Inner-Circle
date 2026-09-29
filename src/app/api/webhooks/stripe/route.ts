@@ -1,48 +1,63 @@
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
-import { eq } from "drizzle-orm";
+import { eq, or } from "drizzle-orm";
 import { db } from "@/db/client";
-import { membershipEvents } from "@/db/schema";
-import { constructWebhookEvent, mapSubscriptionStatus } from "@/lib/payments/stripe";
+import { membershipEvents, memberships, users } from "@/db/schema";
+import {
+  constructWebhookEvent,
+  customerIdFromStripeValue,
+  mapSubscriptionStatus,
+  planForMetadata,
+  planForStripePrice,
+  priceIdFromSubscription,
+  subscriptionIdFromStripeValue,
+} from "@/lib/payments/stripe";
 import {
   activateMembership,
   expireMembership,
   markMembershipCanceled,
+  markMembershipIncomplete,
+  markMembershipPaid,
   markMembershipPastDue,
   recordInvoice,
+  recordMembershipEvent,
+  rememberStripeCheckout,
 } from "@/lib/membership/service";
 import { audit } from "@/lib/admin/audit";
 import { idFor } from "@/db/ids";
-import type { PlanId } from "@/lib/membership/plans";
 
 export const dynamic = "force-dynamic";
 
 /**
  * Stripe webhook receiver.
  *
- * This is the ONLY place where a production membership becomes active. The
- * signature is verified with the webhook secret, and every event id is stored
- * in `MembershipEvent.providerEventId` (unique) so retries are idempotent.
+ * This is the only path that activates a Stripe membership. The raw request
+ * body is verified before parsing, event IDs are unique in MembershipEvent,
+ * and provider/customer/subscription metadata is reconciled against the
+ * server-side user association before any state change is made.
  */
 export async function POST(request: Request) {
   const signature = request.headers.get("stripe-signature");
-  if (!signature) return NextResponse.json({ error: "missing_signature" }, { status: 400 });
+  if (!signature) {
+    console.warn("[stripe] webhook_rejected", { reason: "missing_signature" });
+    return NextResponse.json({ error: "missing_signature" }, { status: 400 });
+  }
 
   const payload = await request.text();
   const verification = await constructWebhookEvent(payload, signature);
   if (!verification.ok) {
+    console.warn("[stripe] webhook_rejected", { reason: verification.error });
     return NextResponse.json({ error: verification.error }, { status: 400 });
   }
 
   const event = verification.event;
-
-  // Idempotency: a repeated event id is acknowledged but not processed twice.
   const [existing] = await db
     .select({ id: membershipEvents.id })
     .from(membershipEvents)
     .where(eq(membershipEvents.providerEventId, event.id))
     .limit(1);
   if (existing) {
+    console.info("[stripe] webhook_duplicate", { type: event.type });
     return NextResponse.json({ received: true, duplicate: true });
   }
 
@@ -51,95 +66,158 @@ export async function POST(request: Request) {
       case "checkout.session.completed":
       case "checkout.session.async_payment_succeeded": {
         const session = event.data.object as Stripe.Checkout.Session;
-        const userId = session.client_reference_id ?? session.metadata?.userId ?? null;
-        const plan = (session.metadata?.plan === "annual" ? "annual" : "monthly") as PlanId;
-        // Sprint 12: a completed checkout is NOT a payment. Delayed methods
-        // (e.g. SEPA debit) complete with payment_status "unpaid" and are only
-        // activated by `checkout.session.async_payment_succeeded`.
+        const customerId = customerIdFromStripeValue(session.customer);
+        const subscriptionId = subscriptionIdFromStripeValue(session.subscription);
+        const userId = await resolveUserId(
+          session.client_reference_id ?? session.metadata?.userId ?? null,
+          customerId,
+          subscriptionId,
+        );
+        const plan = planForMetadata(session.metadata);
         const paid = session.payment_status === "paid" || session.payment_status === "no_payment_required";
-        if (userId && paid) {
+
+        if (!userId) break;
+        if (customerId && plan) {
+          await rememberStripeCheckout({
+            userId,
+            plan,
+            customerId,
+            checkoutSessionId: session.id,
+          });
+        }
+
+        if (paid && plan) {
           await activateMembership({
             userId,
             plan,
             provider: "stripe",
-            providerCustomerId: typeof session.customer === "string" ? session.customer : null,
-            providerSubscriptionId: typeof session.subscription === "string" ? session.subscription : null,
+            providerCustomerId: customerId,
+            providerSubscriptionId: subscriptionId,
             providerCheckoutSessionId: session.id,
             providerEventId: event.id,
             eventType: event.type === "checkout.session.completed" ? "checkout_completed" : "checkout_async_paid",
-            meta: { amountTotal: session.amount_total, currency: session.currency },
+            meta: { amountTotal: session.amount_total, currency: session.currency, priceId: session.metadata?.priceId ?? null },
           });
-        } else if (userId) {
-          await recordPendingEvent(userId, event.id, "checkout_unpaid", { paymentStatus: session.payment_status });
+        } else {
+          await recordMembershipEvent({
+            userId,
+            type: plan ? "checkout_unpaid" : "checkout_unrecognized_price",
+            provider: "stripe",
+            providerEventId: event.id,
+            meta: { paymentStatus: session.payment_status },
+          });
         }
         break;
       }
 
       case "checkout.session.async_payment_failed": {
         const session = event.data.object as Stripe.Checkout.Session;
-        const userId = session.client_reference_id ?? session.metadata?.userId ?? null;
-        if (userId) await recordPendingEvent(userId, event.id, "checkout_payment_failed", {});
+        const customerId = customerIdFromStripeValue(session.customer);
+        const subscriptionId = subscriptionIdFromStripeValue(session.subscription);
+        const userId = await resolveUserId(
+          session.client_reference_id ?? session.metadata?.userId ?? null,
+          customerId,
+          subscriptionId,
+        );
+        if (userId) {
+          await recordMembershipEvent({
+            userId,
+            type: "checkout_payment_failed",
+            provider: "stripe",
+            providerEventId: event.id,
+            meta: { paymentStatus: session.payment_status },
+          });
+        }
         break;
       }
 
       case "customer.subscription.created":
       case "customer.subscription.updated": {
         const subscription = event.data.object as Stripe.Subscription;
-        const userId = subscription.metadata?.userId;
+        const customerId = customerIdFromStripeValue(subscription.customer);
+        const subscriptionPriceId = priceIdFromSubscription(subscription);
+        const plan = subscriptionPriceId
+          ? planForStripePrice(subscriptionPriceId)
+          : planForMetadata(subscription.metadata);
+        const userId = await resolveUserId(subscription.metadata?.userId ?? null, customerId, subscription.id);
+        if (!userId) break;
+
         const status = mapSubscriptionStatus(subscription.status);
-        if (userId) {
-          const periodStart = subscription.items.data[0]?.current_period_start;
-          const periodEnd = subscription.items.data[0]?.current_period_end;
-          if (status === "active" || status === "trialing") {
-            await activateMembership({
+        const periodStart = subscription.items.data[0]?.current_period_start;
+        const periodEnd = subscription.items.data[0]?.current_period_end;
+        const identity = { providerCustomerId: customerId, providerSubscriptionId: subscription.id };
+
+        if (status === "active" || status === "trialing") {
+          if (!plan) {
+            await recordMembershipEvent({
               userId,
-              plan: (subscription.metadata?.plan === "annual" ? "annual" : "monthly") as PlanId,
+              type: "subscription_unrecognized_price",
               provider: "stripe",
-              providerCustomerId: typeof subscription.customer === "string" ? subscription.customer : null,
-              providerSubscriptionId: subscription.id,
-              currentPeriodStart: periodStart ? new Date(periodStart * 1000) : null,
-              currentPeriodEnd: periodEnd ? new Date(periodEnd * 1000) : null,
-              cancelAtPeriodEnd: subscription.cancel_at_period_end,
               providerEventId: event.id,
-              eventType: `subscription_${subscription.status}`,
+              meta: { status: subscription.status },
             });
-          } else if (status === "past_due" || status === "unpaid") {
-            await markMembershipPastDue(userId, event.id);
-          } else if (status === "canceled") {
-            await markMembershipCanceled({
-              userId,
-              cancelAtPeriodEnd: false,
-              providerEventId: event.id,
-            });
+            break;
           }
+          await activateMembership({
+            userId,
+            plan,
+            provider: "stripe",
+            providerCustomerId: customerId,
+            providerSubscriptionId: subscription.id,
+            currentPeriodStart: periodStart ? new Date(periodStart * 1000) : null,
+            currentPeriodEnd: periodEnd ? new Date(periodEnd * 1000) : null,
+            cancelAtPeriodEnd: subscription.cancel_at_period_end,
+            providerEventId: event.id,
+            eventType: `subscription_${subscription.status}`,
+            meta: { priceId: priceIdFromSubscription(subscription) },
+          });
+        } else if (status === "past_due") {
+          await markMembershipPastDue(userId, event.id, "stripe", identity);
+        } else if (status === "canceled") {
+          await markMembershipCanceled({
+            userId,
+            cancelAtPeriodEnd: false,
+            providerEventId: event.id,
+            provider: "stripe",
+            ...identity,
+          });
+        } else {
+          await markMembershipIncomplete(userId, event.id, identity);
         }
         break;
       }
 
       case "customer.subscription.deleted": {
         const subscription = event.data.object as Stripe.Subscription;
-        const userId = subscription.metadata?.userId;
+        const customerId = customerIdFromStripeValue(subscription.customer);
+        const userId = await resolveUserId(subscription.metadata?.userId ?? null, customerId, subscription.id);
         if (userId) {
-          // The event id is unique per MembershipEvent row – it is stored
-          // once, on the final state (expired). Passing it to both calls made
-          // the second insert fail and the webhook answer 500 (Sprint 12 fix).
-          await markMembershipCanceled({ userId, cancelAtPeriodEnd: false });
-          await expireMembership(userId, event.id);
+          await expireMembership(userId, event.id, "stripe", {
+            providerCustomerId: customerId,
+            providerSubscriptionId: subscription.id,
+          });
         }
         break;
       }
 
-      case "invoice.paid":
-      case "invoice.payment_succeeded": {
+      case "invoice.paid": {
         const invoice = event.data.object as Stripe.Invoice;
-        const userId =
-          (invoice.parent?.subscription_details?.metadata?.userId as string | undefined) ??
-          (invoice.metadata?.userId as string | undefined);
-        if (userId && invoice.amount_paid) {
+        const subscriptionId = subscriptionIdFromInvoice(invoice);
+        const customerId = customerIdFromStripeValue(invoice.customer);
+        const userId = await resolveUserId(invoiceUserId(invoice), customerId, subscriptionId);
+        if (userId) {
+          await markMembershipPaid({
+            userId,
+            providerEventId: event.id,
+            providerCustomerId: customerId,
+            providerSubscriptionId: subscriptionId,
+            currentPeriodStart: invoice.period_start ? new Date(invoice.period_start * 1000) : null,
+            currentPeriodEnd: invoice.period_end ? new Date(invoice.period_end * 1000) : null,
+          });
           await recordInvoice({
             userId,
             providerInvoiceId: invoice.id ?? idFor.invoice(),
-            amountCents: invoice.amount_paid,
+            amountCents: invoice.amount_paid ?? 0,
             currency: (invoice.currency ?? "eur").toUpperCase(),
             status: "paid",
             periodStart: invoice.period_start ? new Date(invoice.period_start * 1000) : null,
@@ -152,11 +230,14 @@ export async function POST(request: Request) {
 
       case "invoice.payment_failed": {
         const invoice = event.data.object as Stripe.Invoice;
-        const userId =
-          (invoice.parent?.subscription_details?.metadata?.userId as string | undefined) ??
-          (invoice.metadata?.userId as string | undefined);
+        const subscriptionId = subscriptionIdFromInvoice(invoice);
+        const customerId = customerIdFromStripeValue(invoice.customer);
+        const userId = await resolveUserId(invoiceUserId(invoice), customerId, subscriptionId);
         if (userId) {
-          await markMembershipPastDue(userId, event.id);
+          await markMembershipPastDue(userId, event.id, "stripe", {
+            providerCustomerId: customerId,
+            providerSubscriptionId: subscriptionId,
+          });
           await recordInvoice({
             userId,
             providerInvoiceId: invoice.id ?? idFor.invoice(),
@@ -172,10 +253,12 @@ export async function POST(request: Request) {
       }
 
       default:
+        // Unknown Stripe event types are intentionally acknowledged and ignored.
         break;
     }
   } catch (error) {
-    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
+    console.error("[stripe] webhook_processing_failed", { type: event.type, error: errorName(error) });
+    return NextResponse.json({ error: "webhook_processing_failed" }, { status: 500 });
   }
 
   await audit({
@@ -186,23 +269,49 @@ export async function POST(request: Request) {
     meta: { livemode: event.livemode },
   });
 
+  console.info("[stripe] webhook_processed", { type: event.type });
   return NextResponse.json({ received: true });
 }
 
-/** Records a checkout event that must NOT activate anything (idempotency + audit trail). */
-async function recordPendingEvent(userId: string, providerEventId: string, type: string, meta: Record<string, unknown>) {
-  await db
-    .insert(membershipEvents)
-    .values({
-      id: idFor.event(),
-      userId,
-      type,
-      provider: "stripe",
-      providerEventId,
-      metaJson: JSON.stringify(meta),
-      createdAt: new Date(),
-    })
-    .onConflictDoNothing();
+async function resolveUserId(candidate: string | null, customerId: string | null, subscriptionId: string | null) {
+  const candidateId = candidate?.trim() || null;
+  let candidateExists = false;
+  if (candidateId) {
+    const [user] = await db.select({ id: users.id }).from(users).where(eq(users.id, candidateId)).limit(1);
+    candidateExists = Boolean(user);
+  }
+
+  const mapped = new Set<string>();
+  const identityConditions = [];
+  if (customerId) identityConditions.push(eq(memberships.providerCustomerId, customerId));
+  if (subscriptionId) identityConditions.push(eq(memberships.providerSubscriptionId, subscriptionId));
+  if (identityConditions.length > 0) {
+    const rows = await db
+      .select({ userId: memberships.userId })
+      .from(memberships)
+      .where(or(...identityConditions));
+    for (const row of rows) mapped.add(row.userId);
+  }
+
+  if (candidateId && candidateExists && mapped.size > 0 && !mapped.has(candidateId)) return null;
+  if (candidateId && candidateExists) return candidateId;
+  return mapped.values().next().value ?? null;
+}
+
+function invoiceUserId(invoice: Stripe.Invoice): string | null {
+  const details = invoice.parent?.type === "subscription_details" ? invoice.parent.subscription_details : null;
+  return details?.metadata?.userId ?? invoice.metadata?.userId ?? null;
+}
+
+function subscriptionIdFromInvoice(invoice: Stripe.Invoice): string | null {
+  const details = invoice.parent?.type === "subscription_details" ? invoice.parent.subscription_details : null;
+  if (details?.subscription) return subscriptionIdFromStripeValue(details.subscription);
+  const legacy = (invoice as Stripe.Invoice & { subscription?: string | Stripe.Subscription | null }).subscription;
+  return subscriptionIdFromStripeValue(legacy);
+}
+
+function errorName(error: unknown): string {
+  return error instanceof Error ? error.name : "unknown";
 }
 
 export async function GET() {

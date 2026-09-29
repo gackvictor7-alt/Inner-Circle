@@ -1,6 +1,6 @@
 # 07 – Externe Dienste & Integrationen
 
-**Stand:** 2026-09-24 (Sprint 12: Stripe-Audit, D1 52 Tabellen) · Übernommen und aktualisiert aus
+**Stand:** 2026-09-29 (Sprint 17: Stripe-Sandbox-Checkout, Webhooks, Portal und UX-Aufräumarbeiten) · Basis ist das aktuelle `main`; übernommen und aktualisiert aus
 `07-external-services.md`. **Niemals Zugangsdaten im Chat oder im Repository** –
 der Gründer legt Konten selbst an; der Agent liefert Anleitungen und bindet nur
 Variablennamen ein. Die vollständige Variablenliste steht in
@@ -16,7 +16,7 @@ Variablennamen ein. Die vollständige Variablenliste steht in
 | **OpenNext-Adapter** (`@opennextjs/cloudflare`) | Brücke Next.js → Worker | aktiv (Build erzeugt `.open-next/worker.js`) | ✅ | keine |
 | **Resend** (E-Mail) | Verifizierungscodes, Passwort-Reset, Benachrichtigungen | Code aktiv, Key vorhanden; HTML+Text Multipart-Templates; Absenderdomain `innercirclevp.com` verifiziert; Verifizierungs-Mail ohne Code im Betreff, optionaler Eigen-Absender `EMAIL_FROM_VERIFICATION` (Inbox-Feinschliff 2026-09-27) | ⚠️ Versand läuft über die verifizierte Domain; Website-Domain weiterhin offen | `RESEND_API_KEY` (Secret), `EMAIL_FROM` (Text), `EMAIL_REPLY_TO` (Text), `EMAIL_FROM_VERIFICATION` (Text, optional) |
 | **Twilio** (SMS) | Telefon-Verifizierung | Code fertig, keine Zugangsdaten | ❌ optional | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM_NUMBER`, `TWILIO_TEST_MODE` |
-| **Stripe** (Abos) | Monats-/Jahresmitgliedschaft, Rechnungen, Billing-Portal | Checkout + Webhook vollständig; **Sprint-12-Audit:** Signaturprüfung im Worker auf `constructEventAsync` umgestellt (die synchrone Prüfung scheitert im Worker), Aktivierung nur bei bestätigter Zahlung, SEPA über `async_payment_*`, `subscription.deleted`-500 behoben; Billing-Portal nur als Funktion (keine Route/UI); **keine Schlüssel** | ❌ nicht produktiv aktiv | `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PORTAL_RETURN_URL`, `ALLOW_STRIPE_LIVE` |
+| **Stripe** (Abos) | Monats-/Jahresmitgliedschaft, Rechnungen, Billing-Portal | WORKING für die Sandbox: serverseitige Price-ID-Auflösung, Customer-Zuordnung, Hosted Checkout, raw-body/signaturgeprüfte idempotente Webhooks, Lifecycle-Reconciliation und Portalroute/UI; **keine Live-Konfiguration** | ❌ Live nicht aktiv / Sandbox-Konfiguration erforderlich | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_MONTHLY`, `STRIPE_PRICE_YEARLY` |
 | **Google OAuth** | Social Login | **nicht implementiert** (nur UI-Hinweis „Einrichtung erforderlich") | ❌ | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` (Variablen bereits ausgewertet, aber ohne Route) |
 | **Apple OAuth** | Social Login | **nicht implementiert** | ❌ | `APPLE_CLIENT_ID`, `APPLE_TEAM_ID`, `APPLE_KEY_ID`, `APPLE_PRIVATE_KEY` |
 | **Cloudflare R2** (Binding `MEDIA`, Bucket `inner-circle-media`) | Profilfoto-Upload (Avatare) | WORKING für Profilfotos (Sprint 13, Wrangler-Provisioning legt den Bucket beim Deploy an; lokal emuliert); weitere Media-Typen (Cover, Kursvideos, Dokumente) folgen | optional: `R2_PUBLIC_BASE_URL` für Auslieferung über Bucket-Domain statt App-Route |
@@ -33,8 +33,8 @@ Worker-Secrets bzw. Dashboard-Variablen.
 | ----- | --------------- |
 | `RESEND_API_KEY` | Nachrichten-Transport meldet `none`; `/verify` zeigt „Versand noch nicht eingerichtet"; erzeugte Codes werden sofort entwertet. Alternativ (nur Testbetrieb): `ENABLE_DEV_OUTBOX=true` + Admin-Konto → Code im `/dev/outbox` |
 | `TWILIO_*` | Telefon-Kanal steht nicht zur Verfügung (gleiche Logik wie E-Mail) |
-| `STRIPE_SECRET_KEY` | `/app/billing` zeigt „Einrichtung erforderlich"; Checkout-Route antwortet mit `error=stripeNotConfigured` (außer Dev-Aktivierung ist erlaubt) |
-| `STRIPE_WEBHOOK_SECRET` | Webhook-Route lehnt jeden Aufruf mit 400 ab (`missing_signature`/`invalid_signature`) |
+| `STRIPE_SECRET_KEY` oder Price-ID | `/app/billing` zeigt „Einrichtung erforderlich"; Checkout-Route antwortet mit `error=stripeNotConfigured` bzw. `stripe_price_not_configured` (außer Dev-Aktivierung ist erlaubt) |
+| `STRIPE_WEBHOOK_SECRET` | Webhook-Route lehnt jeden Aufruf mit 400 ab; die Signatur wird vor jeder Verarbeitung geprüft |
 | `AUTH_SECRET` | Entwicklung fällt auf einen festen Dev-Wert zurück (`authSecretIsFallback`); `integrationStatus()` weist darauf hin – **in Produktion unzulässig** |
 | Storage | Sprint 13: Profilfoto-Upload läuft über das R2 `MEDIA`-Binding (JPG/PNG/WebP, max. 5 MB, Magic-Byte-Prüfung); Nachrichten-Anhänge/Cover/Kursvideos bleiben ohne Upload (nur URL-Feld) |
 
@@ -49,13 +49,12 @@ werden in `/app/settings` (Admin-Sicht) bzw. `/dev/outbox` angezeigt.
 (DKIM/SPF/DMARC-Records liegen im Resend-Konto) und
 `EMAIL_FROM="INNER CIRCLE <noreply@innercirclevp.com>"` ist gesetzt – der
 Versand läuft über die eigene Domain, nicht mehr über `onboarding@resend.dev`.
-**Noch offen / bewusst nicht Teil dieses Sprints:** die Website-Domain
-(Production bleibt bis zum kontrollierten Cutover auf `workers.dev`). Laut
-Projektkontext läuft die Nameserver-Propagation bei Cloudflare; die Zone wurde
-hier weder geprüft noch verändert. Die spätere Cutover- und `www`-Strategie steht
-in [`DOMAIN-CUTOVER-CHECKLIST.md`](DOMAIN-CUTOVER-CHECKLIST.md) und
-`09-deployment.md` §7a. Für Rücklauf-Mails (MX) und eigene DMARC-RUAs Records
-bei Bedarf nach Resend-Vorgabe ergänzen.
+**Website-Domain:** Die kanonische öffentliche URL ist `https://innercirclevp.com`.
+Diese Änderung setzt keine DNS-, Cloudflare- oder Resend-Konfiguration voraus;
+`NEXT_PUBLIC_SITE_URL` bleibt die zentrale Runtime-/Build-Einstellung. Die
+bestehende Domain-/`www`-Strategie und eventuelle DNS-Arbeiten bleiben außerhalb
+dieses Sprints dokumentiert in [`DOMAIN-CUTOVER-CHECKLIST.md`](DOMAIN-CUTOVER-CHECKLIST.md)
+und `09-deployment.md` §7a.
 
 **Inbox-Deliverability der Verifizierungs-Mail (2026-09-27):** Resends
 Deliverability Insights monieren `no-reply`-Absender. Der Code hält dafür eine
@@ -73,28 +72,33 @@ Wiederholte Resends begrenzen clientseitiger Countdown (60 s, Button
 deaktiviert) **und** serverseitige Limits (`otp:cooldown` 1/60 s,
 `otp:hourly` 6/h pro Nutzer + Zweck).
 
-### 3.2 Für Bezahlung
+### 3.2 Für Bezahlung (Stripe-Testmodus)
 
-6. Stripe-Konto (zuerst **Testmodus**), Produkt „INNER CIRCLE Membership"
-   mit 24,99 €/Monat und 249,90 €/Jahr.
-7. `STRIPE_SECRET_KEY` (Secret), `STRIPE_PUBLISHABLE_KEY` (Text).
-8. Webhook-Endpoint `https://<worker-url>/api/webhooks/stripe` mit genau
-   diesen Ereignissen → `STRIPE_WEBHOOK_SECRET` (Secret):
-   `checkout.session.completed`, `checkout.session.async_payment_succeeded`,
-   `checkout.session.async_payment_failed`, `customer.subscription.created`,
+1. Im Stripe-Dashboard den **Testmodus** verwenden und ein Produkt „INNER
+   CIRCLE Membership“ mit den beiden bestehenden Preisen anlegen bzw. die
+   vorhandenen Test-Price-IDs verwenden: exakt 24,99 €/Monat und 249,99 €/Jahr.
+2. Nur die bestehenden Variablen setzen: `STRIPE_SECRET_KEY`,
+   `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_MONTHLY` und `STRIPE_PRICE_YEARLY`.
+   Werte niemals in dieses Repository, in Tickets oder in Chat schreiben.
+   `STRIPE_SECRET_KEY` muss ein `sk_test_`-Schlüssel sein; Live-Schlüssel
+   werden vom Code abgewiesen.
+3. Webhook-Endpoint `https://innercirclevp.com/api/webhooks/stripe` mit den
+   sechs verbindlichen Ereignissen registrieren und das Signing Secret als
+   `STRIPE_WEBHOOK_SECRET` hinterlegen:
+   `checkout.session.completed`, `customer.subscription.created`,
    `customer.subscription.updated`, `customer.subscription.deleted`,
-   `invoice.paid`, `invoice.payment_succeeded`, `invoice.payment_failed`.
-   Preise werden inline aus `src/lib/membership/plans.ts` übergeben – im
-   Dashboard muss **kein** Preisobjekt angelegt werden; **keine** Probezeit
-   konfigurieren (`trialing` würde aktivieren).
-9. Testkauf im **Testmodus** durchführen und prüfen: (a) Mitgliedschaft
-   entsteht **nur** über den Webhook, (b) abgebrochener Checkout und
-   fehlgeschlagene Zahlung aktivieren nichts, (c) Kündigung/Löschung im
-   Dashboard beendet die Mitgliedschaft. Live-Keys erst mit
-   `ALLOW_STRIPE_LIVE=true`.
-10. Offen im Code: Kundenportal-Route/UI (Funktion
-    `createBillingPortalSession` existiert), Rechnungsansicht mit echten
-    Provider-Daten.
+   `invoice.paid`, `invoice.payment_failed`.
+   Für verzögerte Zahlarten zusätzlich `checkout.session.async_payment_succeeded`
+   und `checkout.session.async_payment_failed` abonnieren.
+4. Testkauf, Abbruch, unbezahlte/verzögerte Zahlung, erfolgreiche Zahlung,
+   fehlgeschlagene Folgezahlung, Portalaufruf und Kündigung im **Testmodus**
+   prüfen. Die Membership darf erst nach dem signaturgeprüften Webhook aktiv
+   sein; der Success-Link informiert ausschließlich. Ein echter Testmodus-
+   Durchlauf gegen einen Worker ist in dieser Session noch offen.
+5. Das Customer Portal ist fertig verdrahtet: `/app/billing` zeigt es nur für
+   eine Stripe-Zuordnung, `/api/billing/portal` akzeptiert keine Customer-ID
+   aus dem Browser und verwendet die zentrale `NEXT_PUBLIC_SITE_URL` als
+   Rückweg. Admin-/Dev-Mitgliedschaften bleiben bewusst außerhalb des Portals.
 
 ### 3.3 Optional / später
 
@@ -103,7 +107,7 @@ deaktiviert) **und** serverseitige Limits (`otp:cooldown` 1/60 s,
     Beta-Tester, K-10).
 12. Google-/Apple-OAuth-Apps – **erst nachdem** die jeweilige Route
     implementiert wurde (heute nicht vorhanden).
-13. Domain + DNS auf den Worker zeigen lassen.
+13. Domain-/DNS-Arbeiten bleiben außerhalb dieses Sprints; die kanonische App-URL ist `https://innercirclevp.com` und wird über `NEXT_PUBLIC_SITE_URL` zentral gesetzt.
 
 ## 4. Was der Agent nicht kann
 

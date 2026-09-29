@@ -388,7 +388,7 @@ Alle Punkte sind Gründungsaufträge, nach `## 4` protokolliert und damit
    in `src/app/globals.css` ersetzen das pauschale `max-w-6xl` pro Seite.
    Kein Token wurde angefasst (Farben, Radien, Schatten, Schriftgrößen bleiben).
 2. **Hero-Preis + Bildrichtung:** der Hero nennt den Preis als Hinweiszeile
-   (24,99 €/249,90 €), und die Public-Bilder wurden nach neuer Bildrichtung
+   (24,99 €/249,99 €), und die Public-Bilder wurden nach neuer Bildrichtung
    regeneriert (`13-decisions.md`, ADR-013). Hero-Bild `hero-home.jpg` selbst
    ist unangetastet.
 3. **Sprint 5 (Mobile UX · Login UX · Public-Polish):** alle Änderungen sind

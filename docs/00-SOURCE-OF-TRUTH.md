@@ -3,7 +3,32 @@
 **Diese Datei ist der verbindliche Einstiegspunkt für jeden Menschen und jeden
 KI-Agenten, der an diesem Repository arbeitet.**
 
-- **Neuester Stand (2026-09-28): Konsolidierungs-Sprint vor dem Domain-Cutover.**
+- **Aktueller Stand (2026-09-29): Stripe-Sandbox-Billing + UX-Aufräumarbeiten.**
+  Dieser Branch basiert auf dem aktuellsten `main` @ `98814bc` und bleibt
+  ausschließlich im Stripe-Testmodus. `/app/billing` akzeptiert nur `monthly`
+  oder `annual`, löst die bestehenden `STRIPE_PRICE_MONTHLY`/
+  `STRIPE_PRICE_YEARLY` serverseitig auf, erstellt bzw. verwendet den
+  authentifizierten Stripe Customer und leitet zu Checkout weiter. Der Erfolg-
+  bzw. Abbruch-Link erteilt niemals Zugriff; nur ein raw-body/signaturgeprüfter
+  Webhook darf die Membership aktivieren. Die sechs verbindlichen Ereignisse
+  (`checkout.session.completed`, `customer.subscription.created`,
+  `customer.subscription.updated`, `customer.subscription.deleted`,
+  `invoice.paid`, `invoice.payment_failed`) sind idempotent verarbeitet; die
+  verzögerten Checkout-Ereignisse werden zusätzlich als Zahlungsübergang
+  behandelt. Das Kundenportal läuft über `/api/billing/portal` und verwendet
+  ausschließlich die serverseitig gespeicherte Customer-ID. Admin-, Discovery-,
+  Private-Beta-, Founding-Member- und Rollenstatus werden nicht von Stripe
+  verändert. Keine Migration, kein Live-Key, keine DNS-/Cloudflare-/Auth- oder
+  Resend-Änderung. Kanonische öffentliche URL bleibt `https://innercirclevp.com`;
+  die Anwendung verwendet dafür ausschließlich `NEXT_PUBLIC_SITE_URL`.
+  Preise: exakt `24,99 €` monatlich und `249,99 €` jährlich.
+  Profil-/Onboarding-Felder sind in einem Editor zusammengeführt; historische
+  `rolesJson`/`skillsJson` bleiben erhalten. Neue Chancen fragen Titel, Typ,
+  Kurzfassung, Beschreibung, Branche, Ort und die vorhandene Remote-Option ab;
+  alte Opportunity-Felder bleiben lesbar. Tests, TypeScript und i18n-Audit sind
+  nach dem letzten Stand grün; Lint, OpenNext/Cloudflare-Dry-Run und Browser-
+  E2E werden für diesen Sprint separat ausgewiesen.
+- **Davor (2026-09-28): Konsolidierungs-Sprint vor dem Domain-Cutover.**
   Session-Branch auf Basis von `main` @ `f2932e4` (Merge PR #37). Vier
   Aufträge, kein Eingriff in DNS/Domain, Cloudflare-Routes, `NEXT_PUBLIC_SITE_URL`,
   Resend, Stripe, Auth-Flow, Beta-Schlüssel, Chat/Inbox, Networking,
@@ -223,10 +248,9 @@ KI-Agenten, der an diesem Repository arbeitet.**
   Beta-Einlöse-Flow gegen den Worker-Preview; Rezepte `08-testing.md` §3c), `npm test`
   **36 Dateien / 267 grün**, Typecheck, i18n-Audit, `cf:build` und `cf:dry-run` grün,
   Lint unverändert auf Baseline (K-15). **Kein DNS-/Domainwechsel in diesem damaligen PR:** `innercirclevp.com` ist die
-  verifizierte Resend-Sending-Domain. Stand 2026-09-28 läuft die Nameserver-
-  Propagation bei Cloudflare laut Projektkontext; die Website bleibt bis zum
-  freigegebenen Cutover auf `workers.dev`. DNS/Custom-Domain wurden in diesem
-  Cutover-Vorbereitungssprint nicht geändert. Ausführbare Reihenfolge:
+  verifizierte Resend-Sending-Domain. Die kanonische Website-URL bleibt `https://innercirclevp.com`; DNS/Custom-Domain
+  wurden in diesem damaligen Cutover-Vorbereitungssprint nicht geändert.
+  Ausführbare Reihenfolge:
   [`DOMAIN-CUTOVER-CHECKLIST.md`](DOMAIN-CUTOVER-CHECKLIST.md).
   Davor: Sprint 13 – **Profil: einheitliches Speichern & Foto-Upload** (Gründerauftrag):
   `/app/profile/edit` hat **einen** Speicherbutton für die ganze Seite – ein Klick speichert
@@ -434,13 +458,13 @@ Details: [`01-product.md`](01-product.md)
 
 ### 1c. Membership (aktueller Stand – verbindlich)
 
-- **Preise:** 24,99 € / Monat (2499 ct) und 249,90 € / Jahr (24990 ct) – „2 Monate geschenkt" ≈ 17 % Vorteil (16,67 %, `annualSaving()` rundet auf 17 – so zeigt es die App). Quelle der Wahrheit: `src/lib/membership/plans.ts` (doppelt in `src/lib/env.ts` als `membershipPricing` – Risiko K-17).
+- **Preise:** 24,99 € / Monat (2499 ct) und 249,99 € / Jahr (24999 ct) – „2 Monate geschenkt" ≈ 17 % Vorteil (16,64 %, `annualSaving()` rundet auf 17 – so zeigt es die App). Quelle der Wahrheit: `src/lib/membership/plans.ts` (doppelt in `src/lib/env.ts` als `membershipPricing` – Risiko K-17).
 - **48-h-Discovery-Demo (Sprint 11, ersetzt den „Discovery-Trial“ mit Leserechten):** serverseitig, genau einmal pro Konto (`startTrial()`, `Trial`-Tabelle unverändert), Start im Onboarding nach der Verifizierung, Ablauf lazy in `getAccessContext()`. Während der Demo gibt es **keine echten Mitgliederprofile, Kontaktvorschläge, Deals, Jobs oder Investments** – die Bereiche zeigen die zentral gepflegten, als „DEMO · Beispielprofil“/„DEMO · Beispiel“ gekennzeichneten Beispiele (`src/lib/demo`). Das Level `trial` hat dieselben Rechte wie `free` plus `demoAccess` (`src/lib/access/levels.ts`); Kontaktanfragen, Follows, Bewerbungen, Interessensbekundungen und Event-Anmeldungen werden serverseitig mit `membershipRequired` abgewiesen. Die simulierte Kontaktanfrage auf Demo-Profilen läuft rein clientseitig (`DemoConnectDialog`) und schreibt nichts. Echte veröffentlichte Events (Titel, Datum/Uhrzeit, Ort, Programm, freie Plätze aus realer Kapazität − Buchungen) bleiben lesbar; die Anmeldung ist Teil der Mitgliedschaft (Sperrkarte statt Formular, `applyToEventAction` → `membershipRequired`). Nach Ablauf: Konto/Profil bleiben, Level `free`, Demo nicht neu startbar (`already_used`), Mitgliedschafts-Screen (`LockedArea`/Billing).
 - **Sieben Kontozustände (verbindlich):** 1 anonym (`visitor`) · 2 registriert, unverifiziert (kein `/app`) · 3 verifiziert, Discovery nicht gestartet (`free`, kein `Trial`-Datensatz; landet im Onboarding) · 4 aktive 48-h-Demo (`trial`, `demoAccess`) · 5 abgelaufene Demo ohne Mitgliedschaft (`free`, `Trial.status = expired`) · 6 aktive bestätigte Mitgliedschaft (`member`) · 7 Admin. Nachweis: `tests/integration/access-matrix.test.ts`, `tests/integration/discovery-demo.test.ts`.
 - **Migrations-/Übergangsregel (Sprint 11, kein Schema-Change):** bestehende **aktive** Trials laufen bis zu ihrem ursprünglichen `expiresAt` weiter – ab dem Deploy unter Demo-Semantik (keine echten Daten mehr); bestehende **abgelaufene** Trials bleiben abgelaufen und werden **nie** zurückgesetzt; aktive Mitgliedschaften sind unberührt; Konten ohne `Trial`-Datensatz starten ihre Demo weiterhin genau einmal im Onboarding. Es gibt keine Datenmigration und keinen Reset-Pfad.
 - **Private Beta (Sprint 12, verbindlich):** dritte, unabhängige Achse neben Level und Rolle – **kein** neues Level, **keine** Mitgliedschaft. Ein aktiver `BetaAccess` (`status = active` und `endsAt` in der Zukunft, `betaIsActive()` in `src/lib/access/server.ts`, bei jedem Request aus der DB) ergänzt für `free`/`trial` ausschließlich `networkDirectory`, `networkDiscover`, `connect`, `messaging`, `profileFull` (`withBetaGrant()` in `src/lib/access/levels.ts`); Deals, Jobs, Investments, Marketplace-Verkauf, Academy und Event-Anmeldung bleiben gesperrt. Tester zählen nie als zahlend (keine `Membership`-/`Invoice`-Zeile, kein Stripe). Schlüssel: `ICB-XXXX-XXXX-XXXX-XXXX` (80 Bit), einmalig, an das einlösende Konto gebunden, optional an eine E-Mail, Einlösen nur verifiziert, Rate-Limit 8/h pro Konto und 30/h pro IP, race-sicher. Ablauf/Widerruf: Konto, Profil, Kontakte und Verläufe bleiben; echte Mitgliedersuche, neue Anfragen und Nachrichten gesperrt (Chat nur lesbar); Re-Login verlängert nichts. Läuft die 48-h-Demo noch, sieht der Nutzer die Demo plus Ende-Hinweis. Lebenszyklus: `04-auth-membership.md` §4b; Rechte: `06-permissions.md` §3c; Tabellen: `05-database.md`.
 - **Keine zusätzlichen Membership-Tiers.** Nur `free`, `trial`, `member`, `admin` (Level). Keine künstlichen Pakete. Der Beta-Zugang ist ein befristetes Entitlement, kein Tier.
-- **Bezahlung:** Stripe Checkout + signierte Webhooks implementiert, aber BLOCKED (keine Schlüssel). **Sprint-12-Audit:** Signaturprüfung im Worker auf `constructEventAsync` umgestellt (die synchrone Variante hätte jeden Produktions-Webhook abgelehnt), Aktivierung nur bei `payment_status = paid`/`no_payment_required` bzw. `checkout.session.async_payment_succeeded`, unbezahlte/fehlgeschlagene Checkouts werden nur protokolliert, `subscription.deleted` ohne 500 (`04-auth-membership.md` §4a, `stripe-webhook-route.test.ts`). Dev-Aktivierung nur ohne Stripe und außerhalb Produktion (`ALLOW_DEV_MEMBERSHIP_ACTIVATION`), klar gekennzeichnet. **Auf dem Live-Worker (`NODE_ENV=production`, keine Stripe-Variablen in `wrangler.jsonc`) sind daher aktuell keine echten Zahlungen möglich und keine Mitgliedschaft aktivierbar**; `/app/billing` zeigt deshalb deaktivierte Plan-Buttons mit „Zahlung noch nicht freigeschaltet“ statt eines Checkout-Formulars ins Leere.
+- **Bezahlung:** Stripe-Sandbox-Checkout, Customer-Portal und signierte Webhooks sind implementiert. Der Server verwendet ausschließlich `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_MONTHLY` und `STRIPE_PRICE_YEARLY`; Browser-Planwerte werden validiert, aber keine Price-ID akzeptiert. Aktivierung erfolgt nur bei validiertem Stripe-/Webhook-Zustand; `subscription.deleted` und fehlgeschlagene Rechnungen entziehen bzw. begrenzen den Zugang sauber. Ohne vollständige Sandbox-Konfiguration bleibt `/app/billing` ehrlich gesperrt; Dev-Aktivierung ist nur außerhalb Produktion und klar gekennzeichnet. Kein Live-Stripe in diesem Sprint.
 - **Free/abgelaufene Demo im `/app`-Bereich (Sprint 10/11):** Verzeichnis, Discover, Chancen, Jobs, Investments, Deal-/Investment-Details, fremde Profile und Demo-Profilseiten sind seitenweise gesperrt (`LockedArea`), das Dashboard zeigt statt Vollansicht ein Mitgliedschafts-Panel; erlaubt bleiben eigenes Profil/Einstellungen, Marketplace- und Event-Liste inkl. Event-Details (ohne Anmeldung), Inbox (Anfragen annehmen/ablehnen, Mitteilungen), Billing. Matrix und Nachweis: `06-permissions.md` §3/3a/3b.
 - **Zahlungsstatus ehrlich:** `/app/billing` nennt den echten Stand („Keine Zahlung hinterlegt – es besteht keine aktive Mitgliedschaft. Eine Mitgliedschaft wird ausschließlich nach bestätigter Zahlung aktiviert – nie durch einen Klick, eine Demo-Aktion oder eine fehlgeschlagene Zahlung.“). Ohne Stripe-Schlüssel und mit `ALLOW_DEV_MEMBERSHIP_ACTIVATION=false` (Standard in `.env.example`) antwortet `/api/billing/checkout` mit `?error=stripeNotConfigured` und legt **keine** Mitgliedschaft an (`discovery-demo.test.ts`).
 - **Mitgliedskarte:** Format `IC-<Jahr>-<5-stellige Nummer>`, öffentliche `publicId`, Status `active`/`expired`.
@@ -630,7 +654,7 @@ Discover → Profil → Connect (Pflichtnachricht) → Anfrage → Inbox (Anfrag
 | Deployment | Build `npm run cf:build` · Deploy `npm run cf:release` · Production-Branch `main` |
 | Datenbank (Produktion) | D1 `inner-circle-db`, Binding `DB`, Migrationen in `drizzle/` |
 | i18n | Eigenes Wörterbuch `src/lib/i18n` (DE = Standard, EN vollständig) |
-| Tests | Vitest: **36 Dateien / 267 Tests grün** (`npm test`, Sprint 15; inkl. D1-Läufe `for-you-d1`/`beta-network-d1`) + Browser-E2E `tests/e2e/sprint15-browser.mjs` **93/93** (§`08-testing.md` 3d) |
+| Tests | Vitest: **44 Dateien / 353 Tests grün** (`npm test`, Sprint 17; inkl. Checkout-/Webhook-/Lifecycle-Tests) + TypeScript/i18n/OpenNext-Dry-Run grün; Browser-E2E in dieser Umgebung offen (§`08-testing.md`) |
 | App-Navigation | **6 Primärbereiche**: Start · Discover · Erstellen · Inbox · Events · Profil |
 
 ## 3. Status-Legende (verbindlich)
@@ -653,10 +677,10 @@ existiert. Backend + Daten + Berechtigungen + Nachweis gehören dazu.
 
 | Funktion | Status | Nachweis |
 | -------- | ------ | -------- |
-| Startseite `/` – Conversion-Flow (Hero mit 3 Outcomes + Preis-Hinweis → schmales 20-%-Kapital-Band → Membership-Preis → 6 Kernbereiche → Events → CTA) | WORKING | `src/app/(site)/HomeContent.tsx`; Hero-Bild unverändert (Sprint 10: Mobile nutzt dasselbe `hero-alpine.jpg`), Hero nennt beide Preise (24,99 €/249,90 €); **statisch vorgeneriert** |
+| Startseite `/` – Conversion-Flow (Hero mit 3 Outcomes + Preis-Hinweis → schmales 20-%-Kapital-Band → Membership-Preis → 6 Kernbereiche → Events → CTA) | WORKING | `src/app/(site)/HomeContent.tsx`; Hero-Bild unverändert (Sprint 10: Mobile nutzt dasselbe `hero-alpine.jpg`), Hero nennt beide Preise (24,99 €/249,99 €); **statisch vorgeneriert** |
 | Preview-Seiten `/network`, `/business-deals`, `/investments`, `/marketplace`, `/events` | WORKING | statische Inhalte, nicht aktivierte Funktionen als „Demnächst verfügbar\" gekennzeichnet; **statisch vorgeneriert** |
 | `/portfolio` – INNER CIRCLE Portfolio (Arbeitstitel) | WORKING | `src/app/(site)/portfolio/`; 20-%-/25-%-/75-%-Modell (bezogen auf 100 %: 5 % IC / 15 % extern) + 100-€-Beispiel; **kein Fonds, keine Renditeversprechen**; transparent als geplante strategische Zielallokation; **statisch vorgeneriert** |
-| `/membership` (Preise, Leistungen) | WORKING | 24,99 €/Monat **und** 249,90 €/Jahr („2 Monate geschenkt\"); K-03 gelöst, Checkout weiter Dev-Aktivierung bis Stripe scharf ist |
+| `/membership` (Preise, Leistungen) | WORKING | 24,99 €/Monat **und** 249,99 €/Jahr („2 Monate geschenkt\"); K-03 gelöst; Checkout ist für die konfigurierte Stripe-Sandbox vorgesehen |
 | Auth-Seiten `/login`, `/register`, `/forgot-password`, `/reset-password`, `/verify` | WORKING | siehe Bereich B |
 | Rechts-Platzhalter `/imprint`, `/privacy`, `/terms` | PARTIAL | bewusst Platzhalter, kein geprüfter Rechtstext |
 | `/design` (internes Design-System) | WORKING | nur Styleguide, kein Produktfeature |
@@ -672,7 +696,7 @@ existiert. Backend + Daten + Berechtigungen + Nachweis gehören dazu.
 | Logout (Session-Widerruf serverseitig) | WORKING | `logoutAction`, `/api/auth/logout` |
 | Sessions (30 Tage, httpOnly, gehasht) | WORKING | `src/lib/auth/session.ts`; zusätzlich nicht-httpOnly-Präsenz-Flag `ic_presence` in Lockstep mit `ic_session` (nur für den „Zur App\"-CTA der öffentlichen Seiten, keine Identität, keine Autorisierung) |
 | E-Mail-Verifizierung (Code-Erzeugung, Hash, Ablauf, Versuche) | WORKING | `src/lib/auth/otp.ts`, `onboarding.test.ts` |
-| **Echter E-Mail-Versand (Resend)** | **WORKING (Sender-Domain verifiziert) / PARTIAL (Website-Cutover offen)** | `RESEND_API_KEY` aktiv; responsive Multipart-Templates (HTML+Text DE/EN); Absender `INNER CIRCLE <noreply@innercirclevp.com>` (via `EMAIL_FROM`), Verifizierungs-Mail optional über dedizierten `EMAIL_FROM_VERIFICATION` (empfohlen `verify@…`, Fallback `EMAIL_FROM`) – Betreff ohne Code, Code nur im Body; Domain bei Resend verifiziert (Nur-Senden). Die Website bleibt bis zum Cutover auf `workers.dev`; Nameserver-Propagation bei Cloudflare läuft laut Projektkontext, aber weder DNS noch Worker-Custom-Domain wurden in diesem Vorbereitungssprint geändert. Cutover-Runbook: `DOMAIN-CUTOVER-CHECKLIST.md`; Gmail-Inbox-Platzierung: Beobachtung K-25 |
+| **Echter E-Mail-Versand (Resend)** | **WORKING (Sender-Domain verifiziert) / PARTIAL (Website-Cutover offen)** | `RESEND_API_KEY` aktiv; responsive Multipart-Templates (HTML+Text DE/EN); Absender `INNER CIRCLE <noreply@innercirclevp.com>` (via `EMAIL_FROM`), Verifizierungs-Mail optional über dedizierten `EMAIL_FROM_VERIFICATION` (empfohlen `verify@…`, Fallback `EMAIL_FROM`) – Betreff ohne Code, Code nur im Body; Domain bei Resend verifiziert (Nur-Senden). Die kanonische Website-URL ist `https://innercirclevp.com`; DNS und Worker-Custom-Domain wurden in diesem Sprint nicht geändert. Cutover-Runbook: `DOMAIN-CUTOVER-CHECKLIST.md`; Gmail-Inbox-Platzierung: Beobachtung K-25 |
 | Verifizierung im Dev-Postausgang | WORKING | `ENABLE_DEV_OUTBOX` + Admin-Rolle, Testabdeckung `message-delivery.test.ts` |
 | SMS-Verifizierung (Twilio) | BLOCKED | kein Twilio-Konto/Schlüssel |
 | Registrierung per Telefonnummer | NOT IMPLEMENTED | UI-Umschalter existiert, Übermittlung schlägt fehl (Known Issue K-05) |
@@ -691,9 +715,9 @@ existiert. Backend + Daten + Berechtigungen + Nachweis gehören dazu.
 | Demo-Semantik der Discovery-Phase (keine echten Mitglieder/Deals/Jobs/Investments, simulierte Anfrage ohne Datenbankschreibung, echte Events lesbar/Anmeldung gesperrt) | WORKING | `entitlementsFor("trial")` = free + `demoAccess`, `src/lib/demo/discover.ts`, `DemoConnectDialog`, `access-matrix.test.ts`, `discovery-demo.test.ts` |
 | Trial-Kontaktanfragen-Zähler (`TRIAL_CONNECTION_LIMIT`) | PREPARED | Service + Test bleiben, wird seit Sprint 11 von keiner Action mehr verbraucht (Trial darf keine echten Anfragen senden) |
 | Paid Membership (Monat/Jahr) über Service | WORKING | `src/lib/membership/service.ts`, `tests/integration/membership.test.ts` |
-| Stripe-Checkout + signierte Webhooks | BLOCKED | Code vollständig (`/api/billing/checkout`, `/api/webhooks/stripe`, `webhook.test.ts`), aber kein Stripe-Konto/Schlüssel; Sprint 12: Worker-Signaturprüfung + Aktivierungsregeln korrigiert (`stripe-webhook-route.test.ts`, `stripe-worker-signature.test.ts`) |
+| Stripe-Sandbox-Checkout + signierte Webhooks | WORKING (Sandbox-Konfiguration erforderlich) | `/api/billing/checkout`, `/api/webhooks/stripe`, `/api/billing/portal`; serverseitige Price-ID-Auflösung, Customer-Zuordnung, raw-body-Signaturprüfung, sechs verbindliche Events, Idempotenz; `stripe-checkout.test.ts`, `stripe-webhook-route.test.ts` |
 | **Private Beta: Schlüssel einlösen → befristeter Beta-Zugang (Sprint 12)** | WORKING (lokal verifiziert) | `src/lib/beta/*`, `src/app/actions/beta.ts`, `/app/beta`, `beta-access.test.ts` (18), `beta-network-d1.test.ts`, Browser-E2E; **Sprint 15:** Welcome-Card nach dem Einlösen zeigt Laufzeit (`welcomeText {days}`), Ablaufdatum und die vier freigeschalteten Funktionen und leitet ohne Sackgasse nach `/app/profile/edit?welcome=beta` weiter (E2E Flow B); Produktions-D1 braucht Migration `0002` (K-22) |
-| Kundenportal (Kündigung/Zahlungsmittel) | PREPARED | `createBillingPortalSession()` vorhanden, keine Route/UI |
+| Kundenportal (Kündigung/Zahlungsmittel) | WORKING (Sandbox-Konfiguration erforderlich) | `/api/billing/portal`, Billing-UI; Customer-ID ausschließlich aus der serverseitigen Membership-Zuordnung |
 | Dev-Mitgliedschaftsaktivierung (klar gekennzeichnet) | WORKING | nur ohne Stripe und außerhalb Produktion (`ALLOW_DEV_MEMBERSHIP_ACTIVATION`) |
 | Mitgliedskarte (Nummer + öffentliche Verifizierung) | WORKING | `issueCardIfNeeded`, `/member/[publicId]` |
 | Paywall/Weiterleitung unterhalb des Levels | WORKING | `requireAccess()`, `/app/billing?paywall=…`; Sprint 10/11: Seiten-Locked-State `LockedArea` für Free/abgelaufene Demo, `tests/integration/access-matrix.test.ts` (26 Fälle, 7 Kontozustände) |
@@ -817,7 +841,7 @@ existiert. Backend + Daten + Berechtigungen + Nachweis gehören dazu.
 | D1-Anbindung + Migrationen (52 Tabellen) | WORKING (lokal) · Produktion ausstehend | `drizzle/0000_init.sql` … `0002_sprint12_private_beta.sql`, `cf:release`; `0002` bisher **nur lokal** angewendet (K-22) |
 | Laufzeit-Treiberwechsel D1 ↔ libSQL | WORKING | `src/db/client.ts` |
 | Deployment über Workers Builds (main → Produktion) | PARTIAL | dokumentierter Weg; letzter Merge nach `main` durch den Gründer zu prüfen (Dashboard) |
-| Automatisierte Tests | WORKING | **267 Tests grün (36 Testdateien)** (Sprint 15), inkl. echter D1-Läufe (`for-you-d1`, `beta-network-d1`, workerd/Miniflare); Browser-E2E `tests/e2e/sprint15-browser.mjs` gegen den Worker-Preview **93/93** (CTA-Matrix, Reset-Flow, Beta-Einlöse-Flow; `08-testing.md` §3c), zuvor `sprint12-browser.mjs` **65/65** (§3b); E2E nicht Teil von `npm test` |
+| Automatisierte Tests | WORKING | **354 Tests grün (44 Testdateien)** (Sprint 17), inkl. D1-Integration und Stripe-Sandbox-Checkout-/Webhook-Lifecycle; TypeScript, i18n-Audit und OpenNext/Wrangler-Dry-Run grün. Browser-E2E ist in dieser Umgebung offen und wird nicht als bestanden behauptet (`08-testing.md`) |
 | Worker-Build + Dry-Run | WORKING | Sprint 12: `npm run cf:build` grün, `wrangler deploy --dry-run` grün – Upload 9287,12 KiB / gzip 1859,17 KiB, Bindings `DB`, `ASSETS`, `NEXTJS_ENV` |
 | CPU-Zeit / Worker-Limits | PARTIAL (lokal gemessen) | Startphase 50 ms (Limit 1 s); Seiten 43–68 ms, Login ~0,6 s im lokalen workerd → über Free (10 ms), weit unter Paid (30 s) → **Workers Paid Voraussetzung** (K-24, `08-testing.md` §3c); auf Cloudflare nicht gemessen |
 | CI (GitHub Actions) | NOT IMPLEMENTED | keine Workflows im Repo |
