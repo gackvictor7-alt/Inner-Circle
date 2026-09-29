@@ -59,4 +59,7 @@ export const idFor = {
   report: () => createId("rpt"),
   audit: () => createId("aud"),
   outbox: () => createId("out"),
+  dealRecord: () => createId("drc"),
+  dealConfirmation: () => createId("dcf"),
+  dealTermsAcceptance: () => createId("dta"),
 };

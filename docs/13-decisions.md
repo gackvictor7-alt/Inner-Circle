@@ -362,3 +362,62 @@ stehen, sind aber unten ausdrücklich als ersetzt markiert – der **Code** und
   Trust-Seiten rechnen live; Listen nutzen den Cache. Migration ist erzeugt
   und getestet, **aber nicht auf Production angewendet**. Doku: `00` §J, `05`,
   `06` §4a, `03`, `08` §3g, `11` K-08/K-27.
+
+## ADR-018: Degressive Deal-Fee als zentrale Berechnung + gegenseitig bestätigter Deal als Trust-Grundlage (2026-09-29)
+
+**Entscheidung:** Der Deal-Fee wird an **einer** Stelle definiert
+(`src/lib/deals/fees.ts`, rein, ohne D1) und von Website, Plattform-Schritt,
+Deal-Erfassung und Tests gemeinsam genutzt. Die Zustimmung ist ein
+**technischer Nachweis mit Versionsstempel** (`DealTermsAcceptance`), und die
+Anreizseite ist **Produkt**, nicht Strafe: ein von beiden Seiten bestätigter
+`DealRecord` wird ein **vierter** Trust-Kontext (`deal`) und ein neues
+Aggregatsignal (`verified_deals`).
+
+**Begründung:**
+
+- **Eine Quelle für die Staffel.** Fünf Stellen mit hartkodierten Prozenten
+  driften garantiert auseinander. `calculateDealFee()` liefert ein **Quote-Objekt**
+  statt einer Zahl, damit ein Aufrufer eine verhandelbare Stufe nicht versehentlich
+  als feste behandeln kann.
+- **> 5 Mio. erzeugt bewusst keinen Betrag.** `rateBps: null`, `feeCents: null`,
+  dafür `rateBpsRange: [100, 150]`. Eine erfundene „1 %" wäre eine falsche
+  Zusage in einer Rechtsfrage.
+- **Grenzen inklusive oben.** „bis 50.000 € → 5 %" bedeutet: 50.000 € ist noch
+  Stufe 1, 50.000,01 € schon Stufe 2. Genau so getestet.
+- **Zustimmung, nicht Klausel.** Eine Vertragsstrafe ohne juristische Grundlage
+  wäre erfunden. Stattdessen: Version, Zeitpunkt, User-ID, Opportunity-ID,
+  Deal-Art, angezeigtes Volumen und angezeigte Stufe – genau die Fakten, die
+  später eine geprüfte Vereinbarung braucht. Der Server lehnt außerdem ein
+  Formular ab, dessen angezeigte Version nicht mehr aktuell ist.
+- **Anreiz statt Strafe.** Der stärkste Hebel ist Sichtbarkeit: nur bestätigte
+  Deals fließen in Reputation, Deal-Historie und bestätigtes Volumen. Das ist
+  eine Produktentscheidung, die ohne juristische Prüfung funktioniert.
+- **Scope-Trennung ist Code, nicht Text.** `MARKETPLACE_FEE_POLICY` und
+  `DEAL_FEE_OPPORTUNITY_TYPES` erzwingen, dass die Fee **nicht** auf
+  Marketplace-Listings, Jobs, Freelance, Kunden-Leads oder Investments wirkt.
+- **Nur aggregiert nach außen.** `publicDealSummaryFor()` gibt
+  `{ verifiedDealCount, topVolumeBand }` zurück – nie Gegenüber, Betrag, Notiz
+  oder Vertragsinhalt.
+
+**Verworfene Alternativen:**
+
+- *Fee automatisch einziehen / Marketplace auf die gleiche Fee umstellen* –
+  hätte die bestehende, funktionierende Marketplace-Logik verändert und wäre
+  zusätzlich eine Produktentscheidung, die nicht Teil dieses Sprints ist.
+- *Starke Straf-Klausel gegen Umgehung* – ohne Rechtsprüfung nicht vertretbar.
+- *Deal direkt beim Abschluss automatisch verifizieren* – eine einseitige
+  Behauptung ist kein Nachweis; das hätte genau die Beliebigkeit geschaffen, die
+  das Feature verhindern soll.
+- *Investment-Pool-Diagramm mit erfundenen Prozentwerten* – sieht exakt aus wie
+  echte Daten und wäre es nicht. Stattdessen gleich große Segmente ohne
+  Prozentangabe plus „Geplantes Modell".
+- *Navigationspunkt für `/app/deals` und für M&A* – beides würde leere
+  Navigation erzeugen. Der Einstieg ist kontextuell von `/app/opportunities`,
+  M&A ist Roadmapsache (L-11).
+
+**Konsequenz:** `drizzle/0004_deal_terms_and_records.sql` (rein additiv: drei
+Tabellen, keine Änderung bestehender Tabellen), lokal **und** gegen workerd-D1
+getestet, **nicht auf Production angewendet**. Keine Buchhaltung, keine
+Auszahlung, keine Stripe-/Payment-Änderung, keine Produktions-Secrets, kein
+DNS-/Domain-Eingriff. Doku: `00`, `05`, `06` §3f/§4a, `03`, `08` §3e,
+`10` §1.19, `11` K-28/K-29/K-30, `12` L-2/L-4/L-11/L-12.

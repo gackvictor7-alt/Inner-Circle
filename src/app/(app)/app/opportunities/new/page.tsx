@@ -1,6 +1,7 @@
 import { requireUser } from "@/lib/access/server";
 import { createOpportunityAction } from "@/app/actions/business";
 import { ActionForm, type FormField } from "@/components/app/forms";
+import { DealTermsStep } from "@/components/app/DealTermsStep";
 import { LocalizedEmptyState, LocalizedPageHeader } from "@/components/app/localized";
 
 export const dynamic = "force-dynamic";
@@ -77,6 +78,9 @@ export default async function NewOpportunityPage({
         columns={2}
         submitKey="app.opportunities.form.publish"
         successKey="app.opportunities.createdSuccess"
+        // Deal-Bedingungen for deal types only – the component renders
+        // nothing for jobs, freelance work, customer leads and investments.
+        beforeSubmit={<DealTermsStep opportunityType={preselectedType} />}
       />
     </div>
   );

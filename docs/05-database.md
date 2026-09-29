@@ -38,7 +38,7 @@ und `drizzle/0000_init.sql` + `drizzle/0001_sprint3_discover_profile.sql` +
 | Demo-Daten | `isDemo` (Boolean) bzw. `User.seedTag`, damit Demos nie als echt gelten |
 | Namensgebung | Tabellen in PascalCase (`User`, `Membership`), Spalten camelCase |
 
-## Gruppierung der 52 Tabellen (50 aus `0000` + 2 aus `0002`)
+## Gruppierung der 55 Tabellen (50 aus `0000` + 2 aus `0002` + 3 aus `0004`)
 
 ### 1. Auth & Identity (4)
 
@@ -217,6 +217,33 @@ User 1──n PerformanceRecord / UserBadge / AdminAuditLog(actor)
   `Report`, `VerificationCode`-Zwecke `login_2fa`/`phone_change`,
   `BusinessOpportunity.confidentiality > standard`, `Conversation.kind = opportunity`.
 
+## Sprint „Deal Fee & Deal Records" – Migration `0004` (3 neue Tabellen)
+
+**Rein additiv:** ausschließlich `CREATE TABLE` + `CREATE INDEX`. Keine
+`ALTER`, kein `DROP`, keine Änderung an bestehenden Tabellen.
+
+| Tabelle | Zweck | Besonderheit |
+| ------- | ----- | ------------ |
+| `DealTermsAcceptance` | Nachweis, dass ein Mitglied eine **bestimmte Fassung** der Deal-Bedingungen zu einem konkreten Angebot akzeptiert hat | `termsVersion`, `acceptedAt`, `subjectType`/`subjectId`, `dealType`, `volumeCents` (**eingegebene Angabe, kein Fakt**), `feeTierId`, `feeRateBps` (bei > 5 Mio. `null` = verhandelbar), `feeNegotiable` |
+| `DealRecord` | Ein über INNER CIRCLE entstandener, off-platform abgeschlossener Deal | `declaredById`, `counterpartyId`, `sourceOpportunityId` (nullable, `SET NULL`), `volumeBand` (grob), `volumeCents` (**privat**), `status` `pending_confirmation → confirmed \| disputed`, `confirmedAt`, `privateNote` |
+| `DealConfirmation` | Gegenseitige Bestätigung | Unique Index `deal_confirmation_unique` auf (`dealId`, `userId`) – jede Person bestätigt höchstens einmal |
+
+**Schlüsselentscheidungen:**
+
+- `DealRecord.status` wird **nur** zu `confirmed`, wenn **beide** benannten
+  Parteien bestätigt haben (`src/lib/deals/records.ts`, `confirmDeal()`). Ein
+  einseitiger Claim zählt nirgends.
+- `volumeCents` ist privat. Nach außen verlässt die Zeile ausschließlich
+  `publicDealSummaryFor()` → `{ verifiedDealCount, topVolumeBand }`.
+- `privateNote` ist nur für die meldende Seite sichtbar und wird der
+  Gegenseite nie übertragen.
+- Beide Tabellen `ON DELETE CASCADE` auf `User` – beim Löschen eines Kontos
+  verschwinden die Deals mit (gesichert durch Test).
+
+**Angewendet:** lokal (`wrangler d1 migrations apply DB --local`) **und** gegen
+das echte workerd-D1 über `tests/d1-helpers.ts` (`applyAllMigrations`) getestet.
+**NICHT auf Production angewendet.**
+
 ## Betrieb
 
 | Aufgabe | Befehl |
@@ -233,6 +260,10 @@ User 1──n PerformanceRecord / UserBadge / AdminAuditLog(actor)
 und getestet, aber NICHT auf Production angewendet**. Sie wird mit
 `npm run cf:d1:migrate:remote` bzw. automatisch in `npm run cf:release`
 eingespielt – erst nach Freigabe.
+
+**Regel (Deal-Fee-Sprint):** `drizzle/0004_deal_terms_and_records.sql` ist
+**rein additiv**, lokal und gegen workerd-D1 getestet, **aber NICHT auf
+Production angewendet**.
 
 **Regel:** Migrationen sind additiv. Destruktive Änderungen nur mit Backup und
 ausdrücklicher Freigabe. Jede Schemaänderung aktualisiert dieses Dokument.

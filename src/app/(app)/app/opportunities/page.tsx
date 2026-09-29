@@ -79,9 +79,14 @@ export default async function OpportunitiesPage({
         leadKey="app.opportunities.lead"
         actions={
           access.entitlements.opportunitiesManage ? (
-            <Button href="/app/opportunities/new" size="sm">
-              <Tr k="app.create.opportunity" />
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button href="/app/deals" size="sm" variant="secondary">
+                <Tr k="app.deals.declare.title" />
+              </Button>
+              <Button href="/app/opportunities/new" size="sm">
+                <Tr k="app.create.opportunity" />
+              </Button>
+            </div>
           ) : null
         }
       />

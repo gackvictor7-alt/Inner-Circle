@@ -10,6 +10,7 @@ import { Reveal } from "@/components/site/Reveal";
 import { SiteImage } from "@/components/site/SiteImage";
 import { ComingSoonPanel } from "@/components/site/ComingSoonPanel";
 import { CtaBand } from "@/components/site/CtaBand";
+import { DealFeeScale, type FeeScaleLabels } from "@/components/site/DealFeeScale";
 
 /**
  * Business Deals preview page – reworked in this sprint:
@@ -24,9 +25,23 @@ import { CtaBand } from "@/components/site/CtaBand";
  *   conversation, and the section uses the wide container.
  */
 export function BusinessDealsContent() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const page = t.pages.businessDeals;
   usePageMeta(page.metaTitle, page.metaDescription);
+
+  const feeLabels: FeeScaleLabels = {
+    volumeColumn: page.feeVolumeColumn,
+    rateColumn: page.feeRateColumn,
+    tiers: {
+      tier1: page.feeTier1,
+      tier2: page.feeTier2,
+      tier3: page.feeTier3,
+      tier4: page.feeTier4,
+      tierNegotiable: page.feeTierNegotiable,
+    },
+    negotiable: page.feeNegotiable,
+    negotiableNote: page.feeNegotiableNote,
+  };
 
   return (
     <>
@@ -108,6 +123,53 @@ export function BusinessDealsContent() {
           </div>
         </Reveal>
       </Section>
+
+      {/* Deal fee: the degressive scale, presented quietly next to what the
+          platform share actually stands for. Not a pricing hero – the
+          message is "the bigger the deal, the lower the share". */}
+      <Section bg="default" width="wide">
+        <div className="grid gap-10 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:gap-16">
+          <Reveal>
+            <div>
+              <Kicker>{page.feeKicker}</Kicker>
+              <h2 className="mt-4 max-w-xl text-3xl font-bold tracking-tight sm:text-4xl">
+                {page.feeTitle}
+              </h2>
+              <p className="mt-4 max-w-xl text-base leading-7 text-foreground-muted">{page.feeLead}</p>
+              <p className="mt-5 flex items-start gap-2.5 text-sm leading-6 text-foreground-muted">
+                <ShieldCheckIcon size={17} className="mt-0.5 shrink-0 text-forest-500" />
+                <span className="max-w-xl">{page.feeDueNote}</span>
+              </p>
+              <p className="mt-3 flex items-start gap-2.5 text-sm leading-6 text-foreground-muted">
+                <ShieldCheckIcon size={17} className="mt-0.5 shrink-0 text-forest-500" />
+                <span className="max-w-xl">{page.feeTermsNote}</span>
+              </p>
+            </div>
+          </Reveal>
+
+          <Reveal delay={120}>
+            <DealFeeScale labels={feeLabels} locale={locale === "en" ? "en" : "de"} />
+          </Reveal>
+        </div>
+
+        <Reveal delay={160}>
+          <div className="mt-12 border-t border-border pt-8">
+            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-foreground-subtle">
+              {page.feeCoversTitle}
+            </p>
+            <ul className="mt-5 grid gap-x-10 gap-y-3 sm:grid-cols-2 lg:grid-cols-4">
+              {page.feeCovers.map((item) => (
+                <li key={item} className="flex items-baseline gap-2.5 text-sm leading-6 text-foreground-muted">
+                  <span aria-hidden="true" className="mt-2 h-1 w-1 shrink-0 rounded-full bg-electric-500" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+            <p className="mt-5 text-xs leading-5 text-foreground-subtle">{page.feeCoversNote}</p>
+          </div>
+        </Reveal>
+      </Section>
+
 
       <Section bg="muted" width="wide">
         <Reveal>

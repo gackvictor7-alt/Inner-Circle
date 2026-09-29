@@ -194,6 +194,45 @@ P2 mittelfristig · P3 Aufräumen.
 - **Lösung:** Check-in/Attendance in der Event-Verwaltung ergänzen und
   `event` als Kontexttyp nachziehen.
 
+### K-28 · Deal-Bedingungen und Deal-Fee sind rechtlich noch nicht geprüft
+
+- **Symptom:** Die auf `/business-deals` und im Plattform-Schritt sichtbaren
+  **Deal-Bedingungen sind Produkttext, kein geprüfter Vertrag**. Sie sind bewusst
+  knapp und enthalten **bewusst keine** Vertragsstrafen, keine Schadensersatzregelung
+  und keine steuerliche oder haftungsrechtliche Aussage.
+- **Risiko:** mittel – die Plattform-Fee ist derzeit **reine Kommunikation**. Sie
+  wird berechnet (`calculateDealFee()`), angezeigt und mit Versionsstempel
+  dokumentiert, aber **nicht eingezogen**. Es fließt kein Geld.
+- **Lösung:** juristische Prüfung der Formulierung, Prüfung der Bemessungsbasis,
+  Steuerberatung, Entscheidung über die Ausschüttung. Bis dahin keine
+  Aktivierung mit realen Geldflüssen. Keine Buchhaltung implementiert, keine
+  Auszahlung programmiert.
+
+### K-29 · Investment Pool und Impact sind Zielsetzungen, keine Programme
+
+- **Symptom:** Der Investment Pool existiert **nicht als Fonds** – keine
+  investierten Mittel, kein AUM, keine Positionen, keine Rendite. `/app/investments`
+  zeigt deshalb **gleich große Struktursegmente ohne Prozentangabe**, statt eine
+  scheinbar exakte Allokation zu suggerieren.
+- **Risiko:** gering – die Darstellung ist durchgehend als „Geplantes Modell"
+  gekennzeichnet und enthält keine Zahl.
+- **Lösung:** Datenquelle austauschen, sobald echte Investments vorliegen; bis dahin
+  bewusst leer. Die Impact-Aussage („5 % unserer Gewinne") ist eine **Zielsetzung** –
+  Stiftung/gemeinnützige Struktur sind **nicht** gegründet und **nicht** rechtlich
+  geprüft, die Bemessungsbasis „Gewinn" steht nicht fest. Die Website behauptet
+  ausdrücklich **nicht**, dass bereits gespendet werde.
+
+### K-30 · Kein Browser-E2E für die neuen Oberflächen
+
+- **Symptom:** wie K-26 – in dieser Umgebung ist kein Chromium/Playwright
+  verfügbar.
+- **Risiko:** gering – die neuen Ansichten wurden per Server-Rendering (HTTP +
+  Ausgabevergleich) und über Komponenten-Tests (`deal-views.test.tsx`) geprüft,
+  **nicht** visuell im Browser.
+- **Lösung:** visuelle Abnahme von Light/Dark und der 320-px-Ansicht
+  (Deal-Fee-Staffel, Deal-Bedingungen, Investment-Pool-Ring, Deal-Bestätigung)
+  auf einem Rechner mit Browser nachholen.
+
 ### K-09 · Ungeprüfte Rechtstexte
 
 - **Symptom:** `/imprint`, `/privacy`, `/terms` sind Platzhalter.
@@ -294,6 +333,11 @@ P2 mittelfristig · P3 Aufräumen.
   **11 (5 / 6)** – die zwei zunächst neuen Warnungen (ungenutzter
   `RatingStars`-Import und die nicht mehr benötigte `score`-Variable in
   `app/people/[handle]/page.tsx`) wurden entfernt, **kein** neuer Befund.
+- **Deal-Fee-Sprint (2026-09-29):** Baseline **11 (5 / 6)**, Endstand
+  **11 (5 / 6)** – fünf zunächst neue Warnungen (ungenutzter `dealRecords`-Import,
+  ungenutzter `_kind`-Parameter, zwei ungenutzte Variablen in den neuen Tests)
+  wurden entfernt. Der synchron exportierte Helfer `quoteDealFeeForForm` wurde
+  ganz gestrichen (Next.js verbietet Nicht-`async`-Exporte in `"use server"`-Dateien).
 - **Konsolidierungs-Sprint (2026-09-28):** Baseline **11 (5 / 6)**, Endstand
   **11 (5 / 6)** – zwischenzeitlich aufgetretene neue Befunde (`prefer-const`
   in `membership/service.ts`, ungenutzter Import in `admin/users/page.tsx`,
