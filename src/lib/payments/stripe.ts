@@ -18,7 +18,18 @@ let client: Stripe | null = null;
 export function getStripe(): Stripe | null {
   if (!stripeEnv.secretKey || !stripeEnv.testMode || stripeEnv.liveMode) return null;
   if (!client) {
-    client = new Stripe(stripeEnv.secretKey, { apiVersion: "2025-08-27.basil" as Stripe.LatestApiVersion });
+    client = new Stripe(stripeEnv.secretKey, {
+      apiVersion: "2025-08-27.basil" as Stripe.LatestApiVersion,
+      // Cloudflare Workers expose no Node TCP sockets – only fetch(). The Node
+      // build of the Stripe SDK (the one Next.js bundles for the server) would
+      // otherwise default to its Node http/https client, which opens a raw TCP
+      // socket that never completes inside a Worker. The runtime then cancels
+      // the request ("your Worker's code had hung and would never generate a
+      // response"), which is exactly the production checkout failure.
+      // Forcing the Fetch HTTP client keeps every Stripe call (customers,
+      // checkout sessions, billing portal) on the Web Fetch API. Do not remove.
+      httpClient: Stripe.createFetchHttpClient(),
+    });
   }
   return client;
 }
@@ -150,7 +161,21 @@ export async function constructWebhookEvent(
   try {
     // `constructEventAsync` is required for the Web Crypto implementation used
     // by the Cloudflare Worker build of the Stripe SDK.
-    const event = await stripe.webhooks.constructEventAsync(payload, signature, stripeEnv.webhookSecret);
+    //
+    // The webhook helper is a shared, module-level object: it does NOT read a
+    // crypto provider from the Stripe instance, so passing one here is the only
+    // way to select it. We pass an explicit SubtleCrypto (Web Crypto) provider
+    // so verification uses the primitive that is native to Cloudflare Workers,
+    // instead of relying on the Node crypto fallback pulled in by the Node SDK
+    // build through `nodejs_compat`. The HMAC-SHA256 result is identical – this
+    // changes the transport, not the verified event.
+    const event = await stripe.webhooks.constructEventAsync(
+      payload,
+      signature,
+      stripeEnv.webhookSecret,
+      undefined,
+      Stripe.createSubtleCryptoProvider(),
+    );
     return { ok: true, event };
   } catch {
     return { ok: false, error: "signature_verification_failed" };
