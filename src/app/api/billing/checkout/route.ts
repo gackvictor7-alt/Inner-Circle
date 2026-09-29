@@ -12,6 +12,9 @@ import { PLANS, type PlanId } from "@/lib/membership/plans";
 
 export const dynamic = "force-dynamic";
 
+/** The authenticated access context requireUser() resolves for the caller. */
+type CheckoutAccess = Awaited<ReturnType<typeof requireUser>>;
+
 /**
  * Starts a membership checkout.
  *
@@ -22,7 +25,24 @@ export const dynamic = "force-dynamic";
  * signature-verified webhook can activate Stripe membership access.
  */
 export async function POST(request: Request) {
+  // Auth first. requireUser() throws Next's redirect for anonymous callers;
+  // that redirect must propagate untouched, so it stays OUTSIDE the try below.
   const access = await requireUser("/app/billing");
+  try {
+    return await runCheckout(request, access);
+  } catch (error) {
+    // A Worker request must ALWAYS produce a response – never hang, never leak
+    // an uncaught promise. Any unexpected failure becomes a controlled 5xx.
+    // Log only the error class: never a secret, never a full Stripe payload.
+    console.error("[stripe] checkout_route_failed", {
+      error: error instanceof Error ? error.name : "unknown",
+    });
+    return NextResponse.json({ error: "checkout_failed" }, { status: 500 });
+  }
+}
+
+/** Checkout body, kept separate so the POST handler above can guarantee a response. */
+async function runCheckout(request: Request, access: CheckoutAccess) {
   const formData = await request.formData();
   const rawPlan = String(formData.get("plan") ?? "");
   const plan: PlanId | null = rawPlan === "annual" || rawPlan === "monthly" ? rawPlan : null;
