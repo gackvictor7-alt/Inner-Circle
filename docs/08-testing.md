@@ -396,6 +396,19 @@ Geprüft:
 Produktionslauf unter `https://innercirclevp.com` (Sandbox-Egress und fehlende
 Produktions-Credentials), DNS-/Domainwechsel.
 
+### 3e. Neue Tests (Deal-Fee-Sprint)
+
+| Datei | Tests | Was abgesichert wird |
+| ----- | ----- | --------------------- |
+| `tests/unit/deal-fees.test.ts` | 23 | **Alle acht geforderten Grenzwerte** (50.000 / 50.001 / 250.000 / 250.001 / 1.000.000 / 1.000.001 / 5.000.000 / 5.000.001), obere Grenze inklusive, Degressivität, lückenlose Bänder, > 5 Mio. **ohne** festen Betrag, Randfälle (≤ 0, 1 €, Rundung, keine Float-Drift), Scope-Trennung Marketplace/Investments |
+| `tests/integration/deal-terms-and-records.test.ts` | 30 | Zustimmung erforderlich (Publish blockiert, **kein** Datensatz geschrieben), falsche Terms-Version abgelehnt, serverseitig neu bestimmter Tier, Jobs/Freelance/Investments unverändert, Sichtbarkeit nur für Beteiligte, Bestätigung nur durch Beteiligte, **gegenseitige** Bestätigung, `pending`/`disputed` zählen nirgends, `verified_deals`, kein Trust-Signal durch bloßes Listing, bestehende Marketplace-/Investment-Kontexte intakt, Datenschutz (private Notiz, keine Beträge öffentlich), Cascade beim Löschen |
+| `tests/unit/deal-views.test.tsx` | 19 | **Mobile-Rendering** (kein `<table>`, gestapelte Zeilen, feste Ringgröße, `flex-col → sm:flex-row`), Dark/Light-Tokens, **keine** Gradienten/Schatten, SVG statt Chart-Bibliothek, **kein** erfundener Betrag/Prozentwert, Consent-Block nur bei Deal-Typen, Versionsfeld vorhanden, **keine** Vertragsstrafe im Text |
+
+Gesamt nach dem Sprint: **49 Dateien / 439 Tests** grün (Basis war 46 / 367).
+
+**Nicht abgedeckt (siehe K-30):** visuelle Browser-Abnahme von Light/Dark und
+der 320-px-Ansicht – in dieser Umgebung ist kein Chromium/Playwright verfügbar.
+
 ## 4. Testmatrix (Bereiche × Abdeckung)
 
 Legende: **AUT** = automatisiert vorhanden · **MAN** = manuell verifiziert

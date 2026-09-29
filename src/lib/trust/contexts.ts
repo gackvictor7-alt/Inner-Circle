@@ -5,6 +5,7 @@ import { db } from "@/db/client";
 import {
   businessOpportunities,
   courses,
+  dealRecords,
   enrollments,
   investmentInterests,
   investmentOpportunities,
@@ -30,6 +31,16 @@ import {
  *   * `investment` – a funding interaction: the subject submitted an
  *     investment opportunity and the author registered an investment
  *     interest on it (`InvestmentInterest`).
+ *   * `deal` (this sprint) – a **closed** business deal that originated on
+ *     the platform and was **confirmed by both sides** (`DealRecord.status =
+ *     'confirmed'`). This is the strongest of the four: a mutually confirmed
+ *     closing, not just an interaction.
+ *
+ * `deal` is deliberately stricter than the others. A mere *declaration* is
+ * not enough – one side claiming a deal proves nothing, so `status` must be
+ * `confirmed`, which the server only sets once both named parties confirmed.
+ * Publishing a listing, sending an application or expressing interest can
+ * therefore never raise the Trust Score; only a provable closing can.
  *
  * Deliberately **not** a context, although the spec allows it:
  *   * `connection` – a confirmed contact alone proves nothing about a
@@ -41,7 +52,7 @@ import {
  *
  * The function names double as i18n keys: `app.trust.context.<type>`.
  */
-export const TRUST_CONTEXT_TYPES = ["opportunity", "marketplace", "investment"] as const;
+export const TRUST_CONTEXT_TYPES = ["opportunity", "marketplace", "investment", "deal"] as const;
 
 export type TrustContextType = (typeof TRUST_CONTEXT_TYPES)[number];
 
@@ -128,6 +139,26 @@ export async function hasCollaboration(params: {
     return Boolean(row);
   }
 
+  if (contextType === "deal") {
+    // Only a *mutually confirmed* closing counts. A pending declaration or a
+    // disputed one proves nothing, so both are excluded here.
+    const [row] = await db
+      .select({ id: dealRecords.id })
+      .from(dealRecords)
+      .where(
+        and(
+          eq(dealRecords.id, contextId),
+          eq(dealRecords.status, "confirmed"),
+          or(
+            and(eq(dealRecords.declaredById, authorId), eq(dealRecords.counterpartyId, subjectId)),
+            and(eq(dealRecords.declaredById, subjectId), eq(dealRecords.counterpartyId, authorId)),
+          ),
+        ),
+      )
+      .limit(1);
+    return Boolean(row);
+  }
+
   const [row] = await db
     .select({ id: investmentInterests.id })
     .from(investmentInterests)
@@ -155,7 +186,7 @@ export async function collaborationOptionsFor(
   options: { subjectId?: string; limit?: number } = {},
 ): Promise<CollaborationBasis[]> {
   const limit = options.limit ?? 12;
-  const [dealRows, serviceRows, investmentRows] = await Promise.all([
+  const [dealRows, serviceRows, investmentRows, closedDealRows] = await Promise.all([
     db
       .select({
         contextId: businessOpportunities.id,
@@ -212,6 +243,22 @@ export async function collaborationOptionsFor(
           ne(investmentOpportunities.submittedById, authorId),
         ),
       ),
+    // A confirmed business deal the member took part in (this sprint).
+    db
+      .select({
+        contextId: dealRecords.id,
+        declaredById: dealRecords.declaredById,
+        counterpartyId: dealRecords.counterpartyId,
+        occurredAt: dealRecords.confirmedAt,
+      })
+      .from(dealRecords)
+      .where(
+        and(
+          eq(dealRecords.status, "confirmed"),
+          isNotNull(dealRecords.confirmedAt),
+          or(eq(dealRecords.declaredById, authorId), eq(dealRecords.counterpartyId, authorId)),
+        ),
+      ),
   ]);
 
   const raw: {
@@ -236,6 +283,14 @@ export async function collaborationOptionsFor(
       contextType: "investment" as const,
       contextId: row.contextId,
       subjectId: row.subjectId,
+      occurredAt: row.occurredAt,
+    })),
+    ...closedDealRows.map((row) => ({
+      contextType: "deal" as const,
+      contextId: row.contextId,
+      // Never the member themself, even if the data is inconsistent.
+      subjectId:
+        row.declaredById === authorId ? row.counterpartyId : row.declaredById,
       occurredAt: row.occurredAt,
     })),
   ];

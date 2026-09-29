@@ -51,15 +51,17 @@ machen.
 | Thema | Inhalt |
 | ----- | ------ |
 | **L-1 Deal-Räume & Brokerage** | private Räume, Teilnehmer, Dokumente mit Widerruf, Meilensteine, Abschlussbestätigung, Provisionsvereinbarungen |
-| **L-2 Provisions-Engine** | kategorieabhängige Sätze, Abrechnung, Auszahlungsfreigaben |
+| **L-2 Deal-Fee & Provisions-Engine** | ~~degressive Staffel als zentrale Berechnung, Deal-Bedingungen mit Versionsstempel~~ **erledigt im aktuellen Sprint** (`src/lib/deals/fees.ts`). Offen und bewusst **nicht** in diesem Sprint: Abrechnung, Auszahlungsfreigaben, Steuerlogik – sowie die **juristisch geprüfte** Endformulierung der Bedingungen |
 | **L-3 Marktplatz-Bezahlung** | Bestellungen, Zahlungen, Verkäuferauszahlungen (Stripe Connect), Refunds, Freigabe-Workflow erzwingen (K-07) |
-| **L-4 Trust & Verifikation** | ~~abgeschlossene Kollaboration als Bewertungskontext, Aggregation~~ **erledigt in Sprint 16** (`opportunity`/`marketplace`/`investment`, Score = Durchschnitt verifizierter Bewertungen, Admin-Moderation). Offen: Event-Kontext (K-27 – Attendance fehlt technisch) und Badge-Vergabe |
+| **L-4 Trust & Verifikation** | ~~abgeschlossene Kollaboration als Bewertungskontext, Aggregation~~ **erledigt in Sprint 16** (`opportunity`/`marketplace`/`investment`, Score = Durchschnitt verifizierter Bewertungen, Admin-Moderation). ~~Bestätigter Deal als vierter Kontext~~ **erledigt im aktuellen Sprint** (`deal`, nur bei beidseitig bestätigtem `DealRecord`; Signal `verified_deals`). Offen: Event-Kontext (K-27 – Attendance fehlt technisch) und Badge-Vergabe |
 | **L-5 Event-Backend** | Event-Erstellung, Kapazitäten/Wartelisten erzwingen, Tickets, QR-Check-in |
 | **L-6 Investments-Ausbau** | Datenraum, Dokumente, Anbahnung mit regulierten Partnern – **erst nach Rechtsprüfung** |
 | **L-7 Creator/Referrals** | Referral-Links, Attribution, Provisionen, Auszahlungen |
 | **L-8 Gruppen & Firmenprofile** | Gruppen, Rollen, Moderation, Firmenverifizierung |
 | **L-9 Sicherheits- & Produktionsreife** | 2FA, Security-Header, OWASP-Audit, Backup-/Recovery-Nachweis, Lasttests |
 | **L-10 Native Apps / API** | Mobile Clients auf Basis derselben Domänenlogik |
+| **L-11 M&A-Bereich (Roadmap)** | eigener Bereich für Mergers & Acquisitions: Unternehmen kaufen/verkaufen, Nachfolge, Beteiligungen, Due-Diligence-Vorbereitung, M&A-Beratung. **In diesem Sprint bewusst nur dokumentiert, nicht gebaut.** Es gibt bewusst **keinen** Navigationspunkt, solange der Bereich keinen Nutzen hat. Die fachliche Umsetzung wird voraussichtlich **teilweise an externe Spezialisten/Partner ausgelagert**; die technische Grundlage (Deal-Erfassung, `DealRecord.category`, Fee-Berechnung) existiert bereits. **Vor** einem Produktbereich: Rechtsprüfung, Steuerberatung und die Entscheidung, ob V&P vermittelt oder nur vermittelt anbahnen lässt |
+| **L-12 Impact / 5 % gemeinnützig** | Zielsetzung, dass künftig 5 % der Gewinne in eigene gemeinnützige Projekte und ausgewählte Hilfsprojekte fließen. **In diesem Sprint nur als ehrlich gekennzeichnete Zukunfts-/Commitment-Darstellung** umgesetzt (Website `/investments`). Offen und bewusst offen: eigene Stiftung bzw. geeignete gemeinnützige Struktur, juristische und steuerliche Prüfung, Definition der Bemessungsbasis „Gewinn". **Keine** Buchhaltung, **keine** Auszahlung, **keine** erfundenen Zahlen |
 
 ## LEGAL / EXTERNAL DEPENDENCY (nicht rein technisch lösbar)
 

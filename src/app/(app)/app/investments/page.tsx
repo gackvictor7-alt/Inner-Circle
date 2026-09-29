@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { LocalizedEmptyState, LocalizedPageHeader, LocalizedSectionHeading, Tr } from "@/components/app/localized";
 import { InvestmentsDemoSection, PortfolioSection } from "@/components/app/DemoSections";
+import { InvestmentPoolChart } from "@/components/app/InvestmentPoolChart";
 import { LockedArea } from "@/components/app/LockedArea";
 import { DemoAreaNotice } from "@/components/app/DemoAreaNotice";
 
@@ -177,9 +178,11 @@ export default async function InvestmentsPage({
       )}
       </section>
 
-      {/* INNER CIRCLE Portfolio – INNER CIRCLE's own investments, strictly
-          separated from the member opportunities above (spec §13/§14). */}
-      <section aria-label="INNER CIRCLE Portfolio">
+      {/* INNER CIRCLE Investment Pool – INNER CIRCLE's own investments, strictly
+          separated from the member opportunities above (spec §13/§14). The
+          ring shows the planned structure only; it contains no amounts. */}
+      <section aria-label="INNER CIRCLE Investment Pool" className="space-y-6">
+        <InvestmentPoolChart />
         <PortfolioSection />
       </section>
     </div>

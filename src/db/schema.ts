@@ -1009,3 +1009,138 @@ export const betaAccess = sqliteTable(
   },
   (t) => [index("beta_access_status_idx").on(t.status, t.endsAt)],
 );
+
+/* ------------------------------------------------------- deals: terms & records */
+
+/**
+ * Deal Terms acceptance (Sprint – Deal Fee / anti-circumvention).
+ *
+ * Technical groundwork for a later, legally reviewed agreement. It records
+ * **that** a member agreed to a specific version of the Deal Terms together
+ * with the concrete context, and nothing more. It is deliberately NOT a
+ * contract: it contains no penalty clause, no waiver and no invented legal
+ * wording.
+ *
+ * What is captured, because it is what a lawyer would ask for:
+ *   * who accepted it (`userId`) and when (`acceptedAt`)
+ *   * which version was shown (`termsVersion`)
+ *   * what it was accepted for (`subjectType` + `subjectId`, e.g. the created
+ *     opportunity or marketplace listing)
+ *   * the kind of deal (`dealType`)
+ *   * the expected deal volume at the time of publishing, and the fee tier
+ *     that was displayed to the member
+ *
+ * The volume is stored **as stated, not as a fact**. `volumeCents` is what the
+ * member entered; it never turns into an invoice and is never published.
+ */
+export const dealTermsAcceptances = sqliteTable(
+  "DealTermsAcceptance",
+  {
+    id: id(),
+    userId: text("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+    /** Version string that was displayed, e.g. `deal-terms-2026-09-v1`. */
+    termsVersion: text("termsVersion").notNull(),
+    /** What the acceptance is attached to: `opportunity` today. */
+    subjectType: text("subjectType").notNull(),
+    /** Id of the published entity (set after the entity was created). */
+    subjectId: text("subjectId"),
+    /** Opportunity type, kept for auditing which types trigger the step. */
+    dealType: text("dealType"),
+    /** Expected deal volume in cents **as stated by the member**; may be null. */
+    volumeCents: integer("volumeCents"),
+    /** Fee tier id shown at publish time (1–5); null when no volume was given. */
+    feeTierId: text("feeTierId"),
+    /** Exact rate in basis points shown at publish time; null = negotiable. */
+    feeRateBps: integer("feeRateBps"),
+    /** True when the tier was the negotiable one (> 5 M). */
+    feeNegotiable: integer("feeNegotiable", { mode: "boolean" }).notNull().default(false),
+    acceptedAt: integer("acceptedAt", { mode: "timestamp_ms" }).notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index("deal_terms_user_idx").on(t.userId, t.acceptedAt),
+    index("deal_terms_subject_idx").on(t.subjectType, t.subjectId),
+  ],
+);
+
+/**
+ * A deal that originated inside INNER CIRCLE (Sprint – off-platform deals).
+ *
+ * Most deals close outside the platform: the money moves directly between the
+ * parties, the contract is signed elsewhere. INNER CIRCLE still needs to know
+ * that the deal happened *through the network* – that is what makes it
+ * countable for reputation and what keeps the fee model verifiable.
+ *
+ * Privacy: this table is **never** joined into a public or member-facing
+ * listing. Only aggregates (a count, an optional volume band) ever leave it.
+ * `privateNote` and `partiesNote` stay between the declaring members and the
+ * administration.
+ *
+ * status: pending_confirmation → confirmed | disputed
+ *   * `pending_confirmation` – declared by one side, waiting for the other
+ *   * `confirmed`            – **both** sides confirmed (the only state that
+ *                              counts as a verified deal)
+ *   * `disputed`             – the other side explicitly declined to confirm
+ */
+export const dealRecords = sqliteTable(
+  "DealRecord",
+  {
+    id: id(),
+    /** Member who declared the deal. */
+    declaredById: text("declaredById").notNull().references(() => users.id, { onDelete: "cascade" }),
+    /** The other party. Both must confirm before the deal counts. */
+    counterpartyId: text("counterpartyId").notNull().references(() => users.id, { onDelete: "cascade" }),
+    /** The opportunity this originated from, if any. */
+    sourceOpportunityId: text("sourceOpportunityId").references(() => businessOpportunities.id, {
+      onDelete: "set null",
+    }),
+    /** Opportunity type at declaration time, e.g. `joint_venture`. */
+    category: text("category").notNull(),
+    /** Coarse, non-identifying volume band – safe for aggregate display. */
+    volumeBand: text("volumeBand").notNull().default("undisclosed"), // undisclosed | lt_50k | 50k_250k | 250k_1m | 1m_5m | gt_5m
+    /** Exact volume in cents. Private: never rendered on a public surface. */
+    volumeCents: integer("volumeCents"),
+    /** Fee tier that applied to the declared volume (1–5). */
+    feeTierId: text("feeTierId"),
+    status: text("status").notNull().default("pending_confirmation"),
+    /** Date the deal was closed by the parties. */
+    closedAt: integer("closedAt", { mode: "timestamp_ms" }).notNull(),
+    /** Set once both parties confirmed. */
+    confirmedAt: ts("confirmedAt"),
+    /** Free text only the declaring side and the admin can read. */
+    privateNote: text("privateNote"),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    index("deal_record_declared_idx").on(t.declaredById, t.status),
+    index("deal_record_counterparty_idx").on(t.counterpartyId, t.status),
+    index("deal_record_status_idx").on(t.status, t.closedAt),
+  ],
+);
+
+/**
+ * Mutual confirmation of a declared deal.
+ *
+ * A deal is only "verified" when a row exists for **both** sides. A single
+ * confirmation is just a claim – the deal is not counted and never raises any
+ * reputation signal.
+ */
+export const dealConfirmations = sqliteTable(
+  "DealConfirmation",
+  {
+    id: id(),
+    dealId: text("dealId")
+      .notNull()
+      .references(() => dealRecords.id, { onDelete: "cascade" }),
+    /** Who confirmed – must be the declarer or the counterparty. */
+    userId: text("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+    confirmedAt: integer("confirmedAt", { mode: "timestamp_ms" }).notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    // One confirmation per person per deal.
+    uniqueIndex("deal_confirmation_unique").on(t.dealId, t.userId),
+    index("deal_confirmation_user_idx").on(t.userId),
+  ],
+);

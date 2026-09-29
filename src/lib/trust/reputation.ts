@@ -6,6 +6,7 @@ import {
   businessOpportunities,
   connections,
   courses,
+  dealRecords,
   enrollments,
   eventApplications,
   investmentOpportunities,
@@ -21,8 +22,8 @@ import {
  *
  *   1. **Aggregated numbers only.** A member sees "3 verifizierte Deals" – a
  *      counterparty, an amount or a contract detail is never published here.
- *      Deal volume does not exist in the data model at all, so it is not
- *      shown.
+ *      `verified_deals` counts mutually confirmed `DealRecord` rows; the
+ *      volume behind them stays a coarse band and is never shown here.
  *   2. **No effect on the star score.** `computeTrustScore()` never reads
  *      this module; the Trust Score is the average of verified reviews.
  *
@@ -34,6 +35,7 @@ import {
 export type ReputationSignalKey =
   | "verified_reviews"
   | "deals_closed"
+  | "verified_deals"
   | "clients"
   | "services_purchased"
   | "investments"
@@ -49,7 +51,7 @@ export async function reputationSignalsFor(
   userId: string,
   verifiedReviews = 0,
 ): Promise<ReputationSignal[]> {
-  const [dealsAsApplicant, dealsAsOwner, clients, purchases, investments, events, connectionsTotal] =
+  const [dealsAsApplicant, dealsAsOwner, clients, purchases, investments, events, connectionsTotal, verifiedDeals] =
     await Promise.all([
       // A deal closed for me: I applied and was accepted.
       db
@@ -123,11 +125,24 @@ export async function reputationSignalsFor(
         .where(
           and(isNull(connections.endedAt), or(eq(connections.userAId, userId), eq(connections.userBId, userId))),
         ),
+      // Deals that were declared on the platform AND confirmed by both sides.
+      // This is the reward for routing a deal through INNER CIRCLE instead of
+      // around it – a single-sided claim never reaches this counter.
+      db
+        .select({ value: count() })
+        .from(dealRecords)
+        .where(
+          and(
+            eq(dealRecords.status, "confirmed"),
+            or(eq(dealRecords.declaredById, userId), eq(dealRecords.counterpartyId, userId)),
+          ),
+        ),
     ]);
 
   const signals: ReputationSignal[] = [
     { key: "verified_reviews", value: verifiedReviews },
     { key: "deals_closed", value: Number(dealsAsApplicant[0]?.value ?? 0) + Number(dealsAsOwner[0]?.value ?? 0) },
+    { key: "verified_deals", value: Number(verifiedDeals[0]?.value ?? 0) },
     { key: "clients", value: Number(clients[0]?.value ?? 0) },
     { key: "services_purchased", value: Number(purchases[0]?.value ?? 0) },
     { key: "investments", value: Number(investments[0]?.value ?? 0) },

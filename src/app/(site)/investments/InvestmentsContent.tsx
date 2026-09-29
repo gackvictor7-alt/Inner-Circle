@@ -2,6 +2,7 @@
 
 import { useI18n, usePageMeta } from "@/lib/i18n/context";
 import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
 import {
   ArrowRightIcon,
   ChartIcon,
@@ -99,6 +100,102 @@ export function InvestmentsContent() {
             {t.portfolio.netLabel}: {t.portfolio.netSummary} · {t.common.exampleLabel}
           </p>
         </Reveal>
+      </Section>
+
+      <Section bg="surface" width="wide">
+        <Reveal>
+          <div className="flex flex-wrap items-end justify-between gap-6">
+            <div className="max-w-2xl">
+              <Kicker>{t.app.deals.pool.kicker}</Kicker>
+              <h2 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">{page.poolTitle}</h2>
+              <p className="mt-4 text-base leading-7 text-foreground-muted">{page.poolLead}</p>
+            </div>
+            <Badge variant="sand">{t.app.deals.pool.plannedBadge}</Badge>
+          </div>
+        </Reveal>
+
+        {/* Netzwerk → Deals → Einnahmen → Investment Pool → Portfolio.
+            A quiet numbered strip, not five cards. On mobile it stacks
+            into a single readable column. */}
+        <Reveal delay={80}>
+          <ol className="mt-10 grid gap-x-8 gap-y-6 border-t border-border pt-8 sm:grid-cols-2 lg:grid-cols-5">
+            {[
+              { title: page.poolStep1, text: page.poolStep1Text },
+              { title: page.poolStep2, text: page.poolStep2Text },
+              { title: page.poolStep3, text: page.poolStep3Text },
+              { title: page.poolStep4, text: page.poolStep4Text },
+              { title: page.poolStep5, text: page.poolStep5Text },
+            ].map((step, index) => (
+              <li key={step.title} className="flex gap-3.5">
+                <span className="shrink-0 text-sm font-bold tracking-[0.14em] text-electric-600 dark:text-electric-300">
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-bold tracking-tight">{step.title}</span>
+                  <span className="mt-1 block text-sm leading-6 text-foreground-muted">{step.text}</span>
+                </span>
+              </li>
+            ))}
+          </ol>
+        </Reveal>
+
+        <Reveal delay={120}>
+          <div className="mt-12 border-t border-border pt-8">
+            <h3 className="text-[11px] font-bold uppercase tracking-[0.2em] text-foreground-subtle">
+              {page.poolCategoriesTitle}
+            </h3>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-foreground-muted">{page.poolCategoriesLead}</p>
+            <ul className="mt-5 grid gap-x-8 gap-y-2.5 sm:grid-cols-2 lg:grid-cols-3">
+              {page.poolCategories.map((category) => (
+                <li
+                  key={category}
+                  className="flex items-baseline gap-2.5 border-b border-border/60 pb-2.5 text-[15px] text-foreground-muted"
+                >
+                  <span aria-hidden="true" className="mt-2 h-1 w-1 shrink-0 rounded-full bg-forest-500" />
+                  {category}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </Reveal>
+
+        <Reveal delay={160}>
+          <div className="mt-10">
+            <Callout
+              tone="warning"
+              icon={<ShieldCheckIcon size={20} />}
+              title={t.app.deals.pool.plannedBadge}
+              text={page.poolDisclaimer}
+            />
+          </div>
+        </Reveal>
+      </Section>
+
+      {/* Impact: a quiet, honestly labelled target – not a charity banner.
+          No child imagery, no donation counter, no emotional claim. */}
+      <Section bg="default" width="wide">
+        <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-16">
+          <Reveal>
+            <div>
+              <Kicker tone="sand">{page.impactKicker}</Kicker>
+              <h2 className="mt-4 max-w-xl text-3xl font-bold tracking-tight sm:text-4xl">
+                {page.impactTitle}
+              </h2>
+              <p className="mt-4 max-w-xl text-base leading-7 text-foreground-muted">{page.impactLead}</p>
+              <p className="mt-6 max-w-xl border-l-2 border-sand-400 pl-5 text-lg font-semibold leading-8 tracking-tight">
+                {page.impactTarget}
+              </p>
+            </div>
+          </Reveal>
+          <Reveal delay={120}>
+            <Callout
+              tone="sand"
+              icon={<ShieldCheckIcon size={20} />}
+              title={page.impactStatusTitle}
+              text={`${page.impactStatus} ${page.impactNoClaims}`}
+            />
+          </Reveal>
+        </div>
       </Section>
 
       <Section bg="surface" width="wide">

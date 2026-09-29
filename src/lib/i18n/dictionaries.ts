@@ -13,6 +13,7 @@
  *     app.profile … app.trust    (social: dict/app-social.ts)
  *     app.opportunities … app.admin (business: dict/app-business.ts)
  *     app.beta, app.betaAdmin    (private beta, Sprint 12: dict/app-beta.ts)
+ *     app.deals                  (deal fee, investment pool, deal records)
  */
 
 import { appCoreDe, appCoreEn } from "./dict/app-core";
@@ -20,9 +21,10 @@ import { appSocialDe, appSocialEn } from "./dict/app-social";
 import { appBusinessDe, appBusinessEn } from "./dict/app-business";
 import { siteV2De, siteV2En } from "./dict/site-v2";
 import { appBetaDe, appBetaEn } from "./dict/app-beta";
+import { appDealsDe, appDealsEn } from "./dict/app-deals";
 
-const appDe = { ...appCoreDe, ...appSocialDe, ...appBusinessDe, ...appBetaDe };
-const appEn = { ...appCoreEn, ...appSocialEn, ...appBusinessEn, ...appBetaEn };
+const appDe = { ...appCoreDe, ...appSocialDe, ...appBusinessDe, ...appBetaDe, deals: appDealsDe };
+const appEn = { ...appCoreEn, ...appSocialEn, ...appBusinessEn, ...appBetaEn, deals: appDealsEn };
 
 const publicV2De = siteV2De;
 const publicV2En = siteV2En;
@@ -325,6 +327,41 @@ const siteDe = {
       ],
       noteTitle: "Vertrauen ist der Standard",
       note: "Jeder Deal läuft über bestätigte Profile. Der Abschluss einer Zusammenarbeit wird bestätigt und fließt in das Reputationssystem beider Seiten ein.",
+      /* --- Deal fee (Sprint) --- */
+      feeKicker: "Transparente Gebührenstruktur",
+      feeTitle: "Je größer der Deal, desto geringer der Plattformanteil.",
+      feeLead:
+        "Für abgeschlossene Business Deals kann INNER CIRCLE einen prozentualen Plattformanteil verlangen. Die Rate richtet sich nach dem Volumen – und sinkt mit der Größe des Deals.",
+      feeVolumeColumn: "Deal-Volumen",
+      feeRateColumn: "Plattformanteil",
+      feeTier1: "bis 50.000 €",
+      feeTier2: "50.000 – 250.000 €",
+      feeTier3: "250.000 – 1.000.000 €",
+      feeTier4: "1.000.000 – 5.000.000 €",
+      feeTierNegotiable: "über 5.000.000 €",
+      feeNegotiable: "Individuelle Rate (1 – 1,5 %)",
+      feeNegotiableNote:
+        "Über 5.000.000 € wird die Rate im Einzelfall vereinbart. Wir rechnen dann bewusst keinen festen Betrag.",
+      feeForVolume: "Für dein Volumen",
+      feeForVolumeHint: "Gib ein Volumen ein, um die passende Stufe zu sehen.",
+      feeNoVolume: "Keine Rate berechnet – ohne Volumen",
+      feeCoversTitle: "Wofür der Plattformanteil steht",
+      feeCovers: [
+        "Zugang zum Netzwerk",
+        "Deal-Infrastruktur und Anbahnung",
+        "Matching der Beteiligten",
+        "Reputation und dokumentierte Zusammenarbeit",
+        "Verifizierung der Mitglieder",
+        "Kommunikation und Abstimmung",
+        "Dokumentation der Zusammenarbeit",
+        "Unterstützung beim Zustandekommen",
+      ],
+      feeCoversNote:
+        "Leistungen, die INNER CIRCLE heute tatsächlich erbringt – keine Zusagen auf Funktionen, die es noch nicht gibt.",
+      feeDueNote:
+        "Der Anteil wird erst mit dem abgeschlossenen Deal fällig, nicht mit der Veröffentlichung einer Anzeige.",
+      feeTermsNote:
+        "Abgeschlossene Deals werden beidseitig bestätigt und fließen dadurch in die Reputation beider Parteien ein.",
       comingSoonTitle: "Was hier später entsteht",
       comingSoonItems: [
         "Deal-Marktplatz mit Kategorien & Filtern",
@@ -349,6 +386,44 @@ const siteDe = {
       allocationLead:
         "Kein Fonds und keine Renditenzahl, sondern ein definiertes Modell: 20 % der Plattform-Einnahmen sind als Investmentbudget geplant – davon 25 % in Unternehmen und Projekte aus dem Netzwerk, 75 % extern.",
       allocationCta: "Modell ansehen",
+      /* --- Investment Pool (Sprint) --- */
+      poolTitle: "Vom Netzwerk zum eigenen Investment Pool",
+      poolLead:
+        "Langfristig baut INNER CIRCLE einen eigenen Investment Pool auf: Ein Teil der im Netzwerk erwirtschafteten Mittel fließt zurück in ausgewählte Projekte und Unternehmen des Ökosystems – mit Kapital, Kontakten und operativer Unterstützung.",
+      poolStep1: "Netzwerk",
+      poolStep1Text: "Mitglieder finden zusammen, was vorher nicht zueinander gefunden hat.",
+      poolStep2: "Deals",
+      poolStep2Text: "Aus diesen Verbindungen entstehen konkrete Geschäftschancen.",
+      poolStep3: "Einnahmen",
+      poolStep3Text: "Plattform-Einnahmen aus Mitgliedschaft und Marketplace.",
+      poolStep4: "Investment Pool",
+      poolStep4Text: "Ein festgelegter Anteil wird für eigene Investments reserviert.",
+      poolStep5: "Portfolio & Projekte",
+      poolStep5Text: "Kapital, Kontakte und Unterstützung für ausgewählte Projekte im Ökosystem.",
+      poolCategoriesTitle: "Wohin der Pool fließen könnte",
+      poolCategoriesLead:
+        "Die möglichen Kategorien des Investment Pool – bewusst als Struktur beschrieben, nicht als Bestand.",
+      poolCategories: [
+        "Start-ups & Wachstumsunternehmen",
+        "Beteiligungen an Netzwerk-Unternehmen",
+        "Immobilienprojekte",
+        "Community-Unternehmen",
+        "Strategische Investments",
+        "Reserve für künftige Opportunities",
+      ],
+      poolDisclaimer:
+        "Ein geplantes Modell, kein bestehender Fonds. Es werden keine Renditen versprochen, keine Investments garantiert und keine Ausschüttungen zugesagt.",
+      /* --- Impact (Sprint) --- */
+      impactKicker: "Unser Ziel",
+      impactTitle: "Gemeinnützig mitdenken.",
+      impactLead:
+        "Langfristig möchten wir einen Teil unserer Gewinne für gemeinnützige Zwecke einsetzen – etwa für Kinder in unterversorgten Regionen, für Zugang zu sauberem Trinkwasser und für Projekte in ärmeren Regionen, etwa in Afrika.",
+      impactTarget: "Unser Ziel: 5 % unserer Gewinne sollen künftig in eigene gemeinnützige Projekte und ausgewählte Hilfsprojekte fließen.",
+      impactStatusTitle: "Ehrlich gesagt",
+      impactStatus:
+        "Dies ist eine Zielsetzung, kein laufendes Programm. Eine eigene Stiftung oder eine geeignete gemeinnützige Struktur ist noch nicht gegründet und rechtlich nicht geprüft. Die Bemessungsbasis für „Gewinn“ ist noch nicht festgelegt. Wir führen keine Buchhaltung dafür und leisten keine Zahlungen – bevor die Struktur steht und rechtlich geprüft ist.",
+      impactNoClaims:
+        "Solange das nicht der Fall ist, behaupten wir nicht, dass bereits gespendet wird.",
       features: [
         {
           title: "Geprüfte Chancen",
@@ -1039,6 +1114,41 @@ const siteEnRaw: SiteDictionary = {
       ],
       noteTitle: "Trust is the standard",
       note: "Every deal runs on verified profiles. The completion of a collaboration gets confirmed and feeds the reputation system of both sides.",
+      /* --- Deal fee (Sprint) --- */
+      feeKicker: "Transparent fee structure",
+      feeTitle: "The bigger the deal, the lower the platform share.",
+      feeLead:
+        "For completed business deals INNER CIRCLE may charge a percentage platform share. The rate follows the volume – and decreases as the deal grows.",
+      feeVolumeColumn: "Deal volume",
+      feeRateColumn: "Platform share",
+      feeTier1: "up to €50,000",
+      feeTier2: "€50,000 – €250,000",
+      feeTier3: "€250,000 – €1,000,000",
+      feeTier4: "€1,000,000 – €5,000,000",
+      feeTierNegotiable: "over €5,000,000",
+      feeNegotiable: "Individual rate (1 – 1.5%)",
+      feeNegotiableNote:
+        "Above €5,000,000 the rate is agreed case by case. We deliberately do not calculate a fixed amount there.",
+      feeForVolume: "For your volume",
+      feeForVolumeHint: "Enter a volume to see the matching tier.",
+      feeNoVolume: "No rate calculated – without a volume",
+      feeCoversTitle: "What the platform share stands for",
+      feeCovers: [
+        "Access to the network",
+        "Deal infrastructure and origination",
+        "Matching of the parties involved",
+        "Reputation and documented collaboration",
+        "Verification of the members",
+        "Communication and coordination",
+        "Documentation of the collaboration",
+        "Support in closing the deal",
+      ],
+      feeCoversNote:
+        "Services INNER CIRCLE actually provides today – no promises about features that do not exist yet.",
+      feeDueNote:
+        "The share becomes due with the completed deal, not with the publication of a listing.",
+      feeTermsNote:
+        "Completed deals are confirmed by both sides and thereby count towards the reputation of both parties.",
       comingSoonTitle: "What will live here",
       comingSoonItems: [
         "Deal marketplace with categories & filters",
@@ -1063,6 +1173,45 @@ const siteEnRaw: SiteDictionary = {
       allocationLead:
         "No fund and no return figure, just a defined model: 20% of platform revenue is planned as the investment budget – 25% of it into companies and projects from the network, 75% external.",
       allocationCta: "See the model",
+      /* --- Investment Pool (Sprint) --- */
+      poolTitle: "From the network to our own investment pool",
+      poolLead:
+        "In the long run INNER CIRCLE is building its own investment pool: part of the funds earned within the network flows back into selected projects and companies of the ecosystem – with capital, contacts and operational support.",
+      poolStep1: "Network",
+      poolStep1Text: "Members find each other what previously did not find each other.",
+      poolStep2: "Deals",
+      poolStep2Text: "Concrete business opportunities emerge from these connections.",
+      poolStep3: "Revenue",
+      poolStep3Text: "Platform revenue from membership and marketplace.",
+      poolStep4: "Investment pool",
+      poolStep4Text: "A defined share is reserved for our own investments.",
+      poolStep5: "Portfolio & projects",
+      poolStep5Text: "Capital, contacts and support for selected projects in the ecosystem.",
+      poolCategoriesTitle: "Where the pool could flow",
+      poolCategoriesLead:
+        "The possible categories of the investment pool – deliberately described as a structure, not as holdings.",
+      poolCategories: [
+        "Start-ups & growth companies",
+        "Equity stakes in network companies",
+        "Real-estate projects",
+        "Community companies",
+        "Strategic investments",
+        "Reserve for future opportunities",
+      ],
+      poolDisclaimer:
+        "A planned model, not an existing fund. No returns are promised, no investments guaranteed and no distributions committed.",
+      /* --- Impact (Sprint) --- */
+      impactKicker: "Our goal",
+      impactTitle: "Thinking beyond profit.",
+      impactLead:
+        "In the long run we would like to put part of our profit to charitable use – for children in under-served regions, for access to clean drinking water and for projects in poorer regions, for example in Africa.",
+      impactTarget:
+        "Our goal: 5% of our profit should in future flow into our own charitable projects and selected aid projects.",
+      impactStatusTitle: "To be transparent",
+      impactStatus:
+        "This is an aim, not a running programme. A foundation of our own or a suitable charitable structure has not yet been founded and has not been legally reviewed. The basis for calculating “profit” has not yet been defined. We keep no accounting for it and make no payments – until the structure exists and has been legally reviewed.",
+      impactNoClaims:
+        "As long as that is not the case, we do not claim that anything is already being donated.",
       features: [
         {
           title: "Reviewed opportunities",

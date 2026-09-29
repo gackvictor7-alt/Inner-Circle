@@ -29,6 +29,13 @@
       "when": 1790607551747,
       "tag": "0003_sprint16_trust_reviews",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1790703909974,
+      "tag": "0004_deal_terms_and_records",
+      "breakpoints": true
     }
   ]
 }

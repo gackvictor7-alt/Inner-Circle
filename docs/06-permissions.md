@@ -313,10 +313,26 @@ Private Beta:
 | Score = Durchschnitt aller gültigen verifizierten Bewertungen | `computeTrustScore()` (`src/lib/trust/score.ts`): nur `status = 'published'`, `verifiedContext = true`, `isDemo = false`; ohne solche Zeilen `score10 = null` (**nie** 5,0) |
 | Andere Signale verändern den Sterne-Score nicht | `src/lib/trust/reputation.ts` wird von `computeTrustScore()` nicht gelesen; nur eigene Anzeige |
 | Eine Bewertung je Bewertendem, Bewertetem und Zusammenarbeit | Unique Index `trust_review_basis_unique` (`drizzle/0003_sprint16_trust_reviews.sql`) + Vorprüfung für eine verständliche Fehlermeldung |
-| Grundlage ist nachweisbar | `hasCollaboration()` prüft `OpportunityApplication.status='accepted'`, `Enrollment.completedAt` oder `InvestmentInterest` – **serverseitig**, ein `contextId` aus dem Browser ist nur ein Zeiger |
+| Grundlage ist nachweisbar | `hasCollaboration()` prüft `OpportunityApplication.status='accepted'`, `Enrollment.completedAt`, `InvestmentInterest` oder (neu) `DealRecord.status='confirmed'` – **serverseitig**, ein `contextId` aus dem Browser ist nur ein Zeiger |
+| Ein **bestätigter Deal** ist ein Trust-Kontext | Kontext `deal` – die strengste der vier Grundlagen. Erfordert **beidseitige** Bestätigung; ein veröffentlichtes Angebot, eine Bewerbung, ein `applied`-Status oder ein einseitiger `DealRecord` erhöhen den Score **nie**. Neues Aggregatsignal `verified_deals` (nur bei `status='confirmed'`) |
 | Demo-Daten sind keine Reputation | `isDemo`-Reviews zählen nie; `submitTrustReviewAction` lehnt Demo-Konten und Demo-Ziele ab; der Seed leitet seinen Cache aus denselben Regeln ab |
 | Öffentlich sind nur aggregierte Zahlen | Angezeigt werden Score, Anzahl Bewertungen, Kategorie und Jahr – **kein** Titel, keine Gegenseite, kein Betrag (`contextLabel` ist ein Kategoriecode) |
 | Entfernen wirkt sofort | `moderateTrustReviewAction` setzt `status='hidden'` und ruft `refreshTrustSummaryFor()`; Cache und Anzeige fallen im selben Schritt auf `null` |
+
+### 3f. Deal-Bedingungen, Deal-Meldung und Gegenseitige Bestätigung (Deal-Fee-Sprint)
+
+| Regel | Umsetzung |
+| ----- | --------- |
+| Deal-Typen brauchen eine Zustimmung, bevor sie veröffentlicht werden | `requireDealTermsConsent()` in `src/app/actions/deals.ts`, aufgerufen aus `createOpportunityAction()`. Ohne `dealTermsAccepted` → `fieldErrors.dealTermsAccepted = 'termsConsentRequired'`, **nichts wird geschrieben** |
+| Die angezeigte Fassung ist verbindlich | Der Server prüft zusätzlich `dealTermsVersion` gegen `DEAL_TERMS_VERSION`. Ein Formular, das über eine Aktualisierung hinweg offen blieb, wird abgelehnt statt still neu zugeordnet |
+| Die Fee-Stufe wird serverseitig bestimmt | `feeTierId`/`feeRateBps` werden aus dem **gespeicherten Volumen** neu berechnet (`calculateDealFee()`), nie aus dem Browser übernommen |
+| Nicht jeder Create-Flow ist betroffen | `opportunityTypeSubjectToDealFee()`: nur `joint_venture`, `strategic_partnership`, `co_founder`, `other`. `job`, `freelance`, `customers`, `investment` bleiben unverändert |
+| Marketplace ist **nicht** betroffen | `MARKETPLACE_FEE_POLICY.subjectToDealFee = false`; bestehende Preis- und Enrolment-Logik unverändert. Investments ebenso (`investmentSubjectToDealFee()`) |
+| Nur Beteiligte sehen einen Deal | Jede Query in `src/lib/deals/records.ts` filtert auf `declaredById`/`counterpartyId`. `listDealsFor()` liefert für Dritte eine **leere** Liste; es existiert keine „alle Deals"-Abfrage |
+| Nur Beteiligte können bestätigen | `confirmDeal()` prüft die Rolle und liefert `{ ok: false, reason: 'forbidden' }`; es wird **keine** `DealConfirmation`-Zeile geschrieben |
+| Ein Deal zählt erst nach beidseitiger Bestätigung | `status` wird erst `confirmed`, wenn beide Seiten bestätigt haben; `pending_confirmation` und `disputed` zählen **nirgends** |
+| Ablehnen ist immer möglich und folgenlos | `disputeDealAction()` → `status = 'disputed'`. Der Deal wird nicht gezählt. **Keine** Strafe, **kein** erfundener Vertragsschaden |
+| Keine erfundenen Rechtsfolgen | `DealTermsAcceptance` ist ein **technischer Nachweis**, kein Vertrag: keine Vertragsstrafe, keine Haftungsfreistellung, keine steuerliche Aussage |
 
 **Regel für neue Arbeit:** Eine Berechtigung wird in `src/lib/access/levels.ts`
 ergänzt, serverseitig geprüft und **dieses Dokument aktualisiert**. UI-Prüfungen

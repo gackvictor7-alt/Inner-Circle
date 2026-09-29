@@ -12,6 +12,7 @@ import { db } from "@/db/client";
 import {
   businessOpportunities,
   connections,
+  dealTermsAcceptances,
   courses,
   enrollments,
   eventApplications,
@@ -26,6 +27,7 @@ import {
   users,
 } from "@/db/schema";
 import { idFor } from "@/db/ids";
+import { requireDealTermsConsent } from "@/app/actions/deals";
 import { getAccessContext } from "@/lib/access/server";
 import { connectionPair } from "@/db/queries";
 import { notify } from "@/lib/notifications/service";
@@ -73,8 +75,28 @@ export async function createOpportunityAction(
   if (description.length < 40) fieldErrors.description = "opportunityDescription";
   if (Object.keys(fieldErrors).length > 0) return fail("validation", undefined, fieldErrors);
 
+  // Deal-Bedingungen: a deal type cannot be published without the member
+  // having explicitly accepted the displayed terms version. Types that are
+  // not deals (job, freelance, customers, investment) pass straight through,
+  // and the marketplace/investment flows never reach this action.
+  const consent = await requireDealTermsConsent({
+    userId: access.user.id,
+    opportunityType: type,
+    formData,
+  });
+  if (!consent.ok) {
+    return fail("validation", undefined, { dealTermsAccepted: consent.error });
+  }
+
 
   const opportunityId = idFor.opportunity();
+  if (consent.acceptanceId) {
+    // Link the consent to the entity that was just created.
+    await db
+      .update(dealTermsAcceptances)
+      .set({ subjectId: opportunityId })
+      .where(eq(dealTermsAcceptances.id, consent.acceptanceId));
+  }
   await db.insert(businessOpportunities).values({
     id: opportunityId,
     ownerId: access.user.id,

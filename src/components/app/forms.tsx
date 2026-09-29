@@ -40,6 +40,7 @@ export function ActionForm({
   hidden,
   columns = 1,
   footer,
+  beforeSubmit,
   card = true,
   submitVariant = "primary",
 }: {
@@ -50,6 +51,16 @@ export function ActionForm({
   hidden?: Record<string, string>;
   columns?: 1 | 2;
   footer?: React.ReactNode;
+  /**
+   * Rendered between the fields and the submit row – the place a required
+   * consent belongs, so it cannot be skipped by hitting publish.
+   *
+   * Must be a plain node: server pages render this component, and a function
+   * prop could not be serialised across the server/client boundary. Errors
+   * for fields that are not declared in `fields` (such as a consent flag) are
+   * rendered by the form itself, right above the submit button.
+   */
+  beforeSubmit?: React.ReactNode;
   card?: boolean;
   submitVariant?: "primary" | "secondary" | "success" | "danger";
 }) {
@@ -67,6 +78,13 @@ export function ActionForm({
     state.status === "error" && Object.keys(state.fieldErrors ?? {}).length === 0
       ? tr(`app.errors.${state.errorCode ?? "generic"}`, state.errorParams)
       : null;
+
+  /** Field errors that belong to no declared field (e.g. a consent flag). */
+  const fieldNames = new Set(fields.map((field) => field.name));
+  const unassignedErrors = Object.entries(state.fieldErrors ?? {})
+    .filter(([fieldName]) => !fieldNames.has(fieldName))
+    .map(([, code]) => tr(`app.errors.${code}`, state.errorParams))
+    .join(" ");
 
   const body = (
     <form action={formAction} className="space-y-4" noValidate={false}>
@@ -178,6 +196,20 @@ export function ActionForm({
       {state.status === "success" && successKey && (
         <p role="status" className="rounded-xl bg-forest-500/10 px-4 py-3 text-sm text-forest-700 dark:text-forest-200">
           {tr(successKey)}
+        </p>
+      )}
+
+      {beforeSubmit}
+
+      {/* Errors for inputs that are not declared in `fields` – e.g. a consent
+          flag in a `beforeSubmit` block. Rendered right above the submit
+          button so the reason a publish was refused is unmissable. */}
+      {unassignedErrors.length > 0 && (
+        <p
+          role="alert"
+          className="rounded-xl bg-danger-500/10 px-4 py-3 text-sm text-danger-700 dark:text-danger-200"
+        >
+          {unassignedErrors}
         </p>
       )}
 

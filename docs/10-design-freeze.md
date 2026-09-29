@@ -354,6 +354,30 @@ Design-Tokens (Cards, Button-Varianten, Warn/Danger-Farben, Chip-Stil).
 | `/app/profile/edit` – Formularstruktur | Profilfelder, Foto **und** Interessen & Ziele liegen in **einem** `<form>` mit **einem** Primär-Button „Profil speichern“ (unten, rechts); der frühere zweite Speicherbutton „Interessen & Ziele“ entfällt; Speichern zeigt den bekannten grünen Erfolgs-Banner („Alle Änderungen gespeichert – Profilfelder, Foto, Interessen & Ziele“) und verlässt die Seite nicht mehr | Auftrag 1: ein einheitlicher, klar erkennbarer Speichervorgang |
 | `/app/profile/edit` – Statuszeile | dezente Warn-Hinweiszeile „Ungespeicherte Änderungen …“ über dem Button; Browser-Warnung (beforeunload) nur mit tatsächlichen Änderungen | Auftrag 1: Änderungen dürfen beim Wechseln nicht unbemerkt verloren gehen |
 
+### 1.19 Deal-Fee-Sprint: Investment Pool, Impact, Deal-Fee (2026-09-29)
+
+**Ausdrücklicher Gründerauftrag** (Investment Pool darstellen, degressive
+Deal-Fee integrieren, Impact-/Commitment-Darstellung, Deals gegen Umgehung
+absichern). Bestehende freigegebene Flächen bleiben unverändert; hinzu kommen
+**neue** Bausteine, die ausschließlich bestehende Tokens benutzen. **Kein**
+Token in `globals.css` wurde geändert, **keine** Palette, **keine** Schrift,
+**kein** Radius, **kein** Navigationspunkt.
+
+| Bereich | Änderung | Grund |
+| ------- | -------- | ----- |
+| `/business-deals` | Neuer Abschnitt „Transparente Gebührenstruktur": links Titel/Lead + zwei Hinweiszeilen, rechts die Staffel als **Definitionszeilen** (kein `<table>`, auf Mobile gestapelt), darunter eine ruhige Vier-Spalten-Liste „Wofür der Plattformanteil steht" mit kleinen runden Markern | Auftrag: Fee erklären, nicht bewerben |
+| `/investments` | Neuer Abschnitt „Vom Netzwerk zum eigenen Investment Pool": Fünf-Schritt-Streifen (01–05) wie die bestehende Prozessleiste, darunter die geplanten Kategorien als ruhige Linienliste; Badge „Geplantes Modell". Neuer Impact-Abschnitt: links Zielsetzung mit Sand-Kante, rechts eine `Callout tone="sand"` mit dem Ehrlichkeits-Hinweis | Auftrag: Investment Pool verständlich machen + Impact dezent statt Banner |
+| `/app/investments` | Neuer `InvestmentPoolChart`: **flacher SVG-Ring** (160 px, 6 Segmente, `stroke` ohne Füllung) + Legende als einfache Liste. **Keine** Chart-Bibliothek, **keine** Schatten, **keine** Verläufe, **kein** Glow, **keine** Pillen | Auftrag: Kreisdiagramm, aber kein Crypto-Dashboard |
+| `/app/opportunities/new` | Neuer Block „Deal-Bedingungen" über dem Publish-Button: eine Karte (`bg-surface-muted/40`), die Staffel als fünf ruhige Zeilen, ein optionales Volumenfeld, drei Aufzählungspunkte und **eine** Checkbox. Für Nicht-Deal-Typen rendert die Komponente **nichts** | Auftrag: professioneller kompakter Schritt statt AGB-Popup |
+| `/app/deals` | Neue Seite nach dem Muster der bestehenden Listen: `Card` + Trennlinien, Badges, kleine Aktionen. Keine neue Kartenoptik | Auftrag: schlanker Flow im bestehenden Stil |
+
+**Anti-AI-Pledge dieser Änderung (nachweisbar getestet in
+`tests/unit/deal-views.test.tsx`):** keine Verläufe, keine `shadow-[…]`/
+`drop-shadow`, kein `<canvas>`, keine erfundenen Beträge oder Prozentwerte,
+jede Farbklasse aus der bestehenden Palette (electric/forest/sand + neutral),
+Dark-Mode-Variante je Segment, Ring mit fester Quadratgröße, Legende
+`flex-col` → `sm:flex-row`, Gebührenstaffel ohne horizontales Scrollen.
+
 ## 2. Ausdrücklich erlaubt (kein Designbruch)
 
 - Technische Responsive-Bugfixes (z. B. Überlauf, abgeschnittene Inhalte,

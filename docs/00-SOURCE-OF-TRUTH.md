@@ -3,6 +3,59 @@
 **Diese Datei ist der verbindliche Einstiegspunkt für jeden Menschen und jeden
 KI-Agenten, der an diesem Repository arbeitet.**
 
+- **Aktueller Stand (2026-09-29): Sprint – Deal Fee, Investment Pool, Impact, Off-Platform-Deals.**
+  Session-Branch auf Basis `main` @ `eb5d92b`. Vier Themen konsolidiert, **ohne**
+  bestehende Bereiche umzubauen und **ohne** Designänderung an freigegebenen
+  Flächen. **(1) Impact / 5 %:** Die öffentliche Seite `/investments` zeigt einen
+  dezenten Abschnitt „Gemeinnützig mitdenken" als **Zielsetzung**, ausdrücklich
+  mit dem Hinweis, dass Stiftung/gemeinnützige Struktur **nicht** gegründet und
+  **nicht** rechtlich geprüft ist und die Bemessungsbasis „Gewinn" noch nicht
+  feststeht. Keine Buchhaltung, keine Auszahlung, keine erfundenen Summen, keine
+  Charity-Bilder. **(2) Investment Pool:** `PORTFOLIO_ALLOCATION` (20/25/75 → 5/15)
+  wurde **wiederverwendet**, nicht dupliziert; ergänzt um einen Fluss
+  Netzwerk → Deals → Einnahmen → Investment Pool → Portfolio/Projekte und die
+  geplanten Kategorien (Start-ups, Beteiligungen, Immobilienprojekte,
+  Community-Unternehmen, strategische Investments, Reserve). Keine Rendite-, AUM-
+  oder Mitgliederzahl-Aussage. In der Plattform `/app/investments` steht ein
+  **SVG-Ring ohne Chart-Bibliothek** mit sechs **gleich großen** Struktursegmenten
+  – bewusst ohne Prozentangaben, weil es keine echten Positionen gibt. **(3)
+  Degressive Deal-Fee:** `src/lib/deals/fees.ts` ist die **einzige** Stelle mit
+  der Staffel (5 / 4 / 3 / 2 %, über 5 Mio. **individuell 1 – 1,5 %**). Über 5 Mio.
+  liefert `calculateDealFee()` bewusst `rateBps: null` und `feeCents: null` – es
+  wird **kein** fixer Betrag erzeugt. Die Staffel wird auf `/business-deals` und im
+  Plattform-Schritt aus **derselben** Quelle gerendert. **(4) Deal-Bedingungen:**
+  Für Deal-Typen (`joint_venture`, `strategic_partnership`, `co_founder`, `other`)
+  erscheint vor dem Veröffentlichen ein kompakter Schritt „Deal-Bedingungen" mit
+  Staffel, Volumen-Vorschau und Pflicht-Checkbox; der Server verlangt zusätzlich
+  die **Versionskennung** der angezeigten Bedingungen und lehnt veraltete Formulare
+  ab. Für `job`, `freelance`, `customers` und `investment` rendert die Komponente
+  **nichts** – diese Flows sind unverändert. **Marketplace ist ausdrücklich nicht
+  betroffen** (`MARKETPLACE_FEE_POLICY`, bestehende Preis-/Enrolment-Logik
+  unverändert). **(5) Off-Platform-Deals:** Neu ist `/app/deals` („Deal
+  abgeschlossen"). Ein Deal wird von einer **Seite** gemeldet und zählt erst, wenn
+  **beide** Seiten bestätigt haben (`DealRecord.status = 'confirmed'`). Ein
+  einseitiger Claim zählt nirgends. **(6) Trust:** Die bestehende Architektur aus
+  Sprint 16 wurde **erweitert, nicht neu gebaut**: vierter Kontext `deal`
+  (ausschließlich beidseitig bestätigt) und neues Signal `verified_deals`. Ein
+  veröffentlichtes Angebot, eine Bewerbung oder ein Investment-Interesse erhöhen
+  weiterhin **nichts**. Öffentlich sichtbar ist ausschließlich eine aggregierte Zahl
+  und ein Volumenband – nie Gegenüber, Betrag, Notiz oder Vertragsinhalt.
+  **Migration** `drizzle/0004_deal_terms_and_records.sql` ist **rein additiv**
+  (3 neue Tabellen, keine Änderung bestehender Tabellen), lokal **und** gegen das
+  echte workerd-D1 getestet, **nicht auf Production angewendet**. Es wurden **keine
+  rechtlich verbindlichen Vertragsstrafen** erfunden, keine Produktions-Secrets,
+  keine Stripe-/Payment-Änderung, kein DNS-/Domain-Eingriff, kein Deployment.
+  **Nachweise:** `npm test` **49 Dateien / 439 Tests** grün (neu:
+  `deal-fees.test.ts` 23, `deal-terms-and-records.test.ts` 30,
+  `deal-views.test.tsx` 19), `npx tsc --noEmit` grün, `npm run i18n:audit` grün
+  (DE/EN 2892 Schlüssel, identische Form), `npm run lint` unverändert
+  **11 Befunde (5 Fehler, 6 Warnungen)** = K-15, `npm run build`,
+  `npm run cf:build` und `wrangler deploy --dry-run` grün. Live im Dev-Server
+  geprüft: `/business-deals` (Staffel), `/investments` (Pool + Impact),
+  `/app/opportunities/new` (Deal-Bedingungen bei Deal-Typ, **nicht** bei `job`),
+  `/app/deals`, `/app/investments` (Ring) sowie die Signal-Ausgabe in `/app/trust`
+  nach einem bestätigten Deal. Details: `05` §3b, `06` §3f, `03`, `08`, `10`,
+  `11` K-15, `12` L-2/L-4/L-11/L-12.
 - **Aktueller Stand (2026-09-29): Stripe-Sandbox-Billing + UX-Aufräumarbeiten.**
   Dieser Branch basiert auf dem aktuellsten `main` @ `98814bc` und bleibt
   ausschließlich im Stripe-Testmodus. `/app/billing` akzeptiert nur `monthly`
