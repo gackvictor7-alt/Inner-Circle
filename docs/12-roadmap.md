@@ -45,6 +45,7 @@ machen.
 | **S-9 Lint aufräumen** | 12 vorbestehende Hinweise beheben, Verhalten prüfen (K-15) | – |
 | **S-10 Private Beta ausrollen** | Workers Paid bestätigen (K-24), Migration `0002` auf der Produktions-D1 (`cf:release`), erste Schlüssel über `/admin/beta`, Feedback der 10–30 Tester sammeln; danach E-Mail-Benachrichtigung bei neuer Anfrage/Nachricht mit Opt-in und Entscheidung „Schreiben an abgelaufene Tester“ (K-22) | N-1 (Mail-Domain) für E-Mails |
 | **S-11 Layout-Klassen bereinigen** | `.ic-span-*` in `@layer components` verschieben oder Profil/Einstellungen auf `col-span-12 lg:col-span-*` umstellen (K-23) | Design-Freeze beachten |
+| **S-12 Verifizierte Reputation-Badges** | Besondere Badges zusätzlich zum Trust Score (Founding Member, Investor, Founder, Entrepreneur, Verified Business Owner, Exit/Acquisition, High Deal Volume, Creator …). Teilweise **nicht** automatisch: Mitglied reicht Nachweis ein, Admin prüft, erst dann Freischaltung. **UI ist vorbereitet** (`VerifiedBadges` in Discover/Profilstruktur, max. 1–3 kleine Badges neben Name/Trust Score, keine Fake-Badges); offen: Migration/Badge-Tabelle, Proof-Upload, Admin-Workflow | eigener Sprint |
 
 ## LATER – größere Funktionen
 
@@ -53,7 +54,7 @@ machen.
 | **L-1 Deal-Räume & Brokerage** | private Räume, Teilnehmer, Dokumente mit Widerruf, Meilensteine, Abschlussbestätigung, Provisionsvereinbarungen |
 | **L-2 Deal-Fee & Provisions-Engine** | ~~degressive Staffel als zentrale Berechnung, Deal-Bedingungen mit Versionsstempel~~ **erledigt im aktuellen Sprint** (`src/lib/deals/fees.ts`). Offen und bewusst **nicht** in diesem Sprint: Abrechnung, Auszahlungsfreigaben, Steuerlogik – sowie die **juristisch geprüfte** Endformulierung der Bedingungen |
 | **L-3 Marktplatz-Bezahlung** | Bestellungen, Zahlungen, Verkäuferauszahlungen (Stripe Connect), Refunds, Freigabe-Workflow erzwingen (K-07) |
-| **L-4 Trust & Verifikation** | ~~abgeschlossene Kollaboration als Bewertungskontext, Aggregation~~ **erledigt in Sprint 16** (`opportunity`/`marketplace`/`investment`, Score = Durchschnitt verifizierter Bewertungen, Admin-Moderation). ~~Bestätigter Deal als vierter Kontext~~ **erledigt im aktuellen Sprint** (`deal`, nur bei beidseitig bestätigtem `DealRecord`; Signal `verified_deals`). Offen: Event-Kontext (K-27 – Attendance fehlt technisch) und Badge-Vergabe |
+| **L-4 Trust & Verifikation** | ~~abgeschlossene Kollaboration als Bewertungskontext, Aggregation~~ **erledigt in Sprint 16** (`opportunity`/`marketplace`/`investment`, Score = Durchschnitt verifizierter Bewertungen, Admin-Moderation). ~~Bestätigter Deal als vierter Kontext~~ **erledigt im aktuellen Sprint** (`deal`, nur bei beidseitig bestätigtem `DealRecord`; Signal `verified_deals`). Offen: Event-Kontext (K-27 – Attendance fehlt technisch) und Badge-Vergabe (siehe **S-12**, UI-Slot bereits vorbereitet) |
 | **L-5 Event-Backend** | Event-Erstellung, Kapazitäten/Wartelisten erzwingen, Tickets, QR-Check-in |
 | **L-6 Investments-Ausbau** | Datenraum, Dokumente, Anbahnung mit regulierten Partnern – **erst nach Rechtsprüfung** |
 | **L-7 Creator/Referrals** | Referral-Links, Attribution, Provisionen, Auszahlungen |

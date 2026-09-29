@@ -29,10 +29,18 @@ Die Plattform verbindet **Netzwerk**, **Geschäfte**, **Wissen**,
 5. **Events & Experiences:** Tickets + kuratierte Premium-Erlebnisse –
    Event-Bewerbungen vorhanden, Ticketing nicht.
 6. **Ausgewählte B2B-Dienstleistungen** (später).
-7. **Langfristige Unternehmensbeteiligungen:** Ziel-Allokation 20 % des
-   Umsatzes (davon 5 Prozentpunkte für Ökosystem-Projekte) – Strategieabsicht,
+7. **Langfristige Unternehmensbeteiligungen (INNER CIRCLE Portfolio):**
+   Ziel-Allokation 20 % der Plattform-Einnahmen als Investmentbudget; davon
+   25 % in INNER-CIRCLE-Unternehmen/Projekte aus dem Netzwerk und 75 % extern
+   (= 5 % / 15 % der Gesamteinnahmen) – Strategieabsicht,
    **kein Renditeversprechen**, Umsetzung erst nach Steuern, Kosten, Rücklagen
-   und Rechtsprüfung.
+   und Rechtsprüfung. Details: §4a.
+8. **Geplantes Impact-Modell:** langfristig sollen 5 % des Unternehmensgewinns
+   in eine eigene gemeinnützige Struktur fließen (Ernährung für Kinder,
+   sauberes Trinkwasser, Bildung, konkrete soziale Projekte, u. a. in
+   wirtschaftlich schwächeren Regionen wie Afrika). **Noch nicht gegründet,
+   rechtlich nicht geprüft** – bis dahin ausschließlich als geplantes Modell
+   kommuniziert. Details: §4a.
 
 ## 3. Zielmarkt
 
@@ -53,6 +61,58 @@ Die Plattform verbindet **Netzwerk**, **Geschäfte**, **Wissen**,
 - Demo-Daten sind im Datenmodell als Demo markiert (`isDemo`, `seedTag`) und
   werden in der UI nicht als echt dargestellt.
 
+## 4a. Investment-Architektur – zwei Bereiche, strikt getrennt (verbindlich)
+
+Das Investment-Angebot besteht aus **zwei vollkommen unterschiedlichen
+Dingen**, die in Informationsarchitektur, Navigation und Kommunikation nie
+vermischt werden (Sprint Informationsarchitektur/UX, 2026-09-29):
+
+**A. Investments für Mitglieder („Hier investierst du“)**
+
+- Investment Opportunities, die Mitglieder selbst entdecken und tätigen
+  können: Start-ups, Unternehmensbeteiligungen, Immobilienprojekte,
+  ausgewählte Opportunities (später ggf. weitere Anlage-/Beteiligungsformen).
+- Mitglieder reichen ein (`/app/investments/submit`), Admin prüft, nur
+  freigegebene sind sichtbar; Absichtserklärung statt Ausführung.
+- Das ist **nicht** das Geld von INNER CIRCLE.
+
+**B. INNER CIRCLE Portfolio / Investment Pool („Hier investiert INNER CIRCLE“)**
+
+- Ausschließlich die Frage, wie INNER CIRCLE einen Teil seiner **eigenen**
+  erwirtschafteten Mittel investiert.
+- Geplantes strategisches Modell: 20 % der Plattform-Einnahmen sind
+  langfristig als Investmentbudget vorgesehen; innerhalb des Budgets 25 % →
+  INNER-CIRCLE-Unternehmen/Projekte aus dem Netzwerk, 75 % → externe
+  Investments. Bezogen auf 100 % Plattform-Einnahmen: **5 % Netzwerk ·
+  15 % extern · 80 % nicht Teil des Investmentbudgets**.
+- Solange keine echten Investments in der Datenbank existieren: Darstellung
+  ausschließlich als „Geplante Struktur“/„Strategische Zielallokation“ –
+  **kein Fonds, keine Renditen, keine investierten Beträge, keine erfundenen
+  Portfoliounternehmen**. Erst mit echten Daten wird der Bereich umgestellt.
+
+**Informationsarchitektur (Plattform und Website):**
+
+- Plattform `/app/investments` öffnet eine Hub-Übersicht mit **zwei großen
+  Einstiegen** (analog Academy: Landing → klar getrennte Unterbereiche):
+  „Investments entdecken“ (`?view=opportunities`) und „INNER CIRCLE
+  Portfolio“ (`?view=portfolio`). Bestehende Deep Links (`?sector=`,
+  `?submitted=`, `/app/investments/[id]`, `/app/investments/submit`) bleiben
+  erhalten; es gibt **keinen** neuen Hauptnavigationspunkt.
+- Öffentliche Seite `/investments`: kompakte Story statt Dokumentation –
+  Hero mit zwei CTAs → zwei Wege (Mitglieder vs. Portfolio, inkl. 20/25/75)
+  → eine kompakte Allocation-Visualisierung (Donut 5/15/80, als „Geplante
+  Struktur“ gekennzeichnet) → geplantes Impact-Modell → CTA. Das ausführliche
+  Modell bleibt auf `/portfolio`.
+
+**Impact / geplante Stiftung:** 5 % des Gewinns sollen langfristig
+gemeinnützig verwendet werden (Ziel: eigene Stiftung bzw. entsprechende
+rechtliche Struktur). Bis zur Gründung und rechtlichen Prüfung wird das
+ausschließlich als **„Geplantes Impact-Modell“** kommuniziert – keine
+Aussage „Unsere Stiftung spendet …“, keine „Wir spenden bereits“-Behauptung,
+keine erfundenen Partnerorganisationen oder Spendensummen, keine
+emotionalisierende Leid-Bebilderung. Keine rechtlich ungeprüfte Aussage wird
+als verbindliche Rechtsstruktur dokumentiert.
+
 ## 5. Produktbereiche und ihr Bezug zum Code
 
 | Bereich | Produktversprechen | Code-Orte |
@@ -61,7 +121,7 @@ Die Plattform verbindet **Netzwerk**, **Geschäfte**, **Wissen**,
 | B. Mitgliedschaft & Identität | Konten, Verifizierung, Sessions | `src/lib/auth/*`, `src/app/actions/auth.ts` |
 | C. Netzwerk | Finden, folgen, verbinden, schreiben | `src/app/(app)/app/{network,discover,connections,messages,notifications}`, `src/app/actions/network.ts`, `messages.ts` |
 | D. Business Deals | Chancen entdecken/bewerben | `src/app/(app)/app/{opportunities,jobs}`, `src/app/actions/business.ts` |
-| E. Investments | Chancen anbahnen (keine Ausführung) | `src/app/(app)/app/investments/*`, `/admin/investments` |
+| E. Investments | Zwei getrennte Bereiche (§4a): Opportunities für Mitglieder + INNER CIRCLE Portfolio (geplante Allokation); Hub mit zwei Einstiegen | `src/app/(app)/app/investments/*`, `/admin/investments`, `/investments` (public), `/portfolio` (public) |
 | F. Marktplatz & Academy | Produkte, Services, Kurse | `src/app/(app)/app/{marketplace,learn}` |
 | G. Creator & Referrals | Akquise-Provisionen | **kein Code** – NOT IMPLEMENTED |
 | H. Vertrauen & Reputation | Trust Score, Reviews, Badges | `src/app/(app)/app/trust`, `src/lib/platform/queries.ts` |

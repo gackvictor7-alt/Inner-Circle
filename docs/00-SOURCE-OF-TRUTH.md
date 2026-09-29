@@ -3,7 +3,58 @@
 **Diese Datei ist der verbindliche Einstiegspunkt für jeden Menschen und jeden
 KI-Agenten, der an diesem Repository arbeitet.**
 
-- **Aktueller Stand (2026-09-29): Sprint – Deal Fee, Investment Pool, Impact, Off-Platform-Deals.**
+- **Aktueller Stand (2026-09-29): Sprint – Informationsarchitektur, UX & Design
+  (Investments-Trennung, Discover-Dichte, Anti-AI).** Session-Branch auf Basis
+  `main` @ `93d34c8`. Reiner IA-/UX-/Design-Sprint: **keine** neue Migration,
+  **keine** Änderungen an Stripe/Billing/Webhooks/Auth/Resend/Beta/Chat/
+  Contact-Requests/Trust-Score-Logik/Deal-Terms-Backend/Deal-Fee-Berechnung/
+  Marketplace-Backend/DNS/Domain/Secrets. **(1) Zwei Investment-Bereiche:**
+  Investments für Mitglieder („Hier investierst du“ – geprüfte Opportunities
+  aus dem Netzwerk) und das INNER CIRCLE Portfolio („Hier investiert INNER
+  CIRCLE“ – geplante Allokation eigener Mittel) werden überall strikt
+  getrennt. **(2) Plattform:** `/app/investments` öffnet einen Hub mit zwei
+  Einstiegen (`InvestmentsHub`, analog Academy) → `?view=opportunities`
+  (bestehende Opportunities-Logik unverändert) bzw. `?view=portfolio`
+  (bestehender `InvestmentPoolChart` + `PortfolioSection` unverändert
+  beibehalten, als „Geplantes Modell“ gekennzeichnet). Bestehende Deep Links
+  (`?sector=`, `?submitted=`, `/app/investments/[id]`, `/submit`) bleiben
+  erhalten; kein neuer Navigationspunkt. **(3) Öffentliche Seite
+  `/investments`:** von der Dokumentations- zur kompakten Story-Seite –
+  Hero mit zwei CTAs → „Zwei Wege“ (Mitglieder vs. Portfolio inkl.
+  20/25/75-Hinweis) → **eine** kompakte Allocation-Figur (`AllocationDonut`,
+  SVG ohne Chart-Bibliothek, 5 %/15 %/80 % der Einnahmen, Badge „Geplante
+  Struktur“) → geplantes Impact-Modell → CTA; entfernte Blöcke:
+  Schritte-Streifen, Kategorien, Features/Typen, Coming-soon, doppelte
+  Erklärungen. `/portfolio` (public) unverändert. 20/25/75 → 5/15 kommt weiter
+  ausschließlich aus `PORTFOLIO_ALLOCATION`. **(4) Impact:** ausschließlich
+  als „Geplantes Impact-Modell“ (5 % des Gewinns langfristig in eine eigene
+  gemeinnützige Struktur; Bereiche: Kinderernährung, Trinkwasser, Bildung,
+  soziale Projekte, u. a. wirtschaftlich schwächere Regionen wie Afrika) –
+  keine Stiftungs-Behauptung, keine Spendensummen, keine Leid-Bebilderung.
+  **(5) Discover-Dichte:** `/app/discover` rendert statt eines
+  bildschirmfüllenden Ein-Karten-Decks eine **dichte Kartenliste** (Avatar
+  64–80 px · Name/Badges/Trust · Rolle/Firma/Standort · max. 4 Interessen ·
+  „Ich suche“/„Ich biete“ · rechts Match-Gründe + „Profil ansehen“/
+  „Kontakt anfragen“ + Überspringen/Folgen), 2 Spalten ab `xl`; Filter,
+  Ranking, Connect-Pflichtnachricht, Demo-Modus und States unverändert.
+  Swipe-/Tastatur-Deck-Mechanik entfällt. **(6) Badge-System nur
+  vorbereitet:** `VerifiedBadges` rendert heute ausschließlich das bestehende
+  Founding-Member-Badge und stellt einen leeren Slot für später 1–3
+  admin-verifizierte Badges bereit – **keine** Migration, **kein**
+  Proof-Upload, **kein** Admin-Workflow, **keine** Fake-Badges (Roadmap
+  S-12). **Nachweise:** `npm test` **50 Dateien / 460 Tests** grün (neu:
+  `investments-discover-views.test.tsx` 21), `npx tsc --noEmit` grün,
+  `npm run i18n:audit` grün (DE/EN 2885 Schlüssel, identische Form),
+  `npm run lint` unverändert **11 Befunde (5 Fehler, 6 Warnungen)** = K-15,
+  `npm run build` (u. a. `/investments` weiterhin statisch),
+  `npm run cf:build` + `wrangler deploy --dry-run` grün. Live im Dev-Server
+  geprüft: `/investments`, `/portfolio`, `/app/investments` (Hub + beide
+  Unteransichten + Legacy-Parameter), `/app/discover` (Mitglied: kompakte
+  Liste; Trial: 8 Demo-Karten gleichzeitig). **Browser-/Screenshot-E2E ist in
+  dieser Umgebung nicht ausführbar** (kein Chromium-Download, K-26) – es wird
+  keine visuelle Abnahme behauptet. Details: `01` §4a, `03`, `10` §1.22,
+  `12` S-12/L-4/L-12, `13` ADR-019.
+- **Vorheriger Stand (2026-09-29): Sprint – Deal Fee, Investment Pool, Impact, Off-Platform-Deals.**
   Session-Branch auf Basis `main` @ `eb5d92b`. Vier Themen konsolidiert, **ohne**
   bestehende Bereiche umzubauen und **ohne** Designänderung an freigegebenen
   Flächen. **(1) Impact / 5 %:** Die öffentliche Seite `/investments` zeigt einen
@@ -427,7 +478,7 @@ Vier Säulen: **Netzwerk · Geschäfte · Wissen · Kapitalzugang (+ Erlebnisse)
 | 2 | **Discover** | Relevanz-Ranking (Interessen, Ziele, Branche, Ich suche/biete), Filter, Umkreis | `/app/discover` | – (nur Member) |
 | 3 | **Business Deals / Chancen** | Chancen anlegen, browsen, bewerben, Owner antwortet | `/app/opportunities` | `/business-deals` |
 | 4 | **Jobs & Projekte** | Gefilterte Sicht auf Deal-Typ `job`/`freelance` | `/app/jobs` | Teil von Business-Deals |
-| 5 | **Investments** | Investment Opportunities (Mitglieder reichen ein, Admin prüft, freigegebene sichtbar) + Absichtserklärung | `/app/investments` | `/investments` |
+| 5 | **Investments** | Investment Opportunities für Mitglieder („Hier investierst du“: Mitglieder reichen ein, Admin prüft, freigegebene sichtbar) + Absichtserklärung; strikt getrennt vom INNER CIRCLE Portfolio (§1f) | `/app/investments` (Hub → `?view=opportunities`) | `/investments` |
 | 6 | **Marketplace** | Produkte, Services, Listings (ohne Bezahlung, nur Discovery) | `/app/marketplace` | `/marketplace` |
 | 7 | **Academy** | Kurse (Module, Lektionen), Enrollment, Fortschritt | `/app/learn` | Teil von Marketplace |
 | 8 | **Events** | Kuratierte INNER-CIRCLE-Events, Bewerben/Abbestätigen, Warteliste | `/app/events` | `/events` |
@@ -435,7 +486,7 @@ Vier Säulen: **Netzwerk · Geschäfte · Wissen · Kapitalzugang (+ Erlebnisse)
 | 10 | **Profile** | Business Identity (Header, Stats, Actions, Vollständigkeit, Tabs Beiträge/Übersicht/Performance/Angebote) | `/app/profile` | `/member/[publicId]` (Karten-Verifikation) |
 | 11 | **Membership** | Pläne, Billing, Paywall, Mitgliedsantrag, Rechnungen (vorbereitet) | `/app/billing`, `/app/membership-application`, `/app/card` | `/membership` |
 | 12 | **Trust** | Trust Score aus verifizierten Bewertungen + Detailansicht, verifizierte Bewertungen nach echter Zusammenarbeit, nachweisbare Erfolge, Performance Records, Badges, Founding Member | `/app/profile?tab=performance`, `/app/trust`, `/admin/reviews` | – |
-| 13 | **INNER CIRCLE Portfolio** | Strategische Zielallokation 20% → 25% Netzwerk / 75% extern = 5%/15%; kein Fonds, keine Renditeversprechen | `/app/investments` (untere Sektion) + `/portfolio` | `/portfolio` |
+| 13 | **INNER CIRCLE Portfolio** | Wie INNER CIRCLE eigenes Kapital einsetzen möchte („Hier investiert INNER CIRCLE“): strategische Zielallokation 20% → 25% Netzwerk / 75% extern = 5%/15%; geplante Struktur, kein Fonds, keine Renditeversprechen, keine erfundenen Beträge | `/app/investments` (Hub → `?view=portfolio`) + `/portfolio` | `/portfolio` |
 
 Details: [`01-product.md`](01-product.md)
 
@@ -503,7 +554,9 @@ Details: [`01-product.md`](01-product.md)
 - `/app/network` – Verzeichnis
 - `/app/opportunities` – Chancen
 - `/app/jobs` – Jobs & Projekte
-- `/app/investments` – Investments (Opportunities + Portfolio)
+- `/app/investments` – Investments: Hub mit zwei getrennten Einstiegen
+  („Investments entdecken“ → Opportunities für Mitglieder, „INNER CIRCLE
+  Portfolio“ → geplante Allokation; §1f)
 - `/app/marketplace` – Marketplace
 - `/app/learn` – Academy
 
@@ -552,9 +605,43 @@ Details: [`01-product.md`](01-product.md)
 
 ### 1f. Investments – klare Trennung (verbindlich)
 
-- **Investment Opportunities für Mitglieder:** Mitglieder reichen ein (`/app/investments/submit`), Admin prüft (`/admin/investments` → `approved`/`rejected` + Notiz), nur freigegebene sichtbar (`/app/investments` + Detail `/app/investments/[id]`), Absichtserklärung (`expressInvestmentInterestAction`). Beträge ohne Renditeversprechen, regulierte Abläufe (Zeichnung, Zahlung, Verträge) NOT IMPLEMENTED, Rechtsprüfung nötig.
-- **INNER CIRCLE Portfolio (IC selbst):** strategische Zielallokation der Plattform-Einnahmen, **keine echten Zahlen, keine Renditeversprechen, keine Vermischung** mit Member-Opportunities. Darstellung: `/app/investments` untere Sektion + `/portfolio` (Public) mit 100-€-Beispiel.
-- **UI-Trennung:** zwei getrennte Sektionen mit eigenen Headings, Portfolio als Ziel/Demo gekennzeichnet.
+Das Investment-Angebot besteht aus **zwei vollkommen unterschiedlichen
+Dingen**, die nie vermischt werden (Details: `01-product.md` §4a, ADR-019):
+
+- **A. Investment Opportunities für Mitglieder („Hier investierst du“):**
+  Mitglieder reichen ein (`/app/investments/submit`), Admin prüft
+  (`/admin/investments` → `approved`/`rejected` + Notiz), nur freigegebene
+  sichtbar (`/app/investments?view=opportunities` + Detail
+  `/app/investments/[id]`), Absichtserklärung
+  (`expressInvestmentInterestAction`). Das ist **nicht** das Geld von INNER
+  CIRCLE. Beträge ohne Renditeversprechen, regulierte Abläufe (Zeichnung,
+  Zahlung, Verträge) NOT IMPLEMENTED, Rechtsprüfung nötig.
+- **B. INNER CIRCLE Portfolio (IC selbst, „Hier investiert INNER CIRCLE“):**
+  wie INNER CIRCLE einen Teil seiner **eigenen** Plattform-Einnahmen
+  langfristig investieren möchte – strategische Zielallokation (20 % Budget →
+  25 % Netzwerk / 75 % extern = 5 % / 15 % der Einnahmen), **keine echten
+  Zahlen, keine Renditeversprechen, keine erfundenen Portfoliounternehmen,
+  keine Vermischung** mit Member-Opportunities. Darstellung:
+  `/app/investments?view=portfolio` + `/portfolio` (Public) mit
+  100-€-Beispiel. Solange keine echten Investments in der Datenbank
+  existieren, ausschließlich als „Geplante Struktur“/„Strategische
+  Zielallokation“ gekennzeichnet.
+- **UI-Trennung (Sprint Informationsarchitektur):** `/app/investments` öffnet
+  einen Hub mit zwei großen Einstiegen (`InvestmentsHub`, analog Academy:
+  Landing → klar getrennte Unterbereiche, keine neue Hauptnavigation); die
+  Unterbereiche sind in 2 Sekunden unterscheidbar („Hier investierst du“ vs.
+  „Hier investiert INNER CIRCLE“). Öffentliche Seite `/investments`:
+  kompakte Story – Hero mit zwei CTAs → zwei Wege → eine Allocation-Figur →
+  geplantes Impact-Modell → CTA.
+- **Geplantes Impact-Modell (nur auf `/investments`):** langfristig sollen
+  5 % des Unternehmensgewinns in eine eigene gemeinnützige Struktur fließen
+  (Ernährung für Kinder, sauberes Trinkwasser, Bildung, konkrete soziale
+  Projekte, u. a. in wirtschaftlich schwächeren Regionen wie Afrika). Bis zur
+  Gründung/rechtlichen Prüfung ausschließlich als „Geplantes Impact-Modell“
+  kommuniziert – keine „Unsere Stiftung spendet“-Aussage, keine „Wir spenden
+  bereits“-Behauptung, keine erfundenen Partner oder Summen, keine
+  Leid-Bebilderung. Keine rechtlich ungeprüfte Aussage wird als verbindliche
+  Rechtsstruktur dokumentiert (Roadmap L-12).
 
 ### 1g. Portfolio-Zielmodell (verbindlich)
 
@@ -707,7 +794,7 @@ Discover → Profil → Connect (Pflichtnachricht) → Anfrage → Inbox (Anfrag
 | Deployment | Build `npm run cf:build` · Deploy `npm run cf:release` · Production-Branch `main` |
 | Datenbank (Produktion) | D1 `inner-circle-db`, Binding `DB`, Migrationen in `drizzle/` |
 | i18n | Eigenes Wörterbuch `src/lib/i18n` (DE = Standard, EN vollständig) |
-| Tests | Vitest: **44 Dateien / 353 Tests grün** (`npm test`, Sprint 17; inkl. Checkout-/Webhook-/Lifecycle-Tests) + TypeScript/i18n/OpenNext-Dry-Run grün; Browser-E2E in dieser Umgebung offen (§`08-testing.md`) |
+| Tests | Vitest: **50 Dateien / 460 Tests grün** (`npm test`, Sprint Informationsarchitektur; inkl. Checkout-/Webhook-/Lifecycle-Tests und `investments-discover-views.test.tsx`) + TypeScript/i18n/OpenNext-Dry-Run grün; Browser-E2E in dieser Umgebung offen (§`08-testing.md`) |
 | App-Navigation | **6 Primärbereiche**: Start · Discover · Erstellen · Inbox · Events · Profil |
 
 ## 3. Status-Legende (verbindlich)
@@ -731,7 +818,8 @@ existiert. Backend + Daten + Berechtigungen + Nachweis gehören dazu.
 | Funktion | Status | Nachweis |
 | -------- | ------ | -------- |
 | Startseite `/` – Conversion-Flow (Hero mit 3 Outcomes + Preis-Hinweis → schmales 20-%-Kapital-Band → Membership-Preis → 6 Kernbereiche → Events → CTA) | WORKING | `src/app/(site)/HomeContent.tsx`; Hero-Bild unverändert (Sprint 10: Mobile nutzt dasselbe `hero-alpine.jpg`), Hero nennt beide Preise (24,99 €/249,99 €); **statisch vorgeneriert** |
-| Preview-Seiten `/network`, `/business-deals`, `/investments`, `/marketplace`, `/events` | WORKING | statische Inhalte, nicht aktivierte Funktionen als „Demnächst verfügbar\" gekennzeichnet; **statisch vorgeneriert** |
+| Preview-Seiten `/network`, `/business-deals`, `/marketplace`, `/events` | WORKING | statische Inhalte, nicht aktivierte Funktionen als „Demnächst verfügbar\" gekennzeichnet; **statisch vorgeneriert** |
+| `/investments` – Investments (öffentliche Story) | WORKING | **Sprint Informationsarchitektur:** kompakte Zwei-Wege-Struktur statt Dokumentationsseite – Hero mit zwei CTAs → „Für Mitglieder“ vs. „INNER CIRCLE Portfolio“ (20/25/75) → eine Allocation-Figur (`AllocationDonut`, 5/15/80, „Geplante Struktur“) → geplantes Impact-Modell → CTA; keine Beträge, keine Renditen, keine erfundenen Portfoliowerte; **statisch vorgeneriert** |
 | `/portfolio` – INNER CIRCLE Portfolio (Arbeitstitel) | WORKING | `src/app/(site)/portfolio/`; 20-%-/25-%-/75-%-Modell (bezogen auf 100 %: 5 % IC / 15 % extern) + 100-€-Beispiel; **kein Fonds, keine Renditeversprechen**; transparent als geplante strategische Zielallokation; **statisch vorgeneriert** |
 | `/membership` (Preise, Leistungen) | WORKING | 24,99 €/Monat **und** 249,99 €/Jahr („2 Monate geschenkt\"); K-03 gelöst; Checkout ist für die konfigurierte Stripe-Sandbox vorgesehen |
 | Auth-Seiten `/login`, `/register`, `/forgot-password`, `/reset-password`, `/verify` | WORKING | siehe Bereich B |
@@ -806,7 +894,7 @@ existiert. Backend + Daten + Berechtigungen + Nachweis gehören dazu.
 | Connection Requests (senden/annehmen/ablehnen/zurückziehen) | WORKING | `network.ts`, `connection-request.test.ts`, `messaging-authorization.test.ts` |
 | **Core Connection Loop (Sprint 8)** | WORKING | Discover → Profil (zustandsabhängige Aktionen) → Connect mit Pflichtnachricht → Anfrage in Inbox → Annehmen/Ablehnen → Chat (nur Mitglieder) + Business Connection → Network (`Alle/Verbindungen/Anfragen`). Details §1i; `core-loop.test.ts` (accept/decline/withdraw, Notification-Deep-Links, kein implizites Follow), `connection-request.test.ts`, `messaging-authorization.test.ts` |
 | **Verbindungsanfrage nur mit Pflichtnachricht** (min. 10 Zeichen, max. 600) | WORKING | serverseitig in `sendConnectionRequestAction` (`CONNECTION_MESSAGE_MIN_LENGTH`/`CONNECTION_MESSAGE_MAX_LENGTH`), UI `ConnectDialog` (Zähler + Fehler), `connection-request.test.ts` |
-| **Discover** (Business-Karten, Relevanz-Ranking, Filter) | WORKING | `/app/discover`, `DiscoverDeck`, `src/lib/discover/matching.ts`, `discover-matching.test.ts`; Sprint 6 humanisiert, keine 3-Skills-Zwang; **Sprint 12:** keine Match-%/Kennzahlen/Trust, Desktop-Zweispalter wiederhergestellt, ruhiger Platzhalter ohne Foto, **Businessziel-Filter** (`10-design-freeze.md` §1.17, `discover-matching.test.ts`) |
+| **Discover** (dichte Kartenliste, Relevanz-Ranking, Filter) | WORKING | `/app/discover`, `DiscoverDeck`, `src/lib/discover/matching.ts`, `discover-matching.test.ts`; Sprint 6 humanisiert, keine 3-Skills-Zwang; **Sprint 12:** keine Match-%/Kennzahlen, ruhiger Platzhalter ohne Foto, **Businessziel-Filter** (`10-design-freeze.md` §1.17); **Sprint Informationsarchitektur:** statt bildschirmfüllendem Ein-Karten-Deck eine **dichte Kartenliste** (Avatar · Name/Badges/Trust · Rolle/Firma/Standort · max. 4 Interessen · „Ich suche“/„Ich biete“ · rechts Match-Gründe + „Profil ansehen“/„Kontakt anfragen“ + Überspringen/Folgen), 2 Spalten ab `xl`, mehrere Profile pro Viewport; Filter/Ranking/Connect-Pflichtnachricht/Demo-Modus unverändert; verifizierte Badges strukturell vorbereitet (`VerifiedBadges`, keine Fake-Badges) (`10-design-freeze.md` §1.22, `investments-discover-views.test.tsx`) |
 | Messaging (nur zwischen verbundenen Konten) | WORKING | `message-delivery`, `messaging-authorization` Tests; Sprint 12: für Mitglieder **und** aktive Beta-Tester, ein Chat pro Paar, Polling 10 s, Ungelesen-Zähler, nach Beta-Ende nur lesbar (`beta-networking.test.ts`, Browser-E2E) |
 | Blockieren | WORKING | `Block`, `blockMemberAction` |
 | Notifications (in-App, i18n, Dedupe) | WORKING | `Notification`, `notify()` |
@@ -843,7 +931,7 @@ existiert. Backend + Daten + Berechtigungen + Nachweis gehören dazu.
 | Opportunities einreichen (Mitglied) | WORKING | `/app/investments/submit`, `submitInvestmentAction` |
 | Admin-Prüfung (approved/rejected + Notiz) | WORKING | `/admin/investments`, `reviewInvestmentAction` |
 | Listings + Detailseite (nur freigegebene sichtbar) | WORKING | `/app/investments`, `/app/investments/[id]` |
-| Unterstruktur: „Investment Opportunities\" (Mitglieder) + „INNER CIRCLE Portfolio\" (IC selbst) | WORKING | `/app/investments`; zwei getrennte Sektionen; Portfolio als strategische Zielallokation (20 % → 25 % IC / 75 % extern = 5 % / 15 %), **keine echten Zahlen, keine Renditeversprechen**, keine Vermischung; kleine Allocation-Visualisierung (CSS-only) |
+| Zwei-Bereiche-Struktur: Hub „Investments entdecken\" (Mitglieder) / „INNER CIRCLE Portfolio\" (IC selbst) | WORKING | `/app/investments` öffnet einen Hub (`InvestmentsHub`, analog Academy); `?view=opportunities` = bestehende Opportunities-Logik, `?view=portfolio` = `InvestmentPoolChart` + `PortfolioSection`; Portfolio als strategische Zielallokation (20 % → 25 % IC / 75 % extern = 5 % / 15 %), **keine echten Zahlen, keine Renditeversprechen**, keine Vermischung; Legacy-Deep-Links bleiben erhalten |
 | Absichtserklärungen (Interesse ausdrücken) | WORKING | `expressInvestmentInterestAction` |
 | Regulierte Abläufe (Zeichnung, Zahlung, Verträge, Dokumente) | NOT IMPLEMENTED | bewusst offen, Rechtsprüfung nötig |
 
@@ -868,7 +956,7 @@ existiert. Backend + Daten + Berechtigungen + Nachweis gehören dazu.
 | Trust in Listen | WORKING | `TrustBadge` in Discover (`DiscoverDeck`), Netzwerk (`MemberCard`), Chancen, Jobs, Marketplace (Liste + Detail) – eine ruhige Zeile `4,8 ★ · 2 Bewertungen`, nur bei echter Bewertung |
 | Trust-Moderation (Admin) | WORKING | `/admin/reviews` + `moderateTrustReviewAction`: wer wen, Grundlage, Datum, Status; Entfernen/Wiederherstellen mit `moderatedById/At/Note`, Audit-Log, sofortige Neuberechnung des Scores |
 | Performance-Records (Kennzahlen) | PREPARED | Tabelle + Admin-freie Anzeige, keine Eingabemaske |
-| Badges | PARTIAL | `Badge`/`UserBadge` + Taxonomie vorhanden, Zuweisung nur per Seed/DB |
+| Badges | PARTIAL | `Badge`/`UserBadge` + Taxonomie vorhanden, Zuweisung nur per Seed/DB; **Sprint Informationsarchitektur:** Darstellungsstruktur `VerifiedBadges` in Discover/Profilumfeld vorbereitet (Slot für später 1–3 admin-verifizierte Badges neben Name/Trust Score, keine Fake-Badges, Founding Member unverändert) – Backend/Proof-Upload/Admin-Workflow bewusst offen (Roadmap S-12) |
 | Founding Member | PREPARED | Felder + Admin-Aktion vorhanden |
 
 ### K. Administration
@@ -894,7 +982,7 @@ existiert. Backend + Daten + Berechtigungen + Nachweis gehören dazu.
 | D1-Anbindung + Migrationen (52 Tabellen) | WORKING (lokal) · Produktion ausstehend | `drizzle/0000_init.sql` … `0002_sprint12_private_beta.sql`, `cf:release`; `0002` bisher **nur lokal** angewendet (K-22) |
 | Laufzeit-Treiberwechsel D1 ↔ libSQL | WORKING | `src/db/client.ts` |
 | Deployment über Workers Builds (main → Produktion) | PARTIAL | dokumentierter Weg; letzter Merge nach `main` durch den Gründer zu prüfen (Dashboard) |
-| Automatisierte Tests | WORKING | **354 Tests grün (44 Testdateien)** (Sprint 17), inkl. D1-Integration und Stripe-Sandbox-Checkout-/Webhook-Lifecycle; TypeScript, i18n-Audit und OpenNext/Wrangler-Dry-Run grün. Browser-E2E ist in dieser Umgebung offen und wird nicht als bestanden behauptet (`08-testing.md`) |
+| Automatisierte Tests | WORKING | **460 Tests grün (50 Testdateien)** (Sprint Informationsarchitektur), inkl. D1-Integration, Stripe-Sandbox-Checkout-/Webhook-Lifecycle und Investment-/Discover-View-Garantien; TypeScript, i18n-Audit und OpenNext/Wrangler-Dry-Run grün. Browser-E2E ist in dieser Umgebung offen und wird nicht als bestanden behauptet (`08-testing.md`) |
 | Worker-Build + Dry-Run | WORKING | Sprint 12: `npm run cf:build` grün, `wrangler deploy --dry-run` grün – Upload 9287,12 KiB / gzip 1859,17 KiB, Bindings `DB`, `ASSETS`, `NEXTJS_ENV` |
 | CPU-Zeit / Worker-Limits | PARTIAL (lokal gemessen) | Startphase 50 ms (Limit 1 s); Seiten 43–68 ms, Login ~0,6 s im lokalen workerd → über Free (10 ms), weit unter Paid (30 s) → **Workers Paid Voraussetzung** (K-24, `08-testing.md` §3c); auf Cloudflare nicht gemessen |
 | CI (GitHub Actions) | NOT IMPLEMENTED | keine Workflows im Repo |

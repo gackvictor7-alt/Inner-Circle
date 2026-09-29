@@ -421,3 +421,57 @@ getestet, **nicht auf Production angewendet**. Keine Buchhaltung, keine
 Auszahlung, keine Stripe-/Payment-Änderung, keine Produktions-Secrets, kein
 DNS-/Domain-Eingriff. Doku: `00`, `05`, `06` §3f/§4a, `03`, `08` §3e,
 `10` §1.19, `11` K-28/K-29/K-30, `12` L-2/L-4/L-11/L-12.
+
+## ADR-019: Investments in zwei Bereiche trennen – IA/UX statt neuer Daten (2026-09-29)
+
+**Entscheidung:** Das Investment-Angebot wird konzeptionell, in der Navigation
+und im Layout strikt in **zwei** Bereiche getrennt: (A) **Investments für
+Mitglieder** („Hier investierst du" – geprüfte Opportunities aus dem Netzwerk,
+nicht das Geld von INNER CIRCLE) und (B) **INNER CIRCLE Portfolio** („Hier
+investiert INNER CIRCLE" – wie IC eigenes Kapital langfristig einsetzen
+möchte). Die Plattform `/app/investments` öffnet einen Hub mit zwei Einstiegen
+(analog Academy: Landing → Unterbereiche), die öffentliche Seite `/investments`
+wird von einer Dokumentations- zu einer kompakten Story-Seite (Hero mit zwei
+CTAs → zwei Wege → eine Allocation-Figur → geplantes Impact-Modell → CTA).
+
+**Begründung:**
+
+- **Zwei Dinge, zwei Mentalmodelle.** „Hier investiere ICH" vs. „Hier
+  investiert INNER CIRCLE" muss in ~2 Sekunden unterscheidbar sein. Eine
+  endlose Mischseite erzeugt genau die Verwechslung, die regulatorisch und
+  produktseitig riskant ist.
+- **Bestehende Navigation wiederverwenden.** Kein neuer Hauptnavigationspunkt;
+  der Hub arbeitet mit `?view=opportunities` / `?view=portfolio`. Bestehende
+  Deep Links (`?sector=`, `?submitted=`, `/app/investments/[id]`,
+  `/app/investments/submit`) bleiben erhalten.
+- **Ein geplantes Modell, keine erfundenen Daten.** Der Donut (`AllocationDonut`)
+  zeigt ausschließlich die strategische Zielallokation (20 % Budget → 25/75 →
+  5/15 der Einnahmen, Rest = nicht Teil des Budgets) und ist als „Geplante
+  Struktur" gekennzeichnet. Kein Fonds, keine Rendite, keine Beträge, keine
+  erfundenen Portfoliounternehmen. Erst wenn echte Investments existieren, wird
+  auf echte Daten umgestellt.
+- **Impact ist ein geplantes Modell.** 5 % des Gewinns sollen langfristig in
+  eine gemeinnützige Struktur fließen. Bis zur Gründung/rechtlichen Prüfung
+  wird das nur als „Geplantes Impact-Modell" kommuniziert – keine
+  „Unsere Stiftung spendet"-Aussage, keine „Wir spenden bereits"-Behauptung,
+  keine Partner, keine Summen, keine Leid-Bebilderung.
+
+**Verworfene Alternativen:**
+
+- *Beide Investment-Arten auf einer langen Seite belassen* – genau das zu
+  behebende Problem (zu lang, zu viele Blöcke, Vermischung).
+- *Eine neue Top-Navigation „Portfolio"* – leere Navigation; das Portfolio ist
+  ein Unterbereich von Investments und zusätzlich unter `/portfolio` öffentlich.
+- *Impact als eigenes großes Charity-Feature ausbauen* – wäre eine rechtlich
+  ungeprüfte, emotionalisierende Behauptung; stattdessen kompakt, sachlich,
+  als geplant gekennzeichnet.
+- *Badges schon mit Backend anlegen* – der Auftrag verlangt nur die
+  UI-Vorbereitung (`VerifiedBadges`, Slot neben Name/Trust Score, keine
+  Fake-Badges); Migration/Proof-Upload/Admin-Workflow kommen in einem
+  eigenen Sprint (S-12).
+
+**Konsequenz:** rein additive UI-/Textänderung, **keine Migration**, keine
+Datenbank-, Stripe-, Auth-, Resend-, Beta- oder DNS-Änderung. Discover wird
+parallel zur dichten Kartenliste verdichtet (mehrere Profile pro Viewport,
+Trust Score bleibt sichtbar). Doku: `00`, `01` §4a, `03`, `10` §1.22,
+`12` S-12/L-4/L-12.
