@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/app/ui";
 import { ConnectDialog } from "@/components/app/ConnectDialog";
 import { TrustBadge } from "@/components/app/TrustPanel";
 import { DemoConnectDialog } from "@/components/app/DemoConnectDialog";
+import { VerifiedBadges } from "@/components/app/VerifiedBadges";
 import { useI18n } from "@/lib/i18n/context";
 import { followAction } from "@/app/actions/network";
 import { initialActionState } from "@/app/actions/state";
@@ -80,12 +81,17 @@ export type DiscoverFiltersState = {
 };
 
 /**
- * Discover – Hinge/Tinder mechanics with a professional business identity
- * (spec §5–§8).
+ * Discover – professional business networking, dense and scannable
+ * (Sprint: Informationsarchitektur/UX).
  *
- * Ranking is rule-based and computed server-side; this component only renders
- * and controls the queue. Gestures work on touch, every action is also
- * available as a labelled button and via keyboard (← skip, → connect).
+ * Instead of one full-screen card at a time, Discover renders a compact
+ * list of profile rows (2 columns on `xl`): avatar · identity & key facts ·
+ * trust/badges/match reasons · actions. A typical desktop shows several
+ * profiles without scrolling. Ranking and filtering stay server-side and
+ * rule-based; this component only renders and controls the list.
+ *
+ * Verified badges (Founding Member today, admin-verified badges later –
+ * see `VerifiedBadges`) sit next to the name; no fake badges are rendered.
  */
 export function DiscoverDeck({
   members,
@@ -118,9 +124,9 @@ export function DiscoverDeck({
 }) {
   const { t, tf } = useI18n();
   const isDemo = mode === "demo";
-  const [index, setIndex] = useState(0);
   const [skipped, setSkipped] = useState<string[]>([]);
-  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [followedIds, setFollowedIds] = useState<string[]>([]);
+  const [pendingFollowId, setPendingFollowId] = useState<string | null>(null);
   const [connectTarget, setConnectTarget] = useState<DiscoverCardData | null>(null);
   const [moreOpen, setMoreOpen] = useState(moreOpenInitial);
 
@@ -128,36 +134,21 @@ export function DiscoverDeck({
     () => members.filter((member) => !skipped.includes(member.id)),
     [members, skipped],
   );
-  const current = queue[index] ?? queue[0] ?? null;
 
-  const skip = useCallback(() => {
-    setSkipped((list) => (current && !list.includes(current.id) ? [...list, current.id] : list));
-    setIndex(0);
-  }, [current]);
+  const skip = (id: string) =>
+    setSkipped((list) => (list.includes(id) ? list : [...list, id]));
 
-  /** Following advances the deck – handled in the action, not in an effect. */
-  const followWithAdvance = useCallback(
-    async (prev: typeof initialActionState, formData: FormData) => {
-      const result = await followAction(prev, formData);
-      if (result.status === "success") skip();
-      return result;
-    },
-    [skip],
-  );
-  const [followState, follow, followPending] = useActionState(followWithAdvance, initialActionState);
-
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (connectTarget) return;
-      if (event.key === "ArrowLeft") skip();
-      if (event.key === "ArrowRight" && current && canConnect && !current.isConnected && !current.requestPending && !current.requestCooldown) {
-        setConnectTarget(current);
-      }
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [current, connectTarget, canConnect]);
+  /** Following stays in the list – only the follow button disappears. */
+  const followMember = async (prev: typeof initialActionState, formData: FormData) => {
+    const result = await followAction(prev, formData);
+    if (result.status === "success") {
+      const id = String(formData.get("userId") ?? "");
+      if (id) setFollowedIds((list) => (list.includes(id) ? list : [...list, id]));
+    }
+    setPendingFollowId(null);
+    return result;
+  };
+  const [followState, follow, followPending] = useActionState(followMember, initialActionState);
 
   const hasFilters = Boolean(
     filters.role ||
@@ -377,7 +368,7 @@ export function DiscoverDeck({
             </Link>
           )}
           <span className="ml-auto text-xs text-foreground-subtle">
-            {tf(t.app.discover.cardOf, { index: Math.min(index + 1, Math.max(queue.length, 1)), total: queue.length })}
+            {tf(t.app.discover.resultsCount, { count: queue.length })}
           </span>
         </div>
 
@@ -475,10 +466,7 @@ export function DiscoverDeck({
               <li>
                 <button
                   type="button"
-                  onClick={() => {
-                    setSkipped([]);
-                    setIndex(0);
-                  }}
+                  onClick={() => setSkipped([])}
                   className="text-xs font-semibold text-foreground-muted hover:text-foreground"
                 >
                   {t.app.discover.resetSeen}
@@ -492,8 +480,8 @@ export function DiscoverDeck({
         {radiusHint && <p className="mt-2 text-xs text-foreground-subtle">{radiusHint}</p>}
       </form>
 
-      {/* -------------------------------------------------------------- card */}
-      {!current ? (
+      {/* -------------------------------------------------------- card list */}
+      {queue.length === 0 ? (
         <EmptyState
           icon={CompassIcon}
           title={
@@ -523,265 +511,24 @@ export function DiscoverDeck({
           }
         />
       ) : (
-        <article
-          className="overflow-hidden rounded-3xl border border-border bg-surface shadow-card"
-          onTouchStart={(event) => setTouchStart(event.touches[0]?.clientX ?? null)}
-          onTouchEnd={(event) => {
-            if (touchStart === null) return;
-            const delta = (event.changedTouches[0]?.clientX ?? touchStart) - touchStart;
-            if (delta < -60) skip();
-            if (delta > 60 && canConnect && !current.isConnected && !current.requestPending && !current.requestCooldown) {
-              setConnectTarget(current);
-            }
-            setTouchStart(null);
-          }}
-        >
-          <div className="ic-grid gap-0 p-5 sm:p-6">
-            {/* left: portrait + identity */}
-            {/* col-span-* (not ic-span-12): the unlayered ic-span-12 rule
-                would override lg:col-span-5 and stretch the portrait across
-                the whole card on desktop. */}
-            <div className="col-span-12 lg:col-span-5">
-              <div className="relative">
-                {current.avatarUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={current.avatarUrl}
-                    alt=""
-                    className="aspect-[4/5] w-full rounded-2xl object-cover"
-                  />
-                ) : (
-                  // No photo yet: a calm, compact placeholder (same style as the
-                  // profile header) instead of a large colour block.
-                  <span className="flex aspect-[16/9] w-full items-center justify-center rounded-2xl border border-border bg-surface-muted text-4xl font-bold tracking-tight text-foreground-muted lg:aspect-[4/3]">
-                    {initials(current.firstName, current.lastName)}
-                  </span>
-                )}
-                {current.isDemo && (
-                  <span className="absolute right-3 top-3 rounded-full bg-sand-400/90 px-2.5 py-1 text-[11px] font-bold text-midnight-950">
-                    {isDemo ? t.app.demo.profileBadge : t.app.discover.demoBadge}
-                  </span>
-                )}
-              </div>
-
-              <div className="mt-4">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="text-xl font-bold tracking-tight sm:text-2xl">
-                    {current.firstName} {current.lastName}
-                  </h2>
-                  {current.foundingMember && <Badge variant="sand">{t.app.card.founding}</Badge>}
-                  {current.requestPending && <Badge variant="electric">{t.app.discover.pendingBadge}</Badge>}
-                  {current.isConnected && <Badge variant="forest">{t.app.discover.connectedBadge}</Badge>}
-                </div>
-                {!isDemo && <p className="mt-1 flex flex-wrap items-center gap-x-2 text-sm text-foreground-subtle">
-                  <span>@{current.handle}</span>
-                  <TrustBadge
-                    score10={current.trustScore10}
-                    verifiedReviewCount={current.verifiedReviewCount}
-                  />
-                </p>}
-                {(current.jobTitle || current.headline) && (
-                  <p className="mt-2 text-sm font-medium">{current.jobTitle ?? current.headline}</p>
-                )}
-                <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-foreground-muted">
-                  {current.company && <span>{current.company}</span>}
-                  {current.location && (
-                    <span className="inline-flex items-center gap-1">
-                      <MapPinIcon size={13} />
-                      {current.location}
-                    </span>
-                  )}
-                </p>
-              </div>
-            </div>
-
-            {/* right: business identity
-                Mobile (Sprint 8, TEIL U): compact card – 1–2 tags + at most
-                two match reasons. Bio and the full tag lists stay
-                on desktop; everything is available in the profile view. */}
-            <div className="col-span-12 mt-4 space-y-4 lg:col-span-7 lg:mt-0 lg:space-y-5 lg:pl-6">
-              {current.bio && (
-                <p className="ic-measure hidden text-sm leading-6 text-foreground-muted lg:block">{current.bio}</p>
-              )}
-
-              {(() => {
-                const reasons: React.ReactNode[] = [];
-                for (const goal of current.sharedGoals.slice(0, 2)) {
-                  reasons.push(
-                    <MatchChip key={`g-${goal}`} label={tf(t.app.discover.reasonSharedGoal, { value: goal })} />,
-                  );
-                }
-                for (const interest of current.sharedInterests.slice(0, 2)) {
-                  reasons.push(
-                    <MatchChip
-                      key={`i-${interest}`}
-                      label={tf(t.app.discover.reasonSharedInterest, { value: interest })}
-                    />,
-                  );
-                }
-                if (current.supplyDemand) reasons.push(<MatchChip key="supply" label={t.app.discover.reasonSupply} />);
-                if (current.sameLocation) {
-                  reasons.push(
-                    <MatchChip
-                      key="location"
-                      label={tf(t.app.discover.reasonLocation, {
-                        value: current.location ? `: ${current.location}` : "",
-                      })}
-                    />,
-                  );
-                }
-                if (current.sharedConnectionCount > 0) {
-                  reasons.push(
-                    <MatchChip
-                      key="connections"
-                      label={tf(t.app.discover.sharedConnections, { count: current.sharedConnectionCount })}
-                    />,
-                  );
-                }
-                if (reasons.length === 0) {
-                  reasons.push(<MatchChip key="none" label={t.app.discover.noShared} muted />);
-                }
-                return (
-                  <div className="rounded-2xl border border-border bg-surface-muted/50 p-4">
-                    <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-foreground-subtle">
-                      {t.app.discover.matchWhy}
-                    </p>
-                    <ul className="mt-2.5 flex flex-col gap-1.5 lg:hidden">{reasons.slice(0, 2)}</ul>
-                    <ul className="mt-2.5 hidden flex-col gap-1.5 lg:flex">{reasons}</ul>
-                  </div>
-                );
-              })()}
-
-              {(() => {
-                // 1–2 relevant tags on the card: shared interests first,
-                // otherwise the profile's main interests.
-                const tags = (
-                  current.sharedInterests.length > 0 ? current.sharedInterests : current.interests
-                ).slice(0, 2);
-                if (tags.length === 0) return null;
-                return (
-                  <ul className="flex flex-wrap gap-1.5 lg:hidden">
-                    {tags.map((item) => (
-                      <li key={item}>
-                        <span className="inline-flex rounded-full bg-surface-muted px-2.5 py-1 text-xs font-medium text-foreground-muted">
-                          {item}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                );
-              })()}
-
-              <div className="hidden lg:block">
-                <TagList label={t.app.discover.roles} items={current.roles} />
-                <TagList label={t.app.discover.interests} items={current.interests} limit={8} />
-                <TagList label={t.app.discover.lookingFor} items={current.lookingFor} tone="electric" />
-                <TagList label={t.app.discover.offering} items={current.offering} tone="forest" />
-                <TagList label={t.app.discover.skills} items={current.skills} limit={8} />
-              </div>
-            </div>
-          </div>
-
-          {/* --------------------------------------------------------- actions
-              Mobile (Sprint 8, TEIL H): two large, thumb-reachable buttons
-              per row; the primary action spans both columns. Desktop keeps
-              the existing flex row. */}
-          <div className="border-t border-border bg-surface-muted/40 p-3 sm:p-5">
-            <div className="grid grid-cols-2 gap-2 lg:hidden">
-              <Button variant="secondary" onClick={skip} aria-label={t.app.discover.actionSkip} className="w-full">
-                <XIcon size={16} />
-                {t.app.discover.actionSkip}
-              </Button>
-              <Button variant="secondary" href={current.profileHref ?? `/app/people/${current.handle}`} className="w-full">
-                <GlobeIcon size={16} />
-                {t.app.discover.actionView}
-              </Button>
-              {canFollow && !current.isFollowing && (
-                <form action={follow} className="col-span-2">
-                  <input type="hidden" name="userId" value={current.id} />
-                  <input type="hidden" name="handle" value={current.handle} />
-                  <Button type="submit" variant="ghost" loading={followPending} className="w-full">
-                    <HeartIcon size={16} />
-                    {t.app.discover.actionFollow}
-                  </Button>
-                </form>
-              )}
-              {current.requestCooldown && !current.isConnected && !current.requestPending && (
-                <span className="col-span-2 inline-flex items-center justify-center rounded-full border border-border bg-surface px-4 py-3 text-sm font-medium text-foreground-muted">
-                  {t.app.beta.requestNotAccepted}
-                </span>
-              )}
-              {canConnect && !current.isConnected && !current.requestPending && !current.requestCooldown && (
-                <Button className="col-span-2 w-full" size="lg" onClick={() => setConnectTarget(current)}>
-                  <UserPlusIcon size={18} />
-                  {isDemo ? t.app.demo.connectTitle : t.app.discover.actionConnect}
-                </Button>
-              )}
-              {current.requestPending && (
-                <span className="col-span-2 inline-flex items-center justify-center gap-1.5 rounded-full border border-border bg-surface px-4 py-3 text-sm font-semibold text-electric-600 dark:text-electric-300">
-                  <CheckIcon size={15} />
-                  {t.app.profile.actions.pending}
-                </span>
-              )}
-              {current.isConnected && (
-                <Button
-                  className="col-span-2 w-full"
-                  size="lg"
-                  variant="secondary"
-                  href={`/app/inbox?tab=messages&to=${current.id}`}
-                >
-                  {t.app.profile.actions.message}
-                </Button>
-              )}
-            </div>
-
-            <div className="hidden flex-wrap items-center gap-2 lg:flex">
-              <Button variant="secondary" onClick={skip} aria-label={t.app.discover.actionSkip}>
-                <XIcon size={16} />
-                {t.app.discover.actionSkip}
-              </Button>
-              <Button variant="ghost" href={current.profileHref ?? `/app/people/${current.handle}`}>
-                <GlobeIcon size={16} />
-                {t.app.discover.actionView}
-              </Button>
-              {canFollow && !current.isFollowing && (
-                <form action={follow}>
-                  <input type="hidden" name="userId" value={current.id} />
-                  <input type="hidden" name="handle" value={current.handle} />
-                  <Button type="submit" variant="secondary" loading={followPending}>
-                    <HeartIcon size={16} />
-                    {t.app.discover.actionFollow}
-                  </Button>
-                </form>
-              )}
-              {current.requestCooldown && !current.isConnected && !current.requestPending && (
-                <span className="ml-auto text-sm font-medium text-foreground-muted">{t.app.beta.requestNotAccepted}</span>
-              )}
-              {canConnect && !current.isConnected && !current.requestPending && !current.requestCooldown && (
-                <Button className="ml-auto" onClick={() => setConnectTarget(current)}>
-                  <UserPlusIcon size={16} />
-                  {isDemo ? t.app.demo.connectTitle : t.app.discover.actionConnect}
-                </Button>
-              )}
-              {current.requestPending && (
-                <span className="ml-auto inline-flex items-center gap-1.5 text-sm font-semibold text-electric-600 dark:text-electric-300">
-                  <CheckIcon size={15} />
-                  {t.app.profile.actions.pending}
-                </span>
-              )}
-              {current.isConnected && (
-                <Button className="ml-auto" href={`/app/inbox?tab=messages&to=${current.id}`} variant="secondary">
-                  {t.app.profile.actions.message}
-                </Button>
-              )}
-            </div>
-          </div>
-        </article>
+        <ul className="grid gap-3 xl:grid-cols-2">
+          {queue.map((member) => (
+            <DiscoverRow
+              key={member.id}
+              member={member}
+              isDemo={isDemo}
+              canFollow={canFollow}
+              canConnect={canConnect}
+              followFormAction={follow}
+              followPending={followPending && pendingFollowId === member.id}
+              onFollowSubmit={() => setPendingFollowId(member.id)}
+              isFollowingOverride={followedIds.includes(member.id)}
+              onSkip={() => skip(member.id)}
+              onConnect={() => setConnectTarget(member)}
+            />
+          ))}
+        </ul>
       )}
-
-      <p className="text-xs text-foreground-subtle">
-        {t.app.discover.swipeHint} · {t.app.discover.keyboardHint}
-      </p>
 
       {connectTarget && isDemo && (
         <DemoConnectDialog
@@ -795,7 +542,7 @@ export function DiscoverDeck({
           open
           onClose={() => setConnectTarget(null)}
           target={{ id: connectTarget.id, handle: connectTarget.handle, firstName: connectTarget.firstName }}
-          onSent={skip}
+          onSent={() => skip(connectTarget.id)}
         />
       )}
 
@@ -806,11 +553,236 @@ export function DiscoverDeck({
   );
 }
 
+/**
+ * One compact profile row: avatar · identity & key facts · trust, badges,
+ * match reasons & actions. Deliberately NOT a profile landing page – the
+ * full bio, skills and tag lists live on the profile itself.
+ */
+function DiscoverRow({
+  member,
+  isDemo,
+  canFollow,
+  canConnect,
+  followFormAction,
+  followPending,
+  onFollowSubmit,
+  isFollowingOverride,
+  onSkip,
+  onConnect,
+}: {
+  member: DiscoverCardData;
+  isDemo: boolean;
+  canFollow: boolean;
+  canConnect: boolean;
+  followFormAction: (formData: FormData) => void;
+  followPending: boolean;
+  onFollowSubmit: () => void;
+  isFollowingOverride: boolean;
+  onSkip: () => void;
+  onConnect: () => void;
+}) {
+  const { t, tf } = useI18n();
+  const profileHref = member.profileHref ?? `/app/people/${member.handle}`;
+
+  // Why this recommendation – max three compact reasons.
+  const reasons: ReactNode[] = [];
+  for (const goal of member.sharedGoals.slice(0, 1)) {
+    reasons.push(<MatchChip key={`g-${goal}`} label={tf(t.app.discover.reasonSharedGoal, { value: goal })} />);
+  }
+  for (const interest of member.sharedInterests.slice(0, 2)) {
+    reasons.push(<MatchChip key={`i-${interest}`} label={tf(t.app.discover.reasonSharedInterest, { value: interest })} />);
+  }
+  if (member.supplyDemand && reasons.length < 3) {
+    reasons.push(<MatchChip key="supply" label={t.app.discover.reasonSupply} />);
+  }
+  if (member.sameLocation && reasons.length < 3) {
+    reasons.push(
+      <MatchChip
+        key="location"
+        label={tf(t.app.discover.reasonLocation, {
+          value: member.location ? `: ${member.location}` : "",
+        })}
+      />,
+    );
+  }
+  if (member.sharedConnectionCount > 0 && reasons.length < 3) {
+    reasons.push(
+      <MatchChip key="connections" label={tf(t.app.discover.sharedConnections, { count: member.sharedConnectionCount })} />,
+    );
+  }
+
+  const showFollow = canFollow && !member.isFollowing && !isFollowingOverride && !member.isDemo;
+
+  return (
+    <li>
+      {/* Mobile: avatar + identity side by side, actions wrap underneath.
+          Desktop (`lg:grid`): three columns – portrait · facts · meta/CTAs.
+          Flex and grid share the same three children, nothing is duplicated. */}
+      <article className="flex flex-wrap items-start gap-x-5 gap-y-3 rounded-2xl border border-border bg-surface p-4 sm:p-5 lg:grid lg:grid-cols-[auto_minmax(0,1fr)_minmax(13rem,17rem)]">
+        {/* left: small portrait */}
+        <div className="relative shrink-0">
+          {member.avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={member.avatarUrl}
+              alt=""
+              className="h-16 w-16 rounded-xl object-cover sm:h-20 sm:w-20"
+            />
+          ) : (
+            <span className="flex h-16 w-16 items-center justify-center rounded-xl border border-border bg-surface-muted text-lg font-bold tracking-tight text-foreground-muted sm:h-20 sm:w-20">
+              {initials(member.firstName, member.lastName)}
+            </span>
+          )}
+        </div>
+
+        {/* middle: identity & key facts */}
+        <div className="min-w-0 flex-1 basis-44 lg:basis-auto">
+          <IdentityBlock member={member} isDemo={isDemo} />
+        </div>
+
+        {/* right: match reasons & actions – bottom row on mobile */}
+        <div className="flex w-full flex-col gap-2.5 border-t border-border/70 pt-3 lg:w-auto lg:basis-auto lg:border-t-0 lg:pt-0">
+          {reasons.length > 0 && (
+            <ul className="flex flex-wrap gap-1.5">{reasons.slice(0, 3)}</ul>
+          )}
+          <div className="mt-auto flex flex-wrap items-center gap-2">
+            <Button variant="secondary" size="sm" href={profileHref} className="h-9">
+              <GlobeIcon size={14} />
+              {t.app.discover.actionView}
+            </Button>
+            {member.requestCooldown && !member.isConnected && !member.requestPending && (
+              <span className="text-xs font-medium text-foreground-muted">{t.app.beta.requestNotAccepted}</span>
+            )}
+            {canConnect && !member.isConnected && !member.requestPending && !member.requestCooldown && (
+              <Button size="sm" className="h-9" onClick={onConnect}>
+                <UserPlusIcon size={14} />
+                {isDemo ? t.app.demo.connectTitle : t.app.discover.actionConnect}
+              </Button>
+            )}
+            {member.requestPending && (
+              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-electric-600 dark:text-electric-300">
+                <CheckIcon size={13} />
+                {t.app.profile.actions.pending}
+              </span>
+            )}
+            {member.isConnected && (
+              <Button size="sm" variant="secondary" className="h-9" href={`/app/inbox?tab=messages&to=${member.id}`}>
+                {t.app.profile.actions.message}
+              </Button>
+            )}
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={onSkip}
+              aria-label={`${t.app.discover.actionSkip}: ${member.firstName} ${member.lastName}`}
+              className="inline-flex items-center gap-1 text-xs font-semibold text-foreground-subtle transition-colors hover:text-foreground"
+            >
+              <XIcon size={12} />
+              {t.app.discover.actionSkip}
+            </button>
+            {showFollow && (
+              <form action={followFormAction} className="inline-flex">
+                <input type="hidden" name="userId" value={member.id} />
+                <input type="hidden" name="handle" value={member.handle} />
+                <button
+                  type="submit"
+                  onClick={onFollowSubmit}
+                  disabled={followPending}
+                  className="inline-flex items-center gap-1 text-xs font-semibold text-foreground-subtle transition-colors hover:text-foreground disabled:opacity-60"
+                >
+                  <HeartIcon size={12} />
+                  {t.app.discover.actionFollow}
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      </article>
+    </li>
+  );
+}
+
+/** Name, badges, trust, positioning, company/location, interests, suche/biete. */
+function IdentityBlock({ member, isDemo }: { member: DiscoverCardData; isDemo: boolean }) {
+  const { t } = useI18n();
+  const interestTags = (
+    member.sharedInterests.length > 0 ? member.sharedInterests : member.interests
+  ).slice(0, 4);
+
+  return (
+    <div className="min-w-0">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <h2 className="text-base font-bold tracking-tight sm:text-lg">
+          {member.firstName} {member.lastName}
+        </h2>
+        {/* Verified badges next to the name (Founding Member today,
+            admin-verified badges later – never fake ones). */}
+        <VerifiedBadges foundingMember={member.foundingMember} />
+        {member.isDemo && (
+          <Badge variant="sand">{isDemo ? t.app.demo.profileBadge : t.app.discover.demoBadge}</Badge>
+        )}
+        {member.requestPending && <Badge variant="electric">{t.app.discover.pendingBadge}</Badge>}
+        {member.isConnected && <Badge variant="forest">{t.app.discover.connectedBadge}</Badge>}
+      </div>
+      {!isDemo && (
+        <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs text-foreground-subtle">
+          <span>@{member.handle}</span>
+          <TrustBadge score10={member.trustScore10} verifiedReviewCount={member.verifiedReviewCount} />
+        </p>
+      )}
+      {(member.jobTitle || member.headline) && (
+        <p className="mt-1.5 line-clamp-1 text-sm font-medium">{member.jobTitle ?? member.headline}</p>
+      )}
+      <p className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-sm text-foreground-muted">
+        {member.company && <span className="line-clamp-1">{member.company}</span>}
+        {member.location && (
+          <span className="inline-flex items-center gap-1">
+            <MapPinIcon size={12} />
+            {member.location}
+          </span>
+        )}
+      </p>
+      {interestTags.length > 0 && (
+        <ul className="mt-2 flex flex-wrap gap-1.5">
+          {interestTags.map((item) => (
+            <li key={item}>
+              <span className="inline-flex rounded-full bg-surface-muted px-2.5 py-0.5 text-xs font-medium text-foreground-muted">
+                {item}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+      {(member.lookingFor.length > 0 || member.offering.length > 0) && (
+        <dl className="mt-2 space-y-1">
+          {member.lookingFor.length > 0 && (
+            <div className="flex min-w-0 gap-2 text-xs leading-5">
+              <dt className="shrink-0 font-bold uppercase tracking-[0.08em] text-foreground-subtle">
+                {t.app.discover.lookingFor}:
+              </dt>
+              <dd className="line-clamp-1 min-w-0 text-foreground-muted">{member.lookingFor.join(", ")}</dd>
+            </div>
+          )}
+          {member.offering.length > 0 && (
+            <div className="flex min-w-0 gap-2 text-xs leading-5">
+              <dt className="shrink-0 font-bold uppercase tracking-[0.08em] text-forest-600 dark:text-forest-400">
+                {t.app.discover.offering}:
+              </dt>
+              <dd className="line-clamp-1 min-w-0 text-foreground-muted">{member.offering.join(", ")}</dd>
+            </div>
+          )}
+        </dl>
+      )}
+    </div>
+  );
+}
+
 function MatchChip({ label, muted = false }: { label: string; muted?: boolean }) {
   return (
     <li>
       <span
-        className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${
+        className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-medium ${
           muted
             ? "bg-surface text-foreground-subtle"
             : "bg-electric-500/10 text-electric-600 dark:text-electric-300"
@@ -819,38 +791,5 @@ function MatchChip({ label, muted = false }: { label: string; muted?: boolean })
         {label}
       </span>
     </li>
-  );
-}
-
-function TagList({
-  label,
-  items,
-  limit = 12,
-  tone = "neutral",
-}: {
-  label: string;
-  items: string[];
-  limit?: number;
-  tone?: "neutral" | "electric" | "forest";
-}) {
-  if (items.length === 0) return null;
-  const tones = {
-    neutral: "bg-surface-muted text-foreground",
-    electric: "bg-electric-500/10 text-electric-600 dark:text-electric-300",
-    forest: "bg-forest-500/10 text-forest-600 dark:text-forest-300",
-  } as const;
-  return (
-    <div>
-      <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-foreground-subtle">{label}</p>
-      <ul className="mt-2 flex flex-wrap gap-1.5">
-        {items.slice(0, limit).map((item) => (
-          <li key={item}>
-            <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${tones[tone]}`}>
-              {item}
-            </span>
-          </li>
-        ))}
-      </ul>
-    </div>
   );
 }

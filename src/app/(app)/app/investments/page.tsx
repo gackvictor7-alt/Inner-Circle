@@ -7,18 +7,22 @@ import { formatMoney } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { ArrowLeftIcon } from "@/components/ui/icons";
 import { LocalizedEmptyState, LocalizedPageHeader, LocalizedSectionHeading, Tr } from "@/components/app/localized";
 import { InvestmentsDemoSection, PortfolioSection } from "@/components/app/DemoSections";
 import { InvestmentPoolChart } from "@/components/app/InvestmentPoolChart";
+import { InvestmentsHub } from "@/components/app/InvestmentsHub";
 import { LockedArea } from "@/components/app/LockedArea";
 import { DemoAreaNotice } from "@/components/app/DemoAreaNotice";
 
 export const dynamic = "force-dynamic";
 
+type InvestmentsView = "hub" | "opportunities" | "portfolio";
+
 export default async function InvestmentsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ submitted?: string; sector?: string }>;
+  searchParams: Promise<{ submitted?: string; sector?: string; view?: string }>;
 }) {
   const access = await requireUser("/app/investments");
   const params = await searchParams;
@@ -44,6 +48,61 @@ export default async function InvestmentsPage({
     return <LockedArea access={access} icon="chart" />;
   }
 
+  /* ------------------------------------------------------------------ view
+     Two clearly separated areas behind one entry (analogous to Academy):
+       hub            → choose: member opportunities vs. INNER CIRCLE Portfolio
+       opportunities  → reviewed opportunities members can discover/express interest in
+       portfolio      → INNER CIRCLE's own planned allocation (no real positions yet)
+     Legacy deep links keep working: ?sector=… / ?submitted=… open the
+     opportunities view directly, ?view=portfolio the portfolio view. */
+  const view: InvestmentsView =
+    params.view === "portfolio"
+      ? "portfolio"
+      : params.view === "opportunities" || params.sector || params.submitted
+        ? "opportunities"
+        : "hub";
+
+  const submitAction = access.entitlements.investmentsSubmit ? (
+    <Button href="/app/investments/submit" size="sm">
+      <Tr k="app.investments.detail.submitCta" />
+    </Button>
+  ) : null;
+
+  /* ------------------------------------------------------------- hub view */
+  if (view === "hub") {
+    return (
+      <div className="space-y-8">
+        <LocalizedPageHeader
+          titleKey="app.investments.title"
+          leadKey="app.investments.lead"
+          actions={submitAction}
+        />
+        <InvestmentsHub />
+      </div>
+    );
+  }
+
+  /* -------------------------------------------------------- portfolio view
+     INNER CIRCLE invests its own money here – never member money. The ring
+     shows the planned structure only; it contains no amounts. */
+  if (view === "portfolio") {
+    return (
+      <div className="space-y-8">
+        <LocalizedPageHeader
+          titleKey="app.investments.hub.portfolioTitle"
+          leadKey="app.investments.hub.portfolioText"
+        />
+        <BackToHub />
+        <section aria-label="INNER CIRCLE Investment Pool" className="space-y-6">
+          <InvestmentPoolChart />
+          <PortfolioSection />
+        </section>
+      </div>
+    );
+  }
+
+  /* ---------------------------------------------------- opportunities view
+     Members invest here: reviewed opportunities from the network. */
   const rows = await db
     .select({
       id: investmentOpportunities.id,
@@ -90,16 +149,12 @@ export default async function InvestmentsPage({
   return (
     <div className="space-y-8">
       <LocalizedPageHeader
-        titleKey="app.investments.title"
+        titleKey="app.investments.opportunitiesSectionTitle"
         leadKey="app.investments.lead"
-        actions={
-          access.entitlements.investmentsSubmit ? (
-            <Button href="/app/investments/submit" size="sm">
-              <Tr k="app.investments.detail.submitCta" />
-            </Button>
-          ) : null
-        }
+        actions={submitAction}
       />
+
+      <BackToHub />
 
       {params.submitted && (
         <p className="rounded-xl bg-forest-500/10 px-4 py-3 text-sm text-forest-700 dark:text-forest-200">
@@ -109,9 +164,9 @@ export default async function InvestmentsPage({
 
       {sectors.length > 0 && (
         <nav aria-label={access.user.locale === "en" ? "Investment categories" : "Investmentkategorien"} className="flex w-full gap-2 overflow-x-auto pb-1">
-          <Link href="/app/investments" aria-current={!params.sector ? "page" : undefined} className={`shrink-0 rounded-full px-3 py-1.5 text-sm font-semibold ${!params.sector ? "bg-electric-500 text-white" : "border border-border text-foreground-muted hover:text-foreground"}`}><Tr k="app.common.all" /></Link>
+          <Link href="/app/investments?view=opportunities" aria-current={!params.sector ? "page" : undefined} className={`shrink-0 rounded-full px-3 py-1.5 text-sm font-semibold ${!params.sector ? "bg-electric-500 text-white" : "border border-border text-foreground-muted hover:text-foreground"}`}><Tr k="app.common.all" /></Link>
           {sectors.map(({ sector }) => (
-            <Link key={sector} href={`/app/investments?sector=${encodeURIComponent(sector)}`} aria-current={params.sector === sector ? "page" : undefined} className={`shrink-0 rounded-full px-3 py-1.5 text-sm font-semibold ${params.sector === sector ? "bg-electric-500 text-white" : "border border-border text-foreground-muted hover:text-foreground"}`}>{sector}</Link>
+            <Link key={sector} href={`/app/investments?view=opportunities&sector=${encodeURIComponent(sector)}`} aria-current={params.sector === sector ? "page" : undefined} className={`shrink-0 rounded-full px-3 py-1.5 text-sm font-semibold ${params.sector === sector ? "bg-electric-500 text-white" : "border border-border text-foreground-muted hover:text-foreground"}`}>{sector}</Link>
           ))}
         </nav>
       )}
@@ -148,7 +203,7 @@ export default async function InvestmentsPage({
                   <Link href={`/app/investments/${row.id}`} className="mt-2 block text-base font-bold tracking-tight hover:underline sm:text-lg">{row.publicName}</Link>
                   <p className="mt-1 line-clamp-2 text-sm leading-6 text-foreground-muted">{row.summary}</p>
                   <p className="mt-2 text-xs text-foreground-subtle">
-                    <span className="font-semibold text-foreground">{formatMoney(row.targetAmountCents, row.currency, "de")}</span> {" · "}<Tr k="app.investments.detail.target" />
+                    <span className="font-semibold text-foreground">{formatMoney(row.targetAmountCents, row.currency, "de")}</span> {" · "} <Tr k="app.investments.detail.target" />
                     {" · "}<Tr k="app.investments.detail.minTicket" />: {formatMoney(row.minTicketCents, row.currency, "de")}
                   </p>
                 </div>
@@ -177,14 +232,19 @@ export default async function InvestmentsPage({
         </section>
       )}
       </section>
-
-      {/* INNER CIRCLE Investment Pool – INNER CIRCLE's own investments, strictly
-          separated from the member opportunities above (spec §13/§14). The
-          ring shows the planned structure only; it contains no amounts. */}
-      <section aria-label="INNER CIRCLE Investment Pool" className="space-y-6">
-        <InvestmentPoolChart />
-        <PortfolioSection />
-      </section>
     </div>
+  );
+}
+
+/** Quiet back link to the two-area overview. */
+function BackToHub() {
+  return (
+    <Link
+      href="/app/investments"
+      className="inline-flex items-center gap-1.5 text-sm font-semibold text-foreground-muted transition-colors hover:text-foreground"
+    >
+      <ArrowLeftIcon size={14} />
+      <Tr k="app.investments.hub.backToOverview" />
+    </Link>
   );
 }

@@ -374,92 +374,69 @@ const siteDe = {
       ctaText:
         "Sobald Business Deals live gehen, erblicken angemeldete Mitglieder neue Chancen zuerst.",
     },
+    /* Investments (Sprint: Informationsarchitektur) – die Seite trennt zwei
+       grundverschiedene Dinge: Opportunities FÜR Mitglieder und das eigene
+       INNER CIRCLE Portfolio. Kurz, editorial, ohne Doppelungen. */
     investments: {
       kicker: "Investments",
-      title: "Zugang zu geprüften Investment-Möglichkeiten.",
-      lead: "INNER CIRCLE bringt Investoren und Unternehmer mit substanziellen Möglichkeiten zusammen – geprüft, strukturiert und mit klaren Erwartungen auf beiden Seiten.",
+      title: "Investments. Für Mitglieder und durch INNER CIRCLE.",
+      lead: "INNER CIRCLE verbindet Mitglieder mit ausgewählten Investment Opportunities und baut gleichzeitig langfristig ein eigenes Investment-Portfolio auf.",
       metaTitle: "Investments – INNER CIRCLE",
       metaDescription:
-        "Geprüfte Investment-Chancen und strukturierte Investoren-Anfragen – diskret und mit klarem Prozess.",
-      imageAlt: "Drei junge Professionals prüfen Investment-Unterlagen an einem Tisch mit Glasfassade",
-      allocationTitle: "So denkt INNER CIRCLE Kapital",
-      allocationLead:
-        "Kein Fonds und keine Renditenzahl, sondern ein definiertes Modell: 20 % der Plattform-Einnahmen sind als Investmentbudget geplant – davon 25 % in Unternehmen und Projekte aus dem Netzwerk, 75 % extern.",
-      allocationCta: "Modell ansehen",
-      /* --- Investment Pool (Sprint) --- */
-      poolTitle: "Vom Netzwerk zum eigenen Investment Pool",
-      poolLead:
-        "Langfristig baut INNER CIRCLE einen eigenen Investment Pool auf: Ein Teil der im Netzwerk erwirtschafteten Mittel fließt zurück in ausgewählte Projekte und Unternehmen des Ökosystems – mit Kapital, Kontakten und operativer Unterstützung.",
-      poolStep1: "Netzwerk",
-      poolStep1Text: "Mitglieder finden zusammen, was vorher nicht zueinander gefunden hat.",
-      poolStep2: "Deals",
-      poolStep2Text: "Aus diesen Verbindungen entstehen konkrete Geschäftschancen.",
-      poolStep3: "Einnahmen",
-      poolStep3Text: "Plattform-Einnahmen aus Mitgliedschaft und Marketplace.",
-      poolStep4: "Investment Pool",
-      poolStep4Text: "Ein festgelegter Anteil wird für eigene Investments reserviert.",
-      poolStep5: "Portfolio & Projekte",
-      poolStep5Text: "Kapital, Kontakte und Unterstützung für ausgewählte Projekte im Ökosystem.",
-      poolCategoriesTitle: "Wohin der Pool fließen könnte",
-      poolCategoriesLead:
-        "Die möglichen Kategorien des Investment Pool – bewusst als Struktur beschrieben, nicht als Bestand.",
-      poolCategories: [
-        "Start-ups & Wachstumsunternehmen",
-        "Beteiligungen an Netzwerk-Unternehmen",
+        "Investments für Mitglieder und das INNER CIRCLE Portfolio: geprüfte Opportunities aus dem Netzwerk und eine geplante strategische Zielallokation.",
+      ctaOpportunities: "Investment Opportunities",
+      ctaPortfolio: "INNER CIRCLE Portfolio",
+      /* --- Abschnitt 2: zwei Wege --- */
+      pathsKicker: "Zwei Wege",
+      pathsTitle: "Zwei unterschiedliche Dinge. Klar getrennt.",
+      memberLabel: "Hier investierst du",
+      memberTitle: "Für Mitglieder",
+      memberText: "Zugang zu ausgewählten Investment Opportunities aus dem Netzwerk.",
+      memberPoints: [
+        "Start-ups & Unternehmen",
+        "Beteiligungen",
         "Immobilienprojekte",
-        "Community-Unternehmen",
-        "Strategische Investments",
-        "Reserve für künftige Opportunities",
+        "Ausgewählte Opportunities",
       ],
-      poolDisclaimer:
-        "Ein geplantes Modell, kein bestehender Fonds. Es werden keine Renditen versprochen, keine Investments garantiert und keine Ausschüttungen zugesagt.",
-      /* --- Impact (Sprint) --- */
-      impactKicker: "Unser Ziel",
-      impactTitle: "Gemeinnützig mitdenken.",
-      impactLead:
-        "Langfristig möchten wir einen Teil unserer Gewinne für gemeinnützige Zwecke einsetzen – etwa für Kinder in unterversorgten Regionen, für Zugang zu sauberem Trinkwasser und für Projekte in ärmeren Regionen, etwa in Afrika.",
-      impactTarget: "Unser Ziel: 5 % unserer Gewinne sollen künftig in eigene gemeinnützige Projekte und ausgewählte Hilfsprojekte fließen.",
-      impactStatusTitle: "Ehrlich gesagt",
-      impactStatus:
-        "Dies ist eine Zielsetzung, kein laufendes Programm. Eine eigene Stiftung oder eine geeignete gemeinnützige Struktur ist noch nicht gegründet und rechtlich nicht geprüft. Die Bemessungsbasis für „Gewinn“ ist noch nicht festgelegt. Wir führen keine Buchhaltung dafür und leisten keine Zahlungen – bevor die Struktur steht und rechtlich geprüft ist.",
-      impactNoClaims:
-        "Solange das nicht der Fall ist, behaupten wir nicht, dass bereits gespendet wird.",
-      features: [
-        {
-          title: "Geprüfte Chancen",
-          desc: "Angebote werden vor Veröffentlichung überprüft – Struktur und Vollständigkeit statt Blindversprechen.",
-        },
-        {
-          title: "Strukturierte Unterlagen",
-          desc: "Teasern, Dokumente und klare Prozessschritte – damit beide Seiten schnell wissen, woran sie sind.",
-        },
-        {
-          title: "Diskretion zuerst",
-          desc: "Sensible Details werden erst nach gegenseitigem Interesse und ggf. NDA geteilt.",
-        },
-        {
-          title: "Investoren-Anfragen",
-          desc: "Auch umgekehrt: Investoren können Suchprofile hinterlegen und gefunden werden.",
-        },
-      ],
-      typesTitle: "Geplante Chancen-Typen",
-      types: [
-        "Startup-Finanzierungen",
-        "Wachstums- & Expansionskapital",
-        "Immobilien-Projekte",
-        "Beteiligungen & Co-Investments",
-      ],
-      disclaimerTitle: "Wichtiger Hinweis",
+      memberCta: "Opportunities entdecken",
+      icLabel: "Hier investiert INNER CIRCLE",
+      icTitle: "INNER CIRCLE Portfolio",
+      icText:
+        "Ein Teil der eigenen Plattform-Einnahmen soll langfristig in Unternehmen und Projekte investiert werden.",
+      icBudgetNote:
+        "20 % der Plattform-Einnahmen sind als Investmentbudget vorgesehen – davon 25 % in das Netzwerk und 75 % extern.",
+      icCta: "Portfolio ansehen",
       disclaimer:
         "INNER CIRCLE ist keine Anlageberatung und keine Vermittlung nach §§ 15, 34f GewO (DE). Es werden keine Renditeversprechen gemacht. Investitionen sind mit Risiken verbunden. Rechtlicher Rahmen und Prüfprozesse werden vor dem Launch final umgesetzt.",
-      comingSoonTitle: "Was hier später entsteht",
-      comingSoonItems: [
-        "Geprüfte Investment-Chancen mit strukturierten Teasern",
-        "Interessensbekundungen mit NDA-Prozess",
-        "Investoren-Suchprofile",
-        "Nachweis- & Prüf-Workflow vor Veröffentlichung",
-        "Diskrete Kommunikation im geschützten Raum",
+      /* --- Abschnitt 3: Investment Pool kompakt visualisiert --- */
+      poolKicker: "Investment Pool",
+      poolTitle: "Strategische Zielallokation",
+      poolPlannedBadge: "Geplante Struktur",
+      poolLead:
+        "Bezogen auf 100 % der Plattform-Einnahmen: 5 % sollen langfristig in INNER-CIRCLE-Unternehmen und Projekte fließen, 15 % in externe Investments. Die übrigen Einnahmen sind nicht Teil des Investmentbudgets.",
+      poolNetwork: "INNER-CIRCLE-Unternehmen & Projekte",
+      poolExternal: "Externe Investments",
+      poolRest: "Nicht Teil des Investmentbudgets",
+      poolNote:
+        "Ein geplantes strategisches Modell – kein bestehender Fonds. Es werden keine Renditen versprochen und keine investierten Beträge dargestellt.",
+      poolDetailCta: "Modell im Detail ansehen",
+      /* --- Abschnitt 4: geplantes Impact-Modell --- */
+      impactKicker: "Impact",
+      impactPlannedBadge: "Geplantes Impact-Modell",
+      impactTitle: "Gemeinnützig mitdenken.",
+      impactLead:
+        "Langfristig sollen 5 % unseres Unternehmensgewinns in eine eigene gemeinnützige Struktur fließen. Ziel ist es, konkrete Projekte rund um Ernährung, Trinkwasser und Bildung zu unterstützen.",
+      impactAreasTitle: "Vorgesehene Bereiche",
+      impactAreas: [
+        "Ernährung für Kinder",
+        "Sauberes Trinkwasser",
+        "Bildungsprojekte",
+        "Konkrete soziale Projekte",
+        "Projekte in wirtschaftlich schwächeren Regionen, beispielsweise in Afrika",
       ],
+      impactStatusTitle: "Ehrlich gesagt",
+      impactStatus:
+        "Eine eigene Stiftung oder eine geeignete gemeinnützige Struktur ist noch nicht gegründet und rechtlich nicht geprüft. Solange das nicht der Fall ist, behaupten wir nicht, dass bereits gespendet wird.",
       ctaTitle: "Auf der Watchlist bleiben.",
       ctaText:
         "Registriere dich vorab – du erfährst, sobald die ersten geprüften Chancen live gehen.",
@@ -1163,91 +1140,64 @@ const siteEnRaw: SiteDictionary = {
     },
     investments: {
       kicker: "Investments",
-      title: "Access to reviewed investment opportunities.",
-      lead: "INNER CIRCLE brings investors and founders with substantial opportunities together – reviewed, structured and with clear expectations on both sides.",
+      title: "Investments. For members, and by INNER CIRCLE.",
+      lead: "INNER CIRCLE connects members with selected investment opportunities while building its own long-term investment portfolio.",
       metaTitle: "Investments – INNER CIRCLE",
       metaDescription:
-        "Reviewed investment opportunities and structured investor inquiries – discreet and with a clear process.",
-      imageAlt: "Three young professionals checking investment documents at a table with a glass façade",
-      allocationTitle: "How INNER CIRCLE thinks about capital",
-      allocationLead:
-        "No fund and no return figure, just a defined model: 20% of platform revenue is planned as the investment budget – 25% of it into companies and projects from the network, 75% external.",
-      allocationCta: "See the model",
-      /* --- Investment Pool (Sprint) --- */
-      poolTitle: "From the network to our own investment pool",
-      poolLead:
-        "In the long run INNER CIRCLE is building its own investment pool: part of the funds earned within the network flows back into selected projects and companies of the ecosystem – with capital, contacts and operational support.",
-      poolStep1: "Network",
-      poolStep1Text: "Members find each other what previously did not find each other.",
-      poolStep2: "Deals",
-      poolStep2Text: "Concrete business opportunities emerge from these connections.",
-      poolStep3: "Revenue",
-      poolStep3Text: "Platform revenue from membership and marketplace.",
-      poolStep4: "Investment pool",
-      poolStep4Text: "A defined share is reserved for our own investments.",
-      poolStep5: "Portfolio & projects",
-      poolStep5Text: "Capital, contacts and support for selected projects in the ecosystem.",
-      poolCategoriesTitle: "Where the pool could flow",
-      poolCategoriesLead:
-        "The possible categories of the investment pool – deliberately described as a structure, not as holdings.",
-      poolCategories: [
-        "Start-ups & growth companies",
-        "Equity stakes in network companies",
+        "Investments for members and the INNER CIRCLE Portfolio: reviewed opportunities from the network and a planned strategic target allocation.",
+      ctaOpportunities: "Investment opportunities",
+      ctaPortfolio: "INNER CIRCLE Portfolio",
+      /* --- Section 2: two paths --- */
+      pathsKicker: "Two paths",
+      pathsTitle: "Two different things. Clearly separated.",
+      memberLabel: "This is where YOU invest",
+      memberTitle: "For members",
+      memberText: "Access to selected investment opportunities from the network.",
+      memberPoints: [
+        "Start-ups & companies",
+        "Equity participations",
         "Real-estate projects",
-        "Community companies",
-        "Strategic investments",
-        "Reserve for future opportunities",
+        "Selected opportunities",
       ],
-      poolDisclaimer:
-        "A planned model, not an existing fund. No returns are promised, no investments guaranteed and no distributions committed.",
-      /* --- Impact (Sprint) --- */
-      impactKicker: "Our goal",
-      impactTitle: "Thinking beyond profit.",
-      impactLead:
-        "In the long run we would like to put part of our profit to charitable use – for children in under-served regions, for access to clean drinking water and for projects in poorer regions, for example in Africa.",
-      impactTarget:
-        "Our goal: 5% of our profit should in future flow into our own charitable projects and selected aid projects.",
-      impactStatusTitle: "To be transparent",
-      impactStatus:
-        "This is an aim, not a running programme. A foundation of our own or a suitable charitable structure has not yet been founded and has not been legally reviewed. The basis for calculating “profit” has not yet been defined. We keep no accounting for it and make no payments – until the structure exists and has been legally reviewed.",
-      impactNoClaims:
-        "As long as that is not the case, we do not claim that anything is already being donated.",
-      features: [
-        {
-          title: "Reviewed opportunities",
-          desc: "Offerings are checked before publication – structure and completeness instead of blind promises.",
-        },
-        {
-          title: "Structured documents",
-          desc: "Teasers, documents and clear process steps – so both sides quickly know where they stand.",
-        },
-        {
-          title: "Discretion first",
-          desc: "Sensitive details are shared only after mutual interest and, if applicable, an NDA.",
-        },
-        {
-          title: "Investor inquiries",
-          desc: "The other way around too: investors can publish search profiles and get found.",
-        },
-      ],
-      typesTitle: "Planned opportunity types",
-      types: [
-        "Startup financings",
-        "Growth & expansion capital",
-        "Real estate projects",
-        "Equity & co-investments",
-      ],
-      disclaimerTitle: "Important notice",
+      memberCta: "Discover opportunities",
+      icLabel: "This is where INNER CIRCLE invests",
+      icTitle: "INNER CIRCLE Portfolio",
+      icText:
+        "Part of INNER CIRCLE's own platform revenue is intended to be invested in companies and projects over the long term.",
+      icBudgetNote:
+        "20% of platform revenue is planned as the investment budget – 25% of it into the network and 75% external.",
+      icCta: "View the portfolio",
       disclaimer:
         "INNER CIRCLE does not provide investment advice or brokerage services. No returns are promised. All investments carry risk. The legal framework and review processes will be finalized before launch.",
-      comingSoonTitle: "What will live here",
-      comingSoonItems: [
-        "Reviewed investment opportunities with structured teasers",
-        "Expressions of interest with an NDA process",
-        "Investor search profiles",
-        "Verification & review workflow before publication",
-        "Discreet communication in protected rooms",
+      /* --- Section 3: the investment pool, visualised compactly --- */
+      poolKicker: "Investment pool",
+      poolTitle: "Strategic target allocation",
+      poolPlannedBadge: "Planned structure",
+      poolLead:
+        "In relation to 100% of platform revenue: 5% is intended to flow into INNER CIRCLE companies and projects in the long run, 15% into external investments. The remaining revenue is not part of the investment budget.",
+      poolNetwork: "INNER CIRCLE companies & projects",
+      poolExternal: "External investments",
+      poolRest: "Not part of the investment budget",
+      poolNote:
+        "A planned strategic model – not an existing fund. No returns are promised and no invested amounts are shown.",
+      poolDetailCta: "See the model in detail",
+      /* --- Section 4: the planned impact model --- */
+      impactKicker: "Impact",
+      impactPlannedBadge: "Planned impact model",
+      impactTitle: "Thinking beyond profit.",
+      impactLead:
+        "In the long run, 5% of our company profit is intended to flow into a charitable structure of our own. The aim is to support concrete projects around nutrition, clean water and education.",
+      impactAreasTitle: "Intended areas",
+      impactAreas: [
+        "Nutrition for children",
+        "Clean drinking water",
+        "Education projects",
+        "Concrete social projects",
+        "Projects in economically weaker regions, for example in Africa",
       ],
+      impactStatusTitle: "To be transparent",
+      impactStatus:
+        "A foundation of our own or a suitable charitable structure has not yet been founded and has not been legally reviewed. As long as that is not the case, we do not claim that anything is already being donated.",
       ctaTitle: "Stay on the watchlist.",
       ctaText:
         "Register in advance – you will hear as soon as the first reviewed opportunities go live.",

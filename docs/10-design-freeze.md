@@ -707,3 +707,32 @@ ausgetauscht.
 **Unverändert:** Desktop-Startseite, Desktop-Header, Sidebar, Events-Desktop,
 Datenmodell, Auth, Resend, Beta, Trust-Berechnung, Payment, Membership, DNS,
 Domain. Keine Migration.
+
+## 1.22 Sprint Informationsarchitektur & UX: Investments-Trennung, Discover-Dichte, Anti-AI (2026-09-29)
+
+**Ausdrücklicher Gründerauftrag** (Informationsarchitektur-, UX- und
+Design-Sprint). Ziel: klare Trennung der zwei Investment-Bereiche,
+kompaktere öffentliche Investment-Seite, dichteres Discover, weniger
+„generierte AI-Landingpage". **Kein** neues Token in `globals.css`,
+**keine** neue Palette, **keine** neue Schrift, **kein** neuer
+Hauptnavigationspunkt; bestehende Navy/Off-White/Grün/Blau-Welt bleibt.
+
+| Bereich | Änderung | Grund |
+| ------- | -------- | ----- |
+| `/investments` (public) | Von der Dokumentations- zur Story-Seite: kompakter Text-Hero mit zwei CTAs (`#fuer-mitglieder`/`#portfolio`) → ein Abschnitt „Zwei Wege" mit Trennlinie statt Kartenstapel (links „Für Mitglieder/Hier investierst du", rechts „INNER CIRCLE Portfolio/Hier investiert INNER CIRCLE" inkl. 20/25/75-Hinweis) → **eine** kompakte Allocation-Figur (`AllocationDonut`, SVG ohne Chart-Bibliothek, 5/15/80 mit Legende, Badge „Geplante Struktur") → kompaktes Impact-Modell (Badge „Geplantes Impact-Modell", vorgesehene Bereiche, Ehrlichkeits-Callout) → CtaBand. Entfernt: Schritte-Streifen, Kategorien-Block, Feature-/Typen-Listen, Coming-soon-Panel, Doppel-Erklärungen. Detailmodell bleibt auf `/portfolio` | Auftrag: kürzer, klarer, zwei Wege in 2 Sekunden erkennbar |
+| `/app/investments` | Landing/Hub analog Academy: zwei flache, bordered Einstiegs-Panel („Hier investierst du" → `?view=opportunities`, „Hier investiert INNER CIRCLE" → `?view=portfolio`) mit `InvestmentsHub`; Unteransichten mit „Zur Übersicht"-Link. `InvestmentPoolChart` (Ring) unverändert beibehalten, jetzt nur in der Portfolio-Unteransicht | Auftrag: Zwei-Bereiche-Struktur statt endloser Mischseite |
+| `/app/discover` | Vom Ein-Karten-Deck zur **dichten Kartenliste**: kompakte Zeilen (Avatar 64–80 px · Name + Badges + Trust · Rolle/Firma/Standort · max. 4 Interessen · „Ich suche"/„Ich biete" als Einzeiler · rechts Match-Gründe + „Profil ansehen"/„Kontakt anfragen" + Überspringen/Folgen), 2 Spalten ab `xl`; Swipe-/Tastatur-Deck-Mechanik entfällt, „Überspringen" bleibt je Karte; Filterleiste unverändert | Auftrag: mehrere Profile effizient erfassbar, Business-Produkt statt Profil-Landingpage |
+| Badges | Neue Komponente `VerifiedBadges`: rendert heute nur das bestehende Founding-Member-Badge, struktureller Slot für später 1–3 admin-verifizierte Badges neben Name/Trust Score; ohne echte Badges rendert sie nichts | Auftrag: Vorbereitung ohne Backend/Fake-Badges |
+
+**Anti-AI-Pledge dieser Änderung (nachweisbar getestet in
+`tests/unit/investments-discover-views.test.tsx`):** keine Kartenstapel,
+Linien/Trennung statt neuer Boxen, keine neuen Pillen-Familien, kontrollierter
+Weißraum (`Section tight`), keine erfundenen Beträge/Statistiken/
+Portfoliounternehmen, Impact ohne emotionale Leid-Bebilderung, jede
+Farbklasse aus der bestehenden Palette (electric/forest/sand/neutral),
+Dark-Modus über semantische Tokens, Mobile ohne horizontal abgeschnittene
+Daten (Discover-Zeilen brechen sauber um).
+
+**Unverändert:** `/portfolio` (public), `InvestmentPoolChart`, Deal-Fee/
+Deal-Terms, alle übrigen freigegebenen Flächen, Auth, Stripe, Resend, Beta,
+DNS/Domain, Datenmodell. Keine Migration.

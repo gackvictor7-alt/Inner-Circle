@@ -69,7 +69,7 @@ Zeichen: ✅ erlaubt · ➖ nicht erlaubt · ⚠️ eingeschränkt (siehe Fußno
 | ---------------- | ------- | ---- | ----- | ------ | ----- |
 | Öffentliche Seiten/Previews sehen | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Mitgliederverzeichnis sehen | ➖ | ➖ | ➖ (stattdessen 8 Demo-Profile) | ✅ | ✅ |
-| Swipe-Discovery nutzen | ➖ | ➖ | ➖ (Demo-Discover über Demo-Profile, echte Filter/Ranking) | ✅ | ✅ |
+| Discovery nutzen (dichte Kartenliste, Sprint IA/UX) | ➖ | ➖ | ➖ (Demo-Discover über Demo-Profile, echte Filter/Ranking) | ✅ | ✅ |
 | Profil eines Mitglieds sehen | public Preview-Seite `/member/[publicId]` | ➖ | ➖ (nur Demo-Profilseiten `/app/people/demo/[key]`) | ✅ voll | ✅ voll |
 | Eigenes Profil bearbeiten | ➖ | ✅ (Free-Basisfelder) | ✅ (wie Free) | ✅ | ✅ |
 | Follow | ➖ | ➖ | ➖ (`membershipRequired`) | ✅ | ✅ |
