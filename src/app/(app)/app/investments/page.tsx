@@ -7,7 +7,6 @@ import { formatMoney } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { ArrowLeftIcon } from "@/components/ui/icons";
 import { LocalizedEmptyState, LocalizedPageHeader, LocalizedSectionHeading, Tr } from "@/components/app/localized";
 import { InvestmentsDemoSection, PortfolioSection } from "@/components/app/DemoSections";
 import { InvestmentPoolChart } from "@/components/app/InvestmentPoolChart";
@@ -50,17 +49,17 @@ export default async function InvestmentsPage({
 
   /* ------------------------------------------------------------------ view
      Two clearly separated areas behind one entry (analogous to Academy):
-       hub            → choose: member opportunities vs. INNER CIRCLE Portfolio
-       opportunities  → reviewed opportunities members can discover/express interest in
-       portfolio      → INNER CIRCLE's own planned allocation (no real positions yet)
+       opportunities  → reviewed opportunities members can discover/express interest in ("Hier investierst du")
+       portfolio      → INNER CIRCLE's own planned allocation & impact ("Hier investiert INNER CIRCLE")
+       hub            → entry overview with both cards
      Legacy deep links keep working: ?sector=… / ?submitted=… open the
      opportunities view directly, ?view=portfolio the portfolio view. */
   const view: InvestmentsView =
     params.view === "portfolio"
       ? "portfolio"
-      : params.view === "opportunities" || params.sector || params.submitted
-        ? "opportunities"
-        : "hub";
+      : params.view === "hub"
+        ? "hub"
+        : "opportunities";
 
   const submitAction = access.entitlements.investmentsSubmit ? (
     <Button href="/app/investments/submit" size="sm">
@@ -77,6 +76,7 @@ export default async function InvestmentsPage({
           leadKey="app.investments.lead"
           actions={submitAction}
         />
+        <InvestmentNavTabs activeView="hub" />
         <InvestmentsHub />
       </div>
     );
@@ -89,13 +89,18 @@ export default async function InvestmentsPage({
     return (
       <div className="space-y-8">
         <LocalizedPageHeader
-          titleKey="app.investments.hub.portfolioTitle"
-          leadKey="app.investments.hub.portfolioText"
+          titleKey="app.investments.title"
+          leadKey="app.investments.lead"
+          actions={submitAction}
         />
-        <BackToHub />
+        <InvestmentNavTabs activeView="portfolio" />
+        <p className="text-sm leading-6 text-foreground-muted">
+          <Tr k="app.investments.portfolioLead" />
+        </p>
         <section aria-label="INNER CIRCLE Investment Pool" className="space-y-6">
           <InvestmentPoolChart />
           <PortfolioSection />
+          <PlannedImpactSection />
         </section>
       </div>
     );
@@ -149,12 +154,16 @@ export default async function InvestmentsPage({
   return (
     <div className="space-y-8">
       <LocalizedPageHeader
-        titleKey="app.investments.opportunitiesSectionTitle"
+        titleKey="app.investments.title"
         leadKey="app.investments.lead"
         actions={submitAction}
       />
 
-      <BackToHub />
+      <InvestmentNavTabs activeView="opportunities" />
+
+      <p className="text-sm leading-6 text-foreground-muted">
+        <Tr k="app.investments.opportunitiesLead" />
+      </p>
 
       {params.submitted && (
         <p className="rounded-xl bg-forest-500/10 px-4 py-3 text-sm text-forest-700 dark:text-forest-200">
@@ -236,15 +245,97 @@ export default async function InvestmentsPage({
   );
 }
 
-/** Quiet back link to the two-area overview. */
-function BackToHub() {
+/** Academy-style tab navigation separating Opportunities vs. Portfolio. */
+function InvestmentNavTabs({ activeView }: { activeView: InvestmentsView }) {
+  const tabs = [
+    {
+      key: "opportunities",
+      href: "/app/investments?view=opportunities",
+      labelKey: "app.investments.tabOpportunities",
+      subKey: "app.investments.tabOpportunitiesSub",
+    },
+    {
+      key: "portfolio",
+      href: "/app/investments?view=portfolio",
+      labelKey: "app.investments.tabPortfolio",
+      subKey: "app.investments.tabPortfolioSub",
+    },
+  ] as const;
+
   return (
-    <Link
-      href="/app/investments"
-      className="inline-flex items-center gap-1.5 text-sm font-semibold text-foreground-muted transition-colors hover:text-foreground"
-    >
-      <ArrowLeftIcon size={14} />
-      <Tr k="app.investments.hub.backToOverview" />
-    </Link>
+    <nav aria-label="Investments" className="flex w-full overflow-x-auto no-scrollbar border-b border-border">
+      <div className="flex min-w-max gap-4 sm:gap-6">
+        {tabs.map((item) => {
+          const isActive =
+            (activeView === "portfolio" && item.key === "portfolio") ||
+            (activeView !== "portfolio" && item.key === "opportunities");
+          return (
+            <Link
+              key={item.key}
+              href={item.href}
+              aria-current={isActive ? "page" : undefined}
+              className={`group border-b-2 pb-3 pt-1 text-sm font-semibold transition-colors ${
+                isActive
+                  ? "border-electric-500 text-foreground"
+                  : "border-transparent text-foreground-muted hover:text-foreground"
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <span><Tr k={item.labelKey} /></span>
+                <span
+                  className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                    item.key === "opportunities"
+                      ? "bg-electric-500/10 text-electric-600 dark:text-electric-300"
+                      : "bg-forest-500/10 text-forest-600 dark:text-forest-300"
+                  }`}
+                >
+                  <Tr k={item.subKey} />
+                </span>
+              </div>
+            </Link>
+          );
+        })}
+      </div>
+    </nav>
+  );
+}
+
+/** Planned Impact / charitable structure clearly separated from the 20% investment budget. */
+function PlannedImpactSection() {
+  return (
+    <Card className="p-5 sm:p-6 border-sand-400/40 bg-sand-200/20 dark:bg-sand-400/5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <h3 className="text-base font-bold tracking-tight sm:text-lg">
+            <Tr k="app.investments.impactSectionTitle" />
+          </h3>
+          <Badge variant="sand">
+            <Tr k="pages.investments.impactPlannedBadge" />
+          </Badge>
+        </div>
+        <span className="text-xs font-semibold text-sand-800 dark:text-sand-200">
+          5 % des Unternehmensgewinns
+        </span>
+      </div>
+
+      <p className="mt-3 text-sm leading-6 text-foreground-muted">
+        <Tr k="app.investments.impactSectionLead" />
+      </p>
+
+      <div className="mt-4 grid gap-2.5 sm:grid-cols-2">
+        <div className="rounded-xl border border-border/70 bg-surface/80 p-3 text-xs leading-5 text-foreground-muted">
+          <span className="font-semibold text-foreground">Ernährung & Trinkwasser:</span>{" "}
+          Gezielte Unterstützung geprüfter Hilfs- und Entwicklungsprojekte.
+        </div>
+        <div className="rounded-xl border border-border/70 bg-surface/80 p-3 text-xs leading-5 text-foreground-muted">
+          <span className="font-semibold text-foreground">Förderung von Kindern:</span>{" "}
+          Überprüfbare soziale Bildung- und Zukunftsprojekte für Kinder.
+        </div>
+      </div>
+
+      <p className="mt-4 border-t border-sand-400/20 pt-3 text-xs leading-5 text-foreground-subtle">
+        <Tr k="app.investments.impactStatusNotice" />
+      </p>
+    </Card>
   );
 }

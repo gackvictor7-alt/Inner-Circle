@@ -82,10 +82,10 @@ export function EventsContent() {
           <article className="grid items-stretch gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:gap-14">
             <Reveal className="flex lg:order-2">
               <SiteImage
-                src="/images/events-vision.jpg"
+                src="/images/events-experience.jpg"
                 alt={page.imageVisionAlt}
-                width={1600}
-                height={1067}
+                width={1536}
+                height={1024}
                 sizes="(min-width: 1280px) 44vw, (min-width: 1024px) 48vw, 100vw"
                 heightClass="h-56 sm:h-72 lg:h-full lg:min-h-[24rem]"
                 className="flex-1 border-sand-400/30"

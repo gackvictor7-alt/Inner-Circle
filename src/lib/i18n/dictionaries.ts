@@ -404,7 +404,7 @@ const siteDe = {
       icText:
         "Ein Teil der eigenen Plattform-Einnahmen soll langfristig in Unternehmen und Projekte investiert werden.",
       icBudgetNote:
-        "20 % der Plattform-Einnahmen sind als Investmentbudget vorgesehen – davon 25 % in das Netzwerk und 75 % extern.",
+        "20 % der Plattform-Einnahmen sind als Investmentbudget vorgesehen – davon 25 % in das Netzwerk und 75 % extern (entspricht bezogen auf 100 % Plattform-Einnahmen 5 % und 15 %).",
       icCta: "Portfolio ansehen",
       disclaimer:
         "INNER CIRCLE ist keine Anlageberatung und keine Vermittlung nach §§ 15, 34f GewO (DE). Es werden keine Renditeversprechen gemacht. Investitionen sind mit Risiken verbunden. Rechtlicher Rahmen und Prüfprozesse werden vor dem Launch final umgesetzt.",
@@ -421,18 +421,17 @@ const siteDe = {
         "Ein geplantes strategisches Modell – kein bestehender Fonds. Es werden keine Renditen versprochen und keine investierten Beträge dargestellt.",
       poolDetailCta: "Modell im Detail ansehen",
       /* --- Abschnitt 4: geplantes Impact-Modell --- */
-      impactKicker: "Impact",
-      impactPlannedBadge: "Geplantes Impact-Modell",
+      impactKicker: "Unser langfristiges Commitment",
+      impactPlannedBadge: "Geplante Impact-Struktur",
       impactTitle: "Gemeinnützig mitdenken.",
       impactLead:
-        "Langfristig sollen 5 % unseres Unternehmensgewinns in eine eigene gemeinnützige Struktur fließen. Ziel ist es, konkrete Projekte rund um Ernährung, Trinkwasser und Bildung zu unterstützen.",
+        "Geplant ist, 5 % des Unternehmensgewinns für eine eigene gemeinnützige Struktur und ausgewählte soziale Projekte bereitzustellen. Ziel ist es, konkrete Projekte rund um Ernährung, Trinkwasser und Bildung zu unterstützen.",
       impactAreasTitle: "Vorgesehene Bereiche",
       impactAreas: [
         "Ernährung für Kinder",
         "Sauberes Trinkwasser",
-        "Bildungsprojekte",
-        "Konkrete soziale Projekte",
-        "Projekte in wirtschaftlich schwächeren Regionen, beispielsweise in Afrika",
+        "Unterstützung von Kindern",
+        "Weitere überprüfbare gemeinnützige Projekte",
       ],
       impactStatusTitle: "Ehrlich gesagt",
       impactStatus:
@@ -530,7 +529,7 @@ const siteDe = {
       visionDisclaimer:
         "Hinweis: Geplante Formate und konzeptionelle Vision – noch keine bestätigten Veranstaltungen.",
       imageRegularAlt: "Networking-Abend auf einer Dachterrasse mit Stadtlichtern",
-      imageVisionAlt: "Business-Dinner an einer langen Tafel in einem hellen, modernen Restaurant",
+      imageVisionAlt: "Gruppe von Unternehmern auf einer Yacht an der Côte d'Azur vor Monaco",
       ctaTitle: "Dabei sein, wenn es startet.",
       ctaText:
         "Mitglieder erhalten vorrangigen Zugang zu allen Events. Sichere dir deinen Platz im Kreis.",
@@ -578,12 +577,12 @@ const siteDe = {
     },
     howItWorks: {
       kicker: "Wie es funktioniert",
-      title: "Für wen das hier ist, wie es läuft und was Vertrauen bedeutet.",
+      title: "Für Menschen, die etwas aufbauen – und wissen wollen, mit wem sie es tun.",
       lead:
-        "Alle Erklärungen, die nicht auf die Startseite gehören – an einem Ort, damit die Homepage kurz bleibt.",
+        "Hier erfährst du, wie INNER CIRCLE funktioniert, wie relevante Verbindungen entstehen und wie Reputation durch echte Zusammenarbeit sichtbar wird.",
       metaTitle: "Wie INNER CIRCLE funktioniert – INNER CIRCLE",
       metaDescription:
-        "Für wen INNER CIRCLE gebaut ist, wie Join → Discover → Connect → Build läuft und wie Reputation hier entsteht.",
+        "Hier erfährst du, wie INNER CIRCLE funktioniert, wie relevante Verbindungen entstehen und wie Reputation durch echte Zusammenarbeit sichtbar wird.",
       audienceLead: "Offen für alle, die etwas aufbauen. Status und Reputation entstehen durch echte Arbeit.",
       flowLead:
         "Vier Schritte, keine Abkürzung nach oben: Profil, relevante Menschen, echte Gespräche, daraus entstehende Zusammenarbeit.",
@@ -997,12 +996,12 @@ const siteEnRaw: SiteDictionary = {
   pages: {
     howItWorks: {
       kicker: "How it works",
-      title: "Who it is for, how it runs and what trust means.",
+      title: "For people who build – and want to know who they are building with.",
       lead:
-        "All the explanation that does not belong on the homepage – in one place, so the homepage stays short.",
+        "Learn how INNER CIRCLE works, how relevant connections are made, and how reputation becomes visible through genuine collaboration.",
       metaTitle: "How INNER CIRCLE works – INNER CIRCLE",
       metaDescription:
-        "Who INNER CIRCLE is built for, how join, discover, connect and build work and how reputation is earned.",
+        "Learn how INNER CIRCLE works, how relevant connections are made, and how reputation becomes visible through genuine collaboration.",
       audienceLead: "Open to anyone who builds. Status and reputation are earned through real work.",
       flowLead:
         "Four steps, no shortcut to the top: a profile, relevant people, real conversations, collaboration that grows from them.",
@@ -1165,7 +1164,7 @@ const siteEnRaw: SiteDictionary = {
       icText:
         "Part of INNER CIRCLE's own platform revenue is intended to be invested in companies and projects over the long term.",
       icBudgetNote:
-        "20% of platform revenue is planned as the investment budget – 25% of it into the network and 75% external.",
+        "20 % of platform revenue is planned as the investment budget – 25 % of it into the network and 75 % external (corresponding to 5 % and 15 % relative to 100 % platform revenue).",
       icCta: "View the portfolio",
       disclaimer:
         "INNER CIRCLE does not provide investment advice or brokerage services. No returns are promised. All investments carry risk. The legal framework and review processes will be finalized before launch.",
@@ -1182,18 +1181,17 @@ const siteEnRaw: SiteDictionary = {
         "A planned strategic model – not an existing fund. No returns are promised and no invested amounts are shown.",
       poolDetailCta: "See the model in detail",
       /* --- Section 4: the planned impact model --- */
-      impactKicker: "Impact",
+      impactKicker: "Our long-term commitment",
       impactPlannedBadge: "Planned impact model",
       impactTitle: "Thinking beyond profit.",
       impactLead:
-        "In the long run, 5% of our company profit is intended to flow into a charitable structure of our own. The aim is to support concrete projects around nutrition, clean water and education.",
+        "It is planned to allocate 5% of company profits to our own charitable structure and selected social projects. The aim is to support concrete projects around nutrition, clean water and education.",
       impactAreasTitle: "Intended areas",
       impactAreas: [
         "Nutrition for children",
         "Clean drinking water",
-        "Education projects",
-        "Concrete social projects",
-        "Projects in economically weaker regions, for example in Africa",
+        "Support for children",
+        "Further verifiable charitable projects",
       ],
       impactStatusTitle: "To be transparent",
       impactStatus:
@@ -1291,7 +1289,7 @@ const siteEnRaw: SiteDictionary = {
       visionDisclaimer:
         "Note: planned formats and conceptual vision – no confirmed events yet.",
       imageRegularAlt: "Rooftop networking evening with city lights",
-      imageVisionAlt: "Business dinner at a long table in a bright, modern restaurant",
+      imageVisionAlt: "Group of entrepreneurs on a yacht on the Côte d'Azur off Monaco",
       ctaTitle: "Be there when it starts.",
       ctaText:
         "Members get priority access to all events. Secure your place in the circle.",
