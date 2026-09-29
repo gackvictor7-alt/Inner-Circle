@@ -19,6 +19,7 @@ import { LocalizedEmptyState, Tr } from "@/components/app/localized";
 import { ProfilePostsDemoSection } from "@/components/app/DemoSections";
 import { ProfilePeopleModal } from "@/components/app/ProfilePeopleModal";
 import { TrustScoreBlock } from "@/components/app/TrustPanel";
+import { VerifiedBadgesSection } from "@/components/app/VerifiedBadges";
 import { DEMO_CONTENT_ENABLED } from "@/lib/demo";
 import { getPublicUrl } from "@/lib/env";
 import { Badge } from "@/components/ui/Badge";
@@ -272,6 +273,14 @@ export default async function OwnProfilePage({
 
       {tab === "overview" && (
         <div className="mx-auto w-full max-w-3xl space-y-3">
+          <Card className="p-5">
+            <VerifiedBadgesSection
+              foundingMember={user.foundingMember}
+              badges={[]}
+              adminRole={user.role === "admin"}
+            />
+          </Card>
+
           {profile?.bio && (
             <Card className="p-5">
               <p className="ic-measure whitespace-pre-wrap text-sm leading-6 text-foreground-muted">

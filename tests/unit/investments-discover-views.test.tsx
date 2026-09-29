@@ -8,7 +8,9 @@ import {
   type DiscoverCardData,
   type DiscoverFilterOptions,
 } from "@/components/app/DiscoverDeck";
-import { VerifiedBadges } from "@/components/app/VerifiedBadges";
+import { VerifiedBadges, VerifiedBadgesSection } from "@/components/app/VerifiedBadges";
+import { EventsContent } from "@/app/(site)/events/EventsContent";
+import { HowItWorksContent } from "@/app/(site)/how-it-works/HowItWorksContent";
 import { PORTFOLIO_ALLOCATION } from "@/lib/demo";
 import { dictionaries } from "@/lib/i18n/dictionaries";
 
@@ -356,5 +358,123 @@ describe("VerifiedBadges – UI slot only, never fake badges", () => {
     );
     expect(markup).toContain(de.app.card.founding);
     expect(markup).toContain("Investor");
+  });
+
+  it("VerifiedBadgesSection displays Founding Member and prepares future badges without fake awards", () => {
+    const markup = render(<VerifiedBadgesSection foundingMember adminRole={false} isSelf />);
+    expect(markup).toContain(de.app.profile.verifiedBadgesTitle);
+    expect(markup).toContain(de.app.profile.foundingMemberTitle);
+    expect(markup).toContain(de.app.profile.statusActive);
+    expect(markup).toContain(de.app.profile.identityVerificationTitle);
+    expect(markup).toContain(de.app.profile.statusPlanned);
+    // Administrator system role is NOT displayed when adminRole is false
+    expect(markup).not.toContain(de.app.profile.adminRoleBadge);
+  });
+
+  it("VerifiedBadgesSection treats Administrator as technical system role, NOT as a community reputation badge", () => {
+    const markup = render(<VerifiedBadgesSection foundingMember={false} adminRole isSelf />);
+    expect(markup).toContain(de.app.profile.adminRoleBadge);
+    expect(markup).toContain(de.app.profile.adminRoleDescription);
+    expect(markup).toContain(de.app.profile.adminNoticeText);
+  });
+});
+
+/* ==================================================================== D ·
+   About / How It Works Hero Copy – no meta landingpage talk */
+
+describe("About / How It Works – Hero copy without meta explanations", () => {
+  const deHow = dictionaries.de.pages.howItWorks;
+  const enHow = dictionaries.en.pages.howItWorks;
+
+  it("uses the exact required German headline and subline", () => {
+    expect(deHow.title).toBe(
+      "Für Menschen, die etwas aufbauen – und wissen wollen, mit wem sie es tun.",
+    );
+    expect(deHow.lead).toBe(
+      "Hier erfährst du, wie INNER CIRCLE funktioniert, wie relevante Verbindungen entstehen und wie Reputation durch echte Zusammenarbeit sichtbar wird.",
+    );
+    expect(deHow.title).not.toContain("Landingpage");
+    expect(deHow.lead).not.toContain("Landingpage");
+  });
+
+  it("has matching English translation without meta text", () => {
+    expect(enHow.title).toBe(
+      "For people who build – and want to know who they are building with.",
+    );
+    expect(enHow.lead).not.toContain("landing page");
+    expect(enHow.title).not.toContain("landing page");
+  });
+
+  it("renders the clean headline in HowItWorksContent", () => {
+    const markup = render(<HowItWorksContent />);
+    expect(markup).toContain("Für Menschen, die etwas aufbauen");
+    expect(markup).toContain("Hier erfährst du, wie INNER CIRCLE funktioniert");
+    expect(markup).not.toContain("Auf dieser Landingpage erfährst du");
+  });
+});
+
+/* ==================================================================== E ·
+   Public Events – Monaco / Côte d'Azur Yacht networking image */
+
+describe("public /events – Monaco / South of France yacht networking image", () => {
+  const markup = render(<EventsContent />);
+
+  it("renders image 2 using the repository South of France yacht networking image", () => {
+    expect(markup).toContain("events-experience.jpg");
+    // Ensure the old dinner / table vision image is no longer used for image 2
+    expect(markup).not.toContain("events-vision.jpg");
+  });
+
+  it("includes descriptive alt text for the Monaco yacht networking image", () => {
+    expect(markup).toContain("Monaco");
+    expect(dictionaries.de.pages.events.imageVisionAlt).toContain("Monaco");
+  });
+});
+
+/* ==================================================================== F ·
+   Clear differentiation of areas – Chancen, Jobs, Marketplace, Academy, Discover, Network */
+
+describe("area lead differentiation – distinct roles without overlap", () => {
+  const deApp = dictionaries.de.app;
+  const enApp = dictionaries.en.app;
+
+  it("clearly distinguishes Chancen (Deals) from operational jobs", () => {
+    expect(deApp.opportunities.lead).toContain("Strategische");
+    expect(deApp.opportunities.lead).toContain("Beteiligungen");
+    expect(enApp.opportunities.lead).toContain("Strategic");
+    expect(enApp.opportunities.lead).toContain("equity");
+  });
+
+  it("clearly distinguishes Jobs & Projekte from strategic equity", () => {
+    expect(deApp.jobs.lead).toContain("Operative Zusammenarbeit");
+    expect(deApp.jobs.lead).toContain("nicht vermischen mit Unternehmensbeteiligungen");
+    expect(enApp.jobs.lead).toContain("Operational collaboration");
+    expect(enApp.jobs.lead).toContain("clearly separated from equity investments");
+  });
+
+  it("clearly distinguishes Marketplace from jobs and deals", () => {
+    expect(deApp.marketplace.lead).toContain("Kaufbare und buchbare Angebote");
+    expect(deApp.marketplace.lead).toContain("nicht vermischen mit Jobs oder Deals");
+    expect(enApp.marketplace.lead).toContain("Purchasable and bookable member offerings");
+    expect(enApp.marketplace.lead).toContain("not to be confused with jobs or deals");
+  });
+
+  it("clearly distinguishes Academy as dedicated learning area", () => {
+    expect(deApp.learn.lead).toContain("Strukturiertes Wissen");
+    expect(deApp.learn.lead).toContain("kein Marktplatz und keine Jobbörse");
+    expect(enApp.learn.lead).toContain("Structured knowledge");
+    expect(enApp.learn.lead).toContain("not a marketplace or job board");
+  });
+
+  it("clearly distinguishes Discover as recommendation engine", () => {
+    expect(deApp.discover.lead).toContain("Vorschläge neuer Kontakte");
+    expect(enApp.discover.lead).toContain("Suggestions for new contacts");
+  });
+
+  it("clearly distinguishes Network as member directory and existing relations", () => {
+    expect(deApp.network.lead).toContain("Bestehendes Netzwerk");
+    expect(deApp.network.lead).toContain("persönliche Kontakte");
+    expect(enApp.network.lead).toContain("Existing network");
+    expect(enApp.network.lead).toContain("personal contacts");
   });
 });

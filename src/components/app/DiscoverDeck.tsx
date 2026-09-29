@@ -148,7 +148,7 @@ export function DiscoverDeck({
     setPendingFollowId(null);
     return result;
   };
-  const [followState, follow, followPending] = useActionState(followMember, initialActionState);
+  const [, follow, followPending] = useActionState(followMember, initialActionState);
 
   const hasFilters = Boolean(
     filters.role ||
@@ -249,12 +249,12 @@ export function DiscoverDeck({
         : null;
 
   const inputClass =
-    "h-9 w-full min-w-0 rounded-lg border border-border bg-background px-3 text-sm font-normal text-foreground sm:w-44";
+    "h-10 w-full min-w-0 rounded-xl border border-border bg-background px-3 text-sm font-normal text-foreground placeholder:text-foreground-subtle outline-none focus:border-electric-500 transition-colors";
   const selectClass =
-    "h-9 w-full min-w-0 rounded-lg border border-border bg-background px-2.5 text-sm font-normal text-foreground sm:w-auto";
+    "h-10 w-full min-w-0 rounded-xl border border-border bg-background px-2.5 text-sm font-normal text-foreground outline-none focus:border-electric-500 transition-colors";
   // Inside the "more filters" grid the text fields fill their cell like the selects.
   const panelInputClass =
-    "h-9 w-full min-w-0 rounded-lg border border-border bg-background px-3 text-sm font-normal text-foreground";
+    "h-10 w-full min-w-0 rounded-xl border border-border bg-background px-3 text-sm font-normal text-foreground placeholder:text-foreground-subtle outline-none focus:border-electric-500 transition-colors";
 
   return (
     <div className="space-y-6">
@@ -282,52 +282,85 @@ export function DiscoverDeck({
       <form
         method="get"
         action="/app/discover"
-        className="rounded-2xl border border-border bg-surface p-3 sm:p-4"
+        className="rounded-2xl border border-border bg-surface p-3.5 sm:p-4"
       >
-        {/* Compact bar: the four most-used filters + apply / more / reset. */}
-        <div className="flex flex-wrap items-center gap-2">
-          <input
-            type="text"
-            name="role"
-            defaultValue={filters.role ?? ""}
-            placeholder={t.app.discover.filtersRolePlaceholder}
-            aria-label={t.app.discover.filtersRole}
-            className={inputClass}
-          />
-          <input
-            type="text"
-            name="location"
-            defaultValue={filters.location ?? ""}
-            placeholder={t.app.discover.filtersLocationPlaceholder}
-            aria-label={t.app.discover.filtersLocation}
-            className={inputClass}
-          />
-          <select
-            name="radius"
-            defaultValue={filters.radius ? String(filters.radius) : ""}
-            aria-label={t.app.discover.filtersRadius}
-            className={selectClass}
-          >
-            <option value="">{t.app.discover.filtersRadius}</option>
-            {filterOptions.radiusKm.map((km) => (
-              <option key={km} value={km}>
-                {tf(t.app.discover.filtersRadiusValue, { km })}
-              </option>
-            ))}
-          </select>
-          <select
-            name="industry"
-            defaultValue={filters.industry ?? ""}
-            aria-label={t.app.discover.filtersIndustry}
-            className={selectClass}
-          >
-            <option value="">{t.app.discover.filtersIndustry}</option>
-            {filterOptions.industries.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+        {/* Full-width proportional filter bar: Suche, Standort, Radius, Branche, Filter, Mehr Filter */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 lg:grid-cols-12 gap-2.5 items-center w-full">
+          <div className="sm:col-span-2 md:col-span-3 lg:col-span-3">
+            <input
+              type="text"
+              name="role"
+              defaultValue={filters.role ?? ""}
+              placeholder={t.app.discover.filtersRolePlaceholder}
+              aria-label={t.app.discover.filtersRole}
+              className={inputClass}
+            />
+          </div>
+          <div className="sm:col-span-2 md:col-span-3 lg:col-span-3">
+            <input
+              type="text"
+              name="location"
+              defaultValue={filters.location ?? ""}
+              placeholder={t.app.discover.filtersLocationPlaceholder}
+              aria-label={t.app.discover.filtersLocation}
+              className={inputClass}
+            />
+          </div>
+          <div className="sm:col-span-1 md:col-span-2 lg:col-span-2">
+            <select
+              name="radius"
+              defaultValue={filters.radius ? String(filters.radius) : ""}
+              aria-label={t.app.discover.filtersRadius}
+              className={selectClass}
+            >
+              <option value="">{t.app.discover.filtersRadius}</option>
+              {filterOptions.radiusKm.map((km) => (
+                <option key={km} value={km}>
+                  {tf(t.app.discover.filtersRadiusValue, { km })}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="sm:col-span-1 md:col-span-2 lg:col-span-2">
+            <select
+              name="industry"
+              defaultValue={filters.industry ?? ""}
+              aria-label={t.app.discover.filtersIndustry}
+              className={selectClass}
+            >
+              <option value="">{t.app.discover.filtersIndustry}</option>
+              {filterOptions.industries.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Filter apply CTA */}
+          <div className="sm:col-span-1 md:col-span-1 lg:col-span-1">
+            <Button type="submit" size="sm" variant="secondary" className="h-10 w-full justify-center">
+              {t.app.discover.filtersApply}
+            </Button>
+          </div>
+
+          {/* More filters toggle button */}
+          <div className="sm:col-span-1 md:col-span-1 lg:col-span-1">
+            <button
+              type="button"
+              onClick={() => setMoreOpen((open) => !open)}
+              aria-expanded={moreOpen}
+              className="inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-xl border border-border-strong bg-surface px-3 text-sm font-semibold text-foreground-muted transition-colors hover:text-foreground"
+            >
+              <FilterIcon size={14} className="shrink-0" />
+              <span className="truncate">{moreOpen ? t.app.discover.filtersLess : t.app.discover.filtersMore}</span>
+              {chips.length > 0 && (
+                <span className="rounded-full bg-electric-500/10 px-1.5 text-[11px] font-bold text-electric-600 dark:text-electric-300">
+                  {chips.length}
+                </span>
+              )}
+            </button>
+          </div>
 
           {/* The "more" fields must survive a submit while the panel is closed. */}
           {!moreOpen && (
@@ -341,40 +374,11 @@ export function DiscoverDeck({
             </>
           )}
           {moreOpen && <input type="hidden" name="more" value="1" />}
-
-          <Button type="submit" size="sm" variant="secondary">
-            {t.app.discover.filtersApply}
-          </Button>
-          <button
-            type="button"
-            onClick={() => setMoreOpen((open) => !open)}
-            aria-expanded={moreOpen}
-            className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border-strong bg-surface px-4 text-sm font-semibold text-foreground-muted transition-colors hover:text-foreground"
-          >
-            <FilterIcon size={14} />
-            {moreOpen ? t.app.discover.filtersLess : t.app.discover.filtersMore}
-            {chips.length > 0 && (
-              <span className="rounded-full bg-electric-500/10 px-1.5 text-[11px] font-bold text-electric-600 dark:text-electric-300">
-                {chips.length}
-              </span>
-            )}
-          </button>
-          {hasFilters && (
-            <Link
-              href="/app/discover"
-              className="text-sm font-semibold text-electric-600 dark:text-electric-300"
-            >
-              {t.app.discover.filtersClear}
-            </Link>
-          )}
-          <span className="ml-auto text-xs text-foreground-subtle">
-            {tf(t.app.discover.resultsCount, { count: queue.length })}
-          </span>
         </div>
 
         {/* More filters: interest, goal, type, "Ich suche", "Ich biete", investments. */}
         {moreOpen && (
-          <div className="mt-3 grid gap-2 border-t border-border pt-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-3 grid gap-2.5 border-t border-border pt-3 sm:grid-cols-2 lg:grid-cols-3">
             <select
               name="interest"
               defaultValue={filters.interest ?? ""}
@@ -445,36 +449,53 @@ export function DiscoverDeck({
           </div>
         )}
 
-        {/* Active filters as chips – every chip removes exactly one filter. */}
-        {chips.length > 0 && (
-          <ul className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-border pt-3">
+        {/* Filter meta line: active chips, clear link, results count */}
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
+          <div className="flex flex-wrap items-center gap-2">
             {chips.map((chip) => (
-              <li key={chip.key}>
-                <span className="inline-flex items-center gap-1 rounded-full bg-electric-500/10 py-1 pl-3 pr-1.5 text-xs font-medium text-electric-600 dark:text-electric-300">
-                  {chip.label}
-                  <Link
-                    href={chip.href}
-                    aria-label={`${t.app.discover.filtersRemove}: ${chip.label}`}
-                    className="rounded-full p-0.5 transition-colors hover:bg-electric-500/20"
-                  >
-                    <XIcon size={12} />
-                  </Link>
-                </span>
-              </li>
-            ))}
-            {skipped.length > 0 && (
-              <li>
-                <button
-                  type="button"
-                  onClick={() => setSkipped([])}
-                  className="text-xs font-semibold text-foreground-muted hover:text-foreground"
+              <span
+                key={chip.key}
+                className="inline-flex items-center gap-1 rounded-full bg-electric-500/10 py-1 pl-3 pr-1.5 text-xs font-medium text-electric-600 dark:text-electric-300"
+              >
+                {chip.label}
+                <Link
+                  href={chip.href}
+                  aria-label={`${t.app.discover.filtersRemove}: ${chip.label}`}
+                  className="rounded-full p-0.5 transition-colors hover:bg-electric-500/20"
                 >
-                  {t.app.discover.resetSeen}
-                </button>
-              </li>
+                  <XIcon size={12} />
+                </Link>
+              </span>
+            ))}
+            {hasFilters && (
+              <Link
+                href="/app/discover"
+                className="text-xs font-semibold text-electric-600 dark:text-electric-300 hover:underline"
+              >
+                {t.app.discover.filtersClear}
+              </Link>
             )}
-          </ul>
-        )}
+            {skipped.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setSkipped([])}
+                className="text-xs font-semibold text-foreground-muted hover:text-foreground"
+              >
+                {t.app.discover.resetSeen}
+              </button>
+            )}
+          </div>
+          <div className="flex items-center gap-3 text-xs text-foreground-subtle">
+            <Link
+              href="/app/network"
+              className="font-medium text-foreground-muted transition-colors hover:text-foreground hover:underline"
+            >
+              {t.app.discover.toDirectory} →
+            </Link>
+            <span>·</span>
+            <span>{tf(t.app.discover.resultsCount, { count: queue.length })}</span>
+          </div>
+        </div>
 
         {/* Honest radius note: no geocodable city → exact match instead. */}
         {radiusHint && <p className="mt-2 text-xs text-foreground-subtle">{radiusHint}</p>}
@@ -511,7 +532,7 @@ export function DiscoverDeck({
           }
         />
       ) : (
-        <ul className="grid gap-3 xl:grid-cols-2">
+        <ul className="flex flex-col gap-3.5">
           {queue.map((member) => (
             <DiscoverRow
               key={member.id}
@@ -554,9 +575,9 @@ export function DiscoverDeck({
 }
 
 /**
- * One compact profile row: avatar · identity & key facts · trust, badges,
+ * One compact horizontal profile row: avatar · identity & key facts · trust, badges,
  * match reasons & actions. Deliberately NOT a profile landing page – the
- * full bio, skills and tag lists live on the profile itself.
+ * full bio and complete lists live on the profile itself.
  */
 function DiscoverRow({
   member,
@@ -584,18 +605,18 @@ function DiscoverRow({
   const { t, tf } = useI18n();
   const profileHref = member.profileHref ?? `/app/people/${member.handle}`;
 
-  // Why this recommendation – max three compact reasons.
+  // Why this recommendation – max 1-2 compact match signals.
   const reasons: ReactNode[] = [];
   for (const goal of member.sharedGoals.slice(0, 1)) {
     reasons.push(<MatchChip key={`g-${goal}`} label={tf(t.app.discover.reasonSharedGoal, { value: goal })} />);
   }
-  for (const interest of member.sharedInterests.slice(0, 2)) {
+  for (const interest of member.sharedInterests.slice(0, 1)) {
     reasons.push(<MatchChip key={`i-${interest}`} label={tf(t.app.discover.reasonSharedInterest, { value: interest })} />);
   }
-  if (member.supplyDemand && reasons.length < 3) {
+  if (reasons.length < 2 && member.supplyDemand) {
     reasons.push(<MatchChip key="supply" label={t.app.discover.reasonSupply} />);
   }
-  if (member.sameLocation && reasons.length < 3) {
+  if (reasons.length < 2 && member.sameLocation) {
     reasons.push(
       <MatchChip
         key="location"
@@ -605,7 +626,7 @@ function DiscoverRow({
       />,
     );
   }
-  if (member.sharedConnectionCount > 0 && reasons.length < 3) {
+  if (reasons.length < 2 && member.sharedConnectionCount > 0) {
     reasons.push(
       <MatchChip key="connections" label={tf(t.app.discover.sharedConnections, { count: member.sharedConnectionCount })} />,
     );
@@ -615,37 +636,33 @@ function DiscoverRow({
 
   return (
     <li>
-      {/* Mobile: avatar + identity side by side, actions wrap underneath.
-          Desktop (`lg:grid`): three columns – portrait · facts · meta/CTAs.
-          Flex and grid share the same three children, nothing is duplicated. */}
-      <article className="flex flex-wrap items-start gap-x-5 gap-y-3 rounded-2xl border border-border bg-surface p-4 sm:p-5 lg:grid lg:grid-cols-[auto_minmax(0,1fr)_minmax(13rem,17rem)]">
-        {/* left: small portrait */}
+      <article className="group flex flex-col gap-4 rounded-2xl border border-border bg-surface p-4 sm:flex-row sm:items-start sm:p-5 lg:items-center lg:gap-6 transition-colors hover:border-border-strong">
+        {/* left: compact portrait */}
         <div className="relative shrink-0">
-          {member.avatarUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={member.avatarUrl}
-              alt=""
-              className="h-16 w-16 rounded-xl object-cover sm:h-20 sm:w-20"
-            />
-          ) : (
-            <span className="flex h-16 w-16 items-center justify-center rounded-xl border border-border bg-surface-muted text-lg font-bold tracking-tight text-foreground-muted sm:h-20 sm:w-20">
-              {initials(member.firstName, member.lastName)}
-            </span>
-          )}
+          <Link href={profileHref} className="block transition-opacity hover:opacity-90">
+            {member.avatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={member.avatarUrl}
+                alt=""
+                className="h-14 w-14 rounded-xl object-cover sm:h-16 sm:w-16"
+              />
+            ) : (
+              <span className="flex h-14 w-14 items-center justify-center rounded-xl border border-border bg-surface-muted text-base font-bold tracking-tight text-foreground-muted sm:h-16 sm:w-16">
+                {initials(member.firstName, member.lastName)}
+              </span>
+            )}
+          </Link>
         </div>
 
-        {/* middle: identity & key facts */}
-        <div className="min-w-0 flex-1 basis-44 lg:basis-auto">
-          <IdentityBlock member={member} isDemo={isDemo} />
+        {/* middle: identity, position/company/location, tags & match signals */}
+        <div className="min-w-0 flex-1">
+          <IdentityBlock member={member} isDemo={isDemo} profileHref={profileHref} reasons={reasons} />
         </div>
 
-        {/* right: match reasons & actions – bottom row on mobile */}
-        <div className="flex w-full flex-col gap-2.5 border-t border-border/70 pt-3 lg:w-auto lg:basis-auto lg:border-t-0 lg:pt-0">
-          {reasons.length > 0 && (
-            <ul className="flex flex-wrap gap-1.5">{reasons.slice(0, 3)}</ul>
-          )}
-          <div className="mt-auto flex flex-wrap items-center gap-2">
+        {/* right: actions */}
+        <div className="flex shrink-0 flex-col gap-2.5 border-t border-border/60 pt-3 sm:border-t-0 sm:pt-0 sm:items-end sm:justify-center">
+          <div className="flex flex-wrap items-center gap-2">
             <Button variant="secondary" size="sm" href={profileHref} className="h-9">
               <GlobeIcon size={14} />
               {t.app.discover.actionView}
@@ -660,7 +677,7 @@ function DiscoverRow({
               </Button>
             )}
             {member.requestPending && (
-              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-electric-600 dark:text-electric-300">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-electric-500/10 px-3 py-1.5 text-xs font-semibold text-electric-600 dark:text-electric-300">
                 <CheckIcon size={13} />
                 {t.app.profile.actions.pending}
               </span>
@@ -672,15 +689,6 @@ function DiscoverRow({
             )}
           </div>
           <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={onSkip}
-              aria-label={`${t.app.discover.actionSkip}: ${member.firstName} ${member.lastName}`}
-              className="inline-flex items-center gap-1 text-xs font-semibold text-foreground-subtle transition-colors hover:text-foreground"
-            >
-              <XIcon size={12} />
-              {t.app.discover.actionSkip}
-            </button>
             {showFollow && (
               <form action={followFormAction} className="inline-flex">
                 <input type="hidden" name="userId" value={member.id} />
@@ -696,6 +704,15 @@ function DiscoverRow({
                 </button>
               </form>
             )}
+            <button
+              type="button"
+              onClick={onSkip}
+              aria-label={`${t.app.discover.actionSkip}: ${member.firstName} ${member.lastName}`}
+              className="inline-flex items-center gap-1 text-xs font-semibold text-foreground-subtle transition-colors hover:text-foreground"
+            >
+              <XIcon size={12} />
+              {t.app.discover.actionSkip}
+            </button>
           </div>
         </div>
       </article>
@@ -703,8 +720,18 @@ function DiscoverRow({
   );
 }
 
-/** Name, badges, trust, positioning, company/location, interests, suche/biete. */
-function IdentityBlock({ member, isDemo }: { member: DiscoverCardData; isDemo: boolean }) {
+/** Name, badges, trust, positioning, company/location, interests, suche/biete, match signals. */
+function IdentityBlock({
+  member,
+  isDemo,
+  profileHref,
+  reasons,
+}: {
+  member: DiscoverCardData;
+  isDemo: boolean;
+  profileHref: string;
+  reasons: ReactNode[];
+}) {
   const { t } = useI18n();
   const interestTags = (
     member.sharedInterests.length > 0 ? member.sharedInterests : member.interests
@@ -712,67 +739,71 @@ function IdentityBlock({ member, isDemo }: { member: DiscoverCardData; isDemo: b
 
   return (
     <div className="min-w-0">
+      {/* Line 1: Name + Badges + @username + Trust */}
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-        <h2 className="text-base font-bold tracking-tight sm:text-lg">
+        <Link href={profileHref} className="text-base font-bold tracking-tight text-foreground hover:underline sm:text-lg">
           {member.firstName} {member.lastName}
-        </h2>
-        {/* Verified badges next to the name (Founding Member today,
-            admin-verified badges later – never fake ones). */}
+        </Link>
         <VerifiedBadges foundingMember={member.foundingMember} />
         {member.isDemo && (
           <Badge variant="sand">{isDemo ? t.app.demo.profileBadge : t.app.discover.demoBadge}</Badge>
         )}
         {member.requestPending && <Badge variant="electric">{t.app.discover.pendingBadge}</Badge>}
         {member.isConnected && <Badge variant="forest">{t.app.discover.connectedBadge}</Badge>}
-      </div>
-      {!isDemo && (
-        <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs text-foreground-subtle">
-          <span>@{member.handle}</span>
+        <span className="text-xs text-foreground-subtle">@{member.handle}</span>
+        {!isDemo && (
           <TrustBadge score10={member.trustScore10} verifiedReviewCount={member.verifiedReviewCount} />
-        </p>
-      )}
-      {(member.jobTitle || member.headline) && (
-        <p className="mt-1.5 line-clamp-1 text-sm font-medium">{member.jobTitle ?? member.headline}</p>
-      )}
-      <p className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-sm text-foreground-muted">
-        {member.company && <span className="line-clamp-1">{member.company}</span>}
+        )}
+      </div>
+
+      {/* Line 2: Position / Role · Company · Location */}
+      <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm text-foreground-muted">
+        {(member.jobTitle || member.headline) && (
+          <span className="font-medium text-foreground">{member.jobTitle ?? member.headline}</span>
+        )}
+        {(member.jobTitle || member.headline) && member.company && <span>·</span>}
+        {member.company && <span>{member.company}</span>}
+        {(member.jobTitle || member.headline || member.company) && member.location && <span>·</span>}
         {member.location && (
           <span className="inline-flex items-center gap-1">
-            <MapPinIcon size={12} />
+            <MapPinIcon size={12} className="shrink-0 text-foreground-subtle" />
             {member.location}
           </span>
         )}
       </p>
-      {interestTags.length > 0 && (
-        <ul className="mt-2 flex flex-wrap gap-1.5">
-          {interestTags.map((item) => (
-            <li key={item}>
-              <span className="inline-flex rounded-full bg-surface-muted px-2.5 py-0.5 text-xs font-medium text-foreground-muted">
-                {item}
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
-      {(member.lookingFor.length > 0 || member.offering.length > 0) && (
-        <dl className="mt-2 space-y-1">
-          {member.lookingFor.length > 0 && (
-            <div className="flex min-w-0 gap-2 text-xs leading-5">
-              <dt className="shrink-0 font-bold uppercase tracking-[0.08em] text-foreground-subtle">
-                {t.app.discover.lookingFor}:
-              </dt>
-              <dd className="line-clamp-1 min-w-0 text-foreground-muted">{member.lookingFor.join(", ")}</dd>
-            </div>
-          )}
-          {member.offering.length > 0 && (
-            <div className="flex min-w-0 gap-2 text-xs leading-5">
-              <dt className="shrink-0 font-bold uppercase tracking-[0.08em] text-forest-600 dark:text-forest-400">
-                {t.app.discover.offering}:
-              </dt>
-              <dd className="line-clamp-1 min-w-0 text-foreground-muted">{member.offering.join(", ")}</dd>
-            </div>
-          )}
-        </dl>
+
+      {/* Line 3: Interests & relevant tags + lookingFor/offering */}
+      <div className="mt-2 flex flex-wrap items-center gap-1.5">
+        {interestTags.map((item) => (
+          <span
+            key={item}
+            className="inline-flex rounded-full bg-surface-muted px-2.5 py-0.5 text-[11px] font-medium text-foreground-muted"
+          >
+            {item}
+          </span>
+        ))}
+        {member.lookingFor.length > 0 && (
+          <span className="inline-flex items-center gap-1 text-[11px] text-foreground-subtle">
+            <span className="font-semibold">{t.app.discover.lookingFor}:</span>
+            <span className="max-w-[12rem] truncate">{member.lookingFor.join(", ")}</span>
+          </span>
+        )}
+        {member.offering.length > 0 && (
+          <span className="inline-flex items-center gap-1 text-[11px] text-forest-600 dark:text-forest-400">
+            <span className="font-semibold">{t.app.discover.offering}:</span>
+            <span className="max-w-[12rem] truncate">{member.offering.join(", ")}</span>
+          </span>
+        )}
+      </div>
+
+      {/* Line 4: Warum empfohlen – max 1-2 compact match signals */}
+      {reasons.length > 0 && (
+        <div className="mt-2.5 flex flex-wrap items-center gap-1.5 text-xs">
+          <span className="text-[11px] font-bold uppercase tracking-wide text-foreground-subtle">
+            {t.app.discover.whyRecommended ?? "Warum empfohlen:"}
+          </span>
+          <ul className="flex flex-wrap gap-1.5">{reasons.slice(0, 2)}</ul>
+        </div>
       )}
     </div>
   );

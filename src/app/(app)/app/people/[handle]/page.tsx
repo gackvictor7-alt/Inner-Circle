@@ -22,6 +22,7 @@ import {
 import { ProfileActions } from "@/components/app/ProfileActions";
 import { TrustReviewForm } from "@/components/app/TrustReviewForm";
 import { TrustScoreBlock } from "@/components/app/TrustPanel";
+import { VerifiedBadgesSection } from "@/components/app/VerifiedBadges";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -240,6 +241,10 @@ export default async function MemberProfilePage({ params }: { params: Promise<{ 
         </Card>
       ) : (
         <>
+          <Card className="p-5 sm:p-6">
+            <VerifiedBadgesSection foundingMember={profile.foundingMember} badges={[]} />
+          </Card>
+
           {profile.bio && (
             <Card className="p-5 sm:p-6">
               <SectionTitle k="app.beta.aboutTitle" />
