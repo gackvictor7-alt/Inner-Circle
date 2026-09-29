@@ -8,8 +8,11 @@ NEXT_PUBLIC_SITE_URL=http://localhost:8787
 ENABLE_DEV_OUTBOX=true
 # Optional: only record these recipients (e.g. me@example.com,@my-domain.de)
 DEV_OUTBOX_RECIPIENTS=
+# Stripe sandbox only. Use the local/test values outside the repository.
 # STRIPE_SECRET_KEY=
 # STRIPE_WEBHOOK_SECRET=
+# STRIPE_PRICE_MONTHLY=
+# STRIPE_PRICE_YEARLY=
 # RESEND_API_KEY=
 # EMAIL_FROM=
 # Optional dedicated sender for verification-code mail (falls back to EMAIL_FROM):

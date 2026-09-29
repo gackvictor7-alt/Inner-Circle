@@ -44,9 +44,13 @@ describe("membership activation (server-verified state)", () => {
     created.push(userId);
 
     await activateMembership({ userId, plan: "monthly", provider: "stripe", providerEventId: "evt_test_1" });
-    await expect(
-      activateMembership({ userId, plan: "monthly", provider: "stripe", providerEventId: "evt_test_1" }),
-    ).rejects.toThrow();
+    const replay = await activateMembership({
+      userId,
+      plan: "monthly",
+      provider: "stripe",
+      providerEventId: "evt_test_1",
+    });
+    expect(replay.plan).toBe("monthly");
 
     const events = await db.select().from(membershipEvents).where(eq(membershipEvents.userId, userId));
     expect(events.filter((event) => event.providerEventId === "evt_test_1")).toHaveLength(1);

@@ -1,7 +1,6 @@
 # 12 – Roadmap ab dem aktuellen Stand
 
-**Stand:** 2026-09-24 (Sprint 12: Private Beta – S-1 präzisiert, S-5 für das
-Networking erledigt, neue Punkte S-10/S-11) · davor 2026-09-21, Basis `main` @ `f22c19e`.
+**Stand:** 2026-09-29 (Sprint 17: Stripe-Sandbox-Billing, Portal, Profil-/Opportunity-UX) · davor 2026-09-24, Basis aktuelles `main` @ `98814bc`.
 Diese Roadmap ersetzt die frühere 20-Schritte-Planung
 (`03-roadmap.md` – die Schritte 01–08 sind gebaut, siehe
 [`00-SOURCE-OF-TRUTH.md`](00-SOURCE-OF-TRUTH.md)). Sie beginnt **beim heutigen
@@ -35,8 +34,8 @@ machen.
 
 | Thema | Inhalt | Abhängigkeit |
 | ----- | ------ | ------------ |
-| **S-1 Stripe scharf schalten** | Schlüssel setzen, Webhook mit den neun Events aus `04-auth-membership.md` §4a registrieren (Preise kommen inline aus `plans.ts`), Testkauf inkl. abgebrochener/fehlgeschlagener Zahlung, Billing-Portal-Route/UI bauen (Funktion vorhanden). Webhook-Code in Sprint 12 geprüft und korrigiert | Stripe-Konto (Test zuerst) |
-| **S-2 Jahrespreis kommunizieren** | 249,90 €/Jahr ist textlich übernommen (K-03 gelöst); Stripe-Produkt mit diesem Preis anlegen | S-1 |
+| **S-1 Stripe-Sandbox-Billing** | **ERLEDIGT im Sprint 17 (Code):** serverseitiger Checkout mit den bestehenden Price-ID-Variablen, Customer-Zuordnung, raw-body/signierte idempotente Webhooks für die sechs verbindlichen Events plus verzögerte Zahlarten, Lifecycle-/Invoice-Reconciliation und Customer Portal. Ein echter Testmodus-Durchlauf gegen den Worker bleibt offen. | Sandbox-Konfiguration/Testlauf |
+| **S-2 Jahrespreis kommunizieren** | **ERLEDIGT:** Homepage, `/membership`, Billing, Übersetzungen, Seed und Dokumentation nennen exakt 24,99 €/Monat und 249,99 €/Jahr. | – |
 | **S-3 Telefon-Registrierung** | Entweder vollständig implementieren (SMS + Schema `email = null`) oder Umschalter deaktivieren (K-05) | Twilio (optional) |
 | **S-4 OAuth oder ehrlicher Zustand** | Buttons deaktivieren (Dead-Link-Regel) **oder** Google-Login implementieren (K-04) | Google-Client |
 | **S-5 Datenschutz wirksam machen** | **Networking erledigt (Sprint 12, §3d)**; offen: übrige Bereiche (Marketplace, Deals) (K-06) | – |

@@ -32,7 +32,7 @@ als Produktionsdatenbank. Vercel/Postgres (ADR-007) ist ersetzt (ADR-008).
 | Lokal (Worker) | `npm run cf:preview` | `workerd` | lokale D1-Emulation (`.wrangler/state`) | `http://localhost:8787` |
 | Tests | `npm test` | Node | Wegwerf-`.test.db` | – |
 | Preview | Nicht-`main`-Branches (Workers Builds) | Cloudflare Workers | D1 `inner-circle-db` | Preview-URL der Version |
-| Produktion | `main` | Cloudflare Workers | D1 `inner-circle-db` | `https://inner-circle.<account>.workers.dev` → später eigene Domain |
+| Produktion | `main` | Cloudflare Workers | D1 `inner-circle-db` | kanonisch `https://innercirclevp.com` (Cloudflare-Domain-Konfiguration außerhalb dieses Sprints) |
 
 ## 3. npm-Skripte (aus `package.json`)
 
@@ -62,14 +62,17 @@ als Produktionsdatenbank. Vercel/Postgres (ADR-007) ist ersetzt (ADR-008).
    Production branch `main`, Build-Variable `NODE_VERSION` = `22`.
 3. **Variablen/Secrets** (Settings → *Variables and Secrets*):
    - `AUTH_SECRET` – Secret, Pflicht, ≥ 32 Zufallszeichen.
-   - `NEXT_PUBLIC_SITE_URL` – Text, z. B.
-     `https://inner-circle.<account>.workers.dev`.
-   - Optional Secrets: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`,
-     `RESEND_API_KEY`, `TWILIO_*`, `GOOGLE_*`, `APPLE_*`.
+   - `NEXT_PUBLIC_SITE_URL` – Text, für die kanonische Anwendung
+     `https://innercirclevp.com` (lokal nur in `.env`/`.dev.vars` abweichend).
+   - Stripe-Sandbox-Secrets: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`.
+     Als Text-Variablen die vorhandenen `STRIPE_PRICE_MONTHLY` und
+     `STRIPE_PRICE_YEARLY` setzen; beide Price IDs bleiben außerhalb des Repos.
+   - Weitere optionale Secrets: `RESEND_API_KEY`, `TWILIO_*`, `GOOGLE_*`,
+     `APPLE_*`.
    - Optional Text: `EMAIL_FROM`, `EMAIL_FROM_VERIFICATION` (eigener
      Absender für Verifizierungs-Code-Mails, z. B.
      `INNER CIRCLE <verify@innercirclevp.com>`; Fallback `EMAIL_FROM`),
-     `STRIPE_PUBLISHABLE_KEY`.
+     `STRIPE_PUBLISHABLE_KEY`. Live-Stripe-Variablen nicht setzen.
    - **Nicht setzen:** `ALLOW_DEV_MEMBERSHIP_ACTIVATION`.
      `ENABLE_DEV_OUTBOX` nur bewusst für den Testbetrieb ohne Mailanbieter.
    Vollständige Liste inkl. Pflicht/Optional: [`14-environment.md`](14-environment.md).
@@ -88,8 +91,9 @@ als Produktionsdatenbank. Vercel/Postgres (ADR-007) ist ersetzt (ADR-008).
    oder `npm run cf:admin -- --email=… --remote`.
    Notlösung ohne Mailanbieter: `emailVerifiedAt = strftime('%s','now') * 1000`
    setzen – besser aber den Dev-Postausgang nutzen (Abschnitt 5).
-7. **Stripe-Webhook:** Endpoint `https://<worker-url>/api/webhooks/stripe`,
-   Signing-Secret als `STRIPE_WEBHOOK_SECRET`.
+7. **Stripe-Sandbox-Webhook:** Endpoint `https://innercirclevp.com/api/webhooks/stripe`,
+   Signing-Secret als `STRIPE_WEBHOOK_SECRET`; die sechs verbindlichen Events
+   und die optionalen `checkout.session.async_payment_*`-Events registrieren.
 
 ## 5. Testbetrieb ohne E-Mail-Anbieter (geschützter Dev-Postausgang)
 
@@ -188,34 +192,31 @@ Binding `MEDIA`. Für Produktion sind **keine Secrets** nötig:
 | `npm run dev` von außen nicht erreichbar | Bind-Adresse | Skripte binden bereits `0.0.0.0` |
 | Build bricht mit DB-Zugriff ab | `.env` im Cloudflare-Build sichtbar | im Repo liegt keine `.env`; OpenNext würde Werte einbetten – keine `.env` committen |
 
-## 7a. Eigene Domain `innercirclevp.com` – Cutover vorbereitet, nicht ausgeführt (2026-09-28)
+## 7a. Eigene Domain `innercirclevp.com` – unverändert, keine Konfigurationsaktion
 
-**Ist-Zustand laut Projektkontext:** Die Nameserver-Propagation bei Cloudflare
-läuft; eine aktive Zone wurde in diesem Sprint nicht überprüft. Die Production
-bleibt bis zum freigegebenen Cutover unter
-`https://inner-circle.gackvictor7.workers.dev`. Die Website-Domain wurde weder
-mit dem Worker verbunden noch in der Production-Konfiguration geändert.
+Die kanonische öffentliche URL der Anwendung ist `https://innercirclevp.com`.
+Dieser Sprint ändert weder DNS noch Cloudflare-Routes, Custom-Domain-Bindings,
+Auth, Resend oder Beta-Konfiguration. Eine tatsächliche Domain-/TLS-Abnahme
+bleibt der zuständigen Produktions-Checkliste und dem Cloudflare-Dashboard
+vorbehalten.
 
-Die absoluten öffentlichen App-URLs werden zur Laufzeit über `getPublicUrl()` /
+Alle absoluten öffentlichen App-URLs werden zur Laufzeit über `getPublicUrl()` /
 `getAppUrl()` und `NEXT_PUBLIC_SITE_URL` aufgelöst: Passwort-Reset, Beta-
 Einladung, Profil teilen, Mitgliedskarten-QR, Stripe-Rückleitungen, Logout,
-Billing-Weiterleitungen und `metadataBase`. Das Root-Metadata verwendet dieselbe
-Basis; relative OpenGraph-Bilder werden darüber aufgelöst. Im archivierten
-E2E-Ergebnis `preview/sprint15/e2e-results-final.json` und in historischen
-Dokumentations-/Teststellen bleibt die alte Adresse als Testbeleg erhalten;
-sie ist kein aktiver Host-Fallback im Produktcode. Interne Auth-Navigation
-(`/verify`, Login, Onboarding, `/app`, `/app/beta`) bleibt pfadbasiert.
+Billing-Weiterleitungen und `metadataBase`. Der Stripe-Sandbox-Webhook ist
+entsprechend unter `https://innercirclevp.com/api/webhooks/stripe` zu registrieren,
+wenn diese URL im freigegebenen Worker bereits aktiv ist.
 
-Die vollständige ausführbare Reihenfolge einschließlich der optionalen
+Die vollständige ausführbare Reihenfolge einschließlich einer optionalen
 `www`-Weiterleitungsstrategie steht in
 [`DOMAIN-CUTOVER-CHECKLIST.md`](DOMAIN-CUTOVER-CHECKLIST.md). Sie ist nur
-Dokumentation; keine DNS-/Redirect-Regel ist angelegt.
+Dokumentation; in diesem Sprint wurde keine DNS-/Redirect-Regel angelegt.
 
 ## 8. Produktions-Checkliste
 
 - [x] `AUTH_SECRET` gesetzt (kein Dev-Fallback).
-- [x] `NEXT_PUBLIC_SITE_URL` gesetzt (aktuell die `workers.dev`-URL; Umzug auf
-      `innercirclevp.com` nach §7a, **nicht** in diesem Sprint).
+- [ ] `NEXT_PUBLIC_SITE_URL` im freigegebenen Worker auf die kanonische URL
+      `https://innercirclevp.com` geprüft; dieser Sprint ändert den Produktionswert nicht.
 - [x] `RESEND_API_KEY` + verifizierte Absenderdomain (`innercirclevp.com`,
       SPF/DKIM/DMARC von Resend verwaltet).
 - [ ] `ENABLE_DEV_OUTBOX` entfernt, `DevOutbox` geleert.

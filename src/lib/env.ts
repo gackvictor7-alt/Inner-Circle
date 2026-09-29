@@ -140,16 +140,31 @@ export const stripe = {
   get webhookSecret() {
     return read("STRIPE_WEBHOOK_SECRET");
   },
+  get monthlyPriceId() {
+    return read("STRIPE_PRICE_MONTHLY");
+  },
+  get annualPriceId() {
+    return read("STRIPE_PRICE_YEARLY");
+  },
   get billingPortalReturnUrl() {
     return read("STRIPE_PORTAL_RETURN_URL");
   },
   get configured() {
     return Boolean(this.secretKey);
   },
-  get webhookConfigured() {
-    return Boolean(this.secretKey && this.webhookSecret);
+  get testMode() {
+    return Boolean(this.secretKey?.startsWith("sk_test_"));
   },
-  /** Live keys are blocked until the founder explicitly allows them. */
+  get priceIdsConfigured() {
+    return Boolean(this.monthlyPriceId && this.annualPriceId);
+  },
+  get checkoutConfigured() {
+    return Boolean(this.secretKey && this.testMode && this.priceIdsConfigured);
+  },
+  get webhookConfigured() {
+    return Boolean(this.secretKey && this.testMode && this.webhookSecret);
+  },
+  /** Live keys are always refused in this sandbox-only sprint. */
   get liveMode() {
     return Boolean(this.secretKey?.startsWith("sk_live_"));
   },

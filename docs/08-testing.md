@@ -1,42 +1,38 @@
 # 08 – Test- und Qualitätssicherung
 
-**Visueller Follow-up (2026-09-28, `/app`-Raster + Dark-Ton):** `npm test`
-**37 Dateien / 275 Tests grün**, `npx tsc --noEmit` grün, `npm run i18n:audit`
-grün (2612 Schlüssel DE/EN, identische Form), `npm run lint` = **11 Befunde
-(5 Fehler, 6 Warnungen)** = K-15-Baseline (keine neuen Befunde),
-`npm run cf:build` grün, `wrangler deploy --dry-run` grün (Upload 9326,75 KiB /
-gzip 1865,27 KiB; Bindings `DB`, `MEDIA`, `ASSETS`, `NEXTJS_ENV`).
-`/app` zusätzlich im echten lokalen workerd (Port 8787, lokale D1, Demo-Mitglied)
-und im Node-Dev-Server (Mitglied, Trial, Free) per HTTP geprüft: jeweils 200,
-kein „Für dich“-Text, sechs Karten-Links im Grid `grid-cols-1 sm:grid-cols-2`;
-das gebaute CSS enthält die neuen `.dark`-Token und die Grid-Utilities.
-**Browser-/Screenshot-Matrix nicht ausgeführt:** in dieser Umgebung ist kein
-Chromium/Playwright/Puppeteer-Browser vorhanden und Browser-Downloads sind
-blockiert (`Client network socket disconnected`). Deshalb werden keine
-Screenshot-Ergebnisse behauptet; Desktop-/Mobile-Layout und „keine horizontale
-Scrollbar“ sind über das gerenderte HTML plus das generierte CSS
-(`repeat(2, minmax(0,1fr))` ab 40rem, `repeat(1, …)` darunter, `body
-{ overflow-x: hidden }`) belegt, nicht über Pixel-Messung. Das neue Skript
-`tests/e2e/follow-up-dashboard.mjs` prüft genau diese Punkte im Browser
-(2×3-Raster, einspaltig mobil, Klickbarkeit aller sechs Karten, Kontraste,
-Überlauf, Regression anderer Routen) und ist auf einem Rechner mit Browser
-ausführbar – in dieser Umgebung wurde es **nicht** ausgeführt:
+**Aktueller Sprint (2026-09-29, Stripe-Sandbox-Billing + UX-Aufräumarbeiten):**
 
-```bash
-mkdir -p /tmp/pw && cd /tmp/pw && npm i puppeteer
-PW_MODULES=/tmp/pw/node_modules BASE_URL=http://127.0.0.1:8787 \
-  IC_SESSION=<Session-Token eines lokalen Demo-Kontos> \
-  node tests/e2e/follow-up-dashboard.mjs
-```
+| Prüfung | Befehl / Weg | Ergebnis |
+| ------- | ------------- | -------- |
+| Unit/Integration | `npm test -- --reporter=dot` | **44 Dateien / 354 Tests grün** |
+| TypeScript | `npm run typecheck` | **grün, 0 Fehler** |
+| i18n | `npm run i18n:audit` | **DE 2708 / EN 2708**, identische Form, alle referenzierten Keys vorhanden |
+| Lint | `npm run lint` | **rot: 5 Fehler + 6 Warnungen**, unveränderte K-15-Baseline; keine Befunde in den neuen Stripe-/Opportunity-Dateien |
+| OpenNext/Cloudflare | `npm run cf:dry-run` | **grün**: OpenNext-Build + `wrangler deploy --dry-run`; Upload 9654,79 KiB / gzip 1932,41 KiB; Bindings `DB`, `MEDIA`, `ASSETS`, `NEXTJS_ENV` |
+| Node-Dev-HTTP-Smoke | `npm run dev` + `curl` | `/` und `/membership` **200**; unauthentifiziertes `/app/billing` **307** auf Login; Portal-GET **303** zurück zu Billing; Webhook-GET **405** |
+| Preis-Render-Smoke | HTML von `/` und `/membership` | `24,99 €` und `249,99 €` gefunden; kein aktiver `249,90`-Text |
 
-**Neueste UX-Konsolidierung (2026-09-27):** `npm test` 37 Dateien / 275 Tests
-grün, Typecheck/i18n-Audit/OpenNext-Build/Wrangler Dry-Run grün; Lint unverändert
-5 Fehler + 6 Warnungen (K-15). Die Profil-/Events-/Business-Listen- und Theme-
-Screenshot-Matrix wurde in dieser Umgebung **nicht** ausgeführt: kein Chromium
-und kein Playwright-Modul auffindbar. Es werden daher keine neuen E2E-Screenshots
-behauptet. Profil-Follower/Following/Connections sowie Trust-Empty-/Score-Zustände
-sind aktuell nicht durch neue Browser-Assertions abgedeckt; reine bestehende
-Service- und Datenbanktests ersetzen diese UI-Prüfung nicht.
+Die Stripe-Sandbox-Route-Tests decken Checkout-Price-ID-Mapping, Customer-
+Wiederverwendung, fehlende Price IDs, Portal-Return-URL, raw-body-
+Signaturablehnung, Idempotenz, unbezahlte/verzögerte Checkouts, Subscription-
+Lifecycle, `invoice.paid`, `invoice.payment_failed`, `subscription.deleted`
+und unbekannte Events ab. Ein echter Testmodus-Kauf gegen den freigegebenen
+Worker wurde **nicht** ausgeführt, weil keine externen Sandbox-Werte in der
+Session gesetzt werden dürfen.
+
+**Browser-/Screenshot-E2E wurde nicht ausgeführt:** In der Umgebung sind kein
+Chromium und kein Playwright-Modul vorhanden (`/tmp/pw/node_modules` fehlt);
+Browser-Downloads bzw. eine zusätzliche Browserinstallation sind nicht Teil
+oder Voraussetzung dieses Repositories. Es werden daher keine neuen
+Screenshot-, Pixel- oder mobilen Browser-Ergebnisse behauptet. Die vorhandenen
+Skripte `tests/e2e/sprint15-browser.mjs` und `tests/e2e/trust-browser.mjs`
+bleiben die ausführbaren Rezepte auf einer Umgebung mit Browser.
+
+**Davor (2026-09-28, `/app`-Raster + Dark-Ton):** `npm test` **37 Dateien /
+275 Tests grün**, Typecheck und i18n-Audit grün; `npm run lint` = **11 Befunde
+(5 Fehler, 6 Warnungen)** = K-15-Baseline. Die damalige HTTP-/CSS-Prüfung und
+nicht ausgeführte Browser-Matrix bleiben als historische Ergebnisse darunter
+referenziert.
 
 **Stand:** 2026-09-27 (Sprint 15 – Passwort-Reset-Root-Cause, Beta-Onboarding,
 CTA-Check, Domain-Vorbereitung) · Branch `arena/01a0e2ea-inner-circle` (Basis
@@ -174,7 +170,7 @@ Details und Grenzen: [Abschlussbericht](SPRINT-12-FINAL-REPORT.md).
 | ----- | ------ | --- |
 | `tests/unit/auth-crypto.test.ts` | scrypt-Hashing/Vergleich, Session-Token-Hash, OTP-Erzeugung | Unit |
 | `tests/unit/access-levels.test.ts` | Entitlement-Matrix free/trial/member/admin; **Sprint 11:** `trial` = `free` + `demoAccess`, keine echten Mitglieder-/Geschäftsrechte, `member`/`admin` nie `demoAccess` | Unit |
-| `tests/unit/membership-plans.test.ts` | 24,99 €/249,90 €, Jahresvorteil, Provider-Status-Mapping; **Sprint 5**: Preisstrings (`formatMoney`) und Homepage-Hinweis in DE/EN zitieren exakt die SoT-Preise | Unit |
+| `tests/unit/membership-plans.test.ts` | 24,99 €/249,99 €, Jahresvorteil, Provider-Status-Mapping; **Sprint 5**: Preisstrings (`formatMoney`) und Homepage-Hinweis in DE/EN zitieren exakt die SoT-Preise | Unit |
 | `tests/unit/trial-rules.test.ts` | 48 h, Verbindungslimit-Konstante, OTP-Grenzen; **Sprint 11:** Demo-Semantik statt `TRIAL_VISIBLE`-Mengen | Unit |
 | `tests/unit/media-validation.test.ts` | **Sprint 13:** Foto-Upload-Regeln – Magic-Bytes (JPEG/PNG/WebP, GIF/PDF abgelehnt), Größenlimit 5 MB, Key-Bau (Escape-sicher `avatars/<userId>/…`), Key-Extraktion nur aus eigenen `/api/media`-URLs, Serving-Route-Validierung | Unit |
 | `tests/unit/demo-discover.test.ts` | **Sprint 11:** Demo-Profile nutzen gültige Slugs der echten Taxonomie (Interessen/Ziele) mit DE/EN-Paar, Avatare nur aus dem freigegebenen Satz oder neutral, Demo-Deals/-Jobs/-Investments ohne abgeschlossene Zustände/Renditeversprechen; `demoDiscoverCandidate` (Präfix-ID `demo:`), `demoDiscoverResults` mit den echten Filtern (Standort, Rolle DE/EN, Interesse, Branche, Investmentinteresse, Typ, Umkreis) und Sortierung nach Interessen/Zielen des Betrachters | Unit |
@@ -358,7 +354,7 @@ PW_MODULES=/tmp/pw/node_modules BASE_URL=http://127.0.0.1:8787 node tests/e2e/sp
 ```
 
 Voraussetzungen in `.dev.vars` (gitignored): `NEXTJS_ENV=production`,
-`NEXT_PUBLIC_SITE_URL=https://inner-circle.gackvictor7.workers.dev`,
+`NEXT_PUBLIC_SITE_URL=https://innercirclevp.com`,
 `ENABLE_DEV_OUTBOX=true`, `DEV_OUTBOX_RECIPIENTS=@innercircle.test`.
 Die UserID-2-Admin-Bootstrap-Zeile steht im Skript-Kopf (analog §3b).
 
@@ -396,10 +392,9 @@ Geprüft:
   Endpunkt) → Dashboard zeigt Networking-Funktionen; Screenshots 07–09
   inkl. `08-beta-welcome.png`.
 
-**Nicht Teil des Skripts:** Versand an ein echtes externes Postfach, Produktion
-unter `workers.dev` (Sandbox-Egress blockiert direkte TLS-Verbindungen dorthin –
-die Produktions-Reset-Seite wurde per Seitenabruf mit Dummy-Token als erreichbar
-geprüft), DNS-/Domainwechsel.
+**Nicht Teil des Skripts:** Versand an ein echtes externes Postfach, ein echter
+Produktionslauf unter `https://innercirclevp.com` (Sandbox-Egress und fehlende
+Produktions-Credentials), DNS-/Domainwechsel.
 
 ## 4. Testmatrix (Bereiche × Abdeckung)
 

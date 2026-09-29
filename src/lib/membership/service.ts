@@ -41,6 +41,88 @@ export type ActivateInput = {
   meta?: Record<string, unknown>;
 };
 
+type ProviderIdentity = {
+  providerCustomerId?: string | null;
+  providerSubscriptionId?: string | null;
+};
+
+/**
+ * MembershipEvent.providerEventId is unique. Every webhook path records its
+ * event through this helper so retries can be acknowledged without creating a
+ * second state transition or a second audit row.
+ */
+export async function recordMembershipEvent(input: {
+  userId: string;
+  type: string;
+  provider: string;
+  providerEventId?: string | null;
+  meta?: Record<string, unknown>;
+}) {
+  await db
+    .insert(membershipEvents)
+    .values({
+      id: idFor.event(),
+      userId: input.userId,
+      type: input.type,
+      provider: input.provider,
+      providerEventId: input.providerEventId ?? null,
+      metaJson: JSON.stringify(input.meta ?? {}),
+      createdAt: new Date(),
+    })
+    .onConflictDoNothing();
+}
+
+async function membershipForUser(userId: string) {
+  const [membership] = await db.select().from(memberships).where(eq(memberships.userId, userId)).limit(1);
+  return membership ?? null;
+}
+
+async function eventAlreadyRecorded(providerEventId?: string | null) {
+  if (!providerEventId) return false;
+  const [event] = await db
+    .select({ id: membershipEvents.id })
+    .from(membershipEvents)
+    .where(eq(membershipEvents.providerEventId, providerEventId))
+    .limit(1);
+  return Boolean(event);
+}
+
+function identityMatches(
+  membership: { provider: string; providerCustomerId: string | null; providerSubscriptionId: string | null },
+  identity: ProviderIdentity,
+): boolean {
+  if (membership.provider !== "stripe") return false;
+  // Every identifier supplied by Stripe must agree with the local association.
+  // Checking them independently prevents a matching subscription ID from
+  // masking a mismatching customer ID (or vice versa).
+  if (
+    identity.providerSubscriptionId &&
+    membership.providerSubscriptionId &&
+    identity.providerSubscriptionId !== membership.providerSubscriptionId
+  ) {
+    return false;
+  }
+  if (identity.providerCustomerId && membership.providerCustomerId && identity.providerCustomerId !== membership.providerCustomerId) {
+    return false;
+  }
+  const hasIncomingIdentity = Boolean(identity.providerSubscriptionId || identity.providerCustomerId);
+  const hasStoredIdentity = Boolean(membership.providerSubscriptionId || membership.providerCustomerId);
+  // A signed event may establish the first provider identity when an older
+  // incomplete row has no Stripe identifiers yet.
+  if (hasIncomingIdentity && !hasStoredIdentity) return true;
+  // Once one provider identity exists, an event carrying an ID must overlap
+  // with that association. Metadata-only events remain usable for legacy rows.
+  if (hasIncomingIdentity && hasStoredIdentity) {
+    return Boolean(
+      (identity.providerSubscriptionId &&
+        membership.providerSubscriptionId &&
+        identity.providerSubscriptionId === membership.providerSubscriptionId) ||
+        (identity.providerCustomerId && membership.providerCustomerId && identity.providerCustomerId === membership.providerCustomerId),
+    );
+  }
+  return true;
+}
+
 async function issueCardIfNeeded(userId: string) {
   const [existing] = await db.select().from(membershipCards).where(eq(membershipCards.userId, userId)).limit(1);
   if (existing) {
@@ -90,20 +172,92 @@ export async function activateMembership(input: ActivateInput) {
   const plan = planById(input.plan);
   if (!plan) throw new Error("invalid_plan");
 
-  const now = new Date();
-  const periodStart = input.currentPeriodStart ?? now;
-  const periodEnd = input.currentPeriodEnd ?? periodEndFor(plan, periodStart);
+  const existing = await membershipForUser(input.userId);
 
+  // An administrative grant is an independent override. Stripe events may be
+  // recorded for auditability, but they must never revoke or replace it.
+  if (input.provider === "stripe" && existing?.provider === "admin") {
+    await recordMembershipEvent({
+      userId: input.userId,
+      type: "stripe_ignored_admin_override",
+      provider: "stripe",
+      providerEventId: input.providerEventId,
+      meta: { requestedType: input.eventType ?? "activated" },
+    });
+    return {
+      plan: (planById(existing.plan)?.id ?? plan.id) as PlanId,
+      periodEnd: existing.currentPeriodEnd,
+      cardNumber: (await db
+        .select({ cardNumber: membershipCards.cardNumber })
+        .from(membershipCards)
+        .where(eq(membershipCards.userId, input.userId))
+        .limit(1))[0]?.cardNumber ?? "",
+    };
+  }
+
+  if (
+    input.provider === "stripe" &&
+    existing?.provider === "stripe" &&
+    !identityMatches(existing, {
+      providerCustomerId: input.providerCustomerId,
+      providerSubscriptionId: input.providerSubscriptionId,
+    })
+  ) {
+    await recordMembershipEvent({
+      userId: input.userId,
+      type: "stripe_ignored_membership_state",
+      provider: "stripe",
+      providerEventId: input.providerEventId,
+      meta: { requestedType: input.eventType ?? "activated" },
+    });
+    return {
+      plan: (planById(existing.plan)?.id ?? plan.id) as PlanId,
+      periodEnd: existing.currentPeriodEnd,
+      cardNumber: (await db
+        .select({ cardNumber: membershipCards.cardNumber })
+        .from(membershipCards)
+        .where(eq(membershipCards.userId, input.userId))
+        .limit(1))[0]?.cardNumber ?? "",
+    };
+  }
+
+  // This guard also makes direct service calls safe, not only the route-level
+  // duplicate check. The first signed event remains the source of truth.
+  if (await eventAlreadyRecorded(input.providerEventId)) {
+    const card = await db
+      .select({ cardNumber: membershipCards.cardNumber })
+      .from(membershipCards)
+      .where(eq(membershipCards.userId, input.userId))
+      .limit(1);
+    return {
+      plan: (planById(existing?.plan)?.id ?? plan.id) as PlanId,
+      periodEnd: existing?.currentPeriodEnd ?? null,
+      cardNumber: card[0]?.cardNumber ?? "",
+    };
+  }
+
+  const now = new Date();
+  // Subscription webhooks can arrive before or after checkout.session.completed.
+  // Never replace a real Stripe period with a locally guessed one when the
+  // provider already supplied it.
+  const periodStart = input.currentPeriodStart ?? existing?.currentPeriodStart ?? now;
+  const periodEnd = input.currentPeriodEnd ?? existing?.currentPeriodEnd ?? periodEndFor(plan, periodStart);
+  const providerCustomerId = input.providerCustomerId ?? existing?.providerCustomerId ?? null;
+  const providerSubscriptionId = input.providerSubscriptionId ?? existing?.providerSubscriptionId ?? null;
+  const providerCheckoutSessionId = input.providerCheckoutSessionId ?? existing?.providerCheckoutSessionId ?? null;
   const values = {
     plan: plan.id,
     status: "active",
     provider: input.provider,
+    providerCustomerId,
+    providerSubscriptionId,
+    providerCheckoutSessionId,
     priceCents: input.priceCents ?? plan.priceCents,
     currency: plan.currency,
     currentPeriodStart: periodStart,
     currentPeriodEnd: periodEnd,
-    cancelAtPeriodEnd: input.cancelAtPeriodEnd ?? false,
-    startedAt: now,
+    cancelAtPeriodEnd: input.cancelAtPeriodEnd ?? existing?.cancelAtPeriodEnd ?? false,
+    startedAt: existing?.startedAt ?? now,
     canceledAt: null,
     endedAt: null,
     updatedAt: now,
@@ -114,27 +268,23 @@ export async function activateMembership(input: ActivateInput) {
     .values({
       id: idFor.membership(),
       userId: input.userId,
-      providerCustomerId: input.providerCustomerId ?? null,
-      providerSubscriptionId: input.providerSubscriptionId ?? null,
-      providerCheckoutSessionId: input.providerCheckoutSessionId ?? null,
-      createdAt: now,
+      createdAt: existing?.createdAt ?? now,
       ...values,
     })
     .onConflictDoUpdate({ target: memberships.userId, set: values });
 
-  await db.insert(membershipEvents).values({
-    id: idFor.event(),
+  await recordMembershipEvent({
     userId: input.userId,
     type: input.eventType ?? (input.provider === "dev" ? "dev_activated" : "activated"),
     provider: input.provider,
-    providerEventId: input.providerEventId ?? null,
-    metaJson: JSON.stringify({ plan: plan.id, ...(input.meta ?? {}) }),
-    createdAt: now,
+    providerEventId: input.providerEventId,
+    meta: { plan: plan.id, ...(input.meta ?? {}) },
   });
 
   const cardNumber = await issueCardIfNeeded(input.userId);
 
-  // A completed membership converts an open trial.
+  // A completed membership converts an open trial. Beta access, badges and
+  // user roles are deliberately not touched here.
   const [trial] = await db.select().from(trials).where(eq(trials.userId, input.userId)).limit(1);
   if (trial && trial.status !== "converted") {
     await db.update(trials).set({ status: "converted", convertedAt: now }).where(eq(trials.id, trial.id));
@@ -147,7 +297,7 @@ export async function activateMembership(input: ActivateInput) {
     titleKey: input.provider === "dev" ? "app.notifications.types.membershipDev" : "app.notifications.types.membershipActive",
     paramsJson: JSON.stringify({ plan: plan.id }),
     url: "/app/billing",
-    dedupeKey: `membership-active-${now.toISOString()}`,
+    dedupeKey: input.providerEventId ? `membership-active-${input.providerEventId}` : `membership-active-${now.toISOString()}`,
     createdAt: now,
   });
 
@@ -162,13 +312,76 @@ export async function activateMembership(input: ActivateInput) {
   return { plan: plan.id, periodEnd, cardNumber };
 }
 
+/** Stores the server-created customer/session before the provider webhook arrives. */
+export async function rememberStripeCheckout(input: {
+  userId: string;
+  plan: PlanId;
+  customerId: string;
+  checkoutSessionId: string;
+}) {
+  const now = new Date();
+  const existing = await membershipForUser(input.userId);
+  // Do not turn an active manual grant into a payment record merely because a
+  // browser submitted a checkout form.
+  if (existing?.provider === "admin" && existing.status === "active") return false;
+  if (existing && (existing.status === "active" || existing.status === "trialing")) return false;
+
+  const values = {
+    plan: input.plan,
+    status: "incomplete",
+    provider: "stripe",
+    providerCustomerId: input.customerId,
+    providerSubscriptionId: existing?.providerSubscriptionId ?? null,
+    providerCheckoutSessionId: input.checkoutSessionId,
+    priceCents: planById(input.plan)!.priceCents,
+    currency: planById(input.plan)!.currency,
+    currentPeriodStart: existing?.currentPeriodStart ?? null,
+    currentPeriodEnd: existing?.currentPeriodEnd ?? null,
+    cancelAtPeriodEnd: false,
+    startedAt: existing?.startedAt ?? now,
+    canceledAt: null,
+    endedAt: null,
+    updatedAt: now,
+  };
+
+  await db
+    .insert(memberships)
+    .values({ id: idFor.membership(), userId: input.userId, createdAt: existing?.createdAt ?? now, ...values })
+    .onConflictDoUpdate({ target: memberships.userId, set: values });
+  return true;
+}
+
 export async function markMembershipCanceled(params: {
   userId: string;
   cancelAtPeriodEnd: boolean;
   providerEventId?: string | null;
   provider?: "stripe" | "dev";
+  providerCustomerId?: string | null;
+  providerSubscriptionId?: string | null;
 }) {
+  if (await eventAlreadyRecorded(params.providerEventId)) return;
   const now = new Date();
+  const current = await membershipForUser(params.userId);
+
+  if (
+    current?.provider === "admin" ||
+    (current &&
+      params.provider === "stripe" &&
+      !identityMatches(current, {
+        providerCustomerId: params.providerCustomerId,
+        providerSubscriptionId: params.providerSubscriptionId,
+      }))
+  ) {
+    await recordMembershipEvent({
+      userId: params.userId,
+      type: "stripe_ignored_membership_state",
+      provider: params.provider ?? "stripe",
+      providerEventId: params.providerEventId,
+      meta: { requestedType: "canceled" },
+    });
+    return;
+  }
+
   await db
     .update(memberships)
     .set(
@@ -178,14 +391,12 @@ export async function markMembershipCanceled(params: {
     )
     .where(eq(memberships.userId, params.userId));
 
-  await db.insert(membershipEvents).values({
-    id: idFor.event(),
+  await recordMembershipEvent({
     userId: params.userId,
     type: "canceled",
     provider: params.provider ?? "stripe",
-    providerEventId: params.providerEventId ?? null,
-    metaJson: JSON.stringify({ cancelAtPeriodEnd: params.cancelAtPeriodEnd }),
-    createdAt: now,
+    providerEventId: params.providerEventId,
+    meta: { cancelAtPeriodEnd: params.cancelAtPeriodEnd },
   });
 
   await db.insert(notifications).values({
@@ -196,7 +407,9 @@ export async function markMembershipCanceled(params: {
       ? "app.notifications.types.membershipCanceling"
       : "app.notifications.types.membershipCanceled",
     url: "/app/billing",
-    dedupeKey: `membership-canceled-${now.toISOString()}`,
+    dedupeKey: params.providerEventId
+      ? `membership-canceled-${params.providerEventId}`
+      : `membership-canceled-${now.toISOString()}`,
     createdAt: now,
   });
 
@@ -256,7 +469,15 @@ export async function activateMembershipByAdmin(input: { userId: string; actorId
       createdAt: now,
       ...values,
     })
-    .onConflictDoUpdate({ target: memberships.userId, set: values });
+    .onConflictDoUpdate({
+      target: memberships.userId,
+      set: {
+        ...values,
+        providerCustomerId: null,
+        providerSubscriptionId: null,
+        providerCheckoutSessionId: null,
+      },
+    });
 
   await db.insert(membershipEvents).values({
     id: idFor.event(),
@@ -348,54 +569,154 @@ export async function revokeMembershipByAdmin(input: { userId: string; actorId: 
   });
 }
 
-export async function markMembershipPastDue(userId: string, providerEventId?: string | null, provider = "stripe") {
+export async function markMembershipPastDue(
+  userId: string,
+  providerEventId?: string | null,
+  provider = "stripe",
+  identity: ProviderIdentity = {},
+) {
+  if (await eventAlreadyRecorded(providerEventId)) return;
   const now = new Date();
-  await db.update(memberships).set({ status: "past_due", updatedAt: now }).where(eq(memberships.userId, userId));
-  await db.insert(membershipEvents).values({
-    id: idFor.event(),
-    userId,
-    type: "payment_failed",
-    provider,
-    providerEventId: providerEventId ?? null,
-    metaJson: "{}",
-    createdAt: now,
-  });
-  await db.insert(notifications).values({
-    id: idFor.notification(),
-    userId,
-    type: "membership",
-    titleKey: "app.notifications.types.membershipPaymentFailed",
-    url: "/app/billing",
-    dedupeKey: `membership-past-due-${now.toISOString()}`,
-    createdAt: now,
-  });
+  const current = await membershipForUser(userId);
+
+  if (current?.provider === "admin" || (current && provider === "stripe" && !identityMatches(current, identity))) {
+    await recordMembershipEvent({
+      userId,
+      type: "stripe_ignored_membership_state",
+      provider,
+      providerEventId,
+      meta: { requestedType: "past_due" },
+    });
+    return;
+  }
+
+  if (current) {
+    await db.update(memberships).set({ status: "past_due", updatedAt: now }).where(eq(memberships.userId, userId));
+  }
+  await recordMembershipEvent({ userId, type: "payment_failed", provider, providerEventId });
+
+  if (current) {
+    await db.insert(notifications).values({
+      id: idFor.notification(),
+      userId,
+      type: "membership",
+      titleKey: "app.notifications.types.membershipPaymentFailed",
+      url: "/app/billing",
+      dedupeKey: providerEventId ? `membership-past-due-${providerEventId}` : `membership-past-due-${now.toISOString()}`,
+      createdAt: now,
+    });
+  }
 }
 
-export async function expireMembership(userId: string, providerEventId?: string | null, provider = "stripe") {
-  const now = new Date();
+export async function markMembershipIncomplete(
+  userId: string,
+  providerEventId?: string | null,
+  identity: ProviderIdentity = {},
+) {
+  if (await eventAlreadyRecorded(providerEventId)) return;
+  const current = await membershipForUser(userId);
+  if (current?.provider === "admin" || (current && !identityMatches(current, identity))) {
+    await recordMembershipEvent({
+      userId,
+      type: "stripe_ignored_membership_state",
+      provider: "stripe",
+      providerEventId,
+      meta: { requestedType: "incomplete" },
+    });
+    return;
+  }
+  if (current) {
+    await db.update(memberships).set({ status: "incomplete", updatedAt: new Date() }).where(eq(memberships.userId, userId));
+  }
+  await recordMembershipEvent({ userId, type: "subscription_incomplete", provider: "stripe", providerEventId });
+}
+
+/** A paid invoice can recover a mapped Stripe membership from past_due. */
+export async function markMembershipPaid(input: {
+  userId: string;
+  providerEventId?: string | null;
+  providerCustomerId?: string | null;
+  providerSubscriptionId?: string | null;
+  currentPeriodStart?: Date | null;
+  currentPeriodEnd?: Date | null;
+}) {
+  if (await eventAlreadyRecorded(input.providerEventId)) return false;
+  const current = await membershipForUser(input.userId);
+  const identity = {
+    providerCustomerId: input.providerCustomerId,
+    providerSubscriptionId: input.providerSubscriptionId,
+  };
+
+  if (!current || current.provider === "admin" || !identityMatches(current, identity)) {
+    await recordMembershipEvent({
+      userId: input.userId,
+      type: "stripe_ignored_membership_state",
+      provider: "stripe",
+      providerEventId: input.providerEventId,
+      meta: { requestedType: "invoice_paid" },
+    });
+    return false;
+  }
+
   await db
     .update(memberships)
-    .set({ status: "expired", endedAt: now, updatedAt: now })
-    .where(eq(memberships.userId, userId));
-  await db.update(membershipCards).set({ status: "expired" }).where(eq(membershipCards.userId, userId));
-  await db.insert(membershipEvents).values({
-    id: idFor.event(),
-    userId,
-    type: "expired",
-    provider,
-    providerEventId: providerEventId ?? null,
-    metaJson: "{}",
-    createdAt: now,
-  });
-  await db.insert(notifications).values({
-    id: idFor.notification(),
-    userId,
-    type: "membership",
-    titleKey: "app.notifications.types.membershipExpired",
-    url: "/app/billing",
-    dedupeKey: `membership-expired-${now.toISOString()}`,
-    createdAt: now,
-  });
+    .set({
+      status: "active",
+      providerCustomerId: input.providerCustomerId ?? current.providerCustomerId,
+      providerSubscriptionId: input.providerSubscriptionId ?? current.providerSubscriptionId,
+      currentPeriodStart: input.currentPeriodStart ?? current.currentPeriodStart,
+      currentPeriodEnd: input.currentPeriodEnd ?? current.currentPeriodEnd,
+      canceledAt: null,
+      endedAt: null,
+      updatedAt: new Date(),
+    })
+    .where(eq(memberships.userId, input.userId));
+
+  await recordMembershipEvent({ userId: input.userId, type: "invoice_paid", provider: "stripe", providerEventId: input.providerEventId });
+  return true;
+}
+
+export async function expireMembership(
+  userId: string,
+  providerEventId?: string | null,
+  provider = "stripe",
+  identity: ProviderIdentity = {},
+) {
+  if (await eventAlreadyRecorded(providerEventId)) return;
+  const now = new Date();
+  const current = await membershipForUser(userId);
+
+  if (current?.provider === "admin" || (current && provider === "stripe" && !identityMatches(current, identity))) {
+    await recordMembershipEvent({
+      userId,
+      type: "stripe_ignored_membership_state",
+      provider,
+      providerEventId,
+      meta: { requestedType: "expired" },
+    });
+    return;
+  }
+
+  if (current) {
+    await db
+      .update(memberships)
+      .set({ status: "expired", endedAt: now, updatedAt: now })
+      .where(eq(memberships.userId, userId));
+    await db.update(membershipCards).set({ status: "expired" }).where(eq(membershipCards.userId, userId));
+  }
+  await recordMembershipEvent({ userId, type: "expired", provider, providerEventId });
+
+  if (current) {
+    await db.insert(notifications).values({
+      id: idFor.notification(),
+      userId,
+      type: "membership",
+      titleKey: "app.notifications.types.membershipExpired",
+      url: "/app/billing",
+      dedupeKey: providerEventId ? `membership-expired-${providerEventId}` : `membership-expired-${now.toISOString()}`,
+      createdAt: now,
+    });
+  }
 }
 
 export async function recordInvoice(params: {
@@ -427,6 +748,13 @@ export async function recordInvoice(params: {
     })
     .onConflictDoUpdate({
       target: invoices.providerInvoiceId,
-      set: { status: params.status, hostedUrl: params.hostedUrl ?? null },
+      set: {
+        amountCents: params.amountCents,
+        currency: params.currency,
+        status: params.status,
+        periodStart: params.periodStart ?? null,
+        periodEnd: params.periodEnd ?? null,
+        hostedUrl: params.hostedUrl ?? null,
+      },
     });
 }

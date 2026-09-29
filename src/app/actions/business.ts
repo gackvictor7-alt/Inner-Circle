@@ -64,9 +64,15 @@ export async function createOpportunityAction(
   const summary = text(formData, "summary", 300);
   const description = text(formData, "description", 4000);
   const rawType = text(formData, "type", 40);
-  const type = (OPPORTUNITY_TYPES as readonly string[]).includes(rawType) ? rawType : "other";
+  const type = (OPPORTUNITY_TYPES as readonly string[]).includes(rawType) ? rawType : "";
 
-  if (title.length < 8 || summary.length < 20 || description.length < 40) return fail("validation");
+  const fieldErrors: Record<string, string> = {};
+  if (title.length < 8) fieldErrors.title = "opportunityTitle";
+  if (!type) fieldErrors.type = "opportunityType";
+  if (summary.length < 20) fieldErrors.summary = "opportunitySummary";
+  if (description.length < 40) fieldErrors.description = "opportunityDescription";
+  if (Object.keys(fieldErrors).length > 0) return fail("validation", undefined, fieldErrors);
+
 
   const opportunityId = idFor.opportunity();
   await db.insert(businessOpportunities).values({

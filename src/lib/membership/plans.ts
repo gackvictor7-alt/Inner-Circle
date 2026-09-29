@@ -12,7 +12,7 @@ export type Plan = {
 
 export const PLANS: Record<PlanId, Plan> = {
   monthly: { id: "monthly", priceCents: 2499, currency: "EUR", interval: "month", months: 1 },
-  annual: { id: "annual", priceCents: 24990, currency: "EUR", interval: "year", months: 12 },
+  annual: { id: "annual", priceCents: 24999, currency: "EUR", interval: "year", months: 12 },
 };
 
 export function planById(value: string | null | undefined): Plan | null {

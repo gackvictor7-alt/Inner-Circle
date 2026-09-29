@@ -3,6 +3,7 @@ import { db } from "@/db/client";
 import { invoices } from "@/db/schema";
 import { requireUser } from "@/lib/access/server";
 import { flags, integrationStatus, membershipPricing, trialConfig } from "@/lib/env";
+import { stripeStatus } from "@/lib/payments/stripe";
 import { PLANS, annualSaving } from "@/lib/membership/plans";
 import { formatMoney } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
@@ -29,7 +30,8 @@ export default async function BillingPage({
   const access = await requireUser("/app/billing");
   const params = await searchParams;
   const integration = integrationStatus();
-  const stripeReady = integration.stripeConfigured && integration.stripeWebhookConfigured;
+  const stripe = stripeStatus();
+  const stripeReady = stripe.checkoutConfigured && stripe.webhookConfigured;
   // A checkout can only be started when the provider is fully configured or the
   // development activation (never in production) is enabled.
   const checkoutAvailable = stripeReady || integration.devMembershipActivation;
@@ -51,10 +53,24 @@ export default async function BillingPage({
     admin: "app.access.levelAdmin",
   }[access.level];
   const planRows = [PLANS.monthly, PLANS.annual];
+  const membershipStatusKey: Record<string, string> = {
+    active: "app.billing.statusActive",
+    trialing: "app.billing.statusActive",
+    past_due: "app.billing.statusPastDue",
+    canceled: "app.billing.statusCanceled",
+    expired: "app.billing.statusExpired",
+    incomplete: "app.billing.statusIncomplete",
+  };
   // The paywall notice describes the viewer's actual state: an active trial
   // hitting a member-only function vs. a free/expired account (which is
   // never told it is "in the trial").
   const paywallCopy = lockedCopyFor(access);
+  const billingErrorKey: Record<string, string> = {
+    invalidPlan: "app.billing.invalidPlan",
+    rateLimited: "app.billing.rateLimited",
+    stripe_price_not_configured: "app.billing.stripePriceMissing",
+    portalUnavailable: "app.billing.portalUnavailable",
+  };
 
   return (
     <div className="space-y-8">
@@ -101,7 +117,9 @@ export default async function BillingPage({
                   ) : membership.isDevelopment ? (
                     <Badge variant="warning"><Tr k="app.billing.devBadge" /></Badge>
                   ) : (
-                    <Badge variant="forest">{membership.status}</Badge>
+                    <Badge variant="forest">
+                      <Tr k={membershipStatusKey[membership.status] ?? "app.common.status"} />
+                    </Badge>
                   )
                 ) : (
                   "–"
@@ -152,8 +170,10 @@ export default async function BillingPage({
             <p role="alert" className="mt-4 rounded-xl bg-danger-500/10 px-3 py-2 text-xs text-danger-700 dark:text-danger-200">
               {params.error === "stripeNotConfigured" ? (
                 <Tr k="app.billing.notConfiguredText" />
+              ) : billingErrorKey[params.error] ? (
+                <Tr k={billingErrorKey[params.error]} />
               ) : (
-                <Tr k="app.billing.errorStripe" params={{ error: params.error }} />
+                <Tr k="app.billing.errorStripe" />
               )}
             </p>
           )}
@@ -240,7 +260,17 @@ export default async function BillingPage({
                     <Tr k="app.billing.annualHint" /> ·{" "}
                     {formatMoney(PLANS.annual.priceCents, PLANS.annual.currency, "de")}
                   </p>
-                ) : null}
+                ) : (
+                  <p className="mt-3 text-xs leading-5 text-foreground-muted">
+                    <Tr
+                      k="app.billing.annualSaving"
+                      params={{
+                        amount: formatMoney(saving.cents, PLANS.annual.currency, "de"),
+                        percent: saving.percent,
+                      }}
+                    />
+                  </p>
+                )}
                 {/* No dead buttons: without a configured provider (and outside the
                     explicitly labelled development activation) there is no checkout
                     to start, so the button says so instead of bouncing to an error. */}
@@ -265,10 +295,15 @@ export default async function BillingPage({
         </section>
       )}
 
-      {membership?.active && !membership.isDevelopment && !membership.isAdminActivation && (
+      {membership?.active && membership.provider === "stripe" && (
         <Card className="p-6">
           <h2 className="text-lg font-bold tracking-tight"><Tr k="app.billing.portal" /></h2>
           <p className="mt-2 text-sm text-foreground-muted"><Tr k="app.billing.portalNote" /></p>
+          <form action="/api/billing/portal" method="post" className="mt-5">
+            <Button type="submit" variant="secondary" size="sm">
+              <Tr k="app.billing.portal" />
+            </Button>
+          </form>
           <p className="mt-4 text-xs text-foreground-subtle"><Tr k="app.billing.cancelConfirm" /></p>
         </Card>
       )}

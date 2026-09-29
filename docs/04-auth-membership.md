@@ -1,6 +1,7 @@
 # 04 – Authentifizierung, Verifizierung, Trial & Membership
 
-**Stand:** 2026-09-24 (Sprint 12: Private Beta §4b, Stripe-Audit §4a) · davor
+**Stand:** 2026-09-29 (Sprint 17: Stripe-Sandbox-Checkout, signierte Webhooks, Portal, Profile-/Opportunity-UX) · davor
+2026-09-24 (Sprint 12: Private Beta §4b, Stripe-Audit §4a) · davor
 2026-09-21 (Sprint 5: Login-/Registrierungs-UX gehärtet, Passwortregeln aus
 einer Quelle). Registrierung, Verifizierung, Login und Onboarding wurden in
 Sprint 12 **nicht** verändert.
@@ -24,7 +25,7 @@ Verified (free)               ← E-Mail ODER Telefon bestätigt
   ▼
 Discovery-Demo (48 h, einmal) ← Rechte wie free + Demo-Inhalte; keine echten Mitglieder/Deals; echte Events lesbar
   │  Ablauf → free (Konto/Profil bleiben, Demo nicht neu startbar) ODER
-  │  /app/billing             (Plan wählen → Stripe-Checkout ODER Dev-Aktivierung)
+  │  /app/billing             (Plan wählen → Stripe-Sandbox-Checkout ODER Dev-Aktivierung)
   ▼
 Paid Member                   ← Aktivierung ausschließlich über Membership-Service / Webhook
   │  /app/membership-application
@@ -221,48 +222,49 @@ und über `AdminAuditLog.membership.dev_activated` protokolliert.
 (Format `IC-<Jahr>-<5-stellige Nummer>`, öffentliche `publicId`), `Notification`,
 `AdminAuditLog`. Rechnungen entstehen nur aus Provider-Events (`Invoice`).
 
-**Preise:** monatlich 24,99 € (2499 ct), jährlich 249,90 € (24990 ct)
+**Preise:** monatlich 24,99 € (2499 ct), jährlich 249,99 € (24999 ct)
 (`src/lib/membership/plans.ts`; doppelt in `src/lib/env.ts` als
 `membershipPricing` – Quelle der Wahrheit im Code ist `plans.ts`).
 
-### 4a. Stripe-Webhook – Aktivierungsregeln (Sprint-12-Audit)
+### 4a. Stripe-Sandbox – Checkout, Webhooks und Portal (Sprint 17)
 
-Geprüft in `src/app/api/webhooks/stripe/route.ts`, `src/lib/payments/stripe.ts`
-und `src/lib/membership/service.ts`; abgesichert durch
-`tests/integration/stripe-webhook-route.test.ts` und
-`tests/unit/stripe-worker-signature.test.ts`.
+Der Stripe-Pfad ist für den **Test-/Sandbox-Modus** implementiert und bleibt
+von Discovery-Demo, Private Beta, Founding Member, Admin-Override und
+Benutzerrolle getrennt. Es gibt keine Produktionsmigration und keine
+Live-Konfiguration in diesem Sprint.
 
 | Regel | Umsetzung |
 | ----- | --------- |
-| Signatur | `stripe.webhooks.constructEventAsync` (Web-Crypto; die synchrone Variante wirft im Worker, **vor Sprint 12 wäre jeder Produktions-Webhook mit 400 abgelehnt worden**) |
-| Idempotenz | jede Event-ID genau einmal in `MembershipEvent.providerEventId` (unique); Wiederholung → `200 {duplicate:true}` ohne Verarbeitung |
-| Checkout abgeschlossen ≠ bezahlt | `checkout.session.completed` aktiviert **nur** bei `payment_status = paid` bzw. `no_payment_required`; sonst nur Protokoll (`checkout_unpaid`) |
-| Verzögerte Zahlarten (z. B. SEPA) | Aktivierung erst mit `checkout.session.async_payment_succeeded`; `…async_payment_failed` wird protokolliert, **keine** Aktivierung |
-| Abo-Status | `customer.subscription.created/updated`: `active`/`trialing` → aktiv, `past_due`/`unpaid` → `past_due`, `canceled` → gekündigt; `customer.subscription.deleted` → beendet (Sprint-12-Fix: vorher 500 wegen doppelt verwendeter Event-ID) |
-| Rechnungen | `invoice.paid`/`invoice.payment_succeeded` → `Invoice`; `invoice.payment_failed` → `past_due` + Rechnung `failed` |
-| Kein Klick aktiviert | `/api/billing/checkout` legt ohne Stripe **keine** Mitgliedschaft an; Dev-Aktivierung nur außerhalb Produktion und nur mit `ALLOW_DEV_MEMBERSHIP_ACTIVATION` ≠ `false` |
-| Preise | 24,99 €/Monat (2499 ct) und 249,90 €/Jahr (24990 ct ≈ 20,83 €/Monat, 17 % günstiger) – `plans.ts`, Billing-Seite und Checkout identisch |
+| Serverseitige Planwahl | Der Browser sendet nur `monthly` oder `annual`. `/api/billing/checkout` verwirft andere Werte; `STRIPE_PRICE_MONTHLY` bzw. `STRIPE_PRICE_YEARLY` werden ausschließlich auf dem Server gelesen. Es werden Stripe Price IDs über `line_items[].price` verwendet, niemals clientseitige `price_data`-Werte. |
+| Customer-Zuordnung | Für die authentifizierte User-ID wird die gespeicherte Stripe Customer-ID wiederverwendet; fehlt sie, erzeugt der Server einen Customer mit `metadata.userId`. Checkout- und Subscription-Metadaten enthalten User-ID, Plan und Price-ID. |
+| Rückleitung | `success_url` und `cancel_url` werden über `NEXT_PUBLIC_SITE_URL` gebaut. `/checkout/success` informiert nur über den Datenbankstatus; weder Klick noch URL aktiviert eine Membership. |
+| Signatur | Die Route liest den Request als Raw Body (`request.text()`) und prüft `stripe-signature` mit `STRIPE_WEBHOOK_SECRET` via `constructEventAsync`, bevor das JSON interpretiert wird. Fehlerantworten und Logs enthalten keine Payloads, IDs, E-Mail-Adressen oder Provider-Fehlertexte. |
+| Idempotenz | Jede Provider-Event-ID wird einmalig in `MembershipEvent.providerEventId` gespeichert. Wiederholungen werden mit `200 {duplicate:true}` quittiert. |
+| Reconciliation | Checkout-, Customer- und Subscription-Metadaten werden gegen die lokale User-/Membership-Zuordnung geprüft. Ein bereits zugeordnetes Stripe-Konto kann nicht über einen fremden User-Kontext übernommen werden; unbekannte Price IDs aktivieren nicht. |
+| Verbindliche Ereignisse | `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.paid`, `invoice.payment_failed`. Zusätzlich werden `checkout.session.async_payment_succeeded` und `checkout.session.async_payment_failed` für verzögerte Zahlarten verarbeitet. |
+| Checkout abgeschlossen ≠ bezahlt | `checkout.session.completed` aktiviert nur bei `payment_status = paid` oder `no_payment_required`. Unbezahlte Sessions werden als `incomplete`/Ereignis dokumentiert. Bei verzögerten Zahlarten aktiviert erst `async_payment_succeeded`; `async_payment_failed` aktiviert nichts. |
+| Subscription-Lifecycle | `active`/`trialing` aktivieren bzw. aktualisieren die Stripe-Membership; `past_due`/`unpaid` werden `past_due`; `incomplete` bleibt unvollständig; `deleted` beendet den Zugang. Provider-, Customer- und Subscription-IDs werden vor der Änderung abgeglichen. |
+| Rechnungen | `invoice.paid` reaktiviert eine passende Stripe-Membership und speichert die Rechnung als `paid`; `invoice.payment_failed` setzt eine passende Membership auf `past_due` und speichert sie als `failed`. |
+| Keine Statusvermischung | Stripe schreibt weder `User.role` noch Beta-/Founding-Member-Felder und verändert keine `provider = admin`-Membership. Admin-Aktivierung/-Entzug bleibt im bestehenden Admin-Pfad. Discovery-Demo und Private Beta bleiben eigene Achsen. |
+| Portal | `/api/billing/portal` erzeugt eine echte Stripe Customer-Portal-Session nur für die authentifizierte User-ID und die serverseitig gespeicherte Customer-ID. Die Billing-Seite zeigt den Button nur für eine Stripe-Membership; Admin-/Dev-Mitgliedschaften erhalten keinen Portalzugang. |
+| Preise | Billing und öffentliche Hinweise zeigen exakt `24,99 €` monatlich und `249,99 €` jährlich. Die Jahresersparnis beträgt `49,89 €` bzw. gerundet 17 % gegenüber zwölf Monatszahlungen. |
 
-**Hinweis:** Im Stripe-Dashboard **keine** Probezeit (Trial) am Preis/Abo
-konfigurieren – der Status `trialing` würde laut obiger Regel aktivieren.
-Die 48-h-Discovery-Demo ist davon unabhängig.
+**Stripe-Testmodus konfigurieren:** Nur die bestehenden Variablen verwenden:
+`STRIPE_SECRET_KEY` (ein `sk_test_`-Schlüssel), `STRIPE_WEBHOOK_SECRET`,
+`STRIPE_PRICE_MONTHLY` und `STRIPE_PRICE_YEARLY`. Die Werte gehören ausschließlich
+in Cloudflare Worker Secrets/Variables bzw. lokale, nicht versionierte Dateien;
+diese Dokumentation enthält bewusst keine Werte. Das Webhook-Endpoint ist
+`https://innercirclevp.com/api/webhooks/stripe`, sofern die freigegebene
+öffentliche Site-URL bereits auf diese Domain zeigt. `NEXT_PUBLIC_SITE_URL` ist
+die zentrale Quelle für alle Rückleitungen. Live-Schlüssel werden von diesem
+Sandbox-Code abgewiesen; `ALLOW_STRIPE_LIVE` macht sie nicht aktiv.
 
-**Preise im Checkout:** inline über `price_data` aus `src/lib/membership/plans.ts`
-(keine Stripe-Preisobjekte/Preis-IDs nötig). `allow_promotion_codes` ist aktiv –
-ein im Stripe-Dashboard angelegter 100-%-Gutschein führt zu
-`no_payment_required` und aktiviert bewusst (nur vom Admin in Stripe steuerbar).
-
-**Offen / BLOCKED:** echte Schlüssel (`STRIPE_SECRET_KEY`,
-`STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`; für Live zusätzlich
-`ALLOW_STRIPE_LIVE=true`), das Webhook-Endpoint im Stripe-Dashboard mit genau
-diesen Events:
-`checkout.session.completed`, `checkout.session.async_payment_succeeded`,
-`checkout.session.async_payment_failed`, `customer.subscription.created`,
-`customer.subscription.updated`, `customer.subscription.deleted`,
-`invoice.paid`, `invoice.payment_succeeded`, `invoice.payment_failed`;
-Kundenportal (Kündigung/Zahlungsmittel): Funktion
-`createBillingPortalSession` vorhanden, aber **keine Route/UI** (PREPARED);
-ein Testlauf im Stripe-Testmodus gegen die Worker-URL steht aus.
+**Dashboard-Ereignisse:** mindestens genau die sechs verbindlichen Ereignisse
+oben registrieren; die beiden `checkout.session.async_payment_*`-Ereignisse
+sind für verzögerte Zahlarten zusätzlich sinnvoll. Testkauf, Abbruch,
+fehlgeschlagene Zahlung, erfolgreiche Folgezahlung und Kündigung im Stripe-
+Testmodus prüfen. Ein Testmodus-Test gegen einen echten Worker ist in dieser
+Session noch offen; lokale Route-/Service-Tests sind vorhanden.
 
 ### 4b. Private Beta (Sprint 12) – Lebenszyklus eines Beta-Testers
 
@@ -348,7 +350,7 @@ Aktion ausgeschlossen (`app.errors.membershipDemo`). Tests:
 | SMS-Code empfangen | BLOCKED | Twilio-Zugangsdaten fehlen (`TWILIO_*`) |
 | E-Mail-Posteingang ohne Spam-Ordner | PARTIAL | E-Mail-Versand über Resend funktioniert technisch, aber die Testdomain `resend.dev` wird von Spamfiltern oft abgestraft; produktiv ist eine verifizierte Domain nötig |
 | Google-/Apple-Login | NOT IMPLEMENTED | Route `/api/auth/oauth/*` existiert nicht; Buttons sind seit Sprint 5 echte `disabled`-Elemente mit Badge „Einrichtung erforderlich" (K-04 behoben – kein toter Link, kein 404) |
-| Bezahlung | BLOCKED | Stripe-Schlüssel fehlen; Dev-Aktivierung nur lokal und nur mit `ALLOW_DEV_MEMBERSHIP_ACTIVATION` ≠ `false` (Standard in `.env.example`: `false`). Ohne beides: `/api/billing/checkout` → `?error=stripeNotConfigured`, keine Mitgliedschaft; `/app/billing` zeigt den Zahlungsstatus ehrlich (`app.billing.paymentStatusNone/paymentStatusHonest`), Plan-Buttons deaktiviert |
+| Bezahlung | WORKING (Sandbox-Konfiguration erforderlich) | `/api/billing/checkout` nutzt serverseitige Price IDs und signierte Webhooks; ohne vollständige Sandbox-Konfiguration: `?error=stripeNotConfigured`, keine Membership-Aktivierung; `/app/billing` zeigt den Zustand ehrlich (`app.billing.paymentStatusNone/paymentStatusHonest`) |
 | 2FA | PREPARED | `VerificationCode.purpose = login_2fa` bzw. Schema vorhanden, keine UI |
 | Profilfoto hochladen | NOT IMPLEMENTED | nur Bild-URL im Profil (K-10); Discover/Profil zeigen ohne Foto ruhige Initialen |
 | E-Mail bei neuer Kontaktanfrage/Nachricht | BLOCKED | Benachrichtigung nur in der App (Inbox-Badge); E-Mail-Benachrichtigungen brauchen den produktiven Mail-Versand (K-01, K-22) |

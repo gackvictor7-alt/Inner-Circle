@@ -13,7 +13,9 @@ npm run test:watch  # watch mode
 | --- | --- |
 | `tests/unit/auth-crypto.test.ts` | password hashing (scrypt), session-token hashing, OTP generation |
 | `tests/unit/access-levels.test.ts` | the entitlement matrix: what free, trial, member and admin may do |
-| `tests/unit/membership-plans.test.ts` | €24.99/month & €249.90/year, annual saving, provider status mapping |
+| `tests/unit/membership-plans.test.ts` | €24.99/month & €249.99/year, annual saving, provider status mapping |
+| `tests/unit/stripe-checkout.test.ts` | server-side sandbox Price-ID mapping, Customer reuse, Portal return URL, no arbitrary webhook price |
+| `tests/integration/stripe-webhook-route.test.ts` | raw/signature boundary, duplicate events, unpaid/async Checkout, subscription lifecycle, paid/failed invoices, deletion |
 | `tests/unit/trial-rules.test.ts` | 48-hour trial, connection cap, OTP limits |
 | `tests/unit/i18n-parity.test.ts` | DE/EN dictionaries define exactly the same keys and no empty strings |
 | `tests/integration/membership.test.ts` | activation, card issuing, cancel-at-period-end, expiry, invoice idempotency |

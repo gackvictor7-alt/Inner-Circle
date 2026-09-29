@@ -9,10 +9,11 @@ import { createTestUser, deleteTestUser } from "../helpers";
 
 /**
  * Simplified opportunity creation (consolidation sprint): the create form
- * sends exactly six content fields (title, type, summary, description,
- * industry, location). Legacy fields (offering/seeking/requirements/remote)
- * stay stored on old entries but are no longer asked for – new entries keep
- * them null and the detail view renders no empty blocks for them.
+ * sends the six core content fields (title, type, summary, description,
+ * industry, location) plus the existing remote option. Legacy text fields
+ * (offering/seeking/requirements) stay stored on old entries but are no longer
+ * asked for – new entries keep them null and the detail view renders no empty
+ * blocks for them.
  */
 
 vi.mock("next/navigation", () => ({ redirect: (url: string) => { throw new Error(`redirect:${url}`); } }));
