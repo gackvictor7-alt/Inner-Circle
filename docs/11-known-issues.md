@@ -1,9 +1,13 @@
 # 11 – Known Issues
 
-**Stand:** 2026-09-29 · Basis: aktuelles `main` @ `98814bc` (Sprint 17 –
-Stripe-Sandbox-Billing, Profil-/Opportunity-UX). Sprint 17 schließt den
-serverseitigen Stripe-Sandbox-Pfad ab; ein echter externer Testmodus-Durchlauf
-und Browser-E2E bleiben als offen ausgewiesen. Davor: Sprint 16 schließt
+**Stand:** 2026-09-30 (Sprint 18: Post-Bilder, Inbox-Lesestatus,
+Beta-/Trial-Präzedenz) · davor `main` @ `98814bc` (Sprint 17 –
+Stripe-Sandbox-Billing, Profil-/Opportunity-UX). Sprint 18 schließt den
+Post-Bild-Upload einschließlich serverseitiger Sichtbarkeitsprüfung und den
+Inbox-Lesestatus-Race; Beta-/Trial-Präzedenz ist durch Regressionstests
+abgesichert. Die gezielte authentifizierte Browser-Abnahme lief gegen den
+lokalen Worker **101/101**; ein echter externer Stripe-Testmodus-Durchlauf und
+die visuelle Abnahme anderer Oberflächen bleiben offen. Davor: Sprint 16 schließt
 **K-08 teilweise** (verifizierte Bewertungen, serverseitige Verifikation,
 Missbrauchsschutz, Score-Berechnung, Detailansicht, Listen-Integration,
 Admin-Moderation), ergänzt **K-27** (Event-Teilnahme technisch nicht
@@ -222,16 +226,17 @@ P2 mittelfristig · P3 Aufräumen.
   geprüft, die Bemessungsbasis „Gewinn" steht nicht fest. Die Website behauptet
   ausdrücklich **nicht**, dass bereits gespendet werde.
 
-### K-30 · Kein Browser-E2E für die neuen Oberflächen
+### K-30 · Browser-Abdeckung anderer Oberflächen weiterhin offen
 
-- **Symptom:** wie K-26 – in dieser Umgebung ist kein Chromium/Playwright
-  verfügbar.
-- **Risiko:** gering – die neuen Ansichten wurden per Server-Rendering (HTTP +
-  Ausgabevergleich) und über Komponenten-Tests (`deal-views.test.tsx`) geprüft,
-  **nicht** visuell im Browser.
-- **Lösung:** visuelle Abnahme von Light/Dark und der 320-px-Ansicht
-  (Deal-Fee-Staffel, Deal-Bedingungen, Investment-Pool-Ring, Deal-Bestätigung)
-  auf einem Rechner mit Browser nachholen.
+- **Stand 2026-09-30:** Ein echter lokaler Worker-Browserlauf ist jetzt für
+  Beta A–G, Zwei-Konten-Unread, JPG/PNG/WebP-Postbilder und 390-px-Inbox/
+  Conversation/Post/Profile dokumentiert und bestanden (101/101):
+  `tests/e2e/sprint18-private-beta-browser.mjs`. Das löst die gezielten
+  Abnahmepunkte, ist aber keine allgemeine Screenshot-/Pixel-Abnahme.
+- **Noch offen:** Deal-Fee-Staffel, Deal-Bedingungen, Investment-Pool-Ring und
+  Deal-Bestätigung in Light/Dark und bei 320 px visuell im Browser prüfen.
+  Komponentenabdeckung besteht (`deal-views.test.tsx`); reale Mobilgeräte und
+  ein Gerätefarm-Durchlauf wurden nicht verwendet.
 
 ### K-09 · Ungeprüfte Rechtstexte
 
@@ -266,36 +271,42 @@ P2 mittelfristig · P3 Aufräumen.
   Resend-Logs (Anzahl/Einwilligungen) prüfen; inhaltlich ist kein weiterer
   Hebel im Code bekannt.
 
-### K-26 · Kein Browser/Screenshot in dieser Umgebung — **OFFEN (Umgebung)**
+### K-26 · Kein systemweit installiertes Chromium — **TEILWEISE ENTSCHÄRFT**
 
-- **Symptom (Stand 2026-09-28, Mobile-Polish-Sprint):** In der Arena-Sandbox
-  ist weder Chromium/Chrome installiert noch lässt sich eines beschaffen –
-  `npx playwright install chromium` schlägt am CDN-Download fehl
-  (`cdn.playwright.dev` und der Mirror `cdn.npmmirror.com` beide `ECONNRESET`).
-- **Folge:** Die Mobile-Arbeit wurde **code- und markupseitig** geprüft
-  (Klassen-/Breakpoint-Audit, gerenderte HTML-Struktur aus dem Dev-Server und
-  aus dem echten lokalen workerd, HTTP 200 auf allen App-Seiten, CSS-Bundle
-  geprüft), aber **es wird keine visuelle Abnahme behauptet**. Die
-  Bildschirmfotos der früheren Sprints unter `preview/` sind unverändert und
-  zeigen den Stand **vor** diesem Sprint.
-- **Lösung:** Auf einem Rechner mit Browser
-  `node tests/e2e/sprint15-browser.mjs` bzw. die Rezepte in
-  [`08-testing.md`](08-testing.md) §3 gegen `npm run dev` bzw.
-  `npm run cf:preview` laufen lassen; für diesen Sprint genügt ein manueller
-  Durchlauf der Mobile-Punkte (Hero, Header, Menü, CTA, Drawer, Overlays,
-  DE/EN, Light/Dark) bei 360 px, 390–430 px, Tablet und Desktop.
+- **Ursache bleibt:** In der Arena-Sandbox schlägt `npx playwright install
+  chromium` beim CDN-Download weiterhin mit `ECONNRESET` fehl; es gibt keine
+  systemweite Chrome-/Chromium-Installation und kein Browserpaket als
+  Repo-Dependency.
+- **Nachtrag 2026-09-30:** Ein isolierter Workaround mit externem
+  `@sparticuz/chromium` + `playwright-core` in `/tmp/pw` funktioniert. Damit
+  lief der echte lokale Worker-Browser-Test
+  `tests/e2e/sprint18-private-beta-browser.mjs` **101/101**. Die Abnahme
+  begrenzt `BASE_URL` auf `localhost:8787`/`127.0.0.1:8787` und nutzt lokale
+  Wrangler-D1/R2-Befehle.
+- **Grenze:** Das behebt weder allgemeine Screenshots/Pixelvergleiche noch
+  Browser-QA aller Seiten; übrige Lücken stehen in K-30. Die benötigten
+  Browsermodule sind temporär und nicht Teil der Repo-Dependencies.
 
 ## P2 – mittelfristig
 
-### K-10 · Keine Uploads (Cover, Kursvideos, Anhänge) – Profilfotos gelöst
+### K-10 · Weitere Medientypen ohne Upload – Profil- und Post-Bilder gelöst
 
 - **Sprint 13:** Profilfoto-Upload ist **WORKING** (R2-Binding `MEDIA`,
   JPG/PNG/WebP, max. 5 MB, Magic-Byte-Prüfung in Browser und Server,
   Auslieferung über `/api/media/<key>` oder `R2_PUBLIC_BASE_URL`).
-- Weiterhin offen: Cover, Kursvideos, Nachrichten-Anhänge sind URL-Felder
+- **Sprint 18:** Post-Bild-Upload ist ebenfalls **WORKING**: gleicher R2-Bucket,
+  eigenes `posts/<userId>/`-Präfix, JPG/PNG/WebP bis 5 MB, Server-Magic-Byte-
+  und Größenprüfung, URL-only in `Post.imageUrl`, streng allowlisted
+  `/api/media`-Auslieferung. Die Route prüft eine vorhandene Post-Zeile,
+  Beitrags-Sichtbarkeit, Verbindung und Blockierungen erneut; Post-Bilder
+  werden `private, no-store` ausgeliefert (Avatar-Cache unverändert). Profil-
+  Ansicht und Bereinigung prüfen Autor/Eigentum; direkte relative
+  `/api/media/posts/...`-Referenzen auf fremde Autoren-Präfixe werden
+  abgewiesen.
+- Weiterhin offen: Cover, Kursvideos und Nachrichten-Anhänge sind URL-Felder
   ohne Upload.
-- **Lösung (Rest):** denselben R2-Weg für die verbleibenden Medientypen
-  nutzen (Key-Präfixe trennen, private Bereiche getrennt halten).
+- **Lösung (Rest):** denselben R2-Weg für verbleibende Medientypen nutzen
+  (Key-Präfixe trennen, private Bereiche getrennt halten).
 
 ### K-11 · Moderations-Queue ohne Oberfläche
 
@@ -409,10 +420,23 @@ ab; vollständiger Wiederholungslauf grün. Read-only-Static-Cache-/Broken-Pipe-
 Meldungen im lokalen Preview bleiben beobachtet, nicht als Anwendungsfix gelöst.
 
 
-- **Produktions-D1 noch ohne Migration `0002`:** nur lokal angewendet. Vor bzw.
-  mit dem Deploy `npm run cf:release` (enthält
-  `wrangler d1 migrations apply DB --remote`) ausführen – der neue Code
-  erwartet `BetaInvite`, `BetaAccess` und `Conversation.directKey`.
+- **Sprint 18 – Beta-/Trial-Präzedenz und Plattformrechte:** Worker-Browser-
+  Abnahme A–G **101/101** plus Integrationstests bestätigen: Trial ohne Beta
+  bleibt Demo, aktives Beta ersetzt die Demo auch nach Trial-Ablauf durch echte
+  ausgewählte Plattformbereiche, und abgelaufenes Beta fällt auch bei sonst
+  aktivem Trial auf Free zurück. Beta-Tester erhalten keine Membership-,
+  Payment- oder Admin-Rechte; aktive Membership/Admin bleiben vorrangig.
+  Browsing/Connect/Follow/Feed/Posts und ausdrücklich freigegebene Opportunity-,
+  Marketplace- und Investment-Bereiche wurden browserseitig geprüft; Seller-,
+  Deal-Management-, Paid-Course-, Investment-Einreichungs- und Event-
+  Anmelderechte blieben gesperrt. Membership war eine lokale Test-Fixture,
+  keine Stripe-Zahlung. Der Report stammt ausschließlich aus isolierter
+  lokaler D1/R2; Produktions-D1 blieb unberührt.
+- **Produktions-D1 wurde in dieser Session nicht abgefragt oder verändert.**
+  Die notwendige Lesestatus-Migration `0006` ist lokal gegen workerd-D1
+  getestet; der Produktions-Migrationsstand ist damit nicht verifiziert. Vor
+  einem späteren Deploy die ausstehende Migration prüfen und nur im
+  freigegebenen Release-Prozess anwenden.
 - **CPU-Zeit nur lokal gemessen** (`08-testing.md` §3c): Sprint-12-Seiten
   43–68 ms im lokalen workerd, gleiche Größenordnung wie das vorbestehende
   Dashboard; Startphase 50 ms (Limit 1 s). Über dem Free-Limit von 10 ms →
@@ -431,8 +455,8 @@ Meldungen im lokalen Preview bleiben beobachtet, nicht als Anwendungsfix gelöst
 - **E-Mail-Benachrichtigungen** bei neuer Anfrage/Nachricht: **BLOCKED** –
   nur In-App (Inbox-Badge, Anfrage-Hinweis); braucht produktiven Mailversand
   (K-01) und eine Opt-in-Einstellung.
-- **Profilfoto-Upload: NOT IMPLEMENTED** (K-10) – nur Bild-URL; ohne Foto
-  zeigen Discover/Profil ruhige Initialen.
+- Profil- und Post-Bild-Uploads sind seit Sprint 13/18 **WORKING** (K-10);
+  übrig bleiben Cover-, Kursvideo- und Nachrichten-Anhang-Uploads.
 - **Kein Echtzeit-Transport:** Chat pollt alle 10 s, Badges aktualisieren
   sich bei Navigation. Bewusst (Auftrag: kein fragiles Realtime).
 - **`AUTH_SECRET` rotieren entwertet alle noch nicht eingelösten

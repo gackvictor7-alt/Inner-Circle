@@ -9,7 +9,7 @@ import { useTr } from "@/components/app/localized";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Input, Textarea } from "@/components/ui/Input";
-import { AVATAR_MAX_BYTES, MEDIA_IMAGE_TYPES, sniffImageType } from "@/lib/media";
+import { MEDIA_MAX_BYTES, sniffImageType } from "@/lib/media";
 
 export function PostCreateForm() {
   const tr = useTr();
@@ -43,20 +43,25 @@ export function PostCreateForm() {
   const pickImage = async (file: File | undefined) => {
     if (!file) return;
 
-    if (!(MEDIA_IMAGE_TYPES as readonly string[]).includes(file.type)) {
-      setImageError(tr("app.errors.fileType"));
+    const rejectFile = (message: string) => {
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      setPreviewUrl((previous) => {
+        if (previous) URL.revokeObjectURL(previous);
+        return null;
+      });
+      setImageError(message);
+    };
+
+    if (file.size <= 0 || file.size > MEDIA_MAX_BYTES) {
+      rejectFile(tr(file.size > MEDIA_MAX_BYTES ? "app.errors.fileTooLarge" : "app.errors.fileType"));
       return;
     }
 
-    if (file.size > AVATAR_MAX_BYTES) {
-      setImageError(tr("app.errors.fileTooLarge"));
-      return;
-    }
-
+    // Trust the same magic bytes that the server validates, not File.type.
     const head = new Uint8Array(await file.slice(0, 12).arrayBuffer());
 
     if (!sniffImageType(head)) {
-      setImageError(tr("app.errors.fileType"));
+      rejectFile(tr("app.errors.fileType"));
       return;
     }
 
@@ -142,12 +147,21 @@ export function PostCreateForm() {
           maxLength={400}
         />
 
+        <div className="space-y-2">
+          <Input
+            label={tr("app.posts.imageLabel")}
+            type="url"
+            name="imageUrl"
+            maxLength={400}
+          />
+          <p className="text-xs text-foreground-subtle">{tr("app.posts.imageUrlHint")}</p>
+        </div>
+
         <div className="space-y-3 border-t border-border pt-5">
           <div>
-            <p className="text-sm font-medium">Bild</p>
-            <p className="mt-1 text-xs text-foreground-subtle">
-              JPG, PNG oder WebP · maximal 5 MB
-            </p>
+            <p className="text-sm font-medium">{tr("app.posts.imageUploadTitle")}</p>
+            <p className="mt-1 text-xs text-foreground-subtle">{tr("app.posts.imageUploadHint")}</p>
+            <p className="mt-1 text-xs text-foreground-subtle">{tr("app.posts.imageUploadNote")}</p>
           </div>
 
           {previewUrl && (
@@ -156,7 +170,7 @@ export function PostCreateForm() {
               <img
                 src={previewUrl}
                 alt=""
-                className="max-h-[420px] w-full object-cover"
+                className="max-h-[420px] w-full object-contain"
               />
             </div>
           )}

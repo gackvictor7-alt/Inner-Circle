@@ -1,6 +1,6 @@
 # 06 – Zugangsstufen, Rollen & Berechtigungen (Ist-Zustand)
 
-**Stand:** 2026-09-24 (Sprint 12: Private Beta & echtes Networking – §3c/§3d; davor Sprint 11:
+**Stand:** 2026-09-30 (Sprint 18: Private-Beta-Plattformrechte – §3c; davor Sprint 12: Private Beta & echtes Networking – §3c/§3d; davor Sprint 11:
 Discovery-Demo) · Quelle im Code: `src/lib/access/levels.ts` (Matrix, client-safe),
 `src/lib/access/server.ts` (Durchsetzung, serverseitig) und
 `src/lib/network/eligibility.ts` (wer zum echten Netzwerk gehört).
@@ -16,11 +16,11 @@ Ersetzt das frühere Zielbild in `06-access-roles.md`.
    Rollen in Profilen (`rolesJson`, `Profile.headline`) sind Selbstbeschreibung
    und **öffnen keine** Rechte.
 
-3. **Private-Beta-Freigabe (Sprint 12)** – ein separater, zeitlich
-   begrenzter Grant (`BetaAccess`), **keine** Zugangsstufe und **keine**
-   Mitgliedschaft: Er ergänzt `free`/`trial` ausschließlich um die
-   Networking-Rechte (§3c). Beta-Tester bleiben `free`/`trial`, zählen nie als
-   zahlend und erhalten nie Admin-Rechte.
+3. **Private-Beta-Freigabe** – ein separater, zeitlich begrenzter Grant
+   (`BetaAccess`), **keine** Zugangsstufe und **keine** Mitgliedschaft: Er
+   ergänzt `free`/`trial` um ausdrücklich ausgewählte Plattform-Rechte (§3c).
+   Beta-Tester bleiben `free`/`trial`, zählen nie als zahlend und erhalten nie
+   Admin-Rechte.
 
 **Grundregel:** Eine Rolle ist keine Berechtigung. Die einzige Ausnahme ist
 `User.role = "admin"`.
@@ -40,7 +40,7 @@ die Konzepte sind getrennt (abgesichert durch `core-loop.test.ts`).
 | Discovery-Demo | `trial` | verifiziert + gestartete 48-h-Demo (einmalig) | **wie `free`** plus `demoAccess`: Network/Discover/Chancen/Jobs/Investments zeigen ausschließlich gekennzeichnete Demo-Inhalte, simulierte Kontaktanfrage ohne Datenbankschreibung, echte Events lesbar (keine Anmeldung); **keine** echten Mitgliederprofile, Kontakte, Follows, Bewerbungen, Interessensbekundungen, Nachrichten, Beiträge, Verkäufe, kein Vollprofil, keine Trust-Sicht |
 | Mitglied | `member` | aktive, aus dem Membership-Service stammende Mitgliedschaft | zusätzlich Messaging, Posten, Chancen anlegen, Verkaufen, Vollkurse, Investments einreichen, Mitgliedskarte, Vollprofil |
 | Admin | `admin` | `User.role = "admin"` | alles aus `member` + Admin-Konsole, Prüfungen, Sperren, Audit, Dev-Postausgang |
-| *Beta-Zugang (Grant, keine Stufe)* | `free`/`trial` + `access.beta.active` | verifiziertes Konto + eingelöster persönlicher Beta-Schlüssel, `BetaAccess.status = active` und `endsAt` in der Zukunft | **nur Networking:** echte Mitglieder entdecken/suchen, echte Profile (im Rahmen der Privatsphäre), Kontaktanfragen senden/annehmen, Chat mit bestätigten Kontakten – sonst alles wie die Basisstufe (§3c) |
+| *Beta-Zugang (Grant, keine Stufe)* | `free`/`trial` + `access.beta.active` | verifiziertes Konto + eingelöster persönlicher Beta-Schlüssel, `BetaAccess.status = active` und `endsAt` in der Zukunft | ausgewählte echte Plattformbereiche inkl. Network, Follow, Beiträge, Opportunities/Jobs, Investments und Marketplace-Browsing; Creator-/Seller-/Payment-/Adminrechte bleiben gesperrt (§3c) |
 
 **Ableitung** in `getAccessContext()` (einzige Wahrheit, pro Request gecacht):
 
@@ -114,10 +114,11 @@ Zeichen: ✅ erlaubt · ➖ nicht erlaubt · ⚠️ eingeschränkt (siehe Fußno
 | Audit-Log einsehen (implizit über Admin-Ansichten) | ➖ | ➖ | ➖ | ➖ | 🔒 |
 | Dev-Postausgang `/dev/outbox` | ➖ | ➖ | ➖ | ➖ | 🔒 (zusätzlich `ENABLE_DEV_OUTBOX=true`) |
 
-**Beta:** In allen Zeilen gilt für Beta-Tester die Spalte ihrer Basisstufe
-(Free/Trial) – **außer** den Networking-Zeilen (Verzeichnis, Discover,
-Mitgliederprofil, Kontaktanfrage senden/annehmen, Nachrichten): dort gilt ✅
-wie bei Mitgliedern, solange der Beta-Zugang aktiv ist. Details §3c.
+**Beta:** Die Tabellen-Spalte Free/Trial ist nur die Mitgliedsstufe, nicht der
+zusätzliche Grant. Bei aktivem Beta-Zugang gelten die ausdrücklich in §3c
+aufgeführten Plattformrechte; sie sind kein Membership-Ersatz und schalten
+weder bezahlte Kurszugänge noch Creator-, Seller-, Zahlungs- oder Adminrechte
+frei.
 
 **Trial-Mengenbegrenzungen:** entfallen seit Sprint 11 (`TRIAL_VISIBLE`
 wurde aus `levels.ts` entfernt) – die Demo zeigt keine begrenzte Auswahl
@@ -142,7 +143,7 @@ Audit-Fix (`tests/integration/access-matrix.test.ts`, 25 Fälle):
 | ----- | ------------------------- | ----- | ------------ |
 | `/app/network` (Verzeichnis) | Locked-State (`NetworkLocked`, Sprint 12: Hinweis „geschlossene Beta“ + „Beta-Zugang aktivieren“), keine Daten geladen | Demo-Zweig (8 Demo-Profile, echte Abfrage läuft nicht) | ✅ (auch aktive Beta-Tester) |
 | `/app/discover` | Locked-State (`NetworkLocked`; bis Sprint 11: Redirect `/app/billing?paywall=trial`) | Demo-Deck über Demo-Profile | ✅ (auch aktive Beta-Tester) |
-| `/app/opportunities`, `/app/jobs`, `/app/investments` | Locked-State | Demo-Zweig (`DemoAreaNotice` + Beispiel-Sektionen, keine echten Abfragen) | ✅ |
+| `/app/opportunities`, `/app/jobs`, `/app/investments` | Locked-State (außer aktiver Beta-Grant) | Demo-Zweig nur ohne Beta (`DemoAreaNotice` + Beispiele; keine echten Abfragen) | ✅; Beta ebenfalls ✅ mit den §3c-Rechten |
 | `/app/opportunities/[id]` | Locked-State (Owner ausgenommen) | Locked-State | ✅ |
 | `/app/investments/[id]` | Locked-State | Locked-State | ✅ |
 | `/app/people/[handle]` | Locked-State (`NetworkLocked`; eigenes Profil ausgenommen) | Locked-State (eigenes Profil ausgenommen) | ✅ nur für echte, sichtbare Teilnehmer, mit Privatsphäre-Regeln (§3d); Beta-Tester ebenso |
@@ -195,28 +196,54 @@ Die 48-Stunden-Phase ist eine **Demo**, kein eingeschränkter Echtzugang:
   `/api/billing/checkout` **keine** Mitgliedschaft an
   (`discovery-demo.test.ts` §6).
 
-### 3c. Private Beta (Sprint 12) – Networking-Freigabe ohne Mitgliedschaft
+### 3c. Private Beta (Abnahme 2026-09-30) – Plattformzugang ohne Mitgliedschaft
+
+**Ausgangszustand vor dieser gezielten Anpassung (2026-09-30):** Der aktive
+Beta-Grant öffnete nur echte Mitglieder-Suche/Discover, Vollprofile im Rahmen
+der Privatsphäre, Kontaktanfragen und Chat. Follow, Feed/Beiträge, reale
+Business-/Job-/Investmentbereiche und Event-Anmeldungen blieben gesperrt.
+Marketplace zeigte trotz `marketplaceBrowse` nur Demo-Angebote; Real-Listing-
+und Detailseiten prüften zusätzlich direkt `hasMemberAccess(level)`. Bei aktivem
+48-h-Trial blieb `demoAccess = true`, sodass ein Beta-Tester weiterhin die
+Discovery-Demo im Dashboard bzw. den Business-Demo-Seiten sah. Academy-Katalog
+und Vorschau waren erreichbar, vollständige Kurse nicht. Der bestehende
+Integrationstest bestätigte damals nur Netzwerk-Rechte; diese Beschreibung hält
+den vorgefundenen Zustand fest, nicht den Zielzustand.
 
 **Modell:** Ein Admin erstellt persönliche Beta-Schlüssel (`/admin/beta`).
 Der Tester registriert sich normal, bestätigt seine E-Mail und löst den
 Schlüssel unter Profil/Mitgliedschaft → **Beta-Zugang** (`/app/beta`) ein.
 Dadurch entsteht ein `BetaAccess`-Datensatz (Standard 30 Tage ab Einlösung,
 pro Schlüssel 1–365 Tage). Keine Mitgliedschaft, kein Stripe, keine Zahlung,
-keine Rollenänderung.
+keine Rollenänderung. Die Beta bleibt eine eigene Achse; `level` bleibt `free`
+oder `trial` und der Konto-/Zahlstatus wird nicht verändert.
 
-| Fähigkeit | Free/Trial | **+ aktiver Beta-Zugang** | Beta abgelaufen/widerrufen | Member/Admin |
-| --------- | ---------- | ------------------------- | -------------------------- | ------------ |
-| Echte Mitglieder entdecken (`/app/discover`) und suchen (`/app/network`) | ➖ (Trial: Demo) | ✅ | ➖ (`NetworkLocked` mit Ende-Hinweis; läuft die eigene 48-h-Demo noch: Demo-Profile **plus** Ende-Hinweis, nie echte Mitglieder) | ✅ |
-| Echte Mitgliederprofile | ➖ | ✅ (Privatsphäre §3d) | ➖ (`NetworkLocked`; Kontakte bleiben in der Kontaktliste, Chatverläufe lesbar) | ✅ |
-| Kontaktanfrage mit Nachricht senden | ➖ | ✅ | ➖ `betaExpired` | ✅ |
-| Anfrage annehmen | ➖ | ✅ | ➖ `betaExpired` | ✅ |
-| Anfrage ablehnen / zurückziehen / Verbindung lösen / blockieren | ✅ | ✅ | ✅ | ✅ |
-| Chat mit bestätigten Kontakten schreiben | ➖ | ✅ | ➖ `betaExpired` (Verlauf bleibt lesbar) | ✅ |
-| Eigene Kontakte, Anfragen, Mitteilungen verwalten | ✅ | ✅ | ✅ | ✅ |
-| Follow, Feed, Beiträge | ➖ | ➖ | ➖ | ✅ |
-| Deals, Jobs, Investments, Marketplace-Verkauf, Academy-Vollzugang | ➖ (Trial: Demo) | ➖ (Trial: Demo) | ➖ | ✅ |
-| Event-Anmeldung, Mitgliedskarte, Trust-Details | ➖ | ➖ | ➖ | ✅ |
-| Admin-Konsole | ➖ | ➖ | ➖ | 🔒 Admin |
+**Präzedenz (getrennte Achsen):** Ein aktiver Beta-Grant gilt auch nach Ablauf
+der 48-h-Discovery-Demo und unterdrückt während seiner Laufzeit `demoAccess`.
+Ohne Beta bleibt ein aktiver Trial Demo-only. Nach Ablauf/Widerruf von Beta
+fallen Nicht-Mitglieder auf Free-Regeln zurück – selbst wenn der Discovery-
+Timer technisch noch nicht abgelaufen ist; die Trial-Zeile wird dadurch nicht
+in eine Membership umgeschrieben. Aktive Membership bleibt `member` (und
+konvertiert einen alten Trial), `User.role = admin` bleibt `admin`; beide haben
+Vorrang vor Beta. Admin-Routen prüfen die Rolle separat – Beta kann nie
+Admin-Rechte erteilen. Abgedeckt durch `tests/integration/beta-access.test.ts`
+(A–G) sowie `tests/unit/beta-grant.test.ts`.
+
+| Fähigkeit / Bereich | **Aktiver Beta-Zugang** | Beta abgelaufen/widerrufen | Member/Admin | Einschränkung im Beta-Grant |
+| ------------------- | ---------------------- | -------------------------- | ------------ | --------------------------- |
+| Start, Dashboard, Trial-Hinweis | ✅ echte Plattformbereiche; Demo-/Trial-Banner wird unterdrückt | Free-Dashboard, Ende-Hinweis | ✅ | kein Membership-Badge, keine Zahlung |
+| Discover, Network, Vollprofile | ✅ echte Mitglieder, Privatsphäre §3d gilt | ➖ neue Suche/Profile; eigene Kontakte/Verläufe bleiben | ✅ | kein Umgehen von Privatsphäre/Blockierungen |
+| Follow | ✅ | ➖ | ✅ | nur normale Follow-Funktion |
+| Connection Requests | ✅ senden/annehmen; persönliche Nachricht bleibt erforderlich | ➖ neue Anfragen/annehmen; ablehnen/zurückziehen bleibt gemäß Basispolicy | ✅ | kein Umgehen der Teilnehmer-/Block-Prüfung |
+| Inbox/Messaging | ✅ Chat mit bestätigten Kontakten | ➖ neue Nachrichten; bestehende eigene Verläufe lesbar | ✅ | keine fremden Unterhaltungen/kein Gruppenchat |
+| Profil, Feed und normale eigene Beiträge | ✅ eigenes Profil pflegen, Feed lesen, normale Posts inkl. Bild erstellen | eigenes Profil/Beiträge bleiben; keine neuen Posts/kein fremder Feed | ✅ | kein Trust-Detail/keine Mitgliedskarte |
+| Business Opportunities und Jobs/Projekte | ✅ echte Listings lesen, Details öffnen, bewerben | echte Bereiche gesperrt (kein Trial-Demo-Rückfall) | ✅ | keine Opportunities/Jobs erstellen oder verwalten; Deal-Management bleibt Membership-Gate |
+| Investments | ✅ Opportunities lesen und unverbindliches Interesse bekunden | echter Investmentbereich gesperrt | ✅ | keine Investment-Einreichung/Publisher-Funktion |
+| Marketplace | ✅ reale Listings und Details lesen | nur normale Free-Preview/Demo | ✅ | kein Verkauf, Checkout/Kauf derzeit nicht implementiert |
+| Academy | ✅ Kurskatalog, Vorschaulektionen und bereits erteilte Enrollment-Zugänge | Vorschau/bestehendes Enrollment gemäß Free-Regeln | ✅ | kein Vollzugang zu Membership-/zahlungspflichtigen Kursen, kein Kursverkauf |
+| Events | ✅ kuratierte reale Events lesen | reale Events lesbar | ✅ | Anmeldung/Tickets bleiben Membership-Gate bzw. nicht implementiert |
+| Billing/Payments | Billing-Info wie Free; Checkout nur nach bestehender Payment-Konfiguration | Free-Regeln | ✅ | Beta allein aktiviert weder Subscription noch Checkout/Zahlung |
+| Admin-/interne Funktionen | ➖ | ➖ | 🔒 nur Admin-Rolle | keinerlei Admin-Rechte |
 
 **Schlüssel (serverseitig, `src/lib/beta/*`, `src/app/actions/beta.ts`):**
 80 Bit Zufall (Crockford-Base32, `ICB-XXXX-XXXX-XXXX-XXXX`), gespeichert nur
@@ -269,6 +296,7 @@ Profilseite `src/app/(app)/app/people/[handle]/page.tsx`, Listen-Abfragen):
 | `showLocation = false` | Standort nirgends angezeigt und vom Standortfilter nicht gefunden |
 | `performanceVisibility` | Trust-Block nur für Betrachter mit `trustView` (Mitglieder) und gemäß Einstellung; Detailansicht und Bewertungsliste folgen derselben Regel |
 | `allowConnectionRequests = false` | keine Anfragen möglich (`memberUnavailable`), neutraler Hinweis statt Button |
+| `Post.visibility` (`public`/`members`/`connections`) | `userPosts()` filtert fremde Profilposts; `/api/media/posts/...` prüft die referenzierende, nicht gelöschte Post-Zeile und dieselbe Stufe/Verbindung serverseitig. Post-Bilder erhalten `private, no-store`; eigene Beiträge bleiben für den Autor sichtbar. |
 
 ### 3e. Manuelle administrative Mitgliedschaft (Konsolidierungs-Sprint 2026-09-28)
 

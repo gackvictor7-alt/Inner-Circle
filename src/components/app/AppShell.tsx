@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
+import type { Entitlements } from "@/lib/access/levels";
 import { useI18n } from "@/lib/i18n/context";
 import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
@@ -43,6 +44,8 @@ export type ShellUser = {
   isAdmin: boolean;
   isDemo: boolean;
   trialMsRemaining: number | null;
+  /** Create-sheet actions mirror server-side entitlements (not the access level). */
+  entitlements: Pick<Entitlements, "opportunitiesManage" | "investmentsSubmit" | "marketplaceSell" | "postCreate">;
   /** ISO end date while a private-beta grant is the source of network access. */
   betaActiveUntil?: string | null;
   /** The account had beta access that has expired or was ended. */
@@ -169,37 +172,37 @@ export function AppShell({
       href: "/app/opportunities/new",
       title: t.app.create.opportunity,
       desc: t.app.create.opportunityDesc,
-      enabled: user.level === "member" || user.level === "admin",
+      enabled: user.entitlements.opportunitiesManage,
     },
     {
       href: "/app/opportunities/new?type=job",
       title: t.app.create.job,
       desc: t.app.create.jobDesc,
-      enabled: user.level === "member" || user.level === "admin",
+      enabled: user.entitlements.opportunitiesManage,
     },
     {
       href: "/app/investments/submit",
       title: t.app.create.investment,
       desc: t.app.create.investmentDesc,
-      enabled: user.level === "member" || user.level === "admin",
+      enabled: user.entitlements.investmentsSubmit,
     },
     {
       href: "/app/marketplace/new",
       title: t.app.create.marketplaceListing,
       desc: t.app.create.marketplaceListingDesc,
-      enabled: user.level === "member" || user.level === "admin",
+      enabled: user.entitlements.marketplaceSell,
     },
     {
       href: "/app/marketplace/new?kind=course",
       title: t.app.create.courseOnly,
       desc: t.app.create.courseOnlyDesc,
-      enabled: user.level === "member" || user.level === "admin",
+      enabled: user.entitlements.marketplaceSell,
     },
     {
       href: "/app/create/post",
       title: t.app.create.post,
       desc: t.app.create.postDesc,
-      enabled: user.level === "member" || user.level === "admin",
+      enabled: user.entitlements.postCreate,
     },
   ];
 
@@ -420,7 +423,7 @@ export function AppShell({
         </ul>
       </nav>
 
-      {/* Create sheet – member create types only, never events (spec §13/§14) */}
+      {/* Create sheet – each action mirrors its entitlement; events remain curated (spec §13/§14). */}
       <Dialog
         open={createOpen}
         onClose={() => setCreateOpen(false)}

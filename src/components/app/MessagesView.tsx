@@ -84,19 +84,27 @@ export function MessagesView({
   const mobileEndRef = useRef<HTMLDivElement>(null);
   const desktopEndRef = useRef<HTMLDivElement>(null);
   const newestMessageId = messages.length > 0 ? messages[messages.length - 1].id : null;
+  const renderedIncomingMessageIds = JSON.stringify(
+    messages.filter((message) => message.senderId !== viewerId && !message.deletedAt).map((message) => message.id),
+  );
 
   useEffect(() => {
     mobileEndRef.current?.scrollIntoView({ block: "end" });
     desktopEndRef.current?.scrollIntoView({ block: "end" });
   }, [newestMessageId, selectedId]);
 
-  // Mark the open chat as read – again whenever a new message shows up.
+  // Mark only the incoming messages that were present in this rendered chat.
+  // A message arriving after this render stays unread until the next refresh.
   useEffect(() => {
     if (!selectedId) return;
+    const messageIds = JSON.parse(renderedIncomingMessageIds) as string[];
+    if (messageIds.length === 0) return;
+
     const formData = new FormData();
     formData.set("conversationId", selectedId);
-    void markConversationReadAction(formData);
-  }, [selectedId, newestMessageId]);
+    for (const messageId of messageIds) formData.append("messageIds", messageId);
+    void markConversationReadAction(formData).then(() => router.refresh()).catch(() => undefined);
+  }, [selectedId, renderedIncomingMessageIds, router]);
 
   // Polling: refresh while the page is visible (faster with an open chat).
   useEffect(() => {

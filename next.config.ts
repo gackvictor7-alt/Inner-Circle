@@ -8,9 +8,8 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ["@libsql/client", "libsql"],
   experimental: {
     serverActions: {
-      // Profile photo uploads travel inside the unified profile save
-      // (multipart server action). 6 MB covers the 5 MB photo limit plus the
-      // remaining form fields.
+      // Avatar and post-image uploads travel inside multipart server actions.
+      // 6 MB covers the shared 5 MB image limit plus the remaining form fields.
       bodySizeLimit: "6mb",
     },
   },

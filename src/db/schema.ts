@@ -409,6 +409,7 @@ export const messages = sqliteTable(
     attachmentUrl: text("attachmentUrl"),
     attachmentName: text("attachmentName"),
     createdAt: integer("createdAt", { mode: "timestamp_ms" }).notNull(),
+    readAt: ts("readAt"),
     deletedAt: ts("deletedAt"),
   },
   (t) => [index("message_conversation_idx").on(t.conversationId, t.createdAt)],
@@ -1146,8 +1147,8 @@ export const betaInvites = sqliteTable(
 
 /**
  * Time-limited beta entitlement (one row per account). It is NOT a paid
- * membership: it only unlocks the networking capabilities (see
- * src/lib/access/levels.ts → BETA_NETWORK_GRANTS). Expiry is derived from
+ * membership: it unlocks only the explicit private-beta platform capabilities
+ * (see src/lib/access/levels.ts → BETA_PLATFORM_GRANTS). Expiry is derived from
  * `endsAt`; an admin can extend it (new `endsAt`) or revoke it early.
  *
  * status: active | revoked

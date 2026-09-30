@@ -3,7 +3,6 @@ import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/db/client";
 import { marketplaceListings, profiles, trustScoreSummaries, users } from "@/db/schema";
 import { requireUser } from "@/lib/access/server";
-import { hasMemberAccess } from "@/lib/access/levels";
 import { formatMoney } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -23,12 +22,10 @@ export default async function MarketplacePage({
   const access = await requireUser("/app/marketplace");
   const params = await searchParams;
 
-  // New product model (Sprint 11 follow-up): non-members see ONLY clearly
-  // labelled demo offers, never real provider profiles. Real events remain
-  // the explicit exception. Members see real + demo listings.
-  const isMember = hasMemberAccess(access.level);
-  if (!isMember) {
-    // Free and trial (including expired trial that became free) see demo only.
+  // Free/trial accounts see clearly labelled demo offers. Members and active
+  // private-beta testers can browse real listings; the separate sell/course
+  // entitlements still gate creator and paid-course actions.
+  if (!access.entitlements.marketplaceRealBrowse) {
     // The demo marketplace is the product preview, not the 48h interactive demo.
     // It uses fictional providers like "Nina Kovač (Beispiel)" – no real member data.
     return (

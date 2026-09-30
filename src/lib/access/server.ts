@@ -33,9 +33,10 @@ export type MembershipState = {
 };
 
 /**
- * Private-beta entitlement (Sprint 12). Separate from membership: a beta
- * tester is never "member", never paying, and only gains the networking
- * grant while `active` is true.
+ * Private-beta entitlement, separate from membership: a beta tester is never
+ * `member` and never treated as paying. While active, the server applies the
+ * selected platform grants from BETA_PLATFORM_GRANTS; it never grants payment
+ * or admin capabilities.
  */
 export type BetaState = {
   /** active = usable now · expired = end date passed · revoked = ended by an admin */
@@ -136,12 +137,18 @@ export const getAccessContext = cache(async (): Promise<AccessContext> => {
     };
   }
 
+  const now = Date.now();
   const membershipActive = Boolean(user.membership && membershipIsActive(user.membership));
+  const betaRecord = user.betaAccess;
+  const betaActive = betaIsActive(betaRecord, now);
+  // Once an account has had Beta, an ended/revoked grant falls back to Free;
+  // an unexpired Discovery Trial does not silently resume behind it.
+  const betaEnded = Boolean(betaRecord && !betaActive);
 
   // Lazy, server-side trial expiry (never trusted from the client).
   let trialRecord = user.trial;
   if (trialRecord && trialRecord.status === "active") {
-    const expired = trialRecord.expiresAt.getTime() <= Date.now();
+    const expired = trialRecord.expiresAt.getTime() <= now;
     if (expired || membershipActive) {
       const status = membershipActive ? "converted" : "expired";
       const convertedAt = membershipActive ? (trialRecord.convertedAt ?? new Date()) : trialRecord.convertedAt;
@@ -159,7 +166,7 @@ export const getAccessContext = cache(async (): Promise<AccessContext> => {
   let level: AccessLevel = "free";
   if (user.role === "admin") level = "admin";
   else if (membershipActive) level = "member";
-  else if (trialActive) level = "trial";
+  else if (trialActive && !betaEnded) level = "trial";
 
   const membership: MembershipState | null = user.membership
     ? {
@@ -180,18 +187,14 @@ export const getAccessContext = cache(async (): Promise<AccessContext> => {
         active: trialActive,
         startedAt: trialRecord.startedAt,
         expiresAt: trialRecord.expiresAt,
-        msRemaining: Math.max(0, trialRecord.expiresAt.getTime() - Date.now()),
+        msRemaining: Math.max(0, trialRecord.expiresAt.getTime() - now),
         connectionRequestsUsed: trialRecord.connectionRequestsUsed,
         connectionRequestLimit: trialRecord.connectionRequestLimit,
       }
     : null;
 
-  // Private beta (Sprint 12): resolved from the database on every request –
-  // expiry and revocation take effect immediately, a new login or session
-  // never extends it. The grant only adds networking capabilities.
-  const now = Date.now();
-  const betaRecord = user.betaAccess;
-  const betaActive = betaIsActive(betaRecord, now);
+  // Private beta is resolved from the database on every request – expiry and
+  // revocation take effect immediately; a new login or session never extends it.
   const beta: BetaState | null = betaRecord
     ? {
         status: betaActive ? "active" : betaRecord.status === "revoked" ? "revoked" : "expired",

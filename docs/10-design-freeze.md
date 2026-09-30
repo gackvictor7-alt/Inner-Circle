@@ -2,7 +2,7 @@
 
 ## DESIGN STATUS: APPROVED / DO NOT REDESIGN WITHOUT EXPLICIT FOUNDER REQUEST
 
-**Stand:** 2026-09-28 (zuletzt ergänzt: 1.21 Mobile-Polish & Cross-Device-QA) · Der aktuelle visuelle Stand des Projekts ist vom
+**Stand:** 2026-09-30 (zuletzt ergänzt: 1.23 Post-Bilder im bestehenden Profilstil) · Der aktuelle visuelle Stand des Projekts ist vom
 Gründer freigegeben und **eingefroren**. Diese Datei schützt ihn.
 
 Ein KI-Agent, eine Entwicklerin oder ein Dienstleister darf die unten
@@ -736,3 +736,13 @@ Daten (Discover-Zeilen brechen sauber um).
 **Unverändert:** `/portfolio` (public), `InvestmentPoolChart`, Deal-Fee/
 Deal-Terms, alle übrigen freigegebenen Flächen, Auth, Stripe, Resend, Beta,
 DNS/Domain, Datenmodell. Keine Migration.
+
+## 1.23 Post-Bilder im bestehenden Profilstil (2026-09-30)
+
+Die Post-Erstellung unterstützt jetzt optionale JPG-/PNG-/WebP-Bilder bis
+5 MB mit lokaler Vorschau. Hochgeladene Bilder erscheinen in den bestehenden
+Post-Karten auf dem eigenen Profil und auf Profilen, die der Betrachter gemäß
+der Beitrags-Sichtbarkeit sehen darf. Externe HTTP(S)-Bild-URLs bleiben
+unterstützt. Es wurden weder Kartenstil, Farben oder Typografie noch Profil-
+Tabs, App-Navigation oder Layout-Rhythmus verändert; kein neues Token und
+keine neue UI-Fläche außerhalb des bestehenden Formulars und der Post-Karte.

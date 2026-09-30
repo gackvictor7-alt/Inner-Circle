@@ -1,5 +1,5 @@
 /**
- * Private beta & real networking (Sprint 12) – DE/EN.
+ * Private beta & real platform access – DE/EN.
  *
  * Namespaces: app.beta (tester-facing: redemption, status, onboarding,
  * networking states) and app.betaAdmin (key management in /admin/beta).
@@ -11,7 +11,7 @@ export const appBetaDe = {
     /* ------------------------------------------------ page /app/beta */
     pageTitle: "Beta-Zugang",
     pageLead:
-      "INNER CIRCLE befindet sich in einer geschlossenen Beta. Mit einem persönlichen Beta-Schlüssel nutzt du das echte Netzwerk: Mitglieder finden, Kontakte anfragen und mit bestätigten Kontakten schreiben.",
+      "INNER CIRCLE befindet sich in einer geschlossenen Beta. Ein aktiver persönlicher Beta-Zugang öffnet ausgewählte Bereiche der echten Plattform – auch nach Ablauf der 48-stündigen Discovery-Demo, ohne daraus eine Mitgliedschaft zu machen.",
     redeemTitle: "Beta-Zugang aktivieren",
     redeemLead: "Gib deinen persönlichen Beta-Schlüssel ein. Er ist einmalig nutzbar und wird mit deinem Konto verknüpft.",
     keyLabel: "Beta-Schlüssel",
@@ -23,20 +23,26 @@ export const appBetaDe = {
     statusActiveText: "Gültig bis {date} · noch {days} Tage.",
     statusExpiredTitle: "Dein Beta-Zugang ist abgelaufen",
     statusExpiredText:
-      "Dein Profil, deine Kontakte und dein Nachrichtenverlauf bleiben erhalten. Neue Anfragen, die Mitgliedersuche und das Schreiben von Nachrichten sind mit einer Mitgliedschaft oder einem neuen Beta-Zeitraum wieder möglich.",
+      "Dein Profil, deine Kontakte und bisherige Nachrichtenverläufe bleiben erhalten. Nach Ablauf gelten wieder die Free-Regeln; für erneuten Beta-Zugang brauchst du eine neue Einladung, für Mitgliedschaftsbereiche eine aktive Mitgliedschaft.",
     statusRevokedTitle: "Dein Beta-Zugang wurde beendet",
     statusRevokedText:
-      "Die Administration hat deinen Beta-Zugang beendet. Profil, Kontakte und Nachrichtenverlauf bleiben erhalten. Bei Fragen wende dich an das INNER-CIRCLE-Team.",
+      "Die Administration hat deinen Beta-Zugang beendet. Profil, Kontakte und Nachrichtenverläufe bleiben erhalten; es gelten wieder die Free-Regeln. Bei Fragen wende dich an das INNER-CIRCLE-Team.",
     includedTitle: "Im Beta-Zugang enthalten",
-    includedDiscover: "Echte Mitglieder entdecken und gezielt suchen",
+    includedDiscover: "Echte Mitglieder in Discover und Network finden – mit Vollprofilen gemäß deren Privatsphäre",
     includedRequests: "Kontaktanfragen mit persönlicher Nachricht senden und beantworten",
-    includedChat: "Mit bestätigten Kontakten schreiben",
-    includedProfile: "Vollständige Profile anderer Mitglieder – im Rahmen ihrer Privatsphäre-Einstellungen",
+    includedChat: "Inbox und Nachrichten mit bestätigten Kontakten nutzen",
+    includedProfile: "Profil pflegen und anderen Mitgliedern folgen",
+    includedPosts: "Normale eigene Beiträge veröffentlichen, auch mit Bild",
+    includedBusiness: "Business-Chancen und Jobs/Projekte ansehen und sich bewerben",
+    includedInvestments: "Investment-Chancen ansehen und unverbindlich Interesse zeigen",
+    includedMarketplace: "Echte Marketplace-Angebote ansehen – ohne Verkaufs- oder Kaufzugang",
+    includedAcademy: "Academy-Katalog, Vorschaulektionen und bereits erteilte Kurseinschreibungen",
+    includedEvents: "Kuratierte Events ansehen; Event-Anmeldungen bleiben gesperrt",
     notIncludedTitle: "Nicht enthalten",
     notIncludedText:
-      "Business Deals, Jobs, Investments, Marketplace-Verkauf, Academy-Kurse und Event-Anmeldungen bleiben Teil der Mitgliedschaft.",
+      "Nicht freigeschaltet sind das Erstellen/Verwalten von Business- oder Job-Listings, Investment-Einreichungen, Marketplace-Verkauf, vollständige zahlungspflichtige Academy-Kurse, Event-Anmeldungen, Mitgliedskarte, Trust-Details oder Admin-Funktionen.",
     notPaidNote:
-      "Der Beta-Zugang ist kostenlos, zeitlich begrenzt und keine Mitgliedschaft. Es wird keine Zahlung ausgelöst.",
+      "Der Beta-Zugang ist kostenlos, zeitlich begrenzt und keine Mitgliedschaft. Er ändert weder Zahlungsstatus noch Abrechnung und löst selbst keine Zahlung aus.",
     memberNotNeededTitle: "Du brauchst keinen Beta-Schlüssel",
     memberNotNeededText: "Deine Mitgliedschaft enthält bereits alle Networking-Funktionen. Gib deinen Schlüssel gerne an eine eingeladene Person weiter – er bleibt unverbraucht.",
     noKeyTitle: "Noch keinen Schlüssel?",
@@ -70,10 +76,10 @@ export const appBetaDe = {
     /* ------------------------------------------------------ dashboard */
     panelKicker: "Private Beta",
     panelTitle: "Dein Beta-Zugang ist aktiv",
-    panelText: "Bis {date}: Mitglieder entdecken, Kontakte anfragen und mit bestätigten Kontakten schreiben.",
+    panelText: "Bis {date}: echtes Netzwerk, Inbox, Beiträge und ausgewählte Business-, Investment- und Marketplace-Bereiche nutzen.",
     panelExpiredTitle: "Dein Beta-Zugang ist beendet",
     panelExpiredText:
-      "Profil, Kontakte und Nachrichtenverlauf bleiben erhalten. Für neue Kontakte und Nachrichten brauchst du eine Mitgliedschaft oder einen neuen Beta-Zeitraum.",
+      "Profil, Kontakte und bisherige Nachrichtenverläufe bleiben erhalten. Die Plattform folgt jetzt wieder den Free-Regeln; eine aktive Mitgliedschaft bleibt davon unberührt.",
     haveKey: "Du hast einen persönlichen Beta-Schlüssel?",
     /* ----------------------------------------------- shell / account */
     accountBeta: "Beta-Zugang",
@@ -83,8 +89,8 @@ export const appBetaDe = {
     /* ------------------------------------------------- billing card */
     billingCardTitle: "Private Beta",
     billingCardText:
-      "Eingeladene Beta-Tester nutzen das Netzwerk mit einem persönlichen Schlüssel – ohne Zahlung und ohne Mitgliedschaft.",
-    billingCardActive: "Dein Beta-Zugang ist aktiv bis {date}. Er ist keine Mitgliedschaft und löst keine Zahlung aus.",
+      "Eingeladene Beta-Tester nutzen ausgewählte Bereiche der echten Plattform mit einem persönlichen Schlüssel – ohne Zahlung und ohne Mitgliedschaft.",
+    billingCardActive: "Dein Beta-Zugang ist aktiv bis {date}. Er ist keine Mitgliedschaft, ändert deinen Zahlungsstatus nicht und löst keine Zahlung aus.",
     /* ------------------------------------------ closed beta / locked */
     closedBetaKicker: "Geschlossene Beta",
     closedBetaText:
@@ -93,11 +99,11 @@ export const appBetaDe = {
     lockedClosedText:
       "Echte Mitglieder, Kontaktanfragen und Nachrichten sind derzeit eingeladenen Beta-Testern und Mitgliedern vorbehalten. Mit einem persönlichen Beta-Schlüssel schaltest du das Netzwerk sofort frei.",
     endedDemoText:
-      "Du siehst wieder die Discovery-Demo mit Beispielprofilen. Dein Profil, deine Kontakte und dein Nachrichtenverlauf bleiben erhalten.",
+      "Dein Beta-Zugang ist beendet; es gelten wieder die Free-Regeln. Profil, Kontakte und bisherige Nachrichtenverläufe bleiben erhalten.",
     lockedExpiredTitle: "Dein Beta-Zugang ist abgelaufen",
     lockedRevokedTitle: "Dein Beta-Zugang wurde beendet",
     lockedEndedText:
-      "Dein Profil, deine Kontakte und dein Nachrichtenverlauf bleiben erhalten. Mitgliedersuche, neue Anfragen und neue Nachrichten sind mit einer Mitgliedschaft wieder möglich.",
+      "Profil, Kontakte und bisherige Nachrichtenverläufe bleiben erhalten. Nach dem Ende gelten wieder die Free-Regeln; Beta-Funktionen setzen eine aktive Einladung oder Mitgliedschaft voraus.",
     activateCta: "Beta-Zugang aktivieren",
     membershipCta: "Mitgliedschaft ansehen",
     toInboxCta: "Zum Posteingang",
@@ -148,7 +154,7 @@ export const appBetaDe = {
     navLabel: "Beta-Zugänge",
     title: "Private Beta",
     lead:
-      "Persönliche Beta-Schlüssel erstellen und verwalten. Ein Schlüssel ist einmalig nutzbar, wird beim Einlösen an ein Konto gebunden und schaltet nur die Networking-Funktionen frei – keine Mitgliedschaft, keine Zahlung, keine Admin-Rechte.",
+      "Persönliche Beta-Schlüssel erstellen und verwalten. Ein Schlüssel ist einmalig nutzbar und wird beim Einlösen an ein Konto gebunden. Aktives Beta öffnet ausgewählte echte Plattformbereiche – ohne Membership, Zahlung oder Admin-Rechte.",
     statsActive: "Aktive Beta-Tester",
     statsOpen: "Offene Schlüssel",
     statsRedeemed: "Eingelöste Schlüssel",
@@ -210,7 +216,7 @@ export const appBetaEn: AppBetaDict = {
   beta: {
     pageTitle: "Beta access",
     pageLead:
-      "INNER CIRCLE is in a closed beta. With a personal beta key you use the real network: find members, send connection requests and message confirmed contacts.",
+      "INNER CIRCLE is in a closed beta. An active personal beta grant opens selected parts of the real platform – including after the 48-hour discovery demo expires, without turning it into a membership.",
     redeemTitle: "Activate beta access",
     redeemLead: "Enter your personal beta key. It can be used once and is linked to your account.",
     keyLabel: "Beta key",
@@ -222,19 +228,27 @@ export const appBetaEn: AppBetaDict = {
     statusActiveText: "Valid until {date} · {days} days left.",
     statusExpiredTitle: "Your beta access has expired",
     statusExpiredText:
-      "Your profile, your connections and your message history remain. New requests, the member search and sending messages are available again with a membership or a new beta period.",
+      "Your profile, connections and existing message history remain. After expiry, the normal free-account rules apply; a new invitation is needed for beta access, while membership features require an active membership.",
     statusRevokedTitle: "Your beta access has been ended",
     statusRevokedText:
-      "The administration ended your beta access. Profile, connections and message history remain. If you have questions, please contact the INNER CIRCLE team.",
+      "The administration ended your beta access. Profile, connections and message history remain; the normal free-account rules apply again. If you have questions, please contact the INNER CIRCLE team.",
     includedTitle: "Included in beta access",
-    includedDiscover: "Discover and search real members",
+    includedDiscover: "Find real members in Discover and Network; view full profiles subject to their privacy settings",
     includedRequests: "Send and answer connection requests with a personal message",
-    includedChat: "Message confirmed contacts",
-    includedProfile: "Full profiles of other members – within their privacy settings",
+    includedChat: "Use the inbox and message confirmed contacts",
+    includedProfile: "Maintain your profile and follow other members",
+    includedPosts: "Publish ordinary posts, including images",
+    includedBusiness: "Browse business opportunities and jobs/projects, and apply",
+    includedInvestments: "Browse investment opportunities and express non-binding interest",
+    includedMarketplace: "Browse real marketplace listings – no selling or checkout",
+    includedAcademy: "Browse the academy catalogue, previews and courses already enrolled in",
+    includedEvents: "Browse curated events; event registration remains locked",
     notIncludedTitle: "Not included",
     notIncludedText:
-      "Business deals, jobs, investments, marketplace selling, academy courses and event registrations remain part of the membership.",
-    notPaidNote: "Beta access is free, time-limited and not a membership. No payment is triggered.",
+      "Not unlocked: create/manage business or job listings, submit investment opportunities, sell on the marketplace, access full paid Academy courses, register for events, membership cards, trust details or admin functions.",
+    notPaidNote:
+      "Beta access is free, time-limited and not a membership. It does not change billing status or trigger any payment.",
+
     memberNotNeededTitle: "You do not need a beta key",
     memberNotNeededText:
       "Your membership already includes all networking features. Feel free to pass your key on to an invited person – it stays unused.",
@@ -266,18 +280,18 @@ export const appBetaEn: AppBetaDict = {
     photoHint: "Upload a photo directly (JPG, PNG or WebP) or paste an image link – it appears on your profile and in Discover.",
     panelKicker: "Private beta",
     panelTitle: "Your beta access is active",
-    panelText: "Until {date}: discover members, send connection requests and message confirmed contacts.",
+    panelText: "Until {date}: use the real network, inbox, posts and selected business, investment and marketplace areas.",
     panelExpiredTitle: "Your beta access has ended",
     panelExpiredText:
-      "Profile, connections and message history remain. New connections and messages need a membership or a new beta period.",
+      "Profile, connections and existing message history remain. The normal free-account rules now apply; an active membership is unaffected.",
     haveKey: "Do you have a personal beta key?",
     accountBeta: "Beta access",
     accountBetaActivate: "Activate beta access",
     sidebarUntil: "until {date}",
     levelBeta: "Private beta",
     billingCardTitle: "Private beta",
-    billingCardText: "Invited beta testers use the network with a personal key – without payment and without membership.",
-    billingCardActive: "Your beta access is active until {date}. It is not a membership and triggers no payment.",
+    billingCardText: "Invited beta testers use selected areas of the real platform with a personal key – without payment and without membership.",
+    billingCardActive: "Your beta access is active until {date}. It is not a membership, does not change billing status and triggers no payment.",
     closedBetaKicker: "Closed beta",
     closedBetaText:
       "Real contacts are currently reserved for invited beta testers and members. Do you have a personal beta key?",
@@ -285,11 +299,11 @@ export const appBetaEn: AppBetaDict = {
     lockedClosedText:
       "Real members, connection requests and messages are currently reserved for invited beta testers and members. A personal beta key unlocks the network immediately.",
     endedDemoText:
-      "You are seeing the discovery demo with sample profiles again. Your profile, your connections and your message history remain.",
+      "Your beta access has ended; the normal free-account rules apply again. Your profile, connections and existing message history remain.",
     lockedExpiredTitle: "Your beta access has expired",
     lockedRevokedTitle: "Your beta access has been ended",
     lockedEndedText:
-      "Your profile, your connections and your message history remain. Member search, new requests and new messages are available again with a membership.",
+      "Your profile, connections and existing message history remain. The normal free-account rules apply again; beta capabilities require a new active invitation or membership.",
     activateCta: "Activate beta access",
     membershipCta: "See membership",
     toInboxCta: "Go to inbox",
@@ -335,7 +349,7 @@ export const appBetaEn: AppBetaDict = {
     navLabel: "Beta access",
     title: "Private beta",
     lead:
-      "Create and manage personal beta keys. A key can be used once, is bound to an account on redemption and unlocks the networking features only – no membership, no payment, no admin rights.",
+      "Create and manage personal beta keys. A key can be used once and is bound to an account when redeemed. Active beta opens selected real platform areas — without membership, payment or admin rights.",
     statsActive: "Active beta testers",
     statsOpen: "Open keys",
     statsRedeemed: "Redeemed keys",

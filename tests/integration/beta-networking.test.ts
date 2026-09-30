@@ -34,7 +34,8 @@ vi.mock("next/navigation", () => ({
     throw new Error("notFound");
   },
 }));
-vi.mock("next/cache", () => ({ revalidatePath: () => {} }));
+const revalidatePathMock = vi.hoisted(() => vi.fn());
+vi.mock("next/cache", () => ({ revalidatePath: revalidatePathMock }));
 
 let currentUserId: string | null = null;
 vi.mock("@/lib/auth/session", async (importOriginal) => {
@@ -76,6 +77,16 @@ function form(values: Record<string, string>) {
   const data = new FormData();
   for (const [key, value] of Object.entries(values)) data.set(key, value);
   return data;
+}
+
+async function markRenderedSnapshotRead(conversationId: string, viewerId: string) {
+  const snapshot = await conversationMessages(conversationId, viewerId);
+  const readForm = form({ conversationId });
+  for (const message of snapshot?.messages ?? []) {
+    if (message.senderId !== viewerId && !message.deletedAt) readForm.append("messageIds", message.id);
+  }
+  await markConversationReadAction(readForm);
+  return snapshot;
 }
 
 function code(state: ActionState) {
@@ -222,9 +233,8 @@ describe("4 · A and B network for real; a third account can read nothing", () =
 
     // B opens the chat → read.
     currentUserId = b;
-    const readForm = new FormData();
-    readForm.set("conversationId", conversationId);
-    await markConversationReadAction(readForm);
+    const readSnapshot = await markRenderedSnapshotRead(conversationId, b);
+    expect(readSnapshot?.messages.map((message) => message.body)).toContain("Danke fürs Annehmen!");
     expect((await inboxCounts(b)).unreadMessages).toBe(0);
 
     // B answers; the history is chronological and persists (re-query = reload).
@@ -245,6 +255,107 @@ describe("4 · A and B network for real; a third account can read nothing", () =
     // Opening the chat again never creates a second one.
     expect(await ensureDirectConversation(a, b)).toBe(conversationId);
     expect(await ensureDirectConversation(b, a)).toBe(conversationId);
+  });
+});
+
+describe("message read markers", () => {
+  it("does not mark a message received after the rendered chat snapshot as read", async () => {
+    const a = await betaTester("ReadSender");
+    const b = await betaTester("ReadRecipient");
+    const conversationId = idFor.conversation();
+    const createdAt = new Date();
+    const firstCreatedAt = new Date(createdAt.getTime() - 2_000);
+    const secondCreatedAt = new Date(createdAt.getTime() - 1_000);
+    const firstMessageId = idFor.message();
+    const secondMessageId = idFor.message();
+
+    await db.insert(conversations).values({ id: conversationId, kind: "direct", createdAt, lastMessageAt: createdAt });
+    await db.insert(conversationParticipants).values([
+      { id: idFor.participant(), conversationId, userId: a, lastReadAt: null, createdAt },
+      { id: idFor.participant(), conversationId, userId: b, lastReadAt: null, createdAt },
+    ]);
+    await db.insert(messages).values({
+      id: firstMessageId,
+      conversationId,
+      senderId: a,
+      body: "Die erste Nachricht ist sichtbar.",
+      createdAt: firstCreatedAt,
+    });
+
+    // This is the exact message snapshot the open chat has rendered so far.
+    currentUserId = b;
+    const renderedSnapshot = await conversationMessages(conversationId, b);
+    expect(renderedSnapshot?.messages.map((message) => message.id)).toContain(firstMessageId);
+
+    // A new message arrives after the render but before the read action reaches
+    // the server. Its ID is not in the submitted snapshot.
+    await db.insert(messages).values({
+      id: secondMessageId,
+      conversationId,
+      senderId: a,
+      body: "Diese Nachricht kam parallel dazu.",
+      createdAt: secondCreatedAt,
+    });
+    await db.update(conversations).set({ lastMessageAt: secondCreatedAt }).where(eq(conversations.id, conversationId));
+
+    const legacyMessageNotificationId = idFor.notification();
+    await db.insert(notifications).values({
+      id: legacyMessageNotificationId,
+      userId: b,
+      type: "message",
+      actorId: a,
+      titleKey: "app.notifications.types.message",
+      paramsJson: "{}",
+      entityType: "conversation",
+      entityId: conversationId,
+      createdAt: firstCreatedAt,
+    });
+
+    const readForm = form({ conversationId });
+    for (const message of renderedSnapshot?.messages ?? []) {
+      if (message.senderId !== b && !message.deletedAt) readForm.append("messageIds", message.id);
+    }
+    revalidatePathMock.mockClear();
+    await markConversationReadAction(readForm);
+
+    const countsAfterFirstRead = await inboxCounts(b);
+    expect(countsAfterFirstRead.unreadMessages).toBe(1);
+    expect(inboxBadgeTotal(countsAfterFirstRead)).toBe(1);
+    expect((await listConversations(b)).find((conversation) => conversation.id === conversationId)?.unread).toBe(1);
+
+    const messagesAfterFirstRead = await db
+      .select({ id: messages.id, readAt: messages.readAt })
+      .from(messages)
+      .where(eq(messages.conversationId, conversationId));
+    expect(messagesAfterFirstRead.find((message) => message.id === firstMessageId)?.readAt).toBeInstanceOf(Date);
+    expect(messagesAfterFirstRead.find((message) => message.id === secondMessageId)?.readAt).toBeNull();
+    const [participantAfterFirstRead] = await db
+      .select({ lastReadAt: conversationParticipants.lastReadAt })
+      .from(conversationParticipants)
+      .where(and(eq(conversationParticipants.conversationId, conversationId), eq(conversationParticipants.userId, b)));
+    expect(participantAfterFirstRead.lastReadAt).toEqual(firstCreatedAt);
+    expect((await db.select().from(notifications).where(eq(notifications.id, legacyMessageNotificationId)))[0].readAt).toBeInstanceOf(Date);
+    expect(revalidatePathMock).toHaveBeenCalledWith("/app/inbox");
+    expect(revalidatePathMock).toHaveBeenCalledWith("/app/messages");
+    expect(revalidatePathMock).toHaveBeenCalledWith("/app");
+
+    // Once the next refresh has rendered the second message, it can be read.
+    const refreshedSnapshot = await conversationMessages(conversationId, b);
+    expect(refreshedSnapshot?.messages.map((message) => message.id)).toContain(secondMessageId);
+    const refreshedReadForm = form({ conversationId });
+    for (const message of refreshedSnapshot?.messages ?? []) {
+      if (message.senderId !== b && !message.deletedAt) refreshedReadForm.append("messageIds", message.id);
+    }
+    await markConversationReadAction(refreshedReadForm);
+
+    const countsAfterRefresh = await inboxCounts(b);
+    expect(countsAfterRefresh.unreadMessages).toBe(0);
+    expect(inboxBadgeTotal(countsAfterRefresh)).toBe(0);
+    const messagesAfterRefresh = await db
+      .select({ id: messages.id, readAt: messages.readAt })
+      .from(messages)
+      .where(eq(messages.conversationId, conversationId));
+    expect(messagesAfterRefresh.find((message) => message.id === secondMessageId)?.readAt).toBeInstanceOf(Date);
   });
 });
 

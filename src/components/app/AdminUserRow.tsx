@@ -18,7 +18,7 @@ export type AdminMembershipInfo = {
  *
  * The three statuses are deliberately independent and rendered separately:
  *   * Mitglied – active full membership (payment or administrative grant)
- *   * Private Beta – time-limited networking grant, never a membership
+ *   * Private Beta – time-limited platform grant, never a membership
  *   * Founding Member – honour, never a membership
  * The membership button below only controls the membership row.
  */

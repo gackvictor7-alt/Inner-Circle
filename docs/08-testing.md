@@ -1,6 +1,57 @@
 # 08 – Test- und Qualitätssicherung
 
-**Aktueller Sprint (2026-09-29, Stripe-Sandbox-Billing + UX-Aufräumarbeiten):**
+**Aktueller Stand (2026-09-30, Private-Beta-Rechte · Inbox-Lesestatus · Post-Bilder):**
+
+| Prüfung | Befehl / Weg | Ergebnis |
+| ------- | ------------- | -------- |
+| Gezielte Unit/Integration | Beta-Access/Networking, Access-Levels, Beta-Grant, Medienvalidierung und Post-Bilder | **6 Dateien / 76 Tests grün** |
+| Vollständige Unit/Integration | `npm test` | **51 Dateien / 493 Tests grün** |
+| TypeScript | `npm run typecheck` | **grün, 0 Fehler** |
+| i18n | `npm run i18n:audit` | **DE 3105 / EN 3105**, gleiche Form, alle referenzierten Keys vorhanden |
+| OpenNext/Cloudflare-Worker-Build | `npm run cf:build` | **grün** |
+| Drizzle-Migrationsmetadaten | `npx drizzle-kit check` | **grün** |
+| Diff-Whitespace | `git diff --check` | **grün** |
+| Lint | `npm run lint` | **Exit 1: 5 Fehler + 6 Warnungen**, unveränderte K-15-Baseline; keine neuen Befunde aus diesem Sprint |
+| Authentifiziertes Browser-E2E | `tests/e2e/sprint18-private-beta-browser.mjs` gegen den lokalen Worker mit isoliertem D1/R2 | **101/101 Checks bestanden**; keine Remote-D1, kein Deployment |
+
+Die Regressionen sichern Trial/Beta-/Membership-/Admin-Präzedenz, tatsächliche
+Beta-Entitlements ohne Membership-Ersatz, snapshot-basierte Read-Acks und
+Post-Bild-Upload, Sichtbarkeit, geschützte Auslieferung sowie Löschung ab. Der
+Browserlauf prüfte A–G mit getrennten Konten; aktives Beta nach Trial-Ablauf
+öffnete echte Plattformbereiche, während Deal-Verwaltung, Seller-/Creator-,
+Investment-Einreichungs-, Event-Anmeldungs-, bezahlte Membership- und
+Admin-Rechte gesperrt blieben. Der aktive Membership-Fall war eine lokale
+Test-Fixture, kein Stripe-Kauf.
+
+Zwei Browserkonten prüften Nachricht → Badge → Chat-Öffnung → Read-Ack:
+Das Badge verschwand ohne manuellen Reload, blieb nach Hard-Reload weg, und
+eine spätere Nachricht im nicht ausgewählten Chat wurde wieder unread. JPG,
+PNG und WebP wurden auf Desktop und bei 390 px mobil ausgewählt, vorab
+angezeigt, veröffentlicht und auf Eigentümer- sowie verbundenem Fremdprofil
+geprüft. Der verbundene Zugriff erhielt `private, no-store`, anonymer Zugriff
+auf Connection-Medien 404; nach Löschen war das Objekt tatsächlich aus dem
+lokalen R2 entfernt. Inbox, Conversation, Composer/Post und Profile hatten bei
+390 px keinen horizontalen Overflow.
+
+**Reproduzierbarkeit/Sicherheit:** Das Browser-Rezept steht in
+`tests/e2e/sprint18-private-beta-browser.mjs`; es verlangt Chromium +
+`playwright-core` außerhalb der Repo-Dependencies, einen lokalen Worker mit
+`--local` und denselben isolierten D1/R2-Persistenzpfad. `BASE_URL` wird auf
+`localhost:8787`/`127.0.0.1:8787` begrenzt; die Ausführung verlangt
+`IC_E2E_LOCAL_WORKER=1` und `IC_E2E_ALLOW_DB_RESET=1`. Das Setup löscht lokale
+`@innercircle.test`-Konten und E2E-Tabellen – ausschließlich in einer frischen,
+isolierten lokalen Test-DB ausführen. Der Report wird nach `/tmp` geschrieben.
+Migration `0006` lief nur lokal/workerd; Produktions-D1 wurde weder abgefragt
+noch verändert.
+
+**Nicht ausgeführt:** echte externe Stripe-Testmodus-Abnahme sowie visuelle
+Screenshot-/Pixelabnahme aller übrigen Oberflächen (insbesondere 320 px und
+Light/Dark für Deal-Fee/Deal-Bedingungen). Die gemeldeten 390-px-Prüfungen sind
+automatisierte Browser-Layout-Checks, kein Gerätefarm-Test.
+
+## Historischer Teststand
+
+**Davor (2026-09-29, Stripe-Sandbox-Billing + UX-Aufräumarbeiten):**
 
 | Prüfung | Befehl / Weg | Ergebnis |
 | ------- | ------------- | -------- |
@@ -172,7 +223,7 @@ Details und Grenzen: [Abschlussbericht](SPRINT-12-FINAL-REPORT.md).
 | `tests/unit/access-levels.test.ts` | Entitlement-Matrix free/trial/member/admin; **Sprint 11:** `trial` = `free` + `demoAccess`, keine echten Mitglieder-/Geschäftsrechte, `member`/`admin` nie `demoAccess` | Unit |
 | `tests/unit/membership-plans.test.ts` | 24,99 €/249,99 €, Jahresvorteil, Provider-Status-Mapping; **Sprint 5**: Preisstrings (`formatMoney`) und Homepage-Hinweis in DE/EN zitieren exakt die SoT-Preise | Unit |
 | `tests/unit/trial-rules.test.ts` | 48 h, Verbindungslimit-Konstante, OTP-Grenzen; **Sprint 11:** Demo-Semantik statt `TRIAL_VISIBLE`-Mengen | Unit |
-| `tests/unit/media-validation.test.ts` | **Sprint 13:** Foto-Upload-Regeln – Magic-Bytes (JPEG/PNG/WebP, GIF/PDF abgelehnt), Größenlimit 5 MB, Key-Bau (Escape-sicher `avatars/<userId>/…`), Key-Extraktion nur aus eigenen `/api/media`-URLs, Serving-Route-Validierung | Unit |
+| `tests/unit/media-validation.test.ts` | Avatar- und Post-Bild-Regeln – Magic Bytes (JPEG/PNG/WebP, GIF/PDF abgelehnt), 5-MB-Grenze, sichere `avatars/<userId>/…`- und `posts/<userId>/…`-Keys, Key-Extraktion nur aus eigenen verwalteten URLs, strenge Serving-Route-Validierung und Content-Type-Mapping | Unit |
 | `tests/unit/demo-discover.test.ts` | **Sprint 11:** Demo-Profile nutzen gültige Slugs der echten Taxonomie (Interessen/Ziele) mit DE/EN-Paar, Avatare nur aus dem freigegebenen Satz oder neutral, Demo-Deals/-Jobs/-Investments ohne abgeschlossene Zustände/Renditeversprechen; `demoDiscoverCandidate` (Präfix-ID `demo:`), `demoDiscoverResults` mit den echten Filtern (Standort, Rolle DE/EN, Interesse, Branche, Investmentinteresse, Typ, Umkreis) und Sortierung nach Interessen/Zielen des Betrachters | Unit |
 | `tests/integration/discovery-demo.test.ts` | **Sprint 11 – komplette Journey:** verifiziert ohne Demo (Zustand 3) → Onboarding speichert Interessen und startet die Demo genau einmal (48 h, zweiter Start abgelehnt) → Discover/Network/Chancen/Jobs/Investments rendern nur Demo (keine echten Handles im Elementbaum, Filter + Leerzustand, Sortierung nach eigenen Interessen) → Demo-Profil offen, echtes Profil gesperrt → Connect/Follow/Bewerbung/Interesse serverseitig `membershipRequired`, Datenbank vorher = nachher, Demo-IDs ungültig → echtes Event mit realer Kapazität lesbar (19 von 20 Plätzen frei), Sperrkarte statt Formular, `applyToEventAction` abgewiesen, Mitglied kann sich weiterhin anmelden → Ablauf lazy, `already_used`, erneutes Onboarding legt keinen zweiten Trial an, Demo-Seiten gesperrt, eigenes Profil/Events/Billing erreichbar → Checkout ohne Provider und ohne Dev-Schalter legt keine Mitgliedschaft an → Mitglied sieht echte Daten, nie Demo | Integration (DB, `flags.devMembershipActivation=false` gemockt) |
 | `tests/unit/i18n-parity.test.ts` | DE/EN gleiche Struktur, keine leeren Strings | Unit |
@@ -201,12 +252,14 @@ Details und Grenzen: [Abschlussbericht](SPRINT-12-FINAL-REPORT.md).
 | Datei | Umfang | Art |
 | ----- | ------ | --- |
 | `tests/unit/beta-keys.test.ts` (7) | Format `ICB-XXXX-XXXX-XXXX-XXXX` aus dem eindeutigen Alphabet, 2 000 Schlüssel ohne Kollision, alle 80 Zufallsbits genutzt, Normalisierung (Groß-/Kleinschreibung, Leerzeichen, Präfix, Crockford-Verwechsler), Ablehnung unmöglicher Eingaben, Hinweis zeigt max. 4 Zeichen, Dauer 1…365 (Standard 30) | Unit |
-| `tests/unit/beta-grant.test.ts` (7) | Beta-Grant enthält **genau** die Networking-Rechte; für `free`/`trial` bleiben alle bezahlten Geschäftsrechte aus; Mitglieder/Admins unverändert, nie „bezahlt“; Privatsphäre-Regeln (reduzierte Karte, Kontaktlinks nur für Kontakte, Standort/Kennzahlen nach Schalter) | Unit |
+| `tests/unit/beta-grant.test.ts` (7) | Beta-Grant enthält genau die expliziten Plattform-Entitlements aus `BETA_PLATFORM_GRANTS` (Network/Follow/Chat/Feed/Posts, Browsing und Opportunity-Bewerbung), ohne Membership-/Payment-/Admin-Rechte; für `free`/`trial` bleiben bezahlte Funktionen gesperrt; Mitglieder/Admins unverändert, nie „bezahlt“; Privatsphäre-Regeln (reduzierte Karte, Kontaktlinks nur für Kontakte, Standort/Kennzahlen nach Schalter) | Unit |
 | `tests/unit/stripe-worker-signature.test.ts` (3) | asynchrone Signaturprüfung funktioniert, synchrone Variante scheitert im Worker-Build (Begründung für `constructEventAsync`), gefälschte Signatur abgelehnt | Unit |
-| `tests/integration/beta-access.test.ts` (18) | Schlüssel nur als Hash; Einlösen → sofort Networking, keine Mitgliedschaft/kein Admin/nicht bezahlt; Dauer pro Schlüssel; ungültig/unbekannt/benutzt/deaktiviert/abgelaufen/falsche E-Mail; unverifiziert + Mitglieder lösen nicht ein (Schlüssel bleibt frei); Brute-Force-Limit; kein Stapeln; **Race:** zwei Konten, ein Schlüssel → genau einer gewinnt; ein Konto, zwei Schlüssel → ein Grant, anderer Schlüssel zurückgerollt; Ablauf entzieht sofort, neue Session bringt nichts zurück; Admin widerruft/verlängert; Mitglied unberührt; alle Admin-Actions für Nicht-Admins (inkl. Tester/Mitglieder) abgewiesen; Admin-Seite ohne Klartextschlüssel | Integration (DB) |
-| `tests/integration/beta-networking.test.ts` (15) | kompletter Flow Discover → Profil → Anfrage mit Nachricht → Annehmen → Chat (persistiert, ungelesen, privat); gegenseitige Anfrage → eine Verbindung; gleichzeitige Anfragen/Annahmen/„Chat öffnen“ → eine Verbindung, ein Chat; Selbst/verbunden/unbekannt/gelöscht/Demo/blockiert/geschlossen abgewiesen; abgelaufene Beta (kein Senden, nicht kontaktierbar, Kontakte + Verlauf bleiben, Ablehnen möglich); Ablehnen ohne Push + Cooldown; Zurückziehen entfernt Hinweis; Trennen/Wiederverbinden; unsichtbare Profile/verborgener Standort; Kontaktlinks nur für Kontakte; Demo/Echt strikt getrennt; ehrlicher Leerzustand ohne Demo-Füller/Match-%; keine Benachrichtigung pro Nachricht | Integration (DB) |
+| `tests/integration/beta-access.test.ts` (27) | Schlüssel nur als Hash; Einlösen → echte Beta-Plattformbereiche ohne Membership/Bezahlung/Admin; Dauer pro Schlüssel; ungültig/unbekannt/benutzt/deaktiviert/abgelaufen/falsche E-Mail; unverifiziert + Mitglieder lösen nicht ein; Rate-Limit, kein Stapeln und Redemption-Races; Ablauf/Widerruf/Verlängerung; **Präzedenz:** aktives Beta bleibt trotz abgelaufenem Trial für Plattformbereiche aktiv, Beta-Ablauf fällt auch bei sonst aktivem Trial auf Free zurück, Mitgliedschaft und Adminrolle bleiben erhalten; Admin-Actions für Nicht-Admins abgewiesen, Admin-Seite ohne Klartextschlüssel | Integration (DB) |
+| `tests/integration/beta-networking.test.ts` (16) | Discover → Profil → Anfrage → Annehmen → privater Chat; neue Nachricht nach gerendertem Snapshot bleibt nach dem Read-Ack ungelesen; parallele Anfragen/Annahmen/Chat-Erstellung; abgelaufene Beta, Demo-/Block-/Privacy-Regeln, Ablehnen/Zurückziehen/Trennen/Wiederverbinden; keine Benachrichtigung pro Nachricht | Integration (DB) |
 | `tests/integration/beta-network-d1.test.ts` (4) | dieselben kritischen Pfade gegen **echte D1 in workerd** (Miniflare): Einlösen race-sicher (`UPDATE … RETURNING`, `UPSERT … WHERE`), Widerruf/Verlängerung/Admin-Übersicht, Verzeichnis nur echte Teilnehmer, ein Chat bei parallelen Aufrufen + Ungelesen-Zähler | Integration (D1) |
-| `tests/integration/profile-save.test.ts` (9) | Sprint 12: alle Profilfelder inkl. Website/X/Instagram werden gespeichert und wirklich geleert (falsche Formularschlüssel), nur der Name ist Pflicht, unsichere Link-Schemata abgewiesen, geführtes Beta-Onboarding führt weiter zu Discover. **Sprint 13:** Foto-Upload im selben Save und nach Fresh-Read (Reload-Simulation) vorhanden, Nicht-Bild (falsche Magic-Bytes) abgelehnt ohne DB-Schreibeffekt, ehrlicher Fehler ohne `MEDIA`-Binding, gespeicherte `/api/media`-URL bleibt bei weiteren Saves gültig (fremde Own-Prefix-Keys abgewiesen). **Konsolidierungs-Sprint:** historische `rolesJson`/`skillsJson` bleiben beim Speichern ohne diese Felder erhalten (Entdupplung des Formulars zerstört keine Daten) | Integration (DB) |
+| `tests/integration/profile-save.test.ts` (9) | Sprint 12: Profilfelder, sichere Links und Beta-Onboarding. **Sprint 13:** Avatar-Upload, Magic-Byte-Ablehnung und verwaltete Medien-URLs. **Konsolidierungs-Sprint:** historische `rolesJson`/`skillsJson` bleiben erhalten | Integration (DB) |
+| `tests/integration/post-images.test.ts` (8) | JPG/PNG/WebP-Upload bis 5 MB, R2-Objekt plus URL-only D1, Data-/unsupported/oversize/fremde verwaltete URL abgewiesen, externe HTTP(S)-URLs bleiben; nur eigene Medienobjekte bei Autorenlöschung entfernen; Profilrendering und Sichtbarkeit; direkte Route prüft Post-Livezustand/Visibility/Block/Connection und setzt `private, no-store` | Integration (DB + R2-Mock) |
+| `tests/integration/for-you-d1.test.ts` (6) | `forYouItems()` auf lokaler echter D1/workerd, ungelesene `Message.readAt`-Query und Unread-Ergebnis, Backfill bestehender Read-Stände mit Migration `0006`, Epoch-/Event-Query-Regressions | Integration (D1) |
 | `tests/integration/stripe-webhook-route.test.ts` (2) | signierte Events gegen die echte Route: abgeschlossener, aber unbezahlter Checkout aktiviert **nicht**, `async_payment_succeeded` aktiviert; bezahlter Checkout aktiviert, `subscription.deleted` beendet ohne 500 | Integration (DB) |
 
 Erweitert (zweite Prüfrunde): `discover-matching` (+1, **Businessziel-Filter**:

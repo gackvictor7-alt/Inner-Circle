@@ -1,6 +1,6 @@
 # 12 – Roadmap ab dem aktuellen Stand
 
-**Stand:** 2026-09-29 (Sprint 17: Stripe-Sandbox-Billing, Portal, Profil-/Opportunity-UX) · davor 2026-09-24, Basis aktuelles `main` @ `98814bc`.
+**Stand:** 2026-09-30 (Sprint 18: Post-Bilder, Inbox-Lesestatus, Beta-/Trial-Präzedenz) · davor 2026-09-29: Stripe-Sandbox-Billing, Portal, Profil-/Opportunity-UX.
 Diese Roadmap ersetzt die frühere 20-Schritte-Planung
 (`03-roadmap.md` – die Schritte 01–08 sind gebaut, siehe
 [`00-SOURCE-OF-TRUTH.md`](00-SOURCE-OF-TRUTH.md)). Sie beginnt **beim heutigen
@@ -40,7 +40,7 @@ machen.
 | **S-4 OAuth oder ehrlicher Zustand** | Buttons deaktivieren (Dead-Link-Regel) **oder** Google-Login implementieren (K-04) | Google-Client |
 | **S-5 Datenschutz wirksam machen** | **Networking erledigt (Sprint 12, §3d)**; offen: übrige Bereiche (Marketplace, Deals) (K-06) | – |
 | **S-6 Moderations-Queue** | Melden von Inhalten/Nutzern + `/admin/reports` (K-11) | – |
-| **S-7 Uploads** | S3-kompatibler Bucket für Avatar/Cover, Typ-/Größenprüfung (K-10) | Storage-Konto |
+| **S-7 Uploads** | **Profil- und Post-Bilder erledigt** (R2 `MEDIA`, JPG/PNG/WebP, 5 MB, Magic-Byte-Prüfung); offen: Cover, Kursvideos und Nachrichten-Anhänge (K-10) | Storage-Konto für die übrigen Medientypen |
 | **S-8 CI** | GitHub-Actions-Workflow mit `typecheck`, `test`, `cf:dry-run` (K-16) | – |
 | **S-9 Lint aufräumen** | 12 vorbestehende Hinweise beheben, Verhalten prüfen (K-15) | – |
 | **S-10 Private Beta ausrollen** | Workers Paid bestätigen (K-24), Migration `0002` auf der Produktions-D1 (`cf:release`), erste Schlüssel über `/admin/beta`, Feedback der 10–30 Tester sammeln; danach E-Mail-Benachrichtigung bei neuer Anfrage/Nachricht mit Opt-in und Entscheidung „Schreiben an abgelaufene Tester“ (K-22) | N-1 (Mail-Domain) für E-Mails |
