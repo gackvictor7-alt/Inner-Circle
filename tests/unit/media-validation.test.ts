@@ -2,12 +2,16 @@ import { describe, expect, it } from "vitest";
 
 import {
   AVATAR_MAX_BYTES,
+  MEDIA_MAX_BYTES,
   avatarKeyFor,
   avatarKeyFromUrl,
   contentTypeForKey,
   isServableMediaKey,
+  postKeyFor,
+  postKeyFromUrl,
   sniffImageType,
   validateAvatarUpload,
+  validateMediaUpload,
 } from "@/lib/media";
 
 /**
@@ -36,25 +40,44 @@ describe("sniffImageType (magic bytes)", () => {
 
 describe("validateAvatarUpload", () => {
   it("accepts the supported types up to the size limit", () => {
-    expect(validateAvatarUpload(1234, new Uint8Array(JPEG_HEAD), "image/jpeg")).toEqual({
+    expect(validateAvatarUpload(1234, new Uint8Array(JPEG_HEAD))).toEqual({
       ok: true,
       type: "image/jpeg",
       extension: "jpg",
     });
-    expect(validateAvatarUpload(AVATAR_MAX_BYTES, new Uint8Array(WEBP_HEAD), "image/webp")).toMatchObject({
+    expect(validateAvatarUpload(AVATAR_MAX_BYTES, new Uint8Array(WEBP_HEAD))).toMatchObject({
       ok: true,
       type: "image/webp",
     });
   });
 
   it("rejects oversize, empty and mislabelled files", () => {
-    expect(validateAvatarUpload(AVATAR_MAX_BYTES + 1, new Uint8Array(PNG_HEAD), "image/png")).toEqual({
+    expect(validateAvatarUpload(AVATAR_MAX_BYTES + 1, new Uint8Array(PNG_HEAD))).toEqual({
       ok: false,
       reason: "tooLarge",
     });
-    expect(validateAvatarUpload(0, new Uint8Array(PNG_HEAD), "image/png")).toEqual({ ok: false, reason: "empty" });
+    expect(validateAvatarUpload(0, new Uint8Array(PNG_HEAD))).toEqual({ ok: false, reason: "empty" });
     // Declared as PNG but really a GIF: the content decides.
-    expect(validateAvatarUpload(10, new Uint8Array(GIF_HEAD), "image/png")).toEqual({
+    expect(validateAvatarUpload(10, new Uint8Array(GIF_HEAD))).toEqual({
+      ok: false,
+      reason: "unsupportedType",
+    });
+  });
+});
+
+describe("post-image upload validation", () => {
+  it("applies the same five-megabyte limit and uses magic bytes instead of the declared MIME type", () => {
+    expect(MEDIA_MAX_BYTES).toBe(5 * 1024 * 1024);
+    expect(validateMediaUpload(MEDIA_MAX_BYTES, new Uint8Array(PNG_HEAD))).toEqual({
+      ok: true,
+      type: "image/png",
+      extension: "png",
+    });
+    expect(validateMediaUpload(MEDIA_MAX_BYTES + 1, new Uint8Array(PNG_HEAD))).toEqual({
+      ok: false,
+      reason: "tooLarge",
+    });
+    expect(validateMediaUpload(1024, new Uint8Array(GIF_HEAD))).toEqual({
       ok: false,
       reason: "unsupportedType",
     });
@@ -68,6 +91,7 @@ describe("storage keys and URLs", () => {
     );
     // Hostile input cannot escape the avatars/<userId>/ folder.
     expect(avatarKeyFor("../etc", "png", "../../etc/passwd")).toBe("avatars/etc/etcpasswd.png");
+    expect(postKeyFor("usr_abc123", "webp", "time-random")).toBe("posts/usr_abc123/time-random.webp");
   });
 
   it("extracts keys only from the member's own media URLs", () => {
@@ -80,8 +104,20 @@ describe("storage keys and URLs", () => {
     expect(avatarKeyFromUrl("/api/media/avatars/usr_abc/../etc", "usr_abc")).toBeNull();
   });
 
+  it("extracts post keys only from the uploader's own managed media URL", () => {
+    expect(postKeyFromUrl("/api/media/posts/usr_abc/photo.webp", "usr_abc")).toBe("posts/usr_abc/photo.webp");
+    expect(
+      postKeyFromUrl("https://cdn.example/media/posts/usr_abc/photo.webp", "usr_abc", "https://cdn.example/media"),
+    ).toBe("posts/usr_abc/photo.webp");
+    expect(postKeyFromUrl("/api/media/posts/usr_other/photo.webp", "usr_abc")).toBeNull();
+    expect(postKeyFromUrl("/api/media/avatars/usr_abc/photo.webp", "usr_abc")).toBeNull();
+    expect(postKeyFromUrl("/api/media/posts/usr_abc/photo.webp?download=1", "usr_abc")).toBeNull();
+    expect(postKeyFromUrl("https://images.example/posts/usr_abc/photo.webp", "usr_abc")).toBeNull();
+  });
+
   it("validates keys for the public serving route", () => {
     expect(isServableMediaKey("avatars/usr_abc123/photo-xyz.webp")).toBe(true);
+    expect(isServableMediaKey("posts/usr_abc123/photo.webp")).toBe(true);
     expect(isServableMediaKey("avatars/usr_abc123/photo.webp")).toBe(true);
     expect(isServableMediaKey("avatars/usr_abc123/photo.gif")).toBe(false);
     expect(isServableMediaKey("avatars/usr_abc123")).toBe(false);

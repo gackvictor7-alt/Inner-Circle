@@ -234,6 +234,7 @@ export function InlineAction({
   variant = "secondary",
   size = "sm",
   successKey,
+  confirmKey,
 }: {
   action: Action;
   hidden: Record<string, string>;
@@ -241,6 +242,7 @@ export function InlineAction({
   variant?: "primary" | "secondary" | "ghost" | "success" | "danger";
   size?: "sm" | "md";
   successKey?: string;
+  confirmKey?: string;
 }) {
   const tr = useTr();
   const router = useRouter();
@@ -251,7 +253,17 @@ export function InlineAction({
   }, [state, router]);
 
   return (
-    <form action={formAction} className="contents">
+    <form
+      action={formAction}
+      className="contents"
+      onSubmit={
+        confirmKey
+          ? (event) => {
+              if (!window.confirm(tr(confirmKey))) event.preventDefault();
+            }
+          : undefined
+      }
+    >
       {Object.entries(hidden).map(([name, value]) => (
         <input key={name} type="hidden" name={name} value={value} />
       ))}

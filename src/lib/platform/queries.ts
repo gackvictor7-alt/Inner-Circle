@@ -1,7 +1,7 @@
 import "server-only";
 
 import { cache } from "react";
-import { and, desc, eq, gt, gte, inArray, isNull, ne, or, sql, count } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, isNull, ne, or, sql, count } from "drizzle-orm";
 import { db } from "@/db/client";
 import {
   businessOpportunities,
@@ -273,7 +273,7 @@ export async function listConversations(userId: string): Promise<OwnedConversati
       lastMessageAt: conversations.lastMessageAt,
       lastBody: sql<string | null>`(select ${messages.body} from ${messages} where ${messages.conversationId} = ${conversations.id} and ${messages.deletedAt} is null order by ${messages.createdAt} desc limit 1)`,
       lastAt: sql<number | null>`(select ${messages.createdAt} from ${messages} where ${messages.conversationId} = ${conversations.id} and ${messages.deletedAt} is null order by ${messages.createdAt} desc limit 1)`,
-      unread: sql<number>`(select count(*) from ${messages} where ${messages.conversationId} = ${conversations.id} and ${messages.senderId} <> ${userId} and ${messages.deletedAt} is null and ${messages.createdAt} > coalesce(${conversationParticipants.lastReadAt}, 0))`,
+      unread: sql<number>`(select count(*) from ${messages} where ${messages.conversationId} = ${conversations.id} and ${messages.senderId} <> ${userId} and ${messages.deletedAt} is null and ${messages.readAt} is null)`,
     })
     .from(conversationParticipants)
     .innerJoin(conversations, eq(conversations.id, conversationParticipants.conversationId))
@@ -345,7 +345,7 @@ export const inboxCounts = cache(async (userId: string): Promise<InboxCounts> =>
   // renders column references unqualified, which is ambiguous inside a join.
   const [row] = await db
     .select({
-      unreadMessages: sql<number>`(select count(*) from "Message" m inner join "ConversationParticipant" p on p."conversationId" = m."conversationId" and p."userId" = ${userId} where m."senderId" <> ${userId} and m."deletedAt" is null and m."createdAt" > coalesce(p."lastReadAt", 0))`,
+      unreadMessages: sql<number>`(select count(*) from "Message" m inner join "ConversationParticipant" p on p."conversationId" = m."conversationId" and p."userId" = ${userId} where m."senderId" <> ${userId} and m."deletedAt" is null and m."readAt" is null)`,
       pendingRequests: sql<number>`(select count(*) from "ConnectionRequest" r where r."toUserId" = ${userId} and r."status" = 'pending')`,
       unreadNotifications: sql<number>`(select count(*) from "Notification" n where n."userId" = ${userId} and n."readAt" is null and n."type" <> 'message')`,
       unseenRequestNotifications: sql<number>`(select count(*) from "Notification" n where n."userId" = ${userId} and n."readAt" is null and n."type" = 'connection_request')`,
@@ -727,13 +727,23 @@ export async function profileStats(userId: string) {
   };
 }
 
-export async function userPosts(userId: string, limit = 20) {
-  return db
-    .select()
-    .from(posts)
-    .where(and(eq(posts.authorId, userId), isNull(posts.deletedAt)))
-    .orderBy(desc(posts.createdAt))
-    .limit(limit);
+export async function userPosts(
+  userId: string,
+  limit = 20,
+  viewer?: { viewerId: string; canReadMemberPosts?: boolean; isConnected?: boolean },
+) {
+  const conditions = [eq(posts.authorId, userId), isNull(posts.deletedAt)];
+
+  // Owners see their own posts. On another member's full profile, enforce the
+  // post-level setting as well as the profile-level access gate.
+  if (viewer && viewer.viewerId !== userId) {
+    const visibleToViewer = [eq(posts.visibility, "public")];
+    if (viewer.canReadMemberPosts) visibleToViewer.push(eq(posts.visibility, "members"));
+    if (viewer.isConnected) visibleToViewer.push(eq(posts.visibility, "connections"));
+    conditions.push(or(...visibleToViewer)!);
+  }
+
+  return db.select().from(posts).where(and(...conditions)).orderBy(desc(posts.createdAt)).limit(limit);
 }
 
 export async function feedPosts(viewerId: string, limit = 20) {
@@ -1196,10 +1206,7 @@ export async function forYouItems(userId: string, interestSlugs: string[], local
       and(
         ne(messages.senderId, userId),
         isNull(messages.deletedAt),
-        // Never interpolate a JS Date here: raw `sql` values are bound
-        // unmapped, and D1 rejects non-scalar bind values (D1_TYPE_ERROR).
-        // Timestamps are integer milliseconds, so epoch 0 is a plain literal.
-        gt(messages.createdAt, sql`coalesce(${conversationParticipants.lastReadAt}, 0)`),
+        isNull(messages.readAt),
       ),
     )
     .orderBy(desc(messages.createdAt))

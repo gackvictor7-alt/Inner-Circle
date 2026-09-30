@@ -1,27 +1,21 @@
 # 05 – Datenbank (Cloudflare D1 / Drizzle)
 
-**Stand:** 2026-09-28 (Sprint 16: Trust & Reputation) · Basis: `src/db/schema.ts`
-und `drizzle/0000_init.sql` + `drizzle/0001_sprint3_discover_profile.sql` +
-`drizzle/0002_sprint12_private_beta.sql` +
-**`drizzle/0003_sprint16_trust_reviews.sql`**.
+**Stand:** 2026-09-30 (Post-Bilder + expliziter Nachrichten-Lesestatus) · Basis:
+`src/db/schema.ts` und Migrationen `drizzle/0000_init.sql` bis
+`drizzle/0006_message_read_state.sql`.
 
 - **Dialekt:** SQLite. In Produktion **Cloudflare D1** über das Binding `DB`
   (`database_name: inner-circle-db`), lokal/testweise **libSQL**
   (`DATABASE_URL`, Default `file:./dev.db`, Tests `file:./.test.db`).
-- **Migrationen:** `drizzle/0000_init.sql` – **50 Tabellen,
-  85 Indizes, 58 Fremdschlüssel, 135 Statements** – und
-  `drizzle/0001_sprint3_discover_profile.sql` (Sprint 3, **rein additiv**:
-  zwei neue Textspalten, keine Löschungen oder Umbenennungen; lokal per
-  `npm run db:push`, remote per `npm run cf:d1:migrate:remote`) und
-  `drizzle/0002_sprint12_private_beta.sql` (Sprint 12, **additiv**: Tabellen
-  `BetaInvite` + `BetaAccess`, Spalte `Conversation.directKey` mit
-  Unique-Index, ein Daten-UPDATE – Details unten) und
-  `drizzle/0003_sprint16_trust_reviews.sql` (Sprint 16, **rein additiv auf
-  `TrustReview`**: Spalten `moderatedById`/`moderatedAt`/`moderationNote`,
-  Index `review_author_idx`, **Unique-Index `trust_review_basis_unique`** auf
-  `(subjectId, authorId, contextType, contextId)` – eine Bewertung je
-  Bewertender, Bewertetem und Zusammenarbeit). Keine Tabelle kommt hinzu oder
-  entfällt, weiterhin **52 Tabellen**.
+- **Migrationen:** `0000` erstellt die Basistabellen; `0001` ergänzt
+  Profil-/Discover-Spalten; `0002` Beta und Direktchat-Schlüssel; `0003`
+  Trust-Bewertungen; `0004` Deal-Records; `0005` Impact/Badges; `0006` ergänzt
+  `Message.readAt` und backfilled den bisherigen
+  `ConversationParticipant.lastReadAt`-Stand. Der bestehende
+  `message_conversation_idx` unterstützt den Conversation-Filter. Die
+  Korrektheit braucht keinen Zusatzindex; ohne gemessene Performance-
+  Notwendigkeit wird kein weiterer Index angelegt. Insgesamt 57 Tabellen;
+  keine Tabelle wird gelöscht oder umbenannt.
 - **Keine Transaktionen:** D1 bietet kein Transaktions-API; mehrstufige
   Schreibvorgänge sind sequenziell und idempotent gehalten.
 
@@ -70,7 +64,7 @@ und `drizzle/0000_init.sql` + `drizzle/0001_sprint3_discover_profile.sql` +
 | `Invoice` | Provider-Rechnungen (`providerInvoiceId` unique, Betrag, Status, Zeitraum, `hostedUrl`) | vorbereitet (nur aus Provider-Events) |
 | `MembershipCard` | `cardNumber` (unique, `IC-<Jahr>-<Nr>`), `publicId` (unique, öffentlich prüfbar), `status`, `issuedAt`, `revokedAt` | **aktiv** |
 | `BetaInvite` *(Sprint 12)* | Persönlicher Beta-Schlüssel: `codeHash` (unique, HMAC-SHA-256 mit `AUTH_SECRET` – **nie Klartext**), `codeHint` (letzte 4 Zeichen, nur zur Wiedererkennung), `label` (Admin-Notiz), `restrictedEmail` (optionale Kontobindung), `durationDays` (Standard 30, 1–365), `status` (`active`\|`redeemed`\|`disabled`), `expiresAt` (optionales Einlöse-Enddatum), `createdById`, `redeemedById`, `redeemedAt`, `disabledAt` | **aktiv** |
-| `BetaAccess` *(Sprint 12)* | Zeitlich begrenzte Networking-Freigabe, **keine Mitgliedschaft**: `userId` (unique – höchstens ein Zugang je Konto), `inviteId`, `status` (`active`\|`revoked`), `startsAt`, `endsAt`, `revokedAt`, `revokedById`. Aktiv = `status = 'active'` **und** `endsAt > jetzt` (Serverzeit, bei jedem Request geprüft) | **aktiv** |
+| `BetaAccess` *(Sprint 12)* | Zeitlich begrenzte Private-Beta-Plattformfreigabe, **keine Mitgliedschaft**: `userId` (unique – höchstens ein Zugang je Konto), `inviteId`, `status` (`active`\|`revoked`), `startsAt`, `endsAt`, `revokedAt`, `revokedById`. Aktiv = `status = 'active'` **und** `endsAt > jetzt` (Serverzeit, bei jedem Request geprüft) | **aktiv** |
 
 ### 4. Networking (4)
 
@@ -87,14 +81,14 @@ und `drizzle/0000_init.sql` + `drizzle/0001_sprint3_discover_profile.sql` +
 | ------- | ----- | ------ |
 | `Conversation` | `kind` (`direct`\|`opportunity`), `subject`, `opportunityId`, `lastMessageAt`, **`directKey`** (Sprint 12: `<kleinere userId>:<größere userId>` für Direktchats, **unique** → genau ein Direktchat je Paar, auch bei gleichzeitigem Annehmen) | **aktiv** (`opportunity`-Kind vorbereitet) |
 | `ConversationParticipant` | Teilnehmer + `lastReadAt`, eindeutig je Paar | **aktiv** |
-| `Message` | `body`, `attachmentUrl`, `attachmentName`, `deletedAt` | **aktiv** (Anhänge nur als URL, kein Upload) |
+| `Message` | `body`, `attachmentUrl`, `attachmentName`, `readAt`, `deletedAt` | **aktiv**; `readAt` markiert eingehende Nachrichten einzeln und wird nur für im gerenderten Chat-Snapshot enthaltene IDs gesetzt (Migration `0006` backfillt bisher gelesene Direktnachrichten); Anhänge bleiben URL-only |
 
 ### 6. Notifications, Feed & Aktivität (2 + 18 unten)
 
 | Tabelle | Zweck | Status |
 | ------- | ----- | ------ |
 | `Notification` | `type`, `titleKey` (i18n), `paramsJson`, `url`, `actorId`, `dedupeKey` (unique je Nutzer → keine Duplikate), `readAt` | **aktiv** |
-| `Post` | Activity Feed: `kind`, `body`, `imageUrl`, `linkUrl`, `entityType/Id`, `visibility`, `verified`, `isDemo`, `deletedAt` | **aktiv** |
+| `Post` | Activity Feed: `kind`, `body`, `imageUrl` (R2-Medium-URL oder externe HTTP(S)-Bild-URL; nie Bytes/Base64), `linkUrl`, `entityType/Id`, `visibility`, `verified`, `isDemo`, `deletedAt` | **aktiv** (Post-Bilder liegen im R2-`MEDIA`-Bucket, nicht in D1) |
 
 ### 7. Business – Opportunities (2)
 
@@ -148,7 +142,7 @@ und `drizzle/0000_init.sql` + `drizzle/0001_sprint3_discover_profile.sql` +
 | `DevOutbox` | nur Entwicklung: aufgezeichnete E-Mails/SMS (`channel`, `to`, `subject`, `body`, `template`) | **aktiv** (admin-only, nur mit `ENABLE_DEV_OUTBOX=true`) |
 | `PlatformMetric` | öffentliche Kennzahlen mit `kind` (`verified`\|`self_reported`\|`demo`\|`zero_state`), DE/EN-Labels | **aktiv** (Startseite) |
 
-*(`Badge`/`UserBadge` sind oben mitgezählt; Gesamtzahl 52 = 50 aus `0000` + `BetaInvite`/`BetaAccess` aus `0002`.)*
+*(`Badge`/`UserBadge` sind oben mitgezählt; Gesamtzahl aktuell 57 = 50 aus `0000` + 2 aus `0002` + 3 aus `0004` + 2 aus `0005`.)*
 
 ## Sprint 3 – neue Spalten (Migration `0001`)
 
@@ -177,6 +171,42 @@ Migrationen aus `drizzle/meta/_journal.json` an), remote
 `npm run cf:d1:migrate:remote`. **Rollback** wäre nur manuell möglich
 (`DROP TABLE BetaAccess; DROP TABLE BetaInvite; DROP INDEX
 conversation_direct_key_unique;` – die Spalte `directKey` kann bleiben).
+
+## Sprint 18 – Nachrichten-Lesestatus (Migration `0006`)
+
+| Migration | Änderung | Zweck |
+| --------- | -------- | ----- |
+| `0006_message_read_state.sql` | `ALTER TABLE Message ADD readAt`; anschließend wird `readAt` für nicht gelöschte Nachrichten gesetzt, wenn der bisherige Cursor eines anderen Gesprächsteilnehmers (`lastReadAt`) mindestens so neu wie die Nachricht ist | Bestehende Direktchats behalten ihren vorherigen Gelesen-Stand; `NULL` bedeutet ungelesen |
+
+`0006` ist für den Race-sicheren Nachrichten-ID-Snapshot notwendig: der
+Conversation-Cursor kann nicht ausdrücken, welche einzelnen, gleichzeitig
+ankommenden Nachrichten tatsächlich im gerenderten Snapshot enthalten waren.
+Die Spalte ist additiv und wird mit vorhandenem `lastReadAt` zurückgefüllt.
+Ein zusätzlicher Unread-Index (`0007`) wurde bei der Abschlussprüfung entfernt:
+der bestehende `message_conversation_idx` unterstützt die Abfrage bereits;
+der weitere zusammengesetzte Index wäre nur eine ungemessene Optimierung.
+
+Neue Chat-Leseaktionen setzen `Message.readAt` ausschließlich für eingehende
+Nachrichten-IDs, die der Client im gerenderten Snapshot mitsendet. Der Server
+prüft Teilnehmer, Conversation-ID, Sender und Löschstatus erneut. Der alte
+`lastReadAt`-Cursor bleibt monoton und wird höchstens bis zur jüngsten Nachricht
+des Snapshots fortgeschrieben; er wird nicht mehr zur Zählung paralleler
+Nachrichten verwendet. D1-Regressionsabdeckung: `tests/integration/for-you-d1.test.ts`
+spielt die Backfill-Migration nach dem Einspielen bereits vorhandener Nachrichten
+gegen Miniflare/workerd.
+
+## Sprint 18 – Post-Bilder (ohne D1-Blob-Migration)
+
+`Post.imageUrl` enthält ausschließlich eine verwaltete Media-URL oder eine
+externe HTTP(S)-Bild-URL. Uploads werden im bestehenden R2-`MEDIA`-Bucket unter
+`posts/<userId>/<random>.<ext>` gespeichert, mit 5-MB- und Magic-Byte-Prüfung;
+`/api/media` erlaubt nur einzelne JPG/JPEG/PNG/WebP-Objekte unter `avatars/`
+oder `posts/`; Post-Medien prüfen zusätzlich die Post-Sichtbarkeit serverseitig
+und werden mit `private, no-store` ausgeliefert. Post-Löschung entfernt nur
+einen sicher validierten Schlüssel im eigenen Autorenordner. Es gibt bewusst weder Base64 noch Bildbytes in D1.
+
+**Production:** Migration `0006` ist generiert und lokal über echte
+workerd-D1-Tests geprüft, aber in diesem Auftrag **nicht remote angewendet**.
 
 ## Wichtige Beziehungen
 

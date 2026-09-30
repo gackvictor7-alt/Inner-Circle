@@ -17,6 +17,9 @@ import { Avatar } from "@/components/app/AppShell";
 import { ShareProfileButton } from "@/components/app/ShareProfileButton";
 import { LocalizedEmptyState, Tr } from "@/components/app/localized";
 import { ProfilePostsDemoSection } from "@/components/app/DemoSections";
+import { InlineAction } from "@/components/app/forms";
+import { PostImage } from "@/components/app/PostImage";
+import { deletePostAction } from "@/app/actions/posts";
 import { ProfilePeopleModal } from "@/components/app/ProfilePeopleModal";
 import { TrustScoreBlock } from "@/components/app/TrustPanel";
 import { VerifiedBadgesSection } from "@/components/app/VerifiedBadges";
@@ -92,7 +95,7 @@ export default async function OwnProfilePage({
   const [stats, trust, posts, counts, offerings, privacy, reputationBadges] = await Promise.all([
     profileStats(user.id),
     trustProfile(user.id),
-    userPosts(user.id, 12),
+    userPosts(user.id, 12, { viewerId: user.id }),
     performanceCountsFor(user.id),
     ownOfferingsFor(user.id),
     loadPrivacy(user.id),
@@ -367,9 +370,11 @@ export default async function OwnProfilePage({
                 <Tr k="app.profile.activityLead" />
               </p>
             </div>
-            <Button href="/app/create/post" size="sm" variant="secondary">
-              <Tr k="app.posts.createTitle" />
-            </Button>
+            {access.entitlements.postCreate && (
+              <Button href="/app/create/post" size="sm" variant="secondary">
+                <Tr k="app.posts.createTitle" />
+              </Button>
+            )}
           </div>
 
           {posts.length === 0 ? (
@@ -381,9 +386,19 @@ export default async function OwnProfilePage({
               {posts.map((post) => (
                 <li key={post.id} className="py-4 sm:py-5">
                   <p className="whitespace-pre-wrap text-[15px] leading-7">{post.body}</p>
-                  <p className="mt-2 text-xs text-foreground-subtle">
-                    {post.createdAt.toLocaleDateString(locale, { day: "2-digit", month: "short", year: "numeric" })}
-                  </p>
+                  <PostImage imageUrl={post.imageUrl} />
+                  <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-xs text-foreground-subtle">
+                      {post.createdAt.toLocaleDateString(locale, { day: "2-digit", month: "short", year: "numeric" })}
+                    </p>
+                    <InlineAction
+                      action={deletePostAction}
+                      hidden={{ postId: post.id }}
+                      labelKey="app.common.delete"
+                      variant="ghost"
+                      confirmKey="app.posts.deleteConfirm"
+                    />
+                  </div>
                 </li>
               ))}
             </ul>

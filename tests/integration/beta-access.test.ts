@@ -40,6 +40,7 @@ import {
 } from "@/app/actions/beta";
 import { createBetaInvite, hashBetaKey, redeemBetaKey } from "@/lib/beta/service";
 import { normalizeBetaKey } from "@/lib/beta/keys";
+import { BETA_PLATFORM_GRANTS, entitlementsFor } from "@/lib/access/levels";
 import { initialActionState, type ActionState } from "@/app/actions/state";
 import AdminBetaPage from "@/app/admin/beta/page";
 import BetaPage from "@/app/(app)/app/beta/page";
@@ -56,6 +57,28 @@ function form(values: Record<string, string>) {
 
 function code(state: ActionState) {
   return state.status === "error" ? state.errorCode : null;
+}
+
+function expectActiveBetaPlatform(access: Awaited<ReturnType<typeof getAccessContext>>) {
+  expect(access.beta?.active).toBe(true);
+  expect(access.level === "free" || access.level === "trial").toBe(true);
+  expect(access.membership?.active ?? false).toBe(false);
+  for (const [key, value] of Object.entries(BETA_PLATFORM_GRANTS)) {
+    expect(access.entitlements[key as keyof typeof access.entitlements], key).toEqual(value);
+  }
+  for (const key of [
+    "opportunitiesManage",
+    "marketplaceSell",
+    "courseFullAccess",
+    "investmentsSubmit",
+    "eventsApply",
+    "trustView",
+    "memberCard",
+    "dealDocuments",
+    "adminConsole",
+  ] as const) {
+    expect(access.entitlements[key], key).toBe(false);
+  }
 }
 
 async function user(firstName: string, options: Parameters<typeof createTestUser>[0] = {}) {
@@ -121,9 +144,9 @@ describe("2 · admin creates a key → tester registers → redeems → immediat
     expect((await redeemAs(tester, key)).redirectTo).toBe("/app/discover?welcome=beta");
   });
 
-  it("redemption grants networking immediately – not a membership, not paid, not admin", async () => {
+  it("redemption opens selected platform areas immediately – not a membership, not paid, not admin", async () => {
     const tester = await user("Tessa");
-    expect((await startTrial(tester)).ok).toBe(true); // tester also uses the demo – must not matter
+    expect((await startTrial(tester)).ok).toBe(true); // active Beta supersedes the trial demo
     const { key } = await newKey();
 
     const result = await redeemAs(tester, key.toLowerCase().replace(/-/g, " "));
@@ -136,17 +159,15 @@ describe("2 · admin creates a key → tester registers → redeems → immediat
     expect(access.beta?.active).toBe(true);
     expect(access.networkAccess).toBe(true);
     expect(access.networkAccessSource).toBe("beta");
+    expectActiveBetaPlatform(access);
+    expect(access.entitlements.connect).toBe("unlimited");
     expect(access.entitlements.networkDirectory).toBe(true);
     expect(access.entitlements.networkDiscover).toBe(true);
-    expect(access.entitlements.connect).toBe("unlimited");
     expect(access.entitlements.messaging).toBe(true);
-    // No paid business function, no admin.
-    expect(access.entitlements.opportunitiesBrowse).toBe(false);
-    expect(access.entitlements.investmentsBrowse).toBe(false);
-    expect(access.entitlements.eventsApply).toBe(false);
-    expect(access.entitlements.follow).toBe(false);
-    expect(access.entitlements.memberCard).toBe(false);
-    expect(access.entitlements.adminConsole).toBe(false);
+    expect(access.entitlements.postCreate).toBe(true);
+    expect(access.entitlements.opportunitiesBrowse).toBe(true);
+    expect(access.entitlements.investmentsBrowse).toBe(true);
+    expect(access.entitlements.marketplaceRealBrowse).toBe(true);
 
     const days = Math.round((access.beta!.endsAt.getTime() - Date.now()) / 86_400_000);
     expect(days).toBe(30);
@@ -325,6 +346,166 @@ describe("5 · expiry, revocation and extension (server clock, relogin never ext
     currentUserId = tester;
     access = await getAccessContext();
     expect(Math.round(access.beta!.msRemaining / 86_400_000)).toBe(21);
+  });
+});
+
+describe("trial, beta, membership and admin precedence", () => {
+  it("an active 48-hour trial without Beta remains demo-only", async () => {
+    const tester = await user("ActiveTrialNoBeta");
+    expect((await startTrial(tester)).ok).toBe(true);
+
+    currentUserId = tester;
+    const access = await getAccessContext();
+    expect(access.level).toBe("trial");
+    expect(access.beta).toBeNull();
+    expect(access.entitlements).toEqual(entitlementsFor("trial"));
+    expect(access.entitlements.demoAccess).toBe(true);
+    expect(access.entitlements.networkDirectory).toBe(false);
+    expect(access.entitlements.follow).toBe(false);
+    expect(access.entitlements.postCreate).toBe(false);
+    expect(access.entitlements.opportunitiesBrowse).toBe(false);
+    expect(access.entitlements.investmentsBrowse).toBe(false);
+    expect(access.entitlements.marketplaceRealBrowse).toBe(false);
+    expect(access.entitlements.eventsApply).toBe(false);
+  });
+
+  it("an active beta grant keeps the real platform open after the original 48-hour trial expires", async () => {
+    const tester = await user("ExpiredTrialBeta");
+    expect((await startTrial(tester)).ok).toBe(true);
+    const { key } = await newKey();
+    expect((await redeemAs(tester, key)).status).toBe("success");
+
+    await db
+      .update(trials)
+      .set({ expiresAt: new Date(Date.now() - 60_000) })
+      .where(eq(trials.userId, tester));
+
+    currentUserId = tester;
+    const access = await getAccessContext();
+    expect(access.level).toBe("free");
+    expect(access.trial?.status).toBe("expired");
+    expect(access.trial?.active).toBe(false);
+    expect((await db.select().from(trials).where(eq(trials.userId, tester)))[0].status).toBe("expired");
+    expectActiveBetaPlatform(access);
+    expect(access.level).toBe("free");
+    expect(access.networkAccess).toBe(true);
+    expect(access.networkAccessSource).toBe("beta");
+    expect(access.entitlements.demoAccess).toBe(false);
+    expect(access.entitlements.postCreate).toBe(true);
+    expect(access.entitlements.opportunitiesBrowse).toBe(true);
+    expect(access.entitlements.marketplaceRealBrowse).toBe(true);
+  });
+
+  it("an active beta without a trial or paid membership opens the beta platform but remains free", async () => {
+    const tester = await user("FreeBetaNoMembership");
+    const { key } = await newKey();
+    expect((await redeemAs(tester, key)).status).toBe("success");
+
+    currentUserId = tester;
+    const access = await getAccessContext();
+    expect(access.level).toBe("free");
+    expect(access.networkAccessSource).toBe("beta");
+    expectActiveBetaPlatform(access);
+    expect(await db.select().from(memberships).where(eq(memberships.userId, tester))).toHaveLength(0);
+  });
+
+  it("an expired beta falls back to Free even if the discovery timer has time left", async () => {
+    const tester = await user("ExpiredBetaDuringTrial");
+    expect((await startTrial(tester)).ok).toBe(true);
+    const { key } = await newKey({ durationDays: 1 });
+    expect((await redeemAs(tester, key)).status).toBe("success");
+    await db.update(betaAccess).set({ endsAt: new Date(Date.now() - 60_000) }).where(eq(betaAccess.userId, tester));
+
+    currentUserId = tester;
+    const access = await getAccessContext();
+    expect(access.beta?.active).toBe(false);
+    expect(access.beta?.status).toBe("expired");
+    expect(access.trial?.active).toBe(true);
+    expect(access.level).toBe("free");
+    expect(access.entitlements).toEqual(entitlementsFor("free"));
+    expect(access.networkAccess).toBe(false);
+  });
+
+  it("an expired trial without beta is free and has no demo or real-network access", async () => {
+    const tester = await user("ExpiredTrialFree");
+    expect((await startTrial(tester)).ok).toBe(true);
+    await db
+      .update(trials)
+      .set({ expiresAt: new Date(Date.now() - 60_000) })
+      .where(eq(trials.userId, tester));
+
+    currentUserId = tester;
+    const access = await getAccessContext();
+    expect(access.level).toBe("free");
+    expect(access.trial?.status).toBe("expired");
+    expect(access.beta).toBeNull();
+    expect(access.networkAccess).toBe(false);
+    expect(access.entitlements.demoAccess).toBe(false);
+    expect(access.entitlements.networkDirectory).toBe(false);
+  });
+
+  it("active membership wins over an expired trial and converts its state", async () => {
+    const member = await user("MembershipAfterTrial");
+    expect((await startTrial(member)).ok).toBe(true);
+    await db
+      .update(trials)
+      .set({ expiresAt: new Date(Date.now() - 60_000) })
+      .where(eq(trials.userId, member));
+    await activateMembership({ userId: member, plan: "monthly", provider: "dev" });
+    // Simulate an old/stale DB state where the completed Trial is still marked
+    // expired; the membership entitlement must remain authoritative on read.
+    await db
+      .update(trials)
+      .set({ status: "expired", convertedAt: null })
+      .where(eq(trials.userId, member));
+
+    currentUserId = member;
+    const access = await getAccessContext();
+    expect(access.level).toBe("member");
+    expect(access.membership?.active).toBe(true);
+    expect(access.trial?.status).toBe("converted");
+    expect(access.trial?.active).toBe(false);
+    expect(access.networkAccessSource).toBe("member");
+    expect(access.entitlements.feedRead).toBe(true);
+  });
+
+  it("admin access is preserved after an admin's trial expires", async () => {
+    const adminUser = await user("TrialAdmin", { role: "admin" });
+    expect((await startTrial(adminUser)).ok).toBe(true);
+    await db
+      .update(trials)
+      .set({ expiresAt: new Date(Date.now() - 60_000) })
+      .where(eq(trials.userId, adminUser));
+
+    currentUserId = adminUser;
+    const access = await getAccessContext();
+    expect(access.level).toBe("admin");
+    expect(access.trial?.status).toBe("expired");
+    expect(access.networkAccessSource).toBe("admin");
+    expect(access.user?.role).toBe("admin");
+    // Admin routes are role-guarded; this member entitlement flag intentionally
+    // stays false so beta cannot grant administrative rights.
+    expect(access.entitlements.adminConsole).toBe(false);
+    expect(access.entitlements.demoAccess).toBe(false);
+  });
+
+  it("after beta and trial expiry, access falls back to the normal free rules", async () => {
+    const tester = await user("ExpiredBetaAndTrial");
+    expect((await startTrial(tester)).ok).toBe(true);
+    const { key } = await newKey();
+    expect((await redeemAs(tester, key)).status).toBe("success");
+
+    await db.update(trials).set({ expiresAt: new Date(Date.now() - 60_000) }).where(eq(trials.userId, tester));
+    await db.update(betaAccess).set({ endsAt: new Date(Date.now() - 60_000) }).where(eq(betaAccess.userId, tester));
+
+    currentUserId = tester;
+    const access = await getAccessContext();
+    expect(access.level).toBe("free");
+    expect(access.beta?.active).toBe(false);
+    expect(access.trial?.active).toBe(false);
+    expect(access.networkAccess).toBe(false);
+    expect(access.entitlements.networkDirectory).toBe(false);
+    expect(access.entitlements.demoAccess).toBe(false);
   });
 });
 

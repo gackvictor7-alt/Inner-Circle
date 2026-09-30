@@ -99,6 +99,8 @@ async function finalizeConnection(input: {
         senderId: entry.senderId,
         body: entry.body!.trim(),
         createdAt: entry.createdAt,
+        // The connection acceptor has just read the request context.
+        readAt: entry.senderId === input.acceptorId ? null : input.now,
       })),
     );
   }

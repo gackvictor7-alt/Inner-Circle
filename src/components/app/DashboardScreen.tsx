@@ -21,6 +21,10 @@ export type DashboardData = {
   betaEnded?: boolean;
   /** Real-network access (member / admin / active beta). */
   networkAccess?: boolean;
+  /** Real opportunities/jobs area (not the trial's fictional demo). */
+  opportunitiesAccess?: boolean;
+  /** Real investment area (not the trial's fictional demo). */
+  investmentsAccess?: boolean;
   membershipDevelopment: boolean;
 };
 
@@ -59,9 +63,9 @@ export function DashboardScreen({ data }: { data: DashboardData }) {
   const isBeta = Boolean(data.betaActiveUntil);
   const countdown = useCountdown(isBeta ? null : data.trialMsRemaining);
   const isTrial = data.level === "trial" && !isBeta;
-  // The 48 h demo keeps running for a beta tester who redeemed a key during it:
-  // business areas still show their labelled demo until the demo ends.
-  const demoActive = data.level === "trial";
+  // Active Beta supersedes the discovery demo; only a trial without Beta sees
+  // fictional business-area content.
+  const demoActive = isTrial;
   const isMember = data.level === "member" || data.level === "admin";
   const isFree = !isTrial && !isMember && !isBeta;
   const networkOpen = Boolean(data.networkAccess);
@@ -87,8 +91,8 @@ export function DashboardScreen({ data }: { data: DashboardData }) {
       desc: t.app.dashboard.areaDealsDesc,
       short: t.app.dashboard.areaDealsShort,
       accent: "forest" as const,
-      locked: !demoActive && !isMember,
-      demo: demoActive && !isMember,
+      locked: !demoActive && !data.opportunitiesAccess,
+      demo: demoActive && !data.opportunitiesAccess,
     },
     {
       href: "/app/jobs",
@@ -97,8 +101,8 @@ export function DashboardScreen({ data }: { data: DashboardData }) {
       desc: t.app.dashboard.areaJobsDesc,
       short: t.app.dashboard.areaJobsShort,
       accent: "sand" as const,
-      locked: !demoActive && !isMember,
-      demo: demoActive && !isMember,
+      locked: !demoActive && !data.opportunitiesAccess,
+      demo: demoActive && !data.opportunitiesAccess,
     },
     {
       href: "/app/investments",
@@ -107,8 +111,8 @@ export function DashboardScreen({ data }: { data: DashboardData }) {
       desc: t.app.dashboard.areaInvestmentsDesc,
       short: t.app.dashboard.areaInvestmentsShort,
       accent: "navy" as const,
-      locked: !demoActive && !isMember,
-      demo: demoActive && !isMember,
+      locked: !demoActive && !data.investmentsAccess,
+      demo: demoActive && !data.investmentsAccess,
     },
     {
       href: "/app/marketplace",

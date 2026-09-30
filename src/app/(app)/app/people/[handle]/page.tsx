@@ -20,6 +20,7 @@ import {
   type ViewerRelation,
 } from "@/lib/network/privacy";
 import { ProfileActions } from "@/components/app/ProfileActions";
+import { PostImage } from "@/components/app/PostImage";
 import { TrustReviewForm } from "@/components/app/TrustReviewForm";
 import { TrustScoreBlock } from "@/components/app/TrustPanel";
 import { VerifiedBadgesSection } from "@/components/app/VerifiedBadges";
@@ -119,7 +120,13 @@ export default async function MemberProfilePage({ params }: { params: Promise<{ 
     depth === "full" ? interestLabelsFor(profile.id, locale) : Promise.resolve([] as string[]),
     depth === "full" ? goalLabelsFor(profile.id, locale) : Promise.resolve([] as string[]),
     showTrust ? trustProfile(profile.id, viewerId) : Promise.resolve(null),
-    showPosts ? userPosts(profile.id, 10) : Promise.resolve([]),
+    showPosts
+      ? userPosts(profile.id, 10, {
+          viewerId,
+          canReadMemberPosts: access.entitlements.feedRead,
+          isConnected: connected,
+        })
+      : Promise.resolve([]),
     // Verified badges are public reputation data: full depth only (or self).
     isSelf || depth === "full"
       ? reputationBadgesFor(profile.id, locale === "en" ? "en" : "de")
@@ -374,6 +381,7 @@ export default async function MemberProfilePage({ params }: { params: Promise<{ 
                   <li key={post.id}>
                     <Card className="p-4">
                       <p className="whitespace-pre-wrap text-sm leading-6">{post.body}</p>
+                      <PostImage imageUrl={post.imageUrl} />
                       <p className="mt-2 text-xs text-foreground-subtle">
                         {post.createdAt.toLocaleDateString(locale === "en" ? "en-GB" : "de-DE")}
                       </p>

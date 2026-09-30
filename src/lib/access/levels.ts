@@ -10,8 +10,8 @@
  *   member     – active paid membership (monthly or annual)
  *   admin      – administrative access (always on top of a level)
  *
- * Private beta (Sprint 12) is NOT a level: it is a separate, time-limited
- * networking grant layered on top of free/trial (see BETA_NETWORK_GRANTS).
+ * Private beta is NOT a level: it is a separate, time-limited platform grant
+ * layered on top of free/trial (see BETA_PLATFORM_GRANTS).
  *
  * The matrix is used by the server for authorization and by the UI to hide or
  * label actions. The server never trusts the UI: every server action and route
@@ -61,6 +61,8 @@ export type Entitlements = {
   opportunitiesApply: boolean;
   /** Browse the marketplace. */
   marketplaceBrowse: boolean;
+  /** Browse real member listings (demo/preview listings are separate). */
+  marketplaceRealBrowse: boolean;
   /** Create marketplace listings (requires approved seller status). */
   marketplaceSell: boolean;
   /** Full lesson access; non-members only see preview lessons. */
@@ -72,7 +74,7 @@ export type Entitlements = {
   /** Browse events and apply. */
   eventsBrowse: boolean;
   eventsApply: boolean;
-  /** See member profiles in full (only members; the demo shows fictional profiles). */
+  /** See member profiles in full (members/Beta, subject to each profile's privacy). */
   profileFull: boolean;
   /** Trust & performance details. */
   trustView: boolean;
@@ -99,6 +101,7 @@ const FREE: Entitlements = {
   opportunitiesManage: false,
   opportunitiesApply: false,
   marketplaceBrowse: true,
+  marketplaceRealBrowse: false,
   marketplaceSell: false,
   courseFullAccess: false,
   investmentsBrowse: false,
@@ -143,6 +146,7 @@ const MEMBER: Entitlements = {
   opportunitiesManage: true,
   opportunitiesApply: true,
   marketplaceBrowse: true,
+  marketplaceRealBrowse: true,
   marketplaceSell: true,
   courseFullAccess: true,
   investmentsBrowse: true,
@@ -159,39 +163,50 @@ const ADMIN: Entitlements = {
 };
 
 /**
- * Private beta (Sprint 12) – a separate, time-limited GRANT, not a level.
+ * Private beta – a separate, time-limited GRANT, not a level.
  *
  * An invited beta tester keeps their account level (free or trial – never
- * "member", never counted as paying) and receives exactly the networking
- * capabilities below on top of it. Everything else stays as for the base
- * level: no follow, no feed/posts, no deals, jobs, investments, marketplace
- * selling, courses, event registration, trust details or member card, and no
- * admin rights. The grant is resolved server-side from the BetaAccess table
- * (src/lib/access/server.ts); it can never be activated from the client.
+ * "member", never counted as paying) and receives the private-beta platform
+ * capabilities below on top of it. The grant intentionally excludes creator,
+ * seller, full paid-course, event-registration, investment-submission, trust,
+ * membership-card, payment and admin capabilities. It also replaces the
+ * discovery-demo entitlement while active. The grant is resolved server-side
+ * from the BetaAccess table (src/lib/access/server.ts); it can never be
+ * activated from the client.
  */
-export const BETA_NETWORK_GRANTS = {
+export const BETA_PLATFORM_GRANTS = {
+  /** An active private beta is real-platform access, never the trial demo. */
+  demoAccess: false,
   /** Browse and search real, network-visible members. */
   networkDirectory: true,
   /** Discover deck over real members. */
   networkDiscover: true,
+  /** Follow other members. */
+  follow: true,
   /** Send / accept real connection requests. */
   connect: "unlimited",
-  /** Chat with confirmed connections. */
+  /** Chat with confirmed contacts. */
   messaging: true,
+  /** Read the real feed and create ordinary posts. */
+  feedRead: true,
+  postCreate: true,
+  /** Browse and apply to published business opportunities / jobs. */
+  opportunitiesBrowse: true,
+  opportunitiesApply: true,
+  /** Browse real marketplace listings without seller or purchase rights. */
+  marketplaceRealBrowse: true,
+  /** Browse investment opportunities and express interest, not submit one. */
+  investmentsBrowse: true,
   /** Open real member profiles in full (their privacy settings still apply). */
   profileFull: true,
 } as const satisfies Partial<Entitlements>;
 
 /** The entitlement keys a beta grant may change – used by tests and docs. */
-export const BETA_GRANT_KEYS = Object.keys(BETA_NETWORK_GRANTS) as (keyof typeof BETA_NETWORK_GRANTS)[];
+export const BETA_GRANT_KEYS = Object.keys(BETA_PLATFORM_GRANTS) as (keyof typeof BETA_PLATFORM_GRANTS)[];
 
-/**
- * Applies the beta networking grant to a base entitlement set. Members and
- * admins already have every networking capability, so the grant never changes
- * them (and never reduces anything).
- */
+/** Applies the private-beta platform grant to a base entitlement set. */
 export function withBetaGrant(base: Entitlements): Entitlements {
-  return { ...base, ...BETA_NETWORK_GRANTS };
+  return { ...base, ...BETA_PLATFORM_GRANTS };
 }
 
 export function entitlementsFor(level: AccessLevel): Entitlements {

@@ -13,7 +13,6 @@ import {
   users,
 } from "@/db/schema";
 import { requireUser } from "@/lib/access/server";
-import { hasMemberAccess } from "@/lib/access/levels";
 import { integrationStatus } from "@/lib/env";
 import { formatMoney } from "@/lib/utils";
 import { enrollInCourseAction } from "@/app/actions/business";
@@ -51,8 +50,9 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
 
   const listing = row.listing;
 
-  // Non-members may only see demo listings – real listings are locked.
-  if (!listing.isDemo && !hasMemberAccess(access.level)) {
+  // Real listing details are readable by members and active beta testers.
+  // This does not grant seller, purchase or full-course access.
+  if (!listing.isDemo && !access.entitlements.marketplaceRealBrowse) {
     return <LockedArea access={access} icon="store" />;
   }
 

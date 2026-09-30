@@ -171,7 +171,7 @@ export async function setUserSuspendedAction(_prev: ActionState, formData: FormD
  * Manual, administrative full-membership control (consolidation sprint).
  *
  * Strictly separate from Founding Member (an honour) and from the private
- * beta (a networking grant): activating a membership changes ONLY the
+ * beta (a separate, time-limited platform grant): activating a membership changes ONLY the
  * Membership row (provider "admin"), revoking it only ends that row and the
  * membership card. No Stripe call, no invoice, no payment status, no deletion
  * of any account data. Demo accounts are excluded – they must stay demo.

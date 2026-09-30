@@ -1,9 +1,10 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { Miniflare, convertV4MiniflareOptions } from "miniflare";
+import { eq } from "drizzle-orm";
 import { drizzle as drizzleD1 } from "drizzle-orm/d1";
 import * as schema from "@/db/schema";
 import type { Database } from "@/db/client";
-import { applyAllMigrations } from "../d1-helpers";
+import { applyMigrationsAfter, applyMigrationsThrough } from "../d1-helpers";
 
 /**
  * Regression test for the production incident of 2026-09-22:
@@ -50,8 +51,7 @@ async function seed(d1: { exec(sql: string): Promise<unknown> }) {
     [
       // Viewer (the authenticated /app visitor).
       user("usr_d1_viewer", "d1-viewer", "Vicky", "Viewer"),
-      // Chat partner who left one unread message (participant.lastReadAt = NULL
-      // – the exact production shape that crashed the page).
+      // Chat partner who left one unread message (Message.readAt = NULL).
       user("usr_d1_partner", "d1-partner", "Paul", "Partner"),
       // Candidate for the "matching member" item (shares the viewer's interest
       // and has NO connection/pending request to the viewer).
@@ -59,8 +59,8 @@ async function seed(d1: { exec(sql: string): Promise<unknown> }) {
       // Requester of the incoming pending connection request (excluded from
       // the "matching member" candidates by design).
       user("usr_d1_candidate", "d1-candidate", "Carl", "Candidate"),
-      // Second partner whose conversation is fully read (message older than
-      // lastReadAt) – must NOT appear as an unread item.
+      // Second partner whose conversation's read state is backfilled from its
+      // participant lastReadAt – it must NOT appear as an unread item.
       user("usr_d1_read", "d1-read", "Rita", "Read"),
       // Owner of the newest public deal.
       user("usr_d1_owner", "d1-owner", "Otto", "Owner"),
@@ -76,7 +76,7 @@ async function seed(d1: { exec(sql: string): Promise<unknown> }) {
       // Step 1: incoming pending connection request.
       `INSERT INTO ConnectionRequest (id, fromUserId, toUserId, message, status, createdAt) VALUES ('creq_in', 'usr_d1_candidate', 'usr_d1_viewer', 'Lass uns über FinTech sprechen.', 'pending', ${T0})`,
 
-      // Step 2: unread conversation (partner messages after NULL lastReadAt).
+      // Step 2: unread conversation (the incoming message has no read marker).
       `INSERT INTO Conversation (id, kind, createdAt, lastMessageAt) VALUES ('con_unread', 'direct', ${PAST}, ${T0})`,
       `INSERT INTO ConversationParticipant (id, conversationId, userId, lastReadAt, createdAt) VALUES ('cpa_unread_v', 'con_unread', 'usr_d1_viewer', NULL, ${PAST}), ('cpa_unread_p', 'con_unread', 'usr_d1_partner', ${T0}, ${PAST})`,
       `INSERT INTO Message (id, conversationId, senderId, body, createdAt) VALUES ('msg_unread', 'con_unread', 'usr_d1_partner', 'Hast du kurz Zeit?', ${T0})`,
@@ -107,8 +107,11 @@ beforeAll(async () => {
     }),
   );
   const d1 = await mf.getD1Database("DB");
-  await applyAllMigrations(d1);
+  // Seed a real pre-readAt database first so the new migration must backfill
+  // messages covered by the old participant.lastReadAt cursor.
+  await applyMigrationsThrough(d1, "0005_impact_and_badges");
   await seed(d1);
+  await applyMigrationsAfter(d1, "0005_impact_and_badges");
   d1Ref.db = drizzleD1(d1, { schema }) as unknown as Database;
 
   const queries = await import("@/lib/platform/queries");
@@ -129,7 +132,7 @@ describe("forYouItems on a real D1 database (workerd)", () => {
     expect(items.map((item) => item.kind)).toEqual(["request", "message", "person", "deal", "event"]);
   });
 
-  it("finds the unread message when lastReadAt is NULL (coalesce fix)", async () => {
+  it("finds a D1 unread message from its null Message.readAt marker", async () => {
     const items = await forYouItems("usr_d1_viewer", ["fintech"], "de");
     const message = items.find((item) => item.kind === "message");
     expect(message).toBeDefined();
@@ -139,9 +142,14 @@ describe("forYouItems on a real D1 database (workerd)", () => {
     expect(message && message.kind === "message" ? message.name : null).toBe("Paul Partner");
   });
 
-  it("treats messages older than lastReadAt as read", async () => {
+  it("backfills messages already read before the migration and treats them as read", async () => {
     const items = await forYouItems("usr_d1_viewer", ["fintech"], "de");
     expect(items.some((item) => item.kind === "message" && item.href.includes("con_read"))).toBe(false);
+    const [fullyReadMessage] = await d1Ref.db!
+      .select({ readAt: schema.messages.readAt })
+      .from(schema.messages)
+      .where(eq(schema.messages.id, "msg_read"));
+    expect(fullyReadMessage.readAt).toBeInstanceOf(Date);
   });
 
   it("finds the next confirmed event in the future (gte timestamp fix)", async () => {

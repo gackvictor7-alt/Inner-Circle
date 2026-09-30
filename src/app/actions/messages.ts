@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, inArray, isNull, ne, sql } from "drizzle-orm";
 import { db } from "@/db/client";
 import { conversationParticipants, conversations, messages, notifications } from "@/db/schema";
 import { idFor } from "@/db/ids";
@@ -34,9 +34,9 @@ function refreshInbox() {
  * server (never in the UI only) – see spec §33. Only participants of the
  * conversation can write into it.
  *
- * Sprint 12: no notification row per message any more – unread messages are
- * counted from the conversation itself (read marker per participant), which
- * keeps the inbox badge exact and free of duplicates.
+ * No notification row is created per message; unread state is counted from
+ * each incoming Message.readAt marker, keeping the inbox badge exact and free
+ * of duplicate notification rows.
  */
 export async function sendMessageAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const access = await getAccessContext();
@@ -69,14 +69,6 @@ export async function sendMessageAction(_prev: ActionState, formData: FormData):
     createdAt: now,
   });
   await db.update(conversations).set({ lastMessageAt: now }).where(eq(conversations.id, conversationId));
-  // Own message = everything before it has been seen.
-  await db
-    .update(conversationParticipants)
-    .set({ lastReadAt: now })
-    .where(
-      and(eq(conversationParticipants.conversationId, conversationId), eq(conversationParticipants.userId, me.id)),
-    );
-
   refreshInbox();
   return done({ messageCode: "sent" });
 }
@@ -106,27 +98,81 @@ export async function startConversationAction(
   return done({ redirectTo: `/app/inbox?tab=messages&c=${conversationId}` });
 }
 
-/** Marks an open conversation as read (participants only). */
+/**
+ * Marks only incoming messages from the rendered chat snapshot as read. The
+ * client submits visible message IDs; advancing lastReadAt to server-now would
+ * incorrectly consume messages arriving between render and this action.
+ */
 export async function markConversationReadAction(formData: FormData): Promise<void> {
   const access = await getAccessContext();
   if (!access.user) return;
-  const conversationId = String(formData.get("conversationId") ?? "");
+  const conversationId = text(formData, "conversationId", 64);
   if (!conversationId) return;
 
-  const now = new Date();
-  const updated = await db
-    .update(conversationParticipants)
-    .set({ lastReadAt: now })
+  const rawMessageIds = formData.getAll("messageIds");
+  if (rawMessageIds.length === 0 || rawMessageIds.length > 200) return;
+  const messageIds = [...new Set(
+    rawMessageIds.filter((value): value is string => typeof value === "string" && value.length > 0 && value.length <= 64),
+  )];
+  if (messageIds.length === 0) return;
+
+  const [participant] = await db
+    .select({ lastReadAt: conversationParticipants.lastReadAt })
+    .from(conversationParticipants)
     .where(
       and(
         eq(conversationParticipants.conversationId, conversationId),
         eq(conversationParticipants.userId, access.user.id),
       ),
     )
-    .returning({ id: conversationParticipants.id });
-  if (updated.length === 0) return;
+    .limit(1);
+  if (!participant) return;
 
-  // Legacy per-message notifications of this chat are resolved as well.
+  // Re-check every submitted ID against the conversation and viewer. A client
+  // cannot mark outgoing, deleted, foreign-conversation or invented messages.
+  const visibleMessages = await db
+    .select({ id: messages.id, createdAt: messages.createdAt })
+    .from(messages)
+    .where(
+      and(
+        eq(messages.conversationId, conversationId),
+        inArray(messages.id, messageIds),
+        ne(messages.senderId, access.user.id),
+        isNull(messages.deletedAt),
+      ),
+    );
+  if (visibleMessages.length === 0) return;
+
+  const now = new Date();
+  const visibleIds = visibleMessages.map((message) => message.id);
+  await db
+    .update(messages)
+    .set({ readAt: now })
+    .where(
+      and(
+        eq(messages.conversationId, conversationId),
+        inArray(messages.id, visibleIds),
+        ne(messages.senderId, access.user.id),
+        isNull(messages.deletedAt),
+        isNull(messages.readAt),
+      ),
+    );
+
+  // Keep the legacy per-participant cursor monotonic and no later than the
+  // newest message that was actually present in this rendered snapshot.
+  const visibleThrough = Math.max(...visibleMessages.map((message) => message.createdAt.getTime()));
+  await db
+    .update(conversationParticipants)
+    .set({ lastReadAt: sql`max(coalesce(${conversationParticipants.lastReadAt}, 0), ${visibleThrough})` })
+    .where(
+      and(
+        eq(conversationParticipants.conversationId, conversationId),
+        eq(conversationParticipants.userId, access.user.id),
+      ),
+    );
+
+  // Legacy per-message notification rows are excluded from current counts and
+  // cannot be generated by the present send action; resolve those old rows.
   await db
     .update(notifications)
     .set({ readAt: now })

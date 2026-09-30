@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   BETA_GRANT_KEYS,
-  BETA_NETWORK_GRANTS,
+  BETA_PLATFORM_GRANTS,
   entitlementsFor,
   isPaid,
   withBetaGrant,
@@ -9,36 +9,44 @@ import {
 import { contactsVisible, locationVisible, performanceVisible, profileDepth } from "@/lib/network/privacy";
 
 /**
- * The beta grant (Sprint 12) unlocks ONLY networking – it is not a paid
- * membership and must never open business areas or admin capabilities.
+ * The private-beta grant opens selected real platform areas without becoming
+ * membership and without granting creator, seller, payment or admin rights.
  */
-describe("beta grant", () => {
-  it("contains exactly the networking capabilities", () => {
+describe("private beta grant", () => {
+  it("contains the intended platform capabilities and explicit demo override", () => {
     expect([...BETA_GRANT_KEYS].sort()).toEqual(
-      ["connect", "messaging", "networkDirectory", "networkDiscover", "profileFull"].sort(),
+      [
+        "connect",
+        "demoAccess",
+        "feedRead",
+        "follow",
+        "investmentsBrowse",
+        "marketplaceRealBrowse",
+        "messaging",
+        "networkDirectory",
+        "networkDiscover",
+        "opportunitiesApply",
+        "opportunitiesBrowse",
+        "postCreate",
+        "profileFull",
+      ].sort(),
     );
-    expect(BETA_NETWORK_GRANTS.connect).toBe("unlimited");
+    expect(BETA_PLATFORM_GRANTS.connect).toBe("unlimited");
+    expect(BETA_PLATFORM_GRANTS.demoAccess).toBe(false);
   });
 
   for (const level of ["free", "trial"] as const) {
-    it(`${level} + beta: networking on, every paid business capability stays off`, () => {
+    it(`${level} + active beta: the real platform opens without paid-only actions`, () => {
       const base = entitlementsFor(level);
       const granted = withBetaGrant(base);
-      expect(granted.networkDirectory).toBe(true);
-      expect(granted.networkDiscover).toBe(true);
-      expect(granted.connect).toBe("unlimited");
-      expect(granted.messaging).toBe(true);
-      expect(granted.profileFull).toBe(true);
+      for (const key of BETA_GRANT_KEYS) {
+        expect(granted[key], key).toEqual(BETA_PLATFORM_GRANTS[key]);
+      }
+      expect(granted.demoAccess).toBe(false);
       for (const key of [
-        "follow",
-        "feedRead",
-        "postCreate",
-        "opportunitiesBrowse",
         "opportunitiesManage",
-        "opportunitiesApply",
         "marketplaceSell",
         "courseFullAccess",
-        "investmentsBrowse",
         "investmentsSubmit",
         "eventsApply",
         "trustView",
@@ -46,16 +54,16 @@ describe("beta grant", () => {
         "dealDocuments",
         "adminConsole",
       ] as const) {
-        expect(granted[key], key).toBe(base[key]);
         expect(granted[key], key).toBe(false);
       }
-      // The demo flag of the base level is untouched.
-      expect(granted.demoAccess).toBe(base.demoAccess);
+      expect(granted.billing).toBe(base.billing);
+      expect(granted.marketplaceBrowse).toBe(base.marketplaceBrowse);
     });
   }
 
   it("never changes members/admins and never counts as paid", () => {
     expect(withBetaGrant(entitlementsFor("member"))).toEqual(entitlementsFor("member"));
+    expect(withBetaGrant(entitlementsFor("admin"))).toEqual(entitlementsFor("admin"));
     expect(isPaid("free")).toBe(false);
     expect(isPaid("trial")).toBe(false);
   });
