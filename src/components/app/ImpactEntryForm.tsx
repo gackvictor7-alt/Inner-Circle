@@ -44,7 +44,7 @@ export function ImpactEntryForm({
   return (
     <form action={formAction} className="space-y-3">
       {entry?.id && <input type="hidden" name="entryId" value={entry.id} />}
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Input
           label={tr("app.admin.impact.form.name")}
           name="name"

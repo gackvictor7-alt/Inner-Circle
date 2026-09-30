@@ -13,6 +13,19 @@ import { Tr } from "@/components/app/localized";
 export const dynamic = "force-dynamic";
 
 /**
+ * The member profile page answers 404 for demo and non-active accounts, so
+ * those people are shown as plain text instead of a dead link.
+ */
+function PersonLink({ handle, isDemo, status, name }: { handle: string; isDemo: boolean; status: string; name: string }) {
+  if (isDemo || status !== "active") return <span>{name}</span>;
+  return (
+    <Link href={`/app/people/${handle}`} className="hover:underline">
+      {name}
+    </Link>
+  );
+}
+
+/**
  * Trust review moderation (Sprint 16).
  *
  * Deliberately *not* a new moderation suite: a read-only list plus the
@@ -41,9 +54,13 @@ export default async function AdminReviewsPage() {
       authorFirstName: author.firstName,
       authorLastName: author.lastName,
       authorHandle: author.handle,
+      authorIsDemo: author.isDemo,
+      authorStatus: author.status,
       subjectFirstName: subject.firstName,
       subjectLastName: subject.lastName,
       subjectHandle: subject.handle,
+      subjectIsDemo: subject.isDemo,
+      subjectStatus: subject.status,
     })
     .from(trustReviews)
     .innerJoin(author, eq(author.id, trustReviews.authorId))
@@ -100,9 +117,12 @@ export default async function AdminReviewsPage() {
                       <Tr k="app.admin.reviews.author" />:{" "}
                     </dt>
                     <dd className="inline">
-                      <Link href={`/app/people/${row.authorHandle}`} className="hover:underline">
-                        {row.authorFirstName} {row.authorLastName}
-                      </Link>
+                      <PersonLink
+                        handle={row.authorHandle}
+                        isDemo={row.authorIsDemo}
+                        status={row.authorStatus}
+                        name={`${row.authorFirstName} ${row.authorLastName}`}
+                      />
                     </dd>
                   </div>
                   <div>
@@ -110,9 +130,12 @@ export default async function AdminReviewsPage() {
                       <Tr k="app.admin.reviews.subject" />:{" "}
                     </dt>
                     <dd className="inline">
-                      <Link href={`/app/people/${row.subjectHandle}`} className="hover:underline">
-                        {row.subjectFirstName} {row.subjectLastName}
-                      </Link>
+                      <PersonLink
+                        handle={row.subjectHandle}
+                        isDemo={row.subjectIsDemo}
+                        status={row.subjectStatus}
+                        name={`${row.subjectFirstName} ${row.subjectLastName}`}
+                      />
                     </dd>
                   </div>
                   <div>

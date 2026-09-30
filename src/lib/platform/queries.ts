@@ -665,6 +665,12 @@ export async function goalLabelsFor(userId: string, locale: "de" | "en") {
   return rows.map((row) => (locale === "en" ? row.labelEn : row.labelDe));
 }
 
+/** Goal slug -> readable label. Older profiles and the dev seed store slugs in the free-text lists. */
+export async function goalLabelMap(locale: "de" | "en"): Promise<Map<string, string>> {
+  const rows = await db.select({ slug: goals.slug, labelDe: goals.labelDe, labelEn: goals.labelEn }).from(goals);
+  return new Map(rows.map((row) => [row.slug, locale === "en" ? row.labelEn : row.labelDe]));
+}
+
 export async function memberProfileByHandle(handle: string) {
   const nowMs = Date.now();
   const [row] = await db

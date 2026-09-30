@@ -83,7 +83,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ sl
           <Badge variant={event.state === "confirmed" ? "forest" : "sand"}>
             <Tr k={`app.events.state.${event.state}`} />
           </Badge>
-          <Badge variant="outline">{event.category}</Badge>
+          <Badge variant="outline">{["connect", "develop", "experience"].includes(event.category) ? <Tr k={`app.events.categories.${event.category}`} /> : event.category}</Badge>
           {event.isDemo && <Badge variant="sand"><Tr k="app.common.demo" /></Badge>}
         </div>
         <h2 className="mt-4 text-2xl font-bold tracking-tight">{event.title}</h2>

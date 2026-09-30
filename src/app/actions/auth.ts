@@ -28,6 +28,7 @@ import { consumeRateLimit } from "@/lib/rate-limit";
 import { startTrial } from "@/lib/trial/service";
 import { sendPasswordResetEmail } from "@/lib/messages/templates";
 import { EMAIL_RE, handleify, maskEmail } from "@/lib/utils";
+import { safeNextPath } from "@/lib/auth/next-path";
 import { getAccessContext } from "@/lib/access/server";
 import { canOpenDevOutbox, getPublicUrl } from "@/lib/env";
 
@@ -215,7 +216,12 @@ export async function loginAction(_prev: AuthState, formData: FormData): Promise
   await createSession(user.id);
   await audit({ actorId: user.id, action: "auth.login", entityType: "User", entityId: user.id });
 
-  return { status: "success", redirectTo: await landingPathFor(user.id, user.role === "admin") };
+  // Finished accounts go back to the page that required the login; accounts
+  // still in onboarding always continue there first.
+  const landing = await landingPathFor(user.id, user.role === "admin");
+  const returnTo = safeNextPath(field(formData, "next", 300));
+  const redirectTo = returnTo && !landing.startsWith("/onboarding") ? returnTo : landing;
+  return { status: "success", redirectTo };
 }
 
 /* ----------------------------------------------------------------- verify */

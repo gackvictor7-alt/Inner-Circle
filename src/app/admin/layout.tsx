@@ -29,16 +29,16 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <span className="text-sm font-bold tracking-tight"><Tr k="app.admin.title" /></span>
             <Badge variant="sand"><Tr k="app.access.levelAdmin" /></Badge>
           </div>
-          <nav className="flex flex-wrap gap-3 text-sm font-medium">
-            <Link href="/admin"><Tr k="app.admin.title" /></Link>
-            <Link href="/admin/users"><Tr k="app.admin.users.title" /></Link>
-            <Link href="/admin/investments"><Tr k="app.admin.investments.title" /></Link>
-            <Link href="/admin/badges"><Tr k="app.admin.badges.title" /></Link>
-            <Link href="/admin/impact"><Tr k="app.admin.impact.title" /></Link>
-            <Link href="/admin/reviews"><Tr k="app.admin.reviews.title" /></Link>
-            <Link href="/admin/applications"><Tr k="app.admin.applications.title" /></Link>
-            <Link href="/admin/beta"><Tr k="app.betaAdmin.navLabel" /></Link>
-            <Link href="/app" className="text-electric-600 dark:text-electric-300"><Tr k="app.nav.appHome" /></Link>
+          <nav className="flex flex-wrap gap-x-4 text-sm font-medium">
+            <Link href="/admin" className="inline-flex min-h-10 items-center"><Tr k="app.admin.title" /></Link>
+            <Link href="/admin/users" className="inline-flex min-h-10 items-center"><Tr k="app.admin.users.title" /></Link>
+            <Link href="/admin/investments" className="inline-flex min-h-10 items-center"><Tr k="app.admin.investments.title" /></Link>
+            <Link href="/admin/badges" className="inline-flex min-h-10 items-center"><Tr k="app.admin.badges.title" /></Link>
+            <Link href="/admin/impact" className="inline-flex min-h-10 items-center"><Tr k="app.admin.impact.title" /></Link>
+            <Link href="/admin/reviews" className="inline-flex min-h-10 items-center"><Tr k="app.admin.reviews.title" /></Link>
+            <Link href="/admin/applications" className="inline-flex min-h-10 items-center"><Tr k="app.admin.applications.title" /></Link>
+            <Link href="/admin/beta" className="inline-flex min-h-10 items-center"><Tr k="app.betaAdmin.navLabel" /></Link>
+            <Link href="/app" className="inline-flex min-h-10 items-center text-electric-600 dark:text-electric-300"><Tr k="app.nav.appHome" /></Link>
           </nav>
         </div>
       </header>

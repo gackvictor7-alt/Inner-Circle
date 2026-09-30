@@ -1,11 +1,12 @@
 import { notFound } from "next/navigation";
 import { and, eq, or } from "drizzle-orm";
 import { db } from "@/db/client";
-import { blocks } from "@/db/schema";
+import { blocks, follows } from "@/db/schema";
 import { requireUser } from "@/lib/access/server";
 import { isConnected } from "@/db/queries";
 import {
   connectionRequestState,
+  goalLabelMap,
   goalLabelsFor,
   interestLabelsFor,
   memberProfileByHandle,
@@ -76,7 +77,7 @@ export default async function MemberProfilePage({ params }: { params: Promise<{ 
   if (!isSelf && !access.entitlements.networkDirectory) return <NetworkLocked access={access} />;
   if (!isSelf && (profile.isDemo || profile.status !== "active")) notFound();
 
-  const [connected, blockRows, requestState] = await Promise.all([
+  const [connected, blockRows, requestState, followRows] = await Promise.all([
     isSelf ? false : isConnected(viewerId, profile.id),
     isSelf
       ? []
@@ -92,6 +93,13 @@ export default async function MemberProfilePage({ params }: { params: Promise<{ 
     isSelf
       ? { outgoingRequestId: null, incomingRequestId: null, cooldownUntil: null }
       : connectionRequestState(viewerId, profile.id),
+    isSelf
+      ? []
+      : db
+          .select({ id: follows.id })
+          .from(follows)
+          .where(and(eq(follows.followerId, viewerId), eq(follows.followingId, profile.id)))
+          .limit(1),
   ]);
   const blockedMe = blockRows.some((row) => row.blockerId === profile.id);
   const blockedByMe = blockRows.some((row) => row.blockerId === viewerId);
@@ -116,7 +124,7 @@ export default async function MemberProfilePage({ params }: { params: Promise<{ 
     depth === "full" && (isSelf || access.entitlements.trustView) && performanceVisible(profile.privacyPerformance, relation);
   const showPosts = depth === "full" && (isSelf || access.entitlements.feedRead);
 
-  const [interestLabels, goalLabels, trust, posts, reputationBadges] = await Promise.all([
+  const [interestLabels, goalLabels, trust, posts, reputationBadges, goalLabelBySlug] = await Promise.all([
     depth === "full" ? interestLabelsFor(profile.id, locale) : Promise.resolve([] as string[]),
     depth === "full" ? goalLabelsFor(profile.id, locale) : Promise.resolve([] as string[]),
     showTrust ? trustProfile(profile.id, viewerId) : Promise.resolve(null),
@@ -131,11 +139,13 @@ export default async function MemberProfilePage({ params }: { params: Promise<{ 
     isSelf || depth === "full"
       ? reputationBadgesFor(profile.id, locale === "en" ? "en" : "de")
       : Promise.resolve([] as PublicBadge[]),
+    goalLabelMap(locale === "en" ? "en" : "de"),
   ]);
   const roles = parseList(profile.rolesJson);
   const skills = parseList(profile.skillsJson);
-  const lookingFor = parseList(profile.lookingForJson);
-  const offering = parseList(profile.offeringJson);
+  const humanise = (values: string[]) => values.map((value) => goalLabelBySlug.get(value) ?? value);
+  const lookingFor = humanise(parseList(profile.lookingForJson));
+  const offering = humanise(parseList(profile.offeringJson));
   const memberSince = profile.createdAt.toLocaleDateString(locale === "en" ? "en-GB" : "de-DE", {
     month: "long",
     year: "numeric",
@@ -228,6 +238,7 @@ export default async function MemberProfilePage({ params }: { params: Promise<{ 
               isConnected={connected}
               isBlocked={blockedByMe}
               canFollow={access.entitlements.follow && !blockedByMe}
+              isFollowing={followRows.length > 0}
               canConnect={access.entitlements.connect !== "no" && !blockedByMe && requestsOpen}
               canMessage={access.entitlements.messaging}
               outgoingRequestId={requestState.outgoingRequestId}

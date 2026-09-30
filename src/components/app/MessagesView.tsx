@@ -446,7 +446,7 @@ function MessageBubble({
           {mine && onDelete && (
             <form action={onDelete.action}>
               <input type="hidden" name="messageId" value={onDelete.messageId} />
-              <button type="submit" className="font-semibold underline opacity-80 hover:opacity-100">
+              <button type="submit" className="-my-2.5 px-1 py-2.5 font-semibold underline opacity-80 hover:opacity-100">
                 {deleteLabel}
               </button>
             </form>

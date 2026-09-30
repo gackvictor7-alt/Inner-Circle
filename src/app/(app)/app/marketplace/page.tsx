@@ -101,7 +101,9 @@ export default async function MarketplacePage({
           >
             <option value=""><Tr k="app.common.all" /></option>
             {["course", "coaching", "workshop", "consulting", "service", "digital"].map((kind) => (
-              <option key={kind} value={kind}>{kind}</option>
+              <option key={kind} value={kind}>
+                <Tr k={`app.marketplace.kinds.${kind}`} />
+              </option>
             ))}
           </select>
           <Button type="submit" size="sm"><Tr k="app.common.filter" /></Button>

@@ -117,7 +117,7 @@ export default async function EventsPage({
                 <div className="flex min-w-0 flex-col justify-center p-5 sm:p-7">
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge variant={stateVariant[event.state as keyof typeof stateVariant] ?? "outline"}><Tr k={`app.events.state.${event.state}`} /></Badge>
-                    <Badge variant="outline">{event.category}</Badge>
+                    <Badge variant="outline">{["connect", "develop", "experience"].includes(event.category) ? <Tr k={`app.events.categories.${event.category}`} /> : event.category}</Badge>
                     {event.isDemo && <Badge variant="sand"><Tr k="app.common.demo" /></Badge>}
                   </div>
                   <h2 className="mt-3 text-xl font-bold tracking-tight sm:text-2xl">

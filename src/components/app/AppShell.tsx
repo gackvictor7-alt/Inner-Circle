@@ -256,7 +256,7 @@ export function AppShell({
               type="button"
               onClick={() => setAccountOpen(true)}
               aria-label={t.app.nav.accountLabel}
-              className="inline-flex items-center gap-1 rounded-full"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full sm:h-9 sm:w-9"
             >
               <Avatar user={user} size={32} />
             </button>

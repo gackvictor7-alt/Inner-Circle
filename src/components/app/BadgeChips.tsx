@@ -99,7 +99,7 @@ export function ProfileBadgeCluster({
         type="button"
         onClick={() => setOpen(true)}
         aria-label={tr("app.badges.openModal")}
-        className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold transition-colors ${
+        className={`relative inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold transition-colors after:absolute after:-inset-2 after:content-[''] ${
           more > 0
             ? "border-border-strong bg-surface text-foreground-muted hover:text-foreground"
             : "border-transparent text-foreground-subtle hover:text-foreground"

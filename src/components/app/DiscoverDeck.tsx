@@ -497,7 +497,9 @@ export function DiscoverDeck({
               {t.app.discover.toDirectory} →
             </Link>
             <span>·</span>
-            <span>{tf(t.app.discover.resultsCount, { count: queue.length })}</span>
+            <span>
+              {queue.length === 1 ? t.app.discover.resultsCountOne : tf(t.app.discover.resultsCount, { count: queue.length })}
+            </span>
           </div>
         </div>
 
@@ -701,7 +703,7 @@ function DiscoverRow({
                   type="submit"
                   onClick={onFollowSubmit}
                   disabled={followPending}
-                  className="inline-flex items-center gap-1 text-xs font-semibold text-foreground-subtle transition-colors hover:text-foreground disabled:opacity-60"
+                  className="inline-flex min-h-10 items-center gap-1 px-2 text-xs font-semibold text-foreground-subtle transition-colors hover:text-foreground disabled:opacity-60"
                 >
                   <HeartIcon size={12} />
                   {t.app.discover.actionFollow}
@@ -712,7 +714,7 @@ function DiscoverRow({
               type="button"
               onClick={onSkip}
               aria-label={`${t.app.discover.actionSkip}: ${member.firstName} ${member.lastName}`}
-              className="inline-flex items-center gap-1 text-xs font-semibold text-foreground-subtle transition-colors hover:text-foreground"
+              className="inline-flex min-h-10 items-center gap-1 px-2 text-xs font-semibold text-foreground-subtle transition-colors hover:text-foreground"
             >
               <XIcon size={12} />
               {t.app.discover.actionSkip}

@@ -638,3 +638,31 @@ PW_MODULES=/tmp/pw/node_modules BASE_URL=http://127.0.0.1:3000 \
 Dark: Score sichtbar, Dialog öffnet/schließt (Escape und Klick daneben), kein
 horizontaler Überlauf, X sichtbar, Trust-Badge in Chancen und Jobs, Trust-Seite
 mit Score und Signalen, Admin-Moderationsseite.
+
+## QA- und Produkt-Politur-Sprint (2026-10-01)
+
+Systematische Prüfung der bestehenden Flows (Auth, Netzwerk, Inbox, Profil,
+Beiträge, Marketplace, Events, Admin) bei Desktop 1440, Tablet 820, Mobil 390
+und 430 px (Playwright gegen `npm run dev` bzw. den lokalen Worker). Nur reale
+Fehler wurden behoben; keine neue Funktion, keine Migration.
+
+| Befund | Behebung |
+| --- | --- |
+| `/login?next=…` ignorierte das Ziel nach dem Login | `loginAction` liest `next`; `src/lib/auth/next-path.ts` (`safeNextPath`) erlaubt nur `/app…` und `/admin…` (kein Open Redirect), Onboarding hat Vorrang; `tests/unit/auth-next-path.test.ts` |
+| Auth-Fehlerbanner wurden von Screenreadern nicht angesagt | `role="alert"` in `AuthForms.tsx` |
+| Follow-Button auf fremden Profilen zeigte immer „Folgen“ (Toggle ohne Zustand) | `isFollowing` aus `people/[handle]/page.tsx` → Button „Nicht mehr folgen“ |
+| „Ich suche/Ich biete“ auf fremden Profilen zeigte rohe Slugs (`build-network`) | `goalLabelMap()` in `queries.ts`, wie im eigenen Profil |
+| „Dein Trust Score entsteht…“ auf fremden Profilen | neutraler Text (DE/EN) |
+| `/admin/reviews` verlinkte Demo-/inaktive Konten (404) | Name als Text statt Link, wenn die Profilseite 404 liefert |
+| `/admin/impact` horizontaler Überlauf bei 390 px | `grid-cols-1` im `ImpactEntryForm` |
+| Marketplace-/Chancen-Filter zeigten rohe Slugs, Event-Badge `connect` | i18n-Labels |
+| „1 Ergebnisse / 1 Empfehlungen“ | Singular-Keys (`resultsOne`, `resultsCountOne`) |
+| Zu kleine Touch-Ziele (Konto-Button, Folgen/Überspringen, Admin-Navigation, Badge-Chip, „Nachricht löschen“) | Mindesthöhe/Trefferfläche, Optik unverändert |
+
+Ergebnis: `npm run typecheck` grün, `npm test` 54 Dateien / 502 Tests,
+`npm run i18n:audit` DE/EN 3109 identisch, Lint-Baseline unverändert
+(5 Fehler + 6 Warnungen, K-15), `git diff --check` sauber,
+`npm run cf:build` grün, `sprint18-private-beta-browser.mjs` 101/101 gegen den
+lokalen Worker (inkl. R2-Bild-Upload). Crawl aller App-/Admin-Routen bei vier
+Breiten: 0 Überlauf, 0 Konsolenfehler, 0 defekte interne Links. Die übrigen
+E2E-Skripte benötigen ein System-Chromium und liefen hier nicht.

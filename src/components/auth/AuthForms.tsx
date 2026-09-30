@@ -77,7 +77,7 @@ function FormError({ state }: { state: AuthState }) {
       : t.app.errors.generic;
 
   return (
-    <div className="flex items-start gap-2.5 rounded-xl border border-danger-500/30 bg-danger-500/5 px-3.5 py-3 text-sm text-danger-600 dark:text-danger-500">
+    <div role="alert" className="flex items-start gap-2.5 rounded-xl border border-danger-500/30 bg-danger-500/5 px-3.5 py-3 text-sm text-danger-600 dark:text-danger-500">
       <AlertIcon size={16} className="mt-0.5 shrink-0" />
       <span>{message}</span>
     </div>
@@ -580,7 +580,7 @@ export function VerifyForm({
       )}
 
       {errorText && (
-        <div className="mb-5 flex items-start gap-2.5 rounded-xl border border-danger-500/30 bg-danger-500/5 px-3.5 py-3 text-sm text-danger-600 dark:text-danger-500">
+        <div role="alert" className="mb-5 flex items-start gap-2.5 rounded-xl border border-danger-500/30 bg-danger-500/5 px-3.5 py-3 text-sm text-danger-600 dark:text-danger-500">
           <AlertIcon size={16} className="mt-0.5 shrink-0" />
           <span>
             {errorText}

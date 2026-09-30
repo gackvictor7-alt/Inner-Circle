@@ -37,6 +37,7 @@ export function ProfileActions({
   isConnected,
   isBlocked,
   canFollow,
+  isFollowing = false,
   canConnect,
   canMessage,
   outgoingRequestId = null,
@@ -50,6 +51,8 @@ export function ProfileActions({
   isConnected: boolean;
   isBlocked: boolean;
   canFollow: boolean;
+  /** The viewer already follows this member – the button then reads "Unfollow". */
+  isFollowing?: boolean;
   canConnect: boolean;
   canMessage: boolean;
   outgoingRequestId?: string | null;
@@ -153,7 +156,7 @@ export function ProfileActions({
           <input type="hidden" name="userId" value={userId} />
           <input type="hidden" name="handle" value={handle} />
           <Button type="submit" size="sm" variant="secondary" loading={followPending}>
-            {tr("app.network.followCta")}
+            {isFollowing ? tr("app.profile.actions.unfollow") : tr("app.network.followCta")}
           </Button>
         </form>
       )}
@@ -188,11 +191,6 @@ export function ProfileActions({
       {errorCode && (
         <span role="alert" className="w-full text-xs text-danger-600 dark:text-danger-300">
           {tr(`app.errors.${errorCode}`, respondState.errorParams ?? withdrawState.errorParams)}
-        </span>
-      )}
-      {followState.status === "success" && (
-        <span role="status" className="text-xs text-forest-600 dark:text-forest-300">
-          {tr(followState.messageCode === "unfollowed" ? "app.profile.actions.unfollow" : "app.profile.actions.follow")}
         </span>
       )}
 

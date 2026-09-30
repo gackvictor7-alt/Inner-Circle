@@ -108,7 +108,9 @@ export default async function OpportunitiesPage({
           >
             <option value=""><Tr k="app.common.all" /></option>
             {["co_founder", "strategic_partnership", "joint_venture", "freelance", "customers", "job", "investment", "other"].map((type) => (
-              <option key={type} value={type}>{type}</option>
+              <option key={type} value={type}>
+                <Tr k={`app.opportunities.type.${type}` as "app.opportunities.type.co_founder"} />
+              </option>
             ))}
           </select>
           <Button type="submit" size="sm"><Tr k="app.common.filter" /></Button>

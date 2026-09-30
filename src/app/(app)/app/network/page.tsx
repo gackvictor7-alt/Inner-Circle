@@ -277,7 +277,7 @@ export default async function NetworkPage({
                 </>
               ) : (
                 <>
-                  {filteredMembers.length} <Tr k="app.common.results" />
+                  {filteredMembers.length} <Tr k={filteredMembers.length === 1 ? "app.common.resultsOne" : "app.common.results"} />
                 </>
               )}
             </p>
