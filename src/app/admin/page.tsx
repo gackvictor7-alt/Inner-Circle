@@ -1,9 +1,8 @@
 import Link from "next/link";
 import { desc, eq, sql } from "drizzle-orm";
 import { db } from "@/db/client";
-import { adminAuditLog, investmentOpportunities, memberships, trials, users } from "@/db/schema";
+import { adminAuditLog, investmentOpportunities, memberships, users } from "@/db/schema";
 import { requireAdmin } from "@/lib/access/server";
-import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { StatTile } from "@/components/app/ui";
 import { Tr } from "@/components/app/localized";

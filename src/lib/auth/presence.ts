@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { AUTH_PRESENCE_COOKIE } from "./cookie-name";
 
 /**
@@ -14,13 +14,14 @@ import { AUTH_PRESENCE_COOKIE } from "./cookie-name";
  * "Login/Join" and "Zur App".
  */
 export function useSignedInPresence(): boolean {
-  const [signedIn, setSignedIn] = useState(false);
+  // The cookie is read on the client only; the server snapshot is the visitor
+  // state, so hydration stays consistent and the flag applies right after it.
+  return useSyncExternalStore(subscribeNever, readPresenceCookie, () => false);
+}
 
-  useEffect(() => {
-    setSignedIn(readPresenceCookie());
-  }, []);
-
-  return signedIn;
+/** The presence cookie does not notify; it is re-read on every render. */
+function subscribeNever(): () => void {
+  return () => {};
 }
 
 /** Reads the presence flag directly from `document.cookie` (no dependency). */

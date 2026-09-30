@@ -33,10 +33,8 @@ export async function markNotificationReadAction(
   return done({ messageCode: "read" });
 }
 
-export async function markAllNotificationsReadAction(
-  _prev: ActionState,
-  _formData: FormData,
-): Promise<ActionState> {
+// Takes no form input; still usable as a `useActionState` / `<form action>` handler.
+export async function markAllNotificationsReadAction(): Promise<ActionState> {
   const access = await getAccessContext();
   if (!access.user) return fail("unauthorized");
 

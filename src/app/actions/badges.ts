@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { and, eq, inArray, isNull, or } from "drizzle-orm";
+import { and, eq, inArray, or } from "drizzle-orm";
 import { db } from "@/db/client";
 import { badgeApplications, badges, userBadges, users } from "@/db/schema";
 import { idFor } from "@/db/ids";

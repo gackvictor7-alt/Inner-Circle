@@ -12,6 +12,12 @@ export const dynamic = "force-dynamic";
 
 const stateVariant = { confirmed: "forest", concept: "sand", past: "outline", demo: "outline" } as const;
 
+/** Request-time filter (the page is force-dynamic); kept outside the component so render stays pure. */
+function onlyFutureEvents<T extends { startsAt: Date | null }>(events: T[]): T[] {
+  const now = Date.now();
+  return events.filter((event) => (event.startsAt?.getTime() ?? 0) >= now);
+}
+
 export default async function EventsPage({
   searchParams,
 }: {
@@ -26,8 +32,7 @@ export default async function EventsPage({
     myEventApplications(access.user.id),
   ]);
 
-  const now = Date.now();
-  const upcoming = allEvents.filter((event) => (event.startsAt?.getTime() ?? 0) >= now);
+  const upcoming = onlyFutureEvents(allEvents);
   const concepts = upcoming.filter((event) => event.state === "concept");
   const confirmed = upcoming.filter((event) => event.state === "confirmed");
   const shown = tab === "concepts" ? concepts : confirmed;

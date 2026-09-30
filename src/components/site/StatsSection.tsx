@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -23,19 +23,27 @@ export type PlatformMetricView = {
   updatedAt: string;
 };
 
+const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
+
+function subscribeReducedMotion(onChange: () => void) {
+  const query = window.matchMedia(REDUCED_MOTION_QUERY);
+  query.addEventListener("change", onChange);
+  return () => query.removeEventListener("change", onChange);
+}
+
 /** Subtle animated counter (respects prefers-reduced-motion). */
 function useCountUp(target: number | null, duration = 1200) {
   const [value, setValue] = useState(0);
   const ref = useRef<HTMLDivElement>(null);
   const started = useRef(false);
+  const reduced = useSyncExternalStore(
+    subscribeReducedMotion,
+    () => window.matchMedia(REDUCED_MOTION_QUERY).matches,
+    () => false,
+  );
 
   useEffect(() => {
-    if (target === null || target === 0) return;
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduced) {
-      setValue(target);
-      return;
-    }
+    if (target === null || target === 0 || reduced) return;
     const element = ref.current;
     if (!element) return;
 
@@ -58,13 +66,14 @@ function useCountUp(target: number | null, duration = 1200) {
     );
     observer.observe(element);
     return () => observer.disconnect();
-  }, [target, duration]);
+  }, [target, duration, reduced]);
 
-  return { value, ref };
+  // Reduced motion shows the final number immediately instead of counting up.
+  return { value: reduced && target !== null ? target : value, ref };
 }
 
 function MetricCard({ metric }: { metric: PlatformMetricView }) {
-  const { t, locale, tf } = useI18n();
+  const { t, locale } = useI18n();
   const isDemo = metric.kind === "demo";
   const isZero = metric.kind === "zero_state" || metric.valueInt === null;
   const { value, ref } = useCountUp(isDemo ? null : metric.valueInt);

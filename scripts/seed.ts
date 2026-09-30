@@ -1052,18 +1052,18 @@ async function main() {
       });
 
       let modulePosition = 0;
-      for (const module of listing.course.modules) {
+      for (const courseModule of listing.course.modules) {
         const moduleId = createId("mod");
         await db.insert(schema.courseModules).values({
           id: moduleId,
           courseId,
-          title: module.title,
+          title: courseModule.title,
           position: modulePosition,
         });
         modulePosition += 1;
 
         let lessonPosition = 0;
-        for (const lesson of module.lessons) {
+        for (const lesson of courseModule.lessons) {
           await db.insert(schema.lessons).values({
             id: createId("les"),
             moduleId,

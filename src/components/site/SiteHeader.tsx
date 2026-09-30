@@ -55,7 +55,15 @@ function useScrollShadow() {
 export function SiteHeader({ level = "visitor" as AccessLevel }: { level?: AccessLevel }) {
   const { t, locale, setLocale } = useI18n();
   const pathname = usePathname();
-  const [menuOpen, setMenuOpen] = useState(false);
+  // The menu is open for one specific path, so it closes on navigation
+  // without an effect.
+  const [openPath, setOpenPath] = useState<string | null>(null);
+  const menuOpen = openPath === pathname;
+  const setMenuOpen = (next: boolean | ((open: boolean) => boolean)) =>
+    setOpenPath((current) => {
+      const open = typeof next === "function" ? next(current === pathname) : next;
+      return open ? pathname : null;
+    });
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const scrolled = useScrollShadow();
@@ -65,11 +73,6 @@ export function SiteHeader({ level = "visitor" as AccessLevel }: { level?: Acces
   const presenceSignedIn = useSignedInPresence();
 
   const signedIn = level !== "visitor" || presenceSignedIn;
-
-  // Close the menu on navigation.
-  useEffect(() => {
-    setMenuOpen(false);
-  }, [pathname]);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -81,7 +84,7 @@ export function SiteHeader({ level = "visitor" as AccessLevel }: { level?: Acces
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        setMenuOpen(false);
+        setOpenPath(null);
         menuButtonRef.current?.focus();
       }
     };
