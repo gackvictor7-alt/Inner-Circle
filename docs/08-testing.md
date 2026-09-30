@@ -661,8 +661,18 @@ Fehler wurden behoben; keine neue Funktion, keine Migration.
 
 Ergebnis: `npm run typecheck` grün, `npm test` 54 Dateien / 502 Tests,
 `npm run i18n:audit` DE/EN 3109 identisch, Lint-Baseline unverändert
-(5 Fehler + 6 Warnungen, K-15), `git diff --check` sauber,
+(Lint danach bereinigt, siehe unten), `git diff --check` sauber,
 `npm run cf:build` grün, `sprint18-private-beta-browser.mjs` 101/101 gegen den
 lokalen Worker (inkl. R2-Bild-Upload). Crawl aller App-/Admin-Routen bei vier
 Breiten: 0 Überlauf, 0 Konsolenfehler, 0 defekte interne Links. Die übrigen
 E2E-Skripte benötigen ein System-Chromium und liefen hier nicht.
+
+### Lint-Bereinigung (2026-10-01)
+
+`npm run lint`: vorher **5 Fehler + 6 Warnungen**, nachher **0 / 0** (K-15 behoben,
+keine Regel deaktiviert). `npm run typecheck` grün, `npm test` 54 Dateien / 502
+Tests, `git diff --check` sauber, `sprint18-private-beta-browser.mjs` 101/101
+gegen den lokalen Worker. Zusätzlich im Browser geprüft: Mobile-Menü (öffnen,
+Escape, Schließen bei Navigation, Body-Scroll), Presence-Flag schaltet den
+Header auf „Zur App“, Kennzahlen mit/ohne Reduced-Motion ohne Fehler,
+`/app/events` zeigt weiterhin die kommenden Events.

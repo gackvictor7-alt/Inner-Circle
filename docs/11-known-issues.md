@@ -334,7 +334,16 @@ P2 mittelfristig · P3 Aufräumen.
 
 ## P3 – Aufräumen / technische Schulden
 
-### K-15 · Lint nicht fehlerfrei (vorbestehend)
+### K-15 · Lint nicht fehlerfrei (vorbestehend) – **BEHOBEN (2026-10-01)**
+
+- **Stand 2026-10-01:** `npm run lint` meldet **0 Fehler / 0 Warnungen**. Behoben
+  ohne Regel-Deaktivierung und ohne `eslint-disable`: `SiteHeader` (Menü ist für
+  einen Pfad geöffnet, schließt bei Navigation ohne Effekt), `StatsSection`
+  (Reduced-Motion über `useSyncExternalStore`, zeigt sofort den Endwert),
+  `lib/auth/presence.ts` (`useSyncExternalStore`, Server-Snapshot = Besucher),
+  `app/events/page.tsx` (Zeitfilter in Modul-Funktion außerhalb des Renderns),
+  `scripts/seed.ts` (`module` → `courseModule`) sowie sechs ungenutzte
+  Importe/Variablen. Der folgende Verlauf ist historisch.
 
 - `npm run lint` meldet aktuell **11 Probleme**: 5 Fehler („setState in effect"
   in `SiteHeader`, `StatsSection` und `lib/auth/presence.ts`; „impure function
