@@ -610,7 +610,22 @@ async function main() {
     goals: ["build-network"],
     membershipPlan: "annual",
   });
-
+  await createUser({
+    email: "realmember@innercircle.test",
+    firstName: "Lena",
+    lastName: "Hartmann",
+    handle: "lena.hartmann",
+    isDemo: false,
+    level: "member",
+    founding: true,
+    headline: "Founder · B2B Services · Stuttgart",
+    bio: "Lokaler Test-Member für Network, Follow, Connections und Messaging.",
+    location: "Stuttgart, Deutschland",
+    roles: ["Founder", "Business Development"],
+    interests: ["entrepreneurship", "sales", "startups"],
+    goals: ["build-network", "find-customers"],
+    membershipPlan: "annual",
+  });
   await createUser({
     email: "trial@innercircle.test",
     firstName: "Timo",

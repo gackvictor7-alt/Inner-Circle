@@ -143,10 +143,29 @@ export function avatarKeyFromUrl(url: string, userId: string): string | null {
 }
 
 /** Validates a media key requested through the public serving route. */
-export function isServableMediaKey(key: string): boolean {
-  if (!key.startsWith(AVATAR_PREFIX) || key.includes("..")) return false;
+
+ export function isServableMediaKey(key: string): boolean {
+  if (key.includes("..")) return false;
+
   const segments = key.split("/").filter(Boolean);
-  // avatars/<userId>/<filename>.<ext> – only the types we store ourselves.
-  if (segments.length !== 3 || !/^usr_[a-z0-9]+$/.test(segments[1])) return false;
-  return /\.(jpg|jpeg|png|webp)$/.test(segments[2].toLowerCase());
+
+  // avatars/<userId>/<filename>.<ext>
+  if (segments[0] === "avatars") {
+    if (segments.length !== 3 || !/^usr_[a-z0-9]+$/.test(segments[1])) {
+      return false;
+    }
+
+    return /\.(jpg|jpeg|png|webp)$/i.test(segments[2]);
+  }
+
+  // posts/<userId>/<filename>.<ext>
+  if (segments[0] === "posts") {
+    if (segments.length !== 3 || !/^usr_[a-z0-9]+$/.test(segments[1])) {
+      return false;
+    }
+
+    return /\.(jpg|jpeg|png|webp)$/i.test(segments[2]);
+  }
+
+  return false;
 }

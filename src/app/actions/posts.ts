@@ -7,6 +7,7 @@ import { posts } from "@/db/schema";
 import { idFor } from "@/db/ids";
 import { getAccessContext } from "@/lib/access/server";
 import { consumeRateLimit } from "@/lib/rate-limit";
+import { storePostImage } from "@/lib/storage";
 import { fail, done, text, type ActionState } from "./state";
 
 const ALLOWED_KINDS = ["post", "milestone", "opportunity", "course", "event", "deal"] as const;
@@ -32,7 +33,20 @@ export async function createPostAction(_prev: ActionState, formData: FormData): 
 
   const entityType = text(formData, "entityType", 24) || null;
   const entityId = text(formData, "entityId", 64) || null;
+  const imageValue = formData.get("imageFile");
+  const hasImageFile = imageValue instanceof File && imageValue.size > 0;
 
+  let imageUrl = text(formData, "imageUrl", 400) || null;
+
+  if (hasImageFile) {
+    const stored = await storePostImage(access.user.id, imageValue as File);
+
+    if (!stored.ok) {
+      return fail(stored.errorCode);
+    }
+
+    imageUrl = stored.url;
+  }
   const postId = idFor.post();
   await db.insert(posts).values({
     id: postId,
@@ -42,7 +56,7 @@ export async function createPostAction(_prev: ActionState, formData: FormData): 
     visibility,
     entityType,
     entityId,
-    imageUrl: text(formData, "imageUrl", 400) || null,
+    imageUrl,
     linkUrl: text(formData, "linkUrl", 400) || null,
     verified: false,
     isDemo: false,

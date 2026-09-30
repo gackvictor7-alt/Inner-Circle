@@ -143,4 +143,49 @@ export async function deleteAvatarMedia(userId: string, keepUrl?: string | null)
   } catch {
     // Cleanup is best-effort; a failed delete must never break the save.
   }
+}/**
+ * Stores one image attached to a member post.
+ *
+ * Post images use the same strict validation as profile photos
+ * (JPEG / PNG / WebP, magic-byte check, max. 5 MB), but unlike avatars
+ * they are not replaced automatically because every post may keep its
+ * own immutable image.
+ */
+export async function storePostImage(
+  userId: string,
+  file: File,
+): Promise<{ ok: true; key: string; url: string } | { ok: false; errorCode: AvatarStoreError }> {
+  const validation = validateAvatarUpload(file.size, await readHead(file), file.type);
+
+  if (!validation.ok) {
+    return {
+      ok: false,
+      errorCode: validation.reason === "tooLarge" ? "fileTooLarge" : "fileType",
+    };
+  }
+
+  const bucket = getMediaBucket();
+  if (!bucket) {
+    return { ok: false, errorCode: "storageUnavailable" };
+  }
+
+  const random = randomBytes(12).toString("hex");
+  const timestamp = Date.now().toString(36);
+  const key = `posts/${userId}/${timestamp}-${random}.${validation.extension}`;
+
+  const bytes = await file.arrayBuffer();
+
+  if (bytes.byteLength > AVATAR_MAX_BYTES) {
+    return { ok: false, errorCode: "fileTooLarge" };
+  }
+
+  await bucket.put(key, bytes, {
+    httpMetadata: { contentType: validation.type },
+  });
+
+  return {
+    ok: true,
+    key,
+    url: mediaUrlFor(key),
+  };
 }
