@@ -27,6 +27,12 @@ export default async function BetaPage() {
     "app.beta.includedRequests",
     "app.beta.includedChat",
     "app.beta.includedProfile",
+    "app.beta.includedPosts",
+    "app.beta.includedBusiness",
+    "app.beta.includedInvestments",
+    "app.beta.includedMarketplace",
+    "app.beta.includedAcademy",
+    "app.beta.includedEvents",
   ];
 
   return (

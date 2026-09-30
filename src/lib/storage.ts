@@ -3,14 +3,16 @@ import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { randomBytes } from "node:crypto";
 
 import {
-  AVATAR_MAX_BYTES,
+  MEDIA_MAX_BYTES,
   avatarKeyFor,
   avatarKeyFromUrl,
-  validateAvatarUpload,
+  postKeyFor,
+  postKeyFromUrl,
+  validateMediaUpload,
 } from "@/lib/media";
 
 /**
- * Media storage for member uploads (profile photos).
+ * Media storage for member uploads.
  *
  * Production runs on Cloudflare Workers and stores files in an R2 bucket via
  * the `MEDIA` binding declared in `wrangler.jsonc` (bucket
@@ -18,15 +20,9 @@ import {
  * the same binding, so the exact code path is testable without cloud access.
  * Images are NEVER stored as Base64 in D1.
  *
- * Public access works two ways (see docs/09-deployment.md):
- *   * default  – relative URLs `/api/media/<key>` served by the app itself,
- *   * optional – `R2_PUBLIC_BASE_URL` pointing at a public bucket domain
- *                (r2.dev or custom domain), which offloads image requests
- *                from the Worker.
- *
- * When the binding is missing the upload fails with an honest error
- * (`storageUnavailable`) – the existing photo-by-URL field keeps working, so
- * no deployment is silently broken.
+ * Avatar URLs can optionally use `R2_PUBLIC_BASE_URL`. New post images always
+ * use `/api/media/posts/...` so the app's strictly validated route serves them.
+ * When the binding is missing the upload fails with `storageUnavailable`.
  */
 
 /** Minimal structural type for the parts of the R2 binding we use. */
@@ -72,10 +68,15 @@ export function mediaPublicBaseUrl(): string | null {
   return value.replace(/\/+$/, "");
 }
 
-/** Builds the public URL for a stored object key. */
+/** Builds the public URL for a stored avatar object key. */
 export function mediaUrlFor(key: string): string {
   const base = mediaPublicBaseUrl();
   return base ? `${base}/${key}` : `/api/media/${key}`;
+}
+
+/** Post.imageUrl deliberately uses the validated application media route. */
+export function postMediaUrlFor(key: string): string {
+  return `/api/media/${key}`;
 }
 
 const HEAD_BYTES = 16;
@@ -87,18 +88,19 @@ async function readHead(file: File): Promise<Uint8Array> {
 }
 
 /** Failure reasons already mapped to translatable error codes. */
-export type AvatarStoreError = "fileType" | "fileTooLarge" | "storageUnavailable";
+export type MediaStoreError = "fileType" | "fileTooLarge" | "storageUnavailable";
+/** @deprecated Kept as an alias for the existing profile-photo flow. */
+export type AvatarStoreError = MediaStoreError;
 
 /**
- * Validates an uploaded photo (size + real content type) and stores it under
- * `avatars/<userId>/<random>.<ext>`. On failure returns the error code for the
- * action layer; the caller answers with a precise, translatable message.
+ * Validates and stores a profile photo under `avatars/<userId>/<random>.<ext>`.
+ * A replacement removes only the member's previous avatar uploads.
  */
 export async function storeAvatar(
   userId: string,
   file: File,
 ): Promise<{ ok: true; key: string; url: string } | { ok: false; errorCode: AvatarStoreError }> {
-  const validation = validateAvatarUpload(file.size, await readHead(file), file.type);
+  const validation = validateMediaUpload(file.size, await readHead(file));
   if (!validation.ok) {
     return { ok: false, errorCode: validation.reason === "tooLarge" ? "fileTooLarge" : "fileType" };
   }
@@ -113,7 +115,7 @@ export async function storeAvatar(
   const key = avatarKeyFor(userId, validation.extension, `${timestamp}-${random}`);
 
   const bytes = await file.arrayBuffer();
-  if (bytes.byteLength > AVATAR_MAX_BYTES) {
+  if (bytes.byteLength > MEDIA_MAX_BYTES) {
     return { ok: false, errorCode: "fileTooLarge" };
   }
   await bucket.put(key, bytes, {
@@ -128,8 +130,8 @@ export async function storeAvatar(
 
 /**
  * Deletes media objects that belong to this member – but ONLY objects inside
- * their own `avatars/<userId>/` folder and only when `keepUrl` (the newly
- * stored URL) does not match. External URLs are never touched.
+ * their own `avatars/<userId>/` folder and only when `keepUrl` does not match.
+ * External image URLs are never interpreted as managed media.
  */
 export async function deleteAvatarMedia(userId: string, keepUrl?: string | null): Promise<void> {
   const bucket = getMediaBucket();
@@ -137,10 +139,67 @@ export async function deleteAvatarMedia(userId: string, keepUrl?: string | null)
   const prefix = `avatars/${userId}/`;
   try {
     const listed = await bucket.list({ prefix, limit: 100 });
-    const keepKey = keepUrl ? avatarKeyFromUrl(keepUrl, userId) : null;
+    const keepKey = keepUrl ? avatarKeyFromUrl(keepUrl, userId, mediaPublicBaseUrl()) : null;
     const stale = listed.objects.map((object) => object.key).filter((key) => key !== keepKey);
     if (stale.length > 0) await bucket.delete(stale);
   } catch {
     // Cleanup is best-effort; a failed delete must never break the save.
+  }
+}
+
+/**
+ * Stores one immutable image attached to a member post. The same server-side
+ * MIME magic-byte and 5 MB checks as profile photos apply.
+ */
+export async function storePostImage(
+  userId: string,
+  file: File,
+): Promise<{ ok: true; key: string; url: string } | { ok: false; errorCode: MediaStoreError }> {
+  const validation = validateMediaUpload(file.size, await readHead(file));
+  if (!validation.ok) {
+    return {
+      ok: false,
+      errorCode: validation.reason === "tooLarge" ? "fileTooLarge" : "fileType",
+    };
+  }
+
+  const bucket = getMediaBucket();
+  if (!bucket) {
+    return { ok: false, errorCode: "storageUnavailable" };
+  }
+
+  const random = randomBytes(12).toString("hex");
+  const timestamp = Date.now().toString(36);
+  const key = postKeyFor(userId, validation.extension, `${timestamp}-${random}`);
+  const bytes = await file.arrayBuffer();
+
+  // Check the bytes actually written as well as the multipart File size.
+  if (bytes.byteLength > MEDIA_MAX_BYTES) {
+    return { ok: false, errorCode: "fileTooLarge" };
+  }
+
+  await bucket.put(key, bytes, {
+    httpMetadata: { contentType: validation.type },
+  });
+
+  return { ok: true, key, url: postMediaUrlFor(key) };
+}
+
+/**
+ * Best-effort cleanup of a deleted post's own uploaded image. Only an exact
+ * validated post key in the author's folder can be removed; external imageUrl
+ * values and other members' media are never touched.
+ */
+export async function deletePostMedia(userId: string, imageUrl: string | null | undefined): Promise<void> {
+  if (!imageUrl) return;
+  const key = postKeyFromUrl(imageUrl, userId, mediaPublicBaseUrl());
+  if (!key) return;
+
+  const bucket = getMediaBucket();
+  if (!bucket) return;
+  try {
+    await bucket.delete(key);
+  } catch {
+    // Media cleanup is best-effort; deleting the database post must still work.
   }
 }

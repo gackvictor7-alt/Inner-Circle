@@ -128,6 +128,12 @@ export default async function ProfileEditPage({
               "app.beta.includedRequests",
               "app.beta.includedChat",
               "app.beta.includedProfile",
+              "app.beta.includedPosts",
+              "app.beta.includedBusiness",
+              "app.beta.includedInvestments",
+              "app.beta.includedMarketplace",
+              "app.beta.includedAcademy",
+              "app.beta.includedEvents",
             ].map((key) => (
               <li key={key} className="flex items-start gap-2">
                 <CheckIcon size={15} className="mt-1 shrink-0 text-forest-500" />

@@ -15,12 +15,13 @@ describe("access levels", () => {
     expect(atLeast("trial", "member")).toBe(false);
   });
 
-  it("keeps messaging, posting and selling behind a paid membership", () => {
+  it("keeps base free/trial levels from gaining member-only entitlements", () => {
     for (const level of ["visitor", "free", "trial"] as const) {
       const e = entitlementsFor(level);
       expect(e.messaging, level).toBe(false);
       expect(e.postCreate, level).toBe(false);
       expect(e.marketplaceSell, level).toBe(false);
+      expect(e.marketplaceRealBrowse, level).toBe(false);
       expect(e.memberCard, level).toBe(false);
       expect(e.profileFull, level).toBe(false);
     }
@@ -28,6 +29,7 @@ describe("access levels", () => {
     expect(member.messaging).toBe(true);
     expect(member.postCreate).toBe(true);
     expect(member.marketplaceSell).toBe(true);
+    expect(member.marketplaceRealBrowse).toBe(true);
     expect(member.memberCard).toBe(true);
   });
 
