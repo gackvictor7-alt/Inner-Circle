@@ -103,61 +103,7 @@ export function PostCreateForm() {
           placeholder={tr("app.posts.bodyPlaceholder")}
         />
 
-        <label className="block">
-          <span className="mb-1.5 block text-sm font-medium">
-            {tr("app.common.type")}
-          </span>
-
-          <select
-            name="kind"
-            defaultValue="post"
-            className="h-11 w-full rounded-xl border border-border px-3 text-sm outline-none focus:border-electric-500"
-          >
-            <option value="post">{tr("app.posts.typePost")}</option>
-            <option value="milestone">{tr("app.posts.typeMilestone")}</option>
-          </select>
-        </label>
-
-        <label className="block">
-          <span className="mb-1.5 block text-sm font-medium">
-            {tr("app.posts.visibility")}
-          </span>
-
-          <select
-            name="visibility"
-            defaultValue="members"
-            className="h-11 w-full rounded-xl border border-border px-3 text-sm outline-none focus:border-electric-500"
-          >
-            <option value="members">
-              {tr("app.posts.visibilityMembers")}
-            </option>
-            <option value="connections">
-              {tr("app.posts.visibilityConnections")}
-            </option>
-            <option value="public">
-              {tr("app.posts.visibilityPublic")}
-            </option>
-          </select>
-        </label>
-
-        <Input
-          label={tr("app.posts.linkLabel")}
-          type="url"
-          name="linkUrl"
-          maxLength={400}
-        />
-
-        <div className="space-y-2">
-          <Input
-            label={tr("app.posts.imageLabel")}
-            type="url"
-            name="imageUrl"
-            maxLength={400}
-          />
-          <p className="text-xs text-foreground-subtle">{tr("app.posts.imageUrlHint")}</p>
-        </div>
-
-        <div className="space-y-3 border-t border-border pt-5">
+        <div className="space-y-3">
           <div>
             <p className="text-sm font-medium">{tr("app.posts.imageUploadTitle")}</p>
             <p className="mt-1 text-xs text-foreground-subtle">{tr("app.posts.imageUploadHint")}</p>
@@ -170,7 +116,7 @@ export function PostCreateForm() {
               <img
                 src={previewUrl}
                 alt=""
-                className="max-h-[420px] w-full object-contain"
+                className="max-h-[320px] w-full object-contain sm:max-h-[420px]"
               />
             </div>
           )}
@@ -179,6 +125,7 @@ export function PostCreateForm() {
             <Button
               type="button"
               variant="secondary"
+              className="max-sm:h-12 max-sm:flex-1"
               onClick={() => fileInputRef.current?.click()}
               disabled={pending}
             >
@@ -216,6 +163,77 @@ export function PostCreateForm() {
           )}
         </div>
 
+        <div className="grid gap-5 sm:grid-cols-2">
+          <label className="block">
+            <span className="mb-1.5 block text-sm font-medium">
+              {tr("app.common.type")}
+            </span>
+
+            <select
+              name="kind"
+              defaultValue="post"
+              className="h-11 w-full rounded-xl border border-border px-3 text-sm outline-none focus:border-electric-500"
+            >
+              <option value="post">{tr("app.posts.typePost")}</option>
+              <option value="milestone">{tr("app.posts.typeMilestone")}</option>
+            </select>
+          </label>
+
+          <label className="block">
+            <span className="mb-1.5 block text-sm font-medium">
+              {tr("app.posts.visibility")}
+            </span>
+
+            <select
+              name="visibility"
+              defaultValue="members"
+              className="h-11 w-full rounded-xl border border-border px-3 text-sm outline-none focus:border-electric-500"
+            >
+              <option value="members">
+                {tr("app.posts.visibilityMembers")}
+              </option>
+              <option value="connections">
+                {tr("app.posts.visibilityConnections")}
+              </option>
+              <option value="public">
+                {tr("app.posts.visibilityPublic")}
+              </option>
+            </select>
+          </label>
+        </div>
+
+        {/* Optional external references – collapsed by default, still submitted with the form. */}
+        <details className="group rounded-xl border border-border px-4 py-3 open:pb-4">
+          <summary className="flex min-h-8 cursor-pointer list-none items-center justify-between gap-3 text-sm font-medium text-foreground-muted marker:hidden [&::-webkit-details-marker]:hidden">
+            <span>{tr("app.posts.moreOptions")}</span>
+            <span
+              aria-hidden="true"
+              className="text-lg leading-none text-foreground-subtle transition-transform group-open:rotate-45"
+            >
+              +
+            </span>
+          </summary>
+          <div className="mt-4 space-y-5">
+            <Input
+              label={tr("app.posts.linkLabel")}
+              type="url"
+              name="linkUrl"
+              maxLength={400}
+            />
+
+            <div className="space-y-2">
+              <Input
+                label={tr("app.posts.imageLabel")}
+                type="url"
+                name="imageUrl"
+                maxLength={400}
+              />
+              <p className="text-xs text-foreground-subtle">{tr("app.posts.imageUrlHint")}</p>
+            </div>
+
+          </div>
+        </details>
+
         {errorMessage && (
           <p
             role="alert"
@@ -225,7 +243,7 @@ export function PostCreateForm() {
           </p>
         )}
 
-        <Button type="submit" loading={pending}>
+        <Button type="submit" loading={pending} className="max-sm:w-full max-sm:h-12">
           {pending ? tr("app.common.saving") : tr("app.posts.submit")}
         </Button>
       </Card>

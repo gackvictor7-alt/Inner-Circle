@@ -746,3 +746,29 @@ der Beitrags-Sichtbarkeit sehen darf. Externe HTTP(S)-Bild-URLs bleiben
 unterstützt. Es wurden weder Kartenstil, Farben oder Typografie noch Profil-
 Tabs, App-Navigation oder Layout-Rhythmus verändert; kein neues Token und
 keine neue UI-Fläche außerhalb des bestehenden Formulars und der Post-Karte.
+
+## 1.24 Sprint Mobile + UX + Funktions-Check (2026-10-01, ausdrücklicher Gründerauftrag)
+
+Gezielter Mobile-Polish ohne Redesign. Desktop-Sidebar, Farben, Typografie-
+Stufen, Dark-/Light-Mode und DE/EN bleiben unverändert; kein neues Token.
+
+- **Navigation (Phone):** Bottom-Bar-Ziele mit mindestens 48 px Höhe und
+  11-px-Labels; das Konto-/Bereichs-Sheet listet jetzt **Events** als ersten
+  Bereich (vorher auf dem Handy nur über Start-Karten erreichbar) und markiert
+  die aktuelle Seite.
+- **Start:** Bereichskarten auf dem Handy als kompakte Zeilen (Icon · Titel ·
+  Kurztext · Pfeil, ganze Karte klickbar) statt ~195 px hoher Kacheln; ab `sm`
+  unverändert. Header-Aktionen (Inbox · Glocke · Discover) als 44-px-Zeile.
+- **Inbox:** Drei Tabs (Nachrichten · Anfragen · Benachrichtigungen) und die
+  Unter-Tabs (Erhalten · Gesendet · Kontakte) sind auf dem Handy gleich breite
+  Spalten und nie abgeschnitten; „Benachrichtigungen“ nutzt unter `sm` das
+  Kurzlabel „Hinweise“/„Alerts“ (`app.inbox.tabNotificationsShort`). Chat,
+  Composer, Umbruch langer Wörter/URLs und „Nachricht gelöscht“ waren bereits
+  korrekt und bleiben unverändert.
+- **Profil:** Stats (Follower · Folgt · Business Connections) als drei Spalten,
+  Standortzeile bricht um statt abzuschneiden, Aktionen mit 44-px-Targets
+  (gestapelt unter 380 px).
+- **Create Post:** Reihenfolge Text → Bild (Upload/Preview) → Typ/Sichtbarkeit →
+  aufklappbare optionale Felder Link-URL/Bild-URL (`app.posts.moreOptions`);
+  Submit auf dem Handy volle Breite. Upload-, Validierungs- und Server-Logik
+  sind unverändert (Feldnamen `imageFile`, `imageUrl`, `linkUrl` bleiben).

@@ -49,10 +49,10 @@ export function ProfilePeopleModal({
         type="button"
         aria-expanded={open}
         onClick={() => setOpen((current) => !current)}
-        className="min-w-[6rem] rounded-md text-left transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-electric-500"
+        className="min-w-0 rounded-md py-1 text-left sm:min-w-[6rem] transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-electric-500"
       >
         <span className="block text-sm font-bold">{count}</span>
-        <span className="text-xs text-foreground-muted">{label}</span>
+        <span className="block text-xs leading-4 text-foreground-muted">{label}</span>
       </button>
 
       <Dialog open={open} onClose={() => setOpen(false)} title={title} closeLabel={closeLabel}>

@@ -14,6 +14,7 @@ export function ShareProfileButton({ url }: { url: string }) {
     <Button
       size="sm"
       variant="secondary"
+      className="max-sm:h-11 max-sm:px-3"
       onClick={async () => {
         try {
           await navigator.clipboard.writeText(url);

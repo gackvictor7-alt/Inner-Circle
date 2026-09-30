@@ -156,6 +156,10 @@ export function AppShell({
     { href: "/app/learn", key: "learn", icon: GraduationIcon },
   ];
 
+  // Phones: Events are a primary area but have no bottom-bar slot, so the
+  // account/areas sheet lists them first (real route, no new function).
+  const sheetAreas: NavItem[] = [{ href: "/app/events", key: "events", icon: CalendarIcon }, ...areas];
+
   const label = (item: NavItem) => t.app.nav[item.key] as string;
 
   const isActive = (href: string) =>
@@ -385,12 +389,12 @@ export function AppShell({
                   <button
                     type="button"
                     onClick={() => setCreateOpen(true)}
-                    className="flex w-full flex-col items-center gap-1 rounded-xl py-1 text-electric-600 dark:text-electric-300"
+                    className="flex min-h-12 w-full flex-col items-center justify-center gap-1 rounded-xl py-1 text-electric-600 dark:text-electric-300"
                   >
                     <span className="flex h-8 w-8 items-center justify-center rounded-full bg-electric-500 text-white shadow-[0_8px_20px_-8px_rgb(54_108_245/0.8)]">
                       <PlusIcon size={18} />
                     </span>
-                    <span className="block max-w-full truncate text-[10px] font-medium leading-tight">
+                    <span className="block max-w-full truncate text-[11px] font-medium leading-tight">
                       {t.app.nav.create}
                     </span>
                   </button>
@@ -405,7 +409,7 @@ export function AppShell({
                 <Link
                   href={item.href}
                   aria-current={active ? "page" : undefined}
-                  className={`flex w-full flex-col items-center gap-1 rounded-xl py-1 ${
+                  className={`flex min-h-12 w-full flex-col items-center justify-center gap-1 rounded-xl py-1 ${
                     active ? "text-electric-600 dark:text-electric-300" : "text-foreground-muted"
                   }`}
                 >
@@ -413,7 +417,7 @@ export function AppShell({
                     <item.icon size={20} />
                     {item.badge ? <BadgeDot count={item.badge} /> : null}
                   </span>
-                  <span className="block max-w-full truncate text-[10px] font-medium leading-tight">
+                  <span className="block max-w-full truncate text-[11px] font-medium leading-tight">
                     {label(item)}
                   </span>
                 </Link>
@@ -514,7 +518,7 @@ export function AppShell({
                   href={entry.href}
                   onClick={() => setAccountOpen(false)}
                   aria-current={active ? "page" : undefined}
-                  className={`flex items-center gap-3 rounded-xl border px-3.5 py-2.5 text-sm font-medium transition-colors ${
+                  className={`flex min-h-11 items-center gap-3 rounded-xl border px-3.5 py-2.5 text-sm font-medium transition-colors ${
                     active
                       ? "border-electric-500/40 bg-electric-500/10 text-electric-600 dark:text-electric-300"
                       : "border-border hover:border-electric-500/40 hover:bg-surface-muted"
@@ -548,12 +552,15 @@ export function AppShell({
             {t.app.nav.areasLabel}
           </p>
           <ul className="space-y-1">
-            {areas.map((entry) => (
+            {sheetAreas.map((entry) => (
               <li key={entry.href}>
                 <Link
                   href={entry.href}
                   onClick={() => setAccountOpen(false)}
-                  className="flex items-center gap-3 rounded-xl px-3.5 py-2 text-sm font-medium transition-colors hover:bg-surface-muted"
+                  aria-current={isActive(entry.href) ? "page" : undefined}
+                  className={`flex min-h-11 items-center gap-3 rounded-xl px-3.5 py-2 text-sm font-medium transition-colors hover:bg-surface-muted ${
+                    isActive(entry.href) ? "bg-electric-500/10 text-electric-600 dark:text-electric-300" : ""
+                  }`}
                 >
                   <entry.icon size={16} className="text-foreground-subtle" />
                   {t.app.nav[entry.key] as string}

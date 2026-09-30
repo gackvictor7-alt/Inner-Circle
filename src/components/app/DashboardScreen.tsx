@@ -146,9 +146,9 @@ export function DashboardScreen({ data }: { data: DashboardData }) {
   return (
     <div className="space-y-8">
       {/* ------------------------------------------------- compact header */}
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-3">
-          <h1 className="truncate text-xl font-bold tracking-tight sm:text-2xl">
+      <header className="flex flex-wrap items-center justify-between gap-x-3 gap-y-3">
+        <div className="flex min-w-0 max-w-full flex-wrap items-center gap-x-3 gap-y-1.5">
+          <h1 className="max-w-full truncate whitespace-nowrap text-xl font-bold tracking-tight sm:text-2xl">
             {tf(t.app.dashboard.greetingName, { name: data.firstName })}
           </h1>
           <Badge variant={isMember ? "forest" : isBeta ? "forest" : isTrial ? "electric" : "neutral"}>
@@ -163,14 +163,15 @@ export function DashboardScreen({ data }: { data: DashboardData }) {
           {data.membershipDevelopment && <Badge variant="warning">{t.app.billing.devBadge}</Badge>}
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        {/* Phones: one tidy row of 44 px targets (Inbox · bell · Discover). */}
+        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
           {isTrial && countdown && (
             <span className="inline-flex items-center gap-1.5 rounded-full border border-electric-500/25 bg-electric-500/5 px-2.5 py-1 text-xs font-semibold text-electric-600 dark:text-electric-300">
               <span className="h-1.5 w-1.5 rounded-full bg-electric-500 animate-pulse" />
               {tf(t.app.dashboard.trialCompact, { time: countdown })}
             </span>
           )}
-          <Button href="/app/inbox" size="sm" variant="secondary">
+          <Button href="/app/inbox" size="sm" variant="secondary" className="max-sm:h-11 max-sm:flex-1">
             <InboxIcon size={16} />
             {t.app.nav.inbox}
             {data.unreadInbox > 0 && (
@@ -179,11 +180,11 @@ export function DashboardScreen({ data }: { data: DashboardData }) {
               </span>
             )}
           </Button>
-          <Button href="/app/inbox?tab=notifications" size="sm" variant="ghost" aria-label={t.app.nav.notifications}>
+          <Button href="/app/inbox?tab=notifications" size="sm" variant="ghost" aria-label={t.app.nav.notifications} className="max-sm:h-11 max-sm:w-11 max-sm:px-0">
             <BellIcon size={16} />
           </Button>
           {(networkOpen || isTrial) && (
-            <Button href="/app/discover" size="sm">
+            <Button href="/app/discover" size="sm" className="max-sm:h-11 max-sm:flex-1">
               <CompassIcon size={16} />
               {t.app.nav.discover}
             </Button>
@@ -332,23 +333,24 @@ export function DashboardScreen({ data }: { data: DashboardData }) {
             <li key={area.href} className="flex">
               <Link
                 href={area.href}
-                className="group flex h-full w-full flex-col rounded-2xl border border-border bg-surface p-5 shadow-card transition-all duration-300 hover:-translate-y-0.5 hover:border-electric-500/40 hover:shadow-lift sm:min-h-44 sm:p-6"
+                className="group flex h-full w-full items-center gap-4 rounded-2xl border border-border bg-surface p-4 shadow-card transition-all duration-300 hover:-translate-y-0.5 hover:border-electric-500/40 hover:shadow-lift sm:min-h-44 sm:flex-col sm:items-stretch sm:gap-0 sm:p-6"
               >
                 <span className={`inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${accents[area.accent]}`}>
                   <area.icon size={21} />
                 </span>
-                <span className="mt-4 min-w-0 flex-1">
+                <span className="min-w-0 flex-1 sm:mt-4">
                   <span className="flex flex-wrap items-center gap-2">
-                    <span className="text-lg font-bold tracking-tight sm:text-xl">{area.title}</span>
+                    <span className="text-base font-bold tracking-tight sm:text-xl">{area.title}</span>
                     {area.locked && <Badge variant="outline">{t.app.dashboard.lockedHint}</Badge>}
                     {area.demo && <Badge variant="outline">{t.app.demo.badge}</Badge>}
                   </span>
-                  <span className="mt-1.5 block text-sm leading-6 text-foreground-muted">
+                  <span className="mt-0.5 block text-sm leading-5 text-foreground-muted sm:mt-1.5 sm:leading-6">
                     <span className="sm:hidden">{area.short}</span>
                     <span className="hidden sm:inline">{area.desc}</span>
                   </span>
                 </span>
-                <span className="mt-4 flex items-center gap-1.5 text-sm font-semibold text-electric-600 dark:text-electric-300">
+                <ArrowRightIcon size={18} className="shrink-0 text-electric-600 sm:hidden dark:text-electric-300" />
+                <span className="mt-4 hidden items-center gap-1.5 text-sm font-semibold text-electric-600 sm:flex dark:text-electric-300">
                   {t.app.dashboard.areaOpen}
                   <ArrowRightIcon
                     size={16}

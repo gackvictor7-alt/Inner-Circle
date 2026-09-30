@@ -98,9 +98,16 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
         <p className="mt-5 whitespace-pre-wrap text-sm leading-7">{listing.description}</p>
 
         <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-border pt-5">
-          <Link href={`/app/people/${row.sellerHandle}`} className="text-sm font-semibold text-electric-600 dark:text-electric-300">
-            {row.sellerFirstName} {row.sellerLastName}
-          </Link>
+          {/* Demo sellers have no public detail page (it 404s by design) – no link. */}
+          {listing.isDemo ? (
+            <span className="text-sm font-semibold">
+              {row.sellerFirstName} {row.sellerLastName}
+            </span>
+          ) : (
+            <Link href={`/app/people/${row.sellerHandle}`} className="text-sm font-semibold text-electric-600 dark:text-electric-300">
+              {row.sellerFirstName} {row.sellerLastName}
+            </Link>
+          )}
           {row.sellerHeadline && <span className="text-xs text-foreground-subtle">{row.sellerHeadline}</span>}
           {!listing.isDemo && (
             <TrustBadge score10={row.sellerTrustScore10} verifiedReviewCount={row.sellerVerifiedReviews} />

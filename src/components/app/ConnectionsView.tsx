@@ -113,20 +113,20 @@ export function ConnectionsView({
     <div className="space-y-6">
       {!embedded && <PageHeader title={t.app.connections.title} lead={t.app.connections.lead} />}
 
-      <nav aria-label={t.app.connections.title} className="flex flex-wrap gap-2">
+      <nav aria-label={t.app.connections.title} className="grid grid-cols-3 gap-1.5 sm:flex sm:flex-wrap sm:gap-2">
         {tabs.map((item) => (
           <Link
             key={item.key}
             href={item.href}
             aria-current={tab === item.key ? "page" : undefined}
-            className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
+            className={`inline-flex min-h-10 items-center justify-center rounded-full px-1 py-2 text-center text-xs font-semibold transition-colors min-[360px]:px-2 min-[360px]:text-[13px] sm:px-4 sm:text-sm ${
               tab === item.key
                 ? "bg-foreground text-background"
                 : "border border-border bg-surface text-foreground-muted hover:text-foreground"
             }`}
           >
             {item.label}
-            <span className="ml-2 text-xs opacity-70">{item.count}</span>
+            <span className="ml-1.5 text-xs opacity-70 sm:ml-2">{item.count}</span>
           </Link>
         ))}
       </nav>

@@ -131,7 +131,11 @@ export default async function MarketplacePage({
                   <Link href={`/app/marketplace/${row.id}`} className="mt-2 block text-base font-bold tracking-tight hover:underline">{row.title}</Link>
                   <p className="mt-1 line-clamp-2 text-sm leading-6 text-foreground-muted">{row.summary}</p>
                   <p className="mt-2 text-xs text-foreground-subtle">
-                    <Link href={`/app/people/${row.sellerHandle}`} className="hover:text-foreground hover:underline">{row.sellerCompany ?? `${row.sellerFirstName} ${row.sellerLastName}`}</Link>
+                    {row.isDemo ? (
+                      <span>{row.sellerCompany ?? `${row.sellerFirstName} ${row.sellerLastName}`}</span>
+                    ) : (
+                      <Link href={`/app/people/${row.sellerHandle}`} className="hover:text-foreground hover:underline">{row.sellerCompany ?? `${row.sellerFirstName} ${row.sellerLastName}`}</Link>
+                    )}
                     <span aria-hidden="true"> · </span><span className="font-semibold text-foreground">{formatMoney(row.priceCents, row.currency, access.user.locale === "en" ? "en" : "de")}</span>
                     {!row.isDemo && (
                       <>

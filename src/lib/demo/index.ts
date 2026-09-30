@@ -22,6 +22,15 @@
 
 export const DEMO_CONTENT_ENABLED = true;
 
+/**
+ * Sample ("Beispielbeiträge") posts under a member's OWN profile are for
+ * fictional demo accounts only. Real members see exactly their own posts or
+ * the empty state – demo content is never mixed into a real profile.
+ */
+export function showsProfileDemoPosts(user: { isDemo: boolean }): boolean {
+  return DEMO_CONTENT_ENABLED && user.isDemo === true;
+}
+
 /** Where a demo number/status could be mistaken for a result, we say so. */
 export type DemoTone = "demo" | "beispiel";
 

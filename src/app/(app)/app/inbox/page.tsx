@@ -41,13 +41,14 @@ export default async function InboxPage({
     params.tab === "requests" || params.tab === "notifications" ? params.tab : "messages";
   const counts = await inboxCounts(access.user.id);
 
-  const tabs: { key: InboxTab; href: string; labelKey: string; count: number }[] = [
+  const tabs: { key: InboxTab; href: string; labelKey: string; shortKey?: string; count: number }[] = [
     { key: "messages", href: "/app/inbox?tab=messages", labelKey: "app.inbox.tabMessages", count: counts.unreadMessages },
     { key: "requests", href: "/app/inbox?tab=requests", labelKey: "app.inbox.tabRequests", count: counts.pendingRequests },
     {
       key: "notifications",
       href: "/app/inbox?tab=notifications",
       labelKey: "app.inbox.tabNotifications",
+      shortKey: "app.inbox.tabNotificationsShort",
       count: counts.unreadNotifications,
     },
   ];
@@ -70,25 +71,41 @@ export default async function InboxPage({
       </header>
 
       {/* Segmented control – one destination, three views, real counters.
-          One row that scrolls sideways on narrow phones; a wrapping pill box
-          broke the stadium shape at 360 px. */}
+          Phones: three equal columns that always fit (the long "Benachrichtigungen"
+          label switches to a short one below `sm`), so no tab is ever cut off or
+          hidden behind a sideways scroll; from `sm` the original pill row. */}
       <nav
         aria-label="Inbox"
-        className={`${chatOpen ? "hidden lg:inline-flex" : "inline-flex"} max-w-full gap-1 overflow-x-auto no-scrollbar rounded-full border border-border bg-surface p-1`}
+        className={`${
+          chatOpen ? "hidden lg:inline-flex lg:max-w-full" : "grid w-full sm:inline-flex sm:w-auto sm:max-w-full"
+        } grid-cols-3 gap-1 rounded-full border border-border bg-surface p-1`}
       >
         {tabs.map((item) => (
           <Link
             key={item.key}
             href={item.href}
             aria-current={tab === item.key ? "page" : undefined}
-            className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-semibold transition-colors ${
+            className={`inline-flex min-h-10 min-w-0 items-center justify-center gap-1 rounded-full px-1 py-1.5 text-xs font-semibold transition-colors min-[360px]:px-2 min-[360px]:text-[13px] sm:shrink-0 sm:gap-1.5 sm:px-4 sm:text-sm ${
               tab === item.key ? "bg-electric-500 text-white" : "text-foreground-muted hover:text-foreground"
             }`}
           >
-            <Tr k={item.labelKey} />
+            {item.shortKey ? (
+              <>
+                <span className="truncate sm:hidden">
+                  <Tr k={item.shortKey} />
+                </span>
+                <span className="hidden sm:inline">
+                  <Tr k={item.labelKey} />
+                </span>
+              </>
+            ) : (
+              <span className="truncate">
+                <Tr k={item.labelKey} />
+              </span>
+            )}
             {item.count > 0 && (
               <span
-                className={`min-w-[1.25rem] rounded-full px-1.5 text-center text-[11px] font-bold leading-5 ${
+                className={`min-w-[1.25rem] shrink-0 rounded-full px-1.5 text-center text-[11px] font-bold leading-5 ${
                   tab === item.key ? "bg-white/20 text-white" : "bg-electric-500/10 text-electric-600 dark:text-electric-300"
                 }`}
               >

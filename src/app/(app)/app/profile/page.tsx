@@ -25,7 +25,7 @@ import { TrustScoreBlock } from "@/components/app/TrustPanel";
 import { VerifiedBadgesSection } from "@/components/app/VerifiedBadges";
 import { ProfileBadgeCluster } from "@/components/app/BadgeChips";
 import { reputationBadgesFor } from "@/lib/badges/queries";
-import { DEMO_CONTENT_ENABLED } from "@/lib/demo";
+import { showsProfileDemoPosts } from "@/lib/demo";
 import { getPublicUrl } from "@/lib/env";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -201,11 +201,12 @@ export default async function OwnProfilePage({
                     <p className="mt-1 hidden truncate text-sm font-medium sm:block">{profile.headline}</p>
                   </>
                 )}
-                <p className="mt-0.5 truncate text-sm text-foreground-subtle">{[profile?.jobTitle, profile?.company, profile?.location].filter(Boolean).join(" · ")}</p>
+                <p className="mt-0.5 line-clamp-2 break-words text-sm text-foreground-subtle sm:line-clamp-1">{[profile?.jobTitle, profile?.company, profile?.location].filter(Boolean).join(" · ")}</p>
               </div>
             </div>
 
-            <div className="mt-5 flex flex-wrap gap-x-4 gap-y-3 border-t border-border pt-4 sm:gap-x-5">
+            {/* Phones: three equal columns (Follower · Folgt · Connections) instead of a ragged wrap. */}
+            <div className="mt-5 grid grid-cols-3 gap-2 border-t border-border pt-4 sm:flex sm:flex-wrap sm:gap-x-5 sm:gap-y-3">
               <ProfilePeopleModal
                 locale={user.locale === "en" ? "en" : "de"}
                 label={dict.app.profile.metricFollowers}
@@ -235,10 +236,11 @@ export default async function OwnProfilePage({
               />
             </div>
 
-            <div className="mt-5 flex flex-wrap items-center gap-2">
-              <Button href="/app/profile/edit" size="sm"><SparkleIcon size={15} /><Tr k="app.profile.editTitle" /></Button>
+            {/* Phones: two equal 44 px buttons + full-width settings; from `sm` the original inline row. */}
+            <div className="mt-5 grid grid-cols-1 gap-2 min-[380px]:grid-cols-2 sm:flex sm:flex-wrap sm:items-center">
+              <Button href="/app/profile/edit" size="sm" className="max-sm:h-11 max-sm:px-3"><SparkleIcon size={15} /><Tr k="app.profile.editTitle" /></Button>
               <ShareProfileButton url={shareUrl} />
-              <Button href="/app/settings" size="sm" variant="ghost"><SettingsIcon size={15} /><Tr k="app.settings.title" /></Button>
+              <Button href="/app/settings" size="sm" variant="ghost" className="max-sm:h-11 min-[380px]:max-sm:col-span-2"><SettingsIcon size={15} /><Tr k="app.settings.title" /></Button>
             </div>
 
             {profilePercent < 100 && (
@@ -404,7 +406,9 @@ export default async function OwnProfilePage({
             </ul>
           )}
 
-          {DEMO_CONTENT_ENABLED && <ProfilePostsDemoSection asOf={new Date()} />}
+          {/* Sample posts belong to fictional demo accounts only – real members
+              see exactly their own posts (or the empty state), never examples. */}
+          {showsProfileDemoPosts(user) && <ProfilePostsDemoSection asOf={new Date()} />}
         </section>
       )}
 
