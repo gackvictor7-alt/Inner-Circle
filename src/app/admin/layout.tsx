@@ -33,6 +33,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <Link href="/admin"><Tr k="app.admin.title" /></Link>
             <Link href="/admin/users"><Tr k="app.admin.users.title" /></Link>
             <Link href="/admin/investments"><Tr k="app.admin.investments.title" /></Link>
+            <Link href="/admin/badges"><Tr k="app.admin.badges.title" /></Link>
+            <Link href="/admin/impact"><Tr k="app.admin.impact.title" /></Link>
             <Link href="/admin/reviews"><Tr k="app.admin.reviews.title" /></Link>
             <Link href="/admin/applications"><Tr k="app.admin.applications.title" /></Link>
             <Link href="/admin/beta"><Tr k="app.betaAdmin.navLabel" /></Link>

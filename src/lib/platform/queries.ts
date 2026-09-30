@@ -33,6 +33,7 @@ import {
 } from "@/db/schema";
 import { idFor } from "@/db/ids";
 import { connectionPair } from "@/db/queries";
+import type { PublicBadge } from "@/lib/badges/queries";
 import { listedMemberSql, realParticipantSql } from "@/lib/network/eligibility";
 import { CONNECTION_REQUEST_COOLDOWN_DAYS } from "@/lib/platform/rules";
 import { trustDetailFor } from "@/lib/trust/service";
@@ -881,6 +882,8 @@ export type DiscoverCandidate = {
   bio: string | null;
   isDemo: boolean;
   foundingMember: boolean;
+  /** Verified, public badges in reputation priority order (Sprint 18). */
+  badges: PublicBadge[];
   trustScore10: number | null;
   verifiedReviewCount: number | null;
   interestSlugs: string[];
@@ -961,7 +964,7 @@ export async function listDiscoverCandidates(options: {
   const ids = rows.map((row) => row.id);
   const chunks = chunkIds(ids);
 
-  const [interestRows, goalRows, relations, secondDegree] = await Promise.all([
+  const [interestRows, badgeRows, goalRows, relations, secondDegree] = await Promise.all([
     Promise.all(
       chunks.map((chunk) =>
         db
@@ -977,6 +980,39 @@ export async function listDiscoverCandidates(options: {
           .innerJoin(interests, eq(interests.id, userInterests.interestId))
           .where(inArray(userInterests.userId, chunk))
           .orderBy(interests.position),
+      ),
+    ).then((parts) => parts.flat()),
+    // Verified badges for the compact card chips (Sprint 18): only public,
+    // active, non-revoked grants in reputation priority order. Evidence
+    // data is never loaded here.
+    Promise.all(
+      chunks.map((chunk) =>
+        db
+          .select({
+            userId: userBadges.userId,
+            id: userBadges.id,
+            slug: badges.slug,
+            titleDe: badges.titleDe,
+            titleEn: badges.titleEn,
+            category: badges.category,
+            iconKey: badges.iconKey,
+            priority: badges.priority,
+            grantedAt: userBadges.grantedAt,
+            verifiedAt: userBadges.verifiedAt,
+            publicSummary: userBadges.publicSummary,
+            periodLabel: userBadges.periodLabel,
+          })
+          .from(userBadges)
+          .innerJoin(badges, eq(badges.id, userBadges.badgeId))
+          .where(
+            and(
+              inArray(userBadges.userId, chunk),
+              isNull(userBadges.revokedAt),
+              eq(badges.active, true),
+              eq(badges.publiclyVisible, true),
+            ),
+          )
+          .orderBy(badges.priority),
       ),
     ).then((parts) => parts.flat()),
     Promise.all(
@@ -1020,6 +1056,32 @@ export async function listDiscoverCandidates(options: {
   const goalLabelBySlug = new Map(goalRows.map((row) => [row.slug, en ? row.labelEn : row.labelDe]));
   const humanise = (values: string[]) => values.map((value) => goalLabelBySlug.get(value) ?? value);
 
+  // Verified badges per candidate, already in reputation priority order.
+  const badgesByUser = new Map<string, typeof badgeRows>();
+  for (const row of badgeRows) {
+    const list = badgesByUser.get(row.userId) ?? [];
+    list.push(row);
+    badgesByUser.set(row.userId, list);
+  }
+  const candidateBadges = (userId: string): PublicBadge[] =>
+    (badgesByUser.get(userId) ?? []).map((badge) => {
+      const verified = badge.verifiedAt ?? badge.grantedAt;
+      const category: PublicBadge["category"] =
+        badge.category === "special" || badge.category === "platform" ? badge.category : "verified";
+      return {
+        id: badge.id,
+        slug: badge.slug,
+        title: en ? badge.titleEn : badge.titleDe,
+        category,
+        description: null,
+        iconKey: badge.iconKey,
+        priority: badge.priority,
+        verifiedAt: verified ? verified.toISOString() : null,
+        publicSummary: badge.publicSummary,
+        periodLabel: badge.periodLabel,
+      };
+    });
+
   const neighboursOf = new Map<string, Set<string>>();
   for (const row of secondDegree) {
     const a = neighboursOf.get(row.userAId) ?? new Set<string>();
@@ -1050,6 +1112,7 @@ export async function listDiscoverCandidates(options: {
       bio: row.bio,
       isDemo: row.isDemo,
       foundingMember: row.foundingMember,
+      badges: candidateBadges(row.id),
       trustScore10: row.trustScore10,
       verifiedReviewCount: row.verifiedReviewCount,
       interestSlugs: myInterests.map((interest) => interest.slug),

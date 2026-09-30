@@ -20,7 +20,8 @@ import * as schema from "../src/db/schema";
 import { createId } from "../src/db/ids";
 import { computeTrustScore } from "../src/lib/trust/score";
 import { PLANS } from "../src/lib/membership/plans";
-import { BADGES, GOALS, INTERESTS } from "./taxonomy";
+import { GOALS, INTERESTS } from "./taxonomy";
+import { BADGE_CATALOG, DEACTIVATE_LEGACY_SLUGS } from "../src/lib/badges/catalog-data";
 
 const url = process.env.DATABASE_URL ?? "file:./dev.db";
 const client = createClient({ url, authToken: process.env.DATABASE_AUTH_TOKEN });
@@ -207,16 +208,47 @@ async function ensureTaxonomy() {
     goalMap.set(slug, id);
   }
 
+  // Badge catalog (Sprint 18): idempotent upsert of the full catalog. The
+  // catalog data lives in src/lib/badges/catalog-data.ts (pure, no db) so
+  // seed, app and tests always agree on slugs, categories and criteria.
+  // Only the founding-member badge is ever granted to users here – no seed
+  // or demo account receives a verified/platform badge (no fake reputation).
   const badgeMap = new Map<string, string>();
-  for (const [slug, kind, titleDe, titleEn, iconKey] of BADGES) {
+  for (const entry of BADGE_CATALOG) {
+    const [existing] = await db.select().from(schema.badges).where(eq(schema.badges.slug, entry.slug)).limit(1);
+    const values = {
+      titleDe: entry.titleDe,
+      titleEn: entry.titleEn,
+      descDe: entry.descDe ?? null,
+      descEn: entry.descEn ?? null,
+      iconKey: entry.iconKey,
+      category: entry.category,
+      grantMethod: entry.grantMethod,
+      publiclyVisible: true,
+      priority: entry.priority,
+      periodMonths: entry.periodMonths ?? null,
+      thresholdValue: entry.thresholdValue ?? null,
+      thresholdUnit: entry.thresholdUnit ?? null,
+      evidenceDe: entry.evidenceDe ?? null,
+      evidenceEn: entry.evidenceEn ?? null,
+      active: entry.active ?? true,
+    };
+    if (existing) {
+      badgeMap.set(entry.slug, existing.id);
+      await db.update(schema.badges).set(values).where(eq(schema.badges.id, existing.id));
+    } else {
+      const id = createId("bdg");
+      badgeMap.set(entry.slug, id);
+      await db.insert(schema.badges).values({ id, slug: entry.slug, kind: entry.kind ?? entry.category, position: entry.priority, ...values });
+    }
+  }
+  // Legacy slugs: keep the rows (no deletion), deactivate them.
+  for (const slug of DEACTIVATE_LEGACY_SLUGS) {
     const [existing] = await db.select().from(schema.badges).where(eq(schema.badges.slug, slug)).limit(1);
     if (existing) {
       badgeMap.set(slug, existing.id);
-      continue;
+      await db.update(schema.badges).set({ active: false }).where(eq(schema.badges.id, existing.id));
     }
-    const id = createId("bdg");
-    await db.insert(schema.badges).values({ id, slug, kind, titleDe, titleEn, iconKey, position: 1 });
-    badgeMap.set(slug, id);
   }
 
   for (const [index, metric] of METRICS.entries()) {

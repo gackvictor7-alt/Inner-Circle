@@ -9,6 +9,8 @@ import { ConnectDialog } from "@/components/app/ConnectDialog";
 import { TrustBadge } from "@/components/app/TrustPanel";
 import { DemoConnectDialog } from "@/components/app/DemoConnectDialog";
 import { VerifiedBadges } from "@/components/app/VerifiedBadges";
+import { DiscoverBadgeChips } from "@/components/app/BadgeChips";
+import type { PublicBadge } from "@/lib/badges/queries";
 import { useI18n } from "@/lib/i18n/context";
 import { followAction } from "@/app/actions/network";
 import { initialActionState } from "@/app/actions/state";
@@ -40,6 +42,8 @@ export type DiscoverCardData = {
   bio: string | null;
   isDemo: boolean;
   foundingMember: boolean;
+  /** Verified badges for the compact chip row (max 2 + "+N"); empty when none. */
+  badges?: PublicBadge[];
   trustScore10?: number | null;
   verifiedReviewCount?: number | null;
   roles: string[];
@@ -744,7 +748,14 @@ function IdentityBlock({
         <Link href={profileHref} className="text-base font-bold tracking-tight text-foreground hover:underline sm:text-lg">
           {member.firstName} {member.lastName}
         </Link>
-        <VerifiedBadges foundingMember={member.foundingMember} />
+        {/* Verified badges: at most 2 high-value chips + "+N" (Sprint 18) –
+            the card stays compact; without granted badges only the legacy
+            founding-member chip renders (never a fake badge). */}
+        {member.badges && member.badges.length > 0 ? (
+          <DiscoverBadgeChips badges={member.badges} />
+        ) : (
+          <VerifiedBadges foundingMember={member.foundingMember} />
+        )}
         {member.isDemo && (
           <Badge variant="sand">{isDemo ? t.app.demo.profileBadge : t.app.discover.demoBadge}</Badge>
         )}

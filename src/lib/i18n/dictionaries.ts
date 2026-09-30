@@ -22,9 +22,10 @@ import { appBusinessDe, appBusinessEn } from "./dict/app-business";
 import { siteV2De, siteV2En } from "./dict/site-v2";
 import { appBetaDe, appBetaEn } from "./dict/app-beta";
 import { appDealsDe, appDealsEn } from "./dict/app-deals";
+import { appReputationDe, appReputationEn } from "./dict/app-reputation";
 
-const appDe = { ...appCoreDe, ...appSocialDe, ...appBusinessDe, ...appBetaDe, deals: appDealsDe };
-const appEn = { ...appCoreEn, ...appSocialEn, ...appBusinessEn, ...appBetaEn, deals: appDealsEn };
+const appDe = { ...appCoreDe, ...appSocialDe, ...appBusinessDe, ...appBetaDe, ...appReputationDe, deals: appDealsDe };
+const appEn = { ...appCoreEn, ...appSocialEn, ...appBusinessEn, ...appBetaEn, ...appReputationEn, deals: appDealsEn };
 
 const publicV2De = siteV2De;
 const publicV2En = siteV2En;

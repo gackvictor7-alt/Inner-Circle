@@ -36,6 +36,13 @@
       "when": 1790703909974,
       "tag": "0004_deal_terms_and_records",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1790727322405,
+      "tag": "0005_impact_and_badges",
+      "breakpoints": true
     }
   ]
 }

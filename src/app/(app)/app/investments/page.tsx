@@ -13,10 +13,11 @@ import { InvestmentPoolChart } from "@/components/app/InvestmentPoolChart";
 import { InvestmentsHub } from "@/components/app/InvestmentsHub";
 import { LockedArea } from "@/components/app/LockedArea";
 import { DemoAreaNotice } from "@/components/app/DemoAreaNotice";
+import { ImpactDashboard } from "@/components/app/ImpactDashboard";
 
 export const dynamic = "force-dynamic";
 
-type InvestmentsView = "hub" | "opportunities" | "portfolio";
+type InvestmentsView = "hub" | "opportunities" | "portfolio" | "impact";
 
 export default async function InvestmentsPage({
   searchParams,
@@ -48,18 +49,22 @@ export default async function InvestmentsPage({
   }
 
   /* ------------------------------------------------------------------ view
-     Two clearly separated areas behind one entry (analogous to Academy):
+     Three clearly separated areas behind one entry (analogous to Academy):
        opportunities  → reviewed opportunities members can discover/express interest in ("Hier investierst du")
-       portfolio      → INNER CIRCLE's own planned allocation & impact ("Hier investiert INNER CIRCLE")
-       hub            → entry overview with both cards
+       portfolio      → INNER CIRCLE's own planned allocation ("Hier investiert INNER CIRCLE")
+       impact         → INNER CIRCLE's 5 % impact commitment, real entries only ("Hier gibt INNER CIRCLE zurück")
+       hub            → entry overview with the three cards
      Legacy deep links keep working: ?sector=… / ?submitted=… open the
-     opportunities view directly, ?view=portfolio the portfolio view. */
+     opportunities view directly, ?view=portfolio the portfolio view,
+     ?view=impact the impact view. */
   const view: InvestmentsView =
     params.view === "portfolio"
       ? "portfolio"
-      : params.view === "hub"
-        ? "hub"
-        : "opportunities";
+      : params.view === "impact"
+        ? "impact"
+        : params.view === "hub"
+          ? "hub"
+          : "opportunities";
 
   const submitAction = access.entitlements.investmentsSubmit ? (
     <Button href="/app/investments/submit" size="sm">
@@ -84,7 +89,8 @@ export default async function InvestmentsPage({
 
   /* -------------------------------------------------------- portfolio view
      INNER CIRCLE invests its own money here – never member money. The ring
-     shows the planned structure only; it contains no amounts. */
+     shows the planned structure only; it contains no amounts. The impact
+     commitment now has its own tab (?view=impact) to keep the areas clean. */
   if (view === "portfolio") {
     return (
       <div className="space-y-8">
@@ -100,8 +106,25 @@ export default async function InvestmentsPage({
         <section aria-label="INNER CIRCLE Investment Pool" className="space-y-6">
           <InvestmentPoolChart />
           <PortfolioSection />
-          <PlannedImpactSection />
         </section>
+      </div>
+    );
+  }
+
+  /* ----------------------------------------------------------- impact view
+     The third area: INNER CIRCLE's 5 % impact commitment. Renders ONLY real,
+     administration-entered entries – an empty table shows 0 € / 0 projects,
+     never demo amounts. */
+  if (view === "impact") {
+    return (
+      <div className="space-y-8">
+        <LocalizedPageHeader
+          titleKey="app.investments.title"
+          leadKey="app.investments.lead"
+          actions={submitAction}
+        />
+        <InvestmentNavTabs activeView="impact" />
+        <ImpactDashboard locale={access.user.locale === "en" ? "en" : "de"} />
       </div>
     );
   }
@@ -245,7 +268,7 @@ export default async function InvestmentsPage({
   );
 }
 
-/** Academy-style tab navigation separating Opportunities vs. Portfolio. */
+/** Academy-style tab navigation separating the three investment areas. */
 function InvestmentNavTabs({ activeView }: { activeView: InvestmentsView }) {
   const tabs = [
     {
@@ -253,22 +276,37 @@ function InvestmentNavTabs({ activeView }: { activeView: InvestmentsView }) {
       href: "/app/investments?view=opportunities",
       labelKey: "app.investments.tabOpportunities",
       subKey: "app.investments.tabOpportunitiesSub",
+      tone: "electric",
     },
     {
       key: "portfolio",
       href: "/app/investments?view=portfolio",
       labelKey: "app.investments.tabPortfolio",
       subKey: "app.investments.tabPortfolioSub",
+      tone: "forest",
+    },
+    {
+      key: "impact",
+      href: "/app/investments?view=impact",
+      labelKey: "app.investments.tabImpact",
+      subKey: "app.investments.tabImpactSub",
+      tone: "sand",
     },
   ] as const;
+
+  const tones: Record<(typeof tabs)[number]["tone"], string> = {
+    electric: "bg-electric-500/10 text-electric-600 dark:text-electric-300",
+    forest: "bg-forest-500/10 text-forest-600 dark:text-forest-300",
+    sand: "bg-sand-500/10 text-sand-800 dark:text-sand-200",
+  };
 
   return (
     <nav aria-label="Investments" className="flex w-full overflow-x-auto no-scrollbar border-b border-border">
       <div className="flex min-w-max gap-4 sm:gap-6">
         {tabs.map((item) => {
+          // The hub counts as the opportunities area for tab highlighting.
           const isActive =
-            (activeView === "portfolio" && item.key === "portfolio") ||
-            (activeView !== "portfolio" && item.key === "opportunities");
+            item.key === "impact" ? activeView === "impact" : item.key === "portfolio" ? activeView === "portfolio" : activeView !== "portfolio" && activeView !== "impact";
           return (
             <Link
               key={item.key}
@@ -282,13 +320,7 @@ function InvestmentNavTabs({ activeView }: { activeView: InvestmentsView }) {
             >
               <div className="flex items-center gap-2">
                 <span><Tr k={item.labelKey} /></span>
-                <span
-                  className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
-                    item.key === "opportunities"
-                      ? "bg-electric-500/10 text-electric-600 dark:text-electric-300"
-                      : "bg-forest-500/10 text-forest-600 dark:text-forest-300"
-                  }`}
-                >
+                <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${tones[item.tone]}`}>
                   <Tr k={item.subKey} />
                 </span>
               </div>
@@ -297,45 +329,5 @@ function InvestmentNavTabs({ activeView }: { activeView: InvestmentsView }) {
         })}
       </div>
     </nav>
-  );
-}
-
-/** Planned Impact / charitable structure clearly separated from the 20% investment budget. */
-function PlannedImpactSection() {
-  return (
-    <Card className="p-5 sm:p-6 border-sand-400/40 bg-sand-200/20 dark:bg-sand-400/5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <h3 className="text-base font-bold tracking-tight sm:text-lg">
-            <Tr k="app.investments.impactSectionTitle" />
-          </h3>
-          <Badge variant="sand">
-            <Tr k="pages.investments.impactPlannedBadge" />
-          </Badge>
-        </div>
-        <span className="text-xs font-semibold text-sand-800 dark:text-sand-200">
-          5 % des Unternehmensgewinns
-        </span>
-      </div>
-
-      <p className="mt-3 text-sm leading-6 text-foreground-muted">
-        <Tr k="app.investments.impactSectionLead" />
-      </p>
-
-      <div className="mt-4 grid gap-2.5 sm:grid-cols-2">
-        <div className="rounded-xl border border-border/70 bg-surface/80 p-3 text-xs leading-5 text-foreground-muted">
-          <span className="font-semibold text-foreground">Ernährung & Trinkwasser:</span>{" "}
-          Gezielte Unterstützung geprüfter Hilfs- und Entwicklungsprojekte.
-        </div>
-        <div className="rounded-xl border border-border/70 bg-surface/80 p-3 text-xs leading-5 text-foreground-muted">
-          <span className="font-semibold text-foreground">Förderung von Kindern:</span>{" "}
-          Überprüfbare soziale Bildung- und Zukunftsprojekte für Kinder.
-        </div>
-      </div>
-
-      <p className="mt-4 border-t border-sand-400/20 pt-3 text-xs leading-5 text-foreground-subtle">
-        <Tr k="app.investments.impactStatusNotice" />
-      </p>
-    </Card>
   );
 }
