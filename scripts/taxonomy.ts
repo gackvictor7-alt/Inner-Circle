@@ -5,6 +5,11 @@
  * These records are NOT demo data: interests and goals drive onboarding, the
  * badges are granted by administration. Keep both scripts in sync by editing
  * this file only.
+ *
+ * Badges (Sprint 18): the catalog moved to `src/lib/badges/catalog-data.ts`
+ * so seed, UI, admin and tests share one source of truth. d1-bootstrap keeps
+ * its legacy bootstrap rows (it only runs on an empty D1); the seed upserts
+ * the full catalog.
  */
 
 /** [slug, labelDe, labelEn, groupDe, groupEn] */

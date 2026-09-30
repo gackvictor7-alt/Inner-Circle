@@ -173,23 +173,28 @@ describe("AllocationDonut – shared visual source for the planned model", () =>
 /* ==================================================================== B ·
    Platform /app/investments – the two-area hub */
 
-describe("platform investments hub – 'hier investiere ICH' vs. 'hier investiert INNER CIRCLE'", () => {
+describe("platform investments hub – three clearly separated areas", () => {
   const markup = render(<InvestmentsHub />);
 
-  it("offers exactly two clearly separated entries", () => {
+  it("offers three clearly separated entries (Sprint 18: + Impact)", () => {
     expect(markup).toContain(hub.tagDiscover);
     expect(markup).toContain(hub.tagPortfolio);
+    expect(markup).toContain(hub.tagImpact);
     expect(markup).toContain(hub.discoverTitle);
     expect(markup).toContain(hub.portfolioTitle);
+    expect(markup).toContain(hub.impactTitle);
     expect(markup).toContain(hub.discoverText);
     expect(markup).toContain(hub.portfolioText);
+    expect(markup).toContain(hub.impactText);
     expect(markup).toContain(hub.discoverCta);
     expect(markup).toContain(hub.portfolioCta);
+    expect(markup).toContain(hub.impactCta);
   });
 
-  it("links to the two sub-views of the existing route", () => {
+  it("links to the three sub-views of the existing route", () => {
     expect(markup).toContain('href="/app/investments?view=opportunities"');
     expect(markup).toContain('href="/app/investments?view=portfolio"');
+    expect(markup).toContain('href="/app/investments?view=impact"');
   });
 });
 
@@ -360,19 +365,46 @@ describe("VerifiedBadges – UI slot only, never fake badges", () => {
     expect(markup).toContain("Investor");
   });
 
-  it("VerifiedBadgesSection displays Founding Member and prepares future badges without fake awards", () => {
-    const markup = render(<VerifiedBadgesSection foundingMember adminRole={false} isSelf />);
+  it("VerifiedBadgesSection displays granted badges (incl. Founding Member) and links to badge management", () => {
+    const markup = render(
+      <VerifiedBadgesSection
+        badges={[
+          {
+            id: "ub-1",
+            slug: "founding-member",
+            title: de.app.card.founding,
+            category: "special",
+            description: "Frühes, ausgewähltes Gründungsmitglied von INNER CIRCLE.",
+            iconKey: "award",
+            priority: 1,
+            verifiedAt: new Date("2026-01-01T00:00:00Z").toISOString(),
+            publicSummary: null,
+            periodLabel: null,
+          },
+        ]}
+        adminRole={false}
+        isSelf
+      />,
+    );
     expect(markup).toContain(de.app.profile.verifiedBadgesTitle);
-    expect(markup).toContain(de.app.profile.foundingMemberTitle);
-    expect(markup).toContain(de.app.profile.statusActive);
-    expect(markup).toContain(de.app.profile.identityVerificationTitle);
-    expect(markup).toContain(de.app.profile.statusPlanned);
+    expect(markup).toContain(de.app.card.founding);
+    expect(markup).toContain(de.app.badges.categories.special);
+    expect(markup).toContain(de.app.badges.verifiedSince);
+    // "Meine Badges" management link is shown for the member's own profile
+    expect(markup).toContain("/app/profile/badges");
     // Administrator system role is NOT displayed when adminRole is false
     expect(markup).not.toContain(de.app.profile.adminRoleBadge);
   });
 
+  it("VerifiedBadgesSection shows an honest empty state without fake awards", () => {
+    const markup = render(<VerifiedBadgesSection badges={[]} adminRole={false} isSelf />);
+    expect(markup).toContain(de.app.profile.verifiedBadgesTitle);
+    expect(markup).toContain(de.app.badges.verifiedEmptyTitle);
+    expect(markup).not.toContain(de.app.card.founding);
+  });
+
   it("VerifiedBadgesSection treats Administrator as technical system role, NOT as a community reputation badge", () => {
-    const markup = render(<VerifiedBadgesSection foundingMember={false} adminRole isSelf />);
+    const markup = render(<VerifiedBadgesSection badges={[]} adminRole isSelf />);
     expect(markup).toContain(de.app.profile.adminRoleBadge);
     expect(markup).toContain(de.app.profile.adminRoleDescription);
     expect(markup).toContain(de.app.profile.adminNoticeText);

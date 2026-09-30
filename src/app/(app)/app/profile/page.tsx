@@ -20,6 +20,8 @@ import { ProfilePostsDemoSection } from "@/components/app/DemoSections";
 import { ProfilePeopleModal } from "@/components/app/ProfilePeopleModal";
 import { TrustScoreBlock } from "@/components/app/TrustPanel";
 import { VerifiedBadgesSection } from "@/components/app/VerifiedBadges";
+import { ProfileBadgeCluster } from "@/components/app/BadgeChips";
+import { reputationBadgesFor } from "@/lib/badges/queries";
 import { DEMO_CONTENT_ENABLED } from "@/lib/demo";
 import { getPublicUrl } from "@/lib/env";
 import { Badge } from "@/components/ui/Badge";
@@ -87,13 +89,14 @@ export default async function OwnProfilePage({
       ? params.tab
       : "activity";
 
-  const [stats, trust, posts, counts, offerings, privacy] = await Promise.all([
+  const [stats, trust, posts, counts, offerings, privacy, reputationBadges] = await Promise.all([
     profileStats(user.id),
     trustProfile(user.id),
     userPosts(user.id, 12),
     performanceCountsFor(user.id),
     ownOfferingsFor(user.id),
     loadPrivacy(user.id),
+    reputationBadgesFor(user.id, user.locale === "en" ? "en" : "de"),
   ]);
 
   const locale = user.locale === "en" ? "en-GB" : "de-DE";
@@ -176,7 +179,10 @@ export default async function OwnProfilePage({
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <h1 className="text-xl font-bold tracking-tight sm:text-2xl">{user.firstName} {user.lastName}</h1>
-                  {user.foundingMember && <Badge variant="sand"><Tr k="app.card.founding" /></Badge>}
+                  {/* Verified reputation badges (max 3 + "+N" → dialog). The
+                      Founding Member honour is part of this cluster; the
+                      Administrator chip stays separate as a system role. */}
+                  <ProfileBadgeCluster badges={reputationBadges} locale={user.locale === "en" ? "en" : "de"} />
                   {user.role === "admin" && <Badge variant="electric"><Tr k="app.access.levelAdmin" /></Badge>}
                   {user.isDemo && <Badge variant="outline"><Tr k="app.common.demo" /></Badge>}
                 </div>
@@ -275,9 +281,10 @@ export default async function OwnProfilePage({
         <div className="mx-auto w-full max-w-3xl space-y-3">
           <Card className="p-5">
             <VerifiedBadgesSection
-              foundingMember={user.foundingMember}
-              badges={[]}
+              badges={reputationBadges}
               adminRole={user.role === "admin"}
+              isSelf
+              locale={user.locale === "en" ? "en" : "de"}
             />
           </Card>
 

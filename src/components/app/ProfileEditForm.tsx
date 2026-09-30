@@ -202,6 +202,11 @@ export function ProfileEditForm({
                   {tr("app.profile.photoRemove")}
                 </Button>
               )}
+              {/* Badge management lives on its own page (Sprint 18) – the
+                  photo row only carries the entry, not the whole form. */}
+              <Button href="/app/profile/badges" type="button" variant="ghost" size="sm">
+                {tr("app.badges.editBadgeCta")}
+              </Button>
             </div>
             {photoError && (
               <p role="alert" className="text-xs font-medium text-danger-600 dark:text-danger-300">

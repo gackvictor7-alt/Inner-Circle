@@ -15,7 +15,8 @@
  */
 
 import { createId } from "../src/db/ids";
-import { BADGES, GOALS, INTERESTS } from "./taxonomy";
+import { GOALS, INTERESTS } from "./taxonomy";
+import { BADGE_CATALOG, DEACTIVATE_LEGACY_SLUGS } from "../src/lib/badges/catalog-data";
 import { executeSql, parseTarget, sqlString } from "./lib/d1";
 
 function buildSql(): string {
@@ -47,16 +48,32 @@ function buildSql(): string {
     );
   }
 
-  for (const [slug, kind, titleDe, titleEn, iconKey] of BADGES) {
+  // Badge catalog (Sprint 18): insert the full catalog so a fresh production
+  // database has the same slugs/criteria as the app. Legacy slugs are
+  // deactivated (row kept, never grantable) — mirrors the seed behaviour.
+  for (const entry of BADGE_CATALOG) {
+    const legacy = DEACTIVATE_LEGACY_SLUGS.includes(entry.slug);
     statements.push(
-      `INSERT OR IGNORE INTO "Badge" ("id","slug","kind","titleDe","titleEn","iconKey","position") VALUES (${[
+      `INSERT OR IGNORE INTO "Badge" ("id","slug","kind","titleDe","titleEn","descDe","descEn","iconKey","category","grantMethod","publiclyVisible","position","priority","periodMonths","thresholdValue","thresholdUnit","evidenceDe","evidenceEn","active") VALUES (${[
         sqlString(createId("bdg")),
-        sqlString(slug),
-        sqlString(kind),
-        sqlString(titleDe),
-        sqlString(titleEn),
-        sqlString(iconKey),
+        sqlString(entry.slug),
+        sqlString(entry.kind ?? entry.category),
+        sqlString(entry.titleDe),
+        sqlString(entry.titleEn),
+        sqlString(entry.descDe ?? null),
+        sqlString(entry.descEn ?? null),
+        sqlString(entry.iconKey),
+        sqlString(entry.category),
+        sqlString(entry.grantMethod),
         1,
+        entry.priority,
+        entry.priority,
+        entry.periodMonths ?? null,
+        entry.thresholdValue ?? null,
+        entry.thresholdUnit ?? null,
+        sqlString(entry.evidenceDe ?? null),
+        sqlString(entry.evidenceEn ?? null),
+        legacy || entry.active === false ? 0 : 1,
       ].join(",")});`,
     );
   }
@@ -84,7 +101,7 @@ function main() {
       : "✓ Taxonomy statements executed.",
   );
   console.log(
-    `  Source: scripts/taxonomy.ts (${INTERESTS.length} interests · ${GOALS.length} goals · ${BADGES.length} badges); existing rows are kept.`,
+    `  Source: scripts/taxonomy.ts (${INTERESTS.length} interests · ${GOALS.length} goals · ${BADGE_CATALOG.length} badges); existing rows are kept.`,
   );
 }
 

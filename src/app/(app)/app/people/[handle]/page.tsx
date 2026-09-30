@@ -23,6 +23,8 @@ import { ProfileActions } from "@/components/app/ProfileActions";
 import { TrustReviewForm } from "@/components/app/TrustReviewForm";
 import { TrustScoreBlock } from "@/components/app/TrustPanel";
 import { VerifiedBadgesSection } from "@/components/app/VerifiedBadges";
+import { ProfileBadgeCluster } from "@/components/app/BadgeChips";
+import { reputationBadgesFor, type PublicBadge } from "@/lib/badges/queries";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -113,11 +115,15 @@ export default async function MemberProfilePage({ params }: { params: Promise<{ 
     depth === "full" && (isSelf || access.entitlements.trustView) && performanceVisible(profile.privacyPerformance, relation);
   const showPosts = depth === "full" && (isSelf || access.entitlements.feedRead);
 
-  const [interestLabels, goalLabels, trust, posts] = await Promise.all([
+  const [interestLabels, goalLabels, trust, posts, reputationBadges] = await Promise.all([
     depth === "full" ? interestLabelsFor(profile.id, locale) : Promise.resolve([] as string[]),
     depth === "full" ? goalLabelsFor(profile.id, locale) : Promise.resolve([] as string[]),
     showTrust ? trustProfile(profile.id, viewerId) : Promise.resolve(null),
     showPosts ? userPosts(profile.id, 10) : Promise.resolve([]),
+    // Verified badges are public reputation data: full depth only (or self).
+    isSelf || depth === "full"
+      ? reputationBadgesFor(profile.id, locale === "en" ? "en" : "de")
+      : Promise.resolve([] as PublicBadge[]),
   ]);
   const roles = parseList(profile.rolesJson);
   const skills = parseList(profile.skillsJson);
@@ -147,11 +153,10 @@ export default async function MemberProfilePage({ params }: { params: Promise<{ 
               <h1 className="text-2xl font-bold tracking-tight">
                 {profile.firstName} {profile.lastName}
               </h1>
-              {profile.foundingMember && (
-                <Badge variant="sand">
-                  <Tr k="app.card.founding" />
-                </Badge>
-              )}
+              {/* Verified reputation badges (max 3 + "+N" → dialog). Founding
+                  Member is part of this cluster; the admin chip stays a
+                  separate system role. */}
+              <ProfileBadgeCluster badges={reputationBadges} locale={locale === "en" ? "en" : "de"} />
               {profile.role === "admin" && (
                 <Badge variant="outline">
                   <Tr k="app.beta.teamBadge" />
@@ -242,7 +247,12 @@ export default async function MemberProfilePage({ params }: { params: Promise<{ 
       ) : (
         <>
           <Card className="p-5 sm:p-6">
-            <VerifiedBadgesSection foundingMember={profile.foundingMember} badges={[]} />
+            <VerifiedBadgesSection
+              badges={reputationBadges}
+              adminRole={profile.role === "admin"}
+              isSelf={isSelf}
+              locale={locale === "en" ? "en" : "de"}
+            />
           </Card>
 
           {profile.bio && (

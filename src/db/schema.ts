@@ -792,6 +792,31 @@ export const performanceRecords = sqliteTable(
 
 /* --------------------------------------------------------------------- badges */
 
+/**
+ * Badge catalog (Sprint 18: verified reputation).
+ *
+ * Reputation is layered – the Trust Score stays the average of verified
+ * reviews, and badges are an ADDITIONAL, clearly separated signal:
+ *
+ *   * `category` separates the three families:
+ *       - `special`  – INNER CIRCLE honours (Founding Member),
+ *       - `verified` – externally verified achievements (application + review),
+ *       - `platform` – earned from verifiable INNER CIRCLE data.
+ *     `Administrator` is deliberately NOT a badge: it is a system role
+ *     (`users.role`) and never part of reputation.
+ *   * `grantMethod` decides HOW a badge can be earned:
+ *       - `automatic` – derivable from platform data (server-side only),
+ *       - `application` – member files an application with evidence,
+ *         administration reviews it, only then it is granted,
+ *       - `admin` – deliberate admin assignment (e.g. quarterly honours).
+ *   * `publiclyVisible` / `active` are display switches – an inactive or
+ *     non-public badge is never rendered and never grantable.
+ *   * `thresholdValue` + `thresholdUnit` carry the quantitative criterion
+ *     (e.g. 100 000 000 cents for "1M+ Verified Deal Volume"); amounts are
+ *     only ever displayed when the underlying achievement was verified.
+ *
+ * `kind`/`position` are legacy columns kept for compatibility.
+ */
 export const badges = sqliteTable("Badge", {
   id: id(),
   slug: text("slug").notNull().unique(),
@@ -802,8 +827,39 @@ export const badges = sqliteTable("Badge", {
   descEn: text("descEn"),
   iconKey: text("iconKey").notNull().default("award"),
   position: integer("position").notNull().default(0),
+  /** special | verified | platform */
+  category: text("category").notNull().default("verified"),
+  /** automatic | application | admin */
+  grantMethod: text("grantMethod").notNull().default("admin"),
+  /** Public badges are rendered on profiles/discover; private ones are not. */
+  publiclyVisible: integer("publiclyVisible", { mode: "boolean" }).notNull().default(true),
+  /** Display order within reputation (1 = most prominent). */
+  priority: integer("priority").notNull().default(100),
+  /** Optional time window of the honour, in months (e.g. quarterly). */
+  periodMonths: integer("periodMonths"),
+  /** Optional quantitative threshold (e.g. cumulative deal volume). */
+  thresholdValue: integer("thresholdValue"),
+  /** cents | count */
+  thresholdUnit: text("thresholdUnit"),
+  /** What evidence the member should provide (application badges). */
+  evidenceDe: text("evidenceDe"),
+  evidenceEn: text("evidenceEn"),
+  /** Inactive badges are neither grantable nor displayed. */
+  active: integer("active", { mode: "boolean" }).notNull().default(true),
 });
 
+/**
+ * A badge a member actually holds (Sprint 18).
+ *
+ * Private application data (evidence URLs, explanations, notes) stays in
+ * `BadgeApplication` and is NEVER joined into a public surface. What leaves
+ * this table is the verified badge itself: title, category, `verifiedAt`,
+ * an optional `publicSummary` (a verified, non-sensitive figure such as a
+ * deal-volume band) and an optional `periodLabel` ("Q3 2026").
+ *
+ * `revokedAt` removes the badge from all public displays; the row itself is
+ * kept for the audit trail.
+ */
 export const userBadges = sqliteTable(
   "UserBadge",
   {
@@ -813,8 +869,111 @@ export const userBadges = sqliteTable(
     grantedById: text("grantedById"),
     grantedAt: integer("grantedAt", { mode: "timestamp_ms" }).notNull(),
     note: text("note"),
+    /** seed | admin | application | automatic – how the badge was earned. */
+    source: text("source").notNull().default("admin"),
+    /** When the verification happened (fallback for display: grantedAt). */
+    verifiedAt: ts("verifiedAt"),
+    verifiedBy: text("verifiedBy").references(() => users.id, { onDelete: "set null" }),
+    /** Optional verified, non-sensitive figure shown with the badge. */
+    publicSummary: text("publicSummary"),
+    /** Optional period of a time-limited honour, e.g. "Q3 2026". */
+    periodLabel: text("periodLabel"),
+    revokedAt: ts("revokedAt"),
+    revokedById: text("revokedById").references(() => users.id, { onDelete: "set null" }),
   },
-  (t) => [uniqueIndex("user_badge_unique").on(t.userId, t.badgeId)],
+  (t) => [
+    uniqueIndex("user_badge_unique").on(t.userId, t.badgeId),
+    index("user_badge_user_idx").on(t.userId),
+  ],
+);
+
+/**
+ * Badge application (Sprint 18): a member claims a verified badge.
+ *
+ * Privacy: `evidenceUrlsJson`, `details` and `adminNote` are PRIVATE – they
+ * are only rendered for the applicant and for administration. The public
+ * badge display never reads this table.
+ *
+ * status: pending → approved | rejected | needs_more_information
+ *   Approval is performed exclusively by administration (server-side);
+ *   a member can never flip a status itself.
+ */
+export const badgeApplications = sqliteTable(
+  "BadgeApplication",
+  {
+    id: id(),
+    userId: text("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+    badgeId: text("badgeId").notNull().references(() => badges.id, { onDelete: "cascade" }),
+    /** Why the member believes they qualify. */
+    explanation: text("explanation").notNull(),
+    /** Relevant, non-sensitive data as free text. */
+    details: text("details"),
+    /** 1–3 public proof URLs (JSON array of strings). */
+    evidenceUrlsJson: text("evidenceUrlsJson").notNull().default("[]"),
+    /** Optional internal note addressed to INNER CIRCLE. */
+    adminNote: text("adminNote"),
+    /** pending | needs_more_information | approved | rejected */
+    status: text("status").notNull().default("pending"),
+    /** Internal admin reason (never shown to the member). */
+    reviewNote: text("reviewNote"),
+    /** Optional user-friendly feedback for the member. */
+    feedbackNote: text("feedbackNote"),
+    reviewedById: text("reviewedById").references(() => users.id, { onDelete: "set null" }),
+    reviewedAt: ts("reviewedAt"),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    index("badge_application_user_idx").on(t.userId, t.createdAt),
+    index("badge_application_status_idx").on(t.status, t.createdAt),
+    index("badge_application_badge_idx").on(t.badgeId, t.status),
+  ],
+);
+
+/* ------------------------------------------------------------- impact */
+
+/**
+ * Impact entry (Sprint 18): one real contribution of the INNER CIRCLE impact
+ * budget to a charitable/social project.
+ *
+ * Honesty rules (spec L-12):
+ *   * Only rows entered by administration count – there is no self-service.
+ *   * `status = 'planned'`  → allocated for impact, not yet deployed,
+ *     `status = 'confirmed'` → actually deployed/donated (the only state
+ *     that may be presented as "erfolgt").
+ *   * `published = false`   → visible to administration only.
+ *   * An empty table renders an honest 0 € / 0 projects state – no demo
+ *     amounts, ever.
+ *   * `internalNote` is private and never rendered on the member surface.
+ */
+export const impactProjects = sqliteTable(
+  "ImpactProject",
+  {
+    id: id(),
+    name: text("name").notNull(),
+    organization: text("organization").notNull(),
+    /** food_water | children_education | future_opportunities | social | other */
+    category: text("category").notNull(),
+    amountCents: integer("amountCents").notNull(),
+    currency: text("currency").notNull().default("EUR"),
+    purpose: text("purpose"),
+    /** Date the contribution (planned or deployed) takes effect. */
+    occurredAt: integer("occurredAt", { mode: "timestamp_ms" }).notNull(),
+    /** planned | confirmed */
+    status: text("status").notNull().default("planned"),
+    published: integer("published", { mode: "boolean" }).notNull().default(false),
+    /** Optional external project/proof link (public). */
+    proofUrl: text("proofUrl"),
+    /** Private admin note – never shown to members. */
+    internalNote: text("internalNote"),
+    createdById: text("createdById").references(() => users.id, { onDelete: "set null" }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    index("impact_status_idx").on(t.status, t.published),
+    index("impact_category_idx").on(t.category),
+  ],
 );
 
 /* ---------------------------------------------------------- platform metrics */
