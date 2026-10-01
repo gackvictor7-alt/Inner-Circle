@@ -33,7 +33,7 @@ import {
 } from "@/db/schema";
 import { idFor } from "@/db/ids";
 import { connectionPair } from "@/db/queries";
-import { verifiedPublicBadgeUserIdsFor, type PublicBadge } from "@/lib/badges/queries";
+import { badgeTimestampIso, verifiedPublicBadgeUserIdsFor, type PublicBadge } from "@/lib/badges/queries";
 import { hasPublicFoundingMemberBadge } from "@/lib/badges/founding";
 import { listedMemberSql, realParticipantSql } from "@/lib/network/eligibility";
 import { CONNECTION_REQUEST_COOLDOWN_DAYS } from "@/lib/platform/rules";
@@ -1081,6 +1081,7 @@ export async function listDiscoverCandidates(options: {
             priority: badges.priority,
             active: badges.active,
             grantedAt: userBadges.grantedAt,
+            verifiedAt: userBadges.verifiedAt,
             publicSummary: userBadges.publicSummary,
             periodLabel: userBadges.periodLabel,
           })
@@ -1181,7 +1182,7 @@ export async function listDiscoverCandidates(options: {
           iconKey: badge.iconKey,
           priority: badge.priority,
           active: badge.active,
-          grantedAt: badge.grantedAt.toISOString(),
+          grantedAt: badgeTimestampIso(badge.verifiedAt, badge.grantedAt),
           memberNumber: badge.slug === "founding-member" ? owner?.foundingMemberNumber ?? null : null,
           publicSummary: showReviewedFigures ? badge.publicSummary : null,
           periodLabel: badge.periodLabel,

@@ -30,6 +30,7 @@ export type PublicBadge = {
   iconKey: string;
   priority: number;
   active: boolean;
+  /** ISO unlock timestamp: verifiedAt preferred, grantedAt fallback; empty if both are malformed. */
   grantedAt: string;
   /** Only populated for the permanent Founding Member honour. */
   memberNumber: number | null;
@@ -39,6 +40,18 @@ export type PublicBadge = {
 
 function asCategory(value: string): PublicBadge["category"] {
   return value === "special" ? "special" : value === "platform" || value === "reputation" ? "reputation" : "verified";
+}
+
+/**
+ * Convert a persisted badge timestamp without allowing a corrupt/out-of-range
+ * Date to abort an entire Server Component render. Verification time is the
+ * public badge's effective date; grant time is the compatibility fallback.
+ */
+export function badgeTimestampIso(verifiedAt: Date | null | undefined, grantedAt: Date | null | undefined): string {
+  for (const value of [verifiedAt, grantedAt]) {
+    if (value instanceof Date && Number.isFinite(value.getTime())) return value.toISOString();
+  }
+  return "";
 }
 
 /** Server-side proof lookup for public badge markers outside the badge gallery. */
@@ -91,6 +104,7 @@ function toPublic(row: {
   priority: number;
   active: boolean;
   grantedAt: Date;
+  verifiedAt: Date | null;
   memberNumber: number | null;
   publicSummary: string | null;
   periodLabel: string | null;
@@ -104,7 +118,7 @@ function toPublic(row: {
     iconKey: row.iconKey,
     priority: row.priority,
     active: row.active,
-    grantedAt: row.grantedAt.toISOString(),
+    grantedAt: badgeTimestampIso(row.verifiedAt, row.grantedAt),
     memberNumber: row.slug === "founding-member" ? row.memberNumber : null,
     publicSummary: row.publicSummary,
     periodLabel: row.periodLabel,
@@ -133,6 +147,7 @@ export async function reputationBadgesFor(
         priority: badges.priority,
         active: badges.active,
         grantedAt: userBadges.grantedAt,
+        verifiedAt: userBadges.verifiedAt,
         publicSummary: userBadges.publicSummary,
         periodLabel: userBadges.periodLabel,
       })

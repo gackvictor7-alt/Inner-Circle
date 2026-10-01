@@ -127,6 +127,30 @@ describe("network queries on real D1", () => {
     expect(member?.participant).toBe(true);
   });
 
+  it("keeps Discover and profile badge dates safe for out-of-range D1 grant timestamps", async () => {
+    const d1 = await mf.getD1Database("DB");
+    // SQLite accepts 64-bit integers outside JavaScript's valid Date range;
+    // a valid verifiedAt must keep such a legacy/corrupt grant from aborting SSR.
+    await d1.exec([
+      `INSERT INTO Badge (id, slug, kind, titleDe, titleEn, category, publiclyVisible, priority, active) VALUES ('bdg_d1_date_ok', 'd1-date-ok', 'verified', 'Prüfung', 'Verified', 'verified', 1, 1, 1), ('bdg_d1_date_bad', 'd1-date-bad', 'verified', 'Prüfung', 'Verified', 'verified', 1, 2, 1)`,
+      `INSERT INTO UserBadge (id, userId, badgeId, grantedAt, source, verifiedAt) VALUES ('ubg_d1_date_ok', 'usr_beta', 'bdg_d1_date_ok', ${T0}, 'admin', ${T0}), ('ubg_d1_date_bad', 'usr_beta', 'bdg_d1_date_bad', 9223372036854775807, 'admin', ${T0})`,
+    ].join(";"));
+
+    const discover = await queries.listDiscoverCandidates({ viewerId: "usr_member", limit: 50, locale: "en" });
+    const beta = discover.find((candidate) => candidate.id === "usr_beta");
+    expect(beta?.badges.map((badge) => badge.grantedAt)).toEqual([
+      new Date(T0).toISOString(),
+      new Date(T0).toISOString(),
+    ]);
+
+    const { reputationBadgesFor } = await import("@/lib/badges/queries");
+    const profileBadges = await reputationBadgesFor("usr_beta", "en");
+    expect(profileBadges.map((badge) => badge.grantedAt)).toEqual([
+      new Date(T0).toISOString(),
+      new Date(T0).toISOString(),
+    ]);
+  });
+
   it("creates one chat for concurrent calls and counts unread messages", async () => {
     const ids = await Promise.all([
       queries.ensureDirectConversation("usr_beta", "usr_member"),
