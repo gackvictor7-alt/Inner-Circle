@@ -3,6 +3,7 @@ import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/db/client";
 import { marketplaceListings, profiles, trustScoreSummaries, users } from "@/db/schema";
 import { requireUser } from "@/lib/access/server";
+import { performanceVisibleUserIdsFor } from "@/lib/platform/queries";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -47,6 +48,7 @@ export default async function MarketplacePage({
       priceCents: marketplaceListings.priceCents,
       currency: marketplaceListings.currency,
       isDemo: marketplaceListings.isDemo,
+      sellerId: users.id,
       sellerHandle: users.handle,
       sellerFirstName: users.firstName,
       sellerLastName: users.lastName,
@@ -69,6 +71,7 @@ export default async function MarketplacePage({
     )
     .orderBy(desc(marketplaceListings.publishedAt))
     .limit(40);
+  const visibleSellerIds = await performanceVisibleUserIdsFor(access.user.id, rows.map((row) => row.sellerId));
 
   return (
     <div className="space-y-8">
@@ -141,7 +144,7 @@ export default async function MarketplacePage({
                       <Link href={`/app/people/${row.sellerHandle}`} className="hover:text-foreground hover:underline">{row.sellerCompany ?? `${row.sellerFirstName} ${row.sellerLastName}`}</Link>
                     )}
                     <span aria-hidden="true"> · </span><span className="font-semibold text-foreground"><LocalMoney cents={row.priceCents} currency={row.currency} /></span>
-                    {!row.isDemo && (
+                    {!row.isDemo && visibleSellerIds.has(row.sellerId) && (
                       <>
                         {" · "}
                         <TrustBadge

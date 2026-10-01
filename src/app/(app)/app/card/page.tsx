@@ -5,6 +5,8 @@ import { membershipCards } from "@/db/schema";
 import { requireUser } from "@/lib/access/server";
 import QRCode from "qrcode";
 import { getPublicUrl } from "@/lib/env";
+import { hasPublicFoundingMemberBadge } from "@/lib/badges/founding";
+import { hasVerifiedPublicBadgeFor } from "@/lib/badges/queries";
 import { LocalDate, Tr, LocalizedEmptyState, LocalizedPageHeader } from "@/components/app/localized";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -48,6 +50,11 @@ export default async function MemberCardPage() {
     );
   }
 
+  const foundingMemberEligible = hasPublicFoundingMemberBadge(user.foundingMember, user.foundingMemberNumber);
+  const foundingMember = foundingMemberEligible
+    ? await hasVerifiedPublicBadgeFor(user.id, "founding-member")
+    : false;
+
   // QR target: public verification route, no tokens or personal data.
   const verifyPath = `/member/${card.publicId}`;
   const qrSvg = await QRCode.toString(getPublicUrl(verifyPath), {
@@ -68,7 +75,7 @@ export default async function MemberCardPage() {
           cardNumber={card.cardNumber}
           publicId={card.publicId}
           issuedAt={card.issuedAt.toISOString()}
-          foundingMember={user.foundingMember}
+          foundingMember={foundingMember}
           active={card.status === "active" && access.entitlements.memberCard}
           verifyPath={verifyPath}
           qrSvg={qrSvg}

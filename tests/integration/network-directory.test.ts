@@ -1,10 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db/client";
-import { connectionRequests, connections, profiles } from "@/db/schema";
+import { connectionRequests, connections, privacySettings, profiles, trustScoreSummaries } from "@/db/schema";
+import { idFor } from "@/db/ids";
 import { loadUserContext } from "@/db/queries";
 import { activateMembership } from "@/lib/membership/service";
-import { listDirectoryMembers } from "@/lib/platform/queries";
+import { listDirectoryMembers, performanceVisibleUserIdsFor } from "@/lib/platform/queries";
 import {
   respondConnectionRequestAction,
   sendConnectionRequestAction,
@@ -206,5 +207,53 @@ describe("network directory: request states are direction-aware (Sprint 7)", () 
 
     const locationMatches = await listDirectoryMembers({ viewerId: b, limit: 12, location: "nirgendwo-xyz" });
     expect(locationMatches.map((row) => row.id)).not.toContain(a);
+  });
+
+  it("filters Trust badges and score/review figures by performanceVisibility on server-side list surfaces", async () => {
+    const viewer = await member("Viewer");
+    const publicOwner = await member("Public");
+    const privateOwner = await member("Private");
+    const connectedOnlyOwner = await member("Connected");
+
+    for (const [userId, score10] of [[publicOwner, 48], [privateOwner, 50], [connectedOnlyOwner, 45]] as const) {
+      await db.insert(trustScoreSummaries).values({
+        userId,
+        score10,
+        reviewCount: 1,
+        verifiedReviewCount: 1,
+        updatedAt: new Date(),
+      });
+    }
+    await db.update(privacySettings).set({ performanceVisibility: "private" }).where(eq(privacySettings.userId, privateOwner));
+    await db.update(privacySettings).set({ performanceVisibility: "connections" }).where(eq(privacySettings.userId, connectedOnlyOwner));
+
+    const directoryBeforeConnection = new Map(
+      (await listDirectoryMembers({ viewerId: viewer, limit: 20 })).map((row) => [row.id, row]),
+    );
+    expect(directoryBeforeConnection.get(publicOwner)?.trustScore10).toBe(48);
+    expect(directoryBeforeConnection.get(publicOwner)?.verifiedReviewCount).toBe(1);
+    expect(directoryBeforeConnection.get(privateOwner)?.trustScore10).toBeNull();
+    expect(directoryBeforeConnection.get(privateOwner)?.verifiedReviewCount).toBeNull();
+    expect(directoryBeforeConnection.get(connectedOnlyOwner)?.trustScore10).toBeNull();
+
+    const visibleBeforeConnection = await performanceVisibleUserIdsFor(viewer, [publicOwner, privateOwner, connectedOnlyOwner]);
+    expect(visibleBeforeConnection.has(publicOwner)).toBe(true);
+    expect(visibleBeforeConnection.has(privateOwner)).toBe(false);
+    expect(visibleBeforeConnection.has(connectedOnlyOwner)).toBe(false);
+
+    const [userAId, userBId] = [viewer, connectedOnlyOwner].sort();
+    await db.insert(connections).values({
+      id: idFor.connection(),
+      userAId,
+      userBId,
+      createdAt: new Date(),
+    });
+
+    const directoryAfterConnection = new Map(
+      (await listDirectoryMembers({ viewerId: viewer, limit: 20 })).map((row) => [row.id, row]),
+    );
+    expect(directoryAfterConnection.get(connectedOnlyOwner)?.trustScore10).toBe(45);
+    const visibleAfterConnection = await performanceVisibleUserIdsFor(viewer, [connectedOnlyOwner]);
+    expect(visibleAfterConnection.has(connectedOnlyOwner)).toBe(true);
   });
 });

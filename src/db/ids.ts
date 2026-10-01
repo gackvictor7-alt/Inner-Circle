@@ -63,5 +63,6 @@ export const idFor = {
   dealConfirmation: () => createId("dcf"),
   dealTermsAcceptance: () => createId("dta"),
   badgeApplication: () => createId("bag"),
+  badgeApplicationEvent: () => createId("bae"),
   impactEntry: () => createId("imp"),
 };

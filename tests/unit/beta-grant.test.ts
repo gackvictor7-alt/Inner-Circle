@@ -95,5 +95,7 @@ describe("profile privacy rules (K-06)", () => {
     expect(performanceVisible("connections", "network")).toBe(false);
     expect(performanceVisible("connections", "connected")).toBe(true);
     expect(performanceVisible("private", "connected")).toBe(false);
+    expect(performanceVisible(null, "network", "private")).toBe(false);
+    expect(performanceVisible("invalid", "network", "private")).toBe(false);
   });
 });

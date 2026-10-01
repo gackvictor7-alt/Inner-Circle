@@ -20,6 +20,7 @@ export default async function AdminUsersPage() {
       role: users.role,
       status: users.status,
       foundingMember: users.foundingMember,
+      foundingMemberNumber: users.foundingMemberNumber,
       isDemo: users.isDemo,
       createdAt: users.createdAt,
     })
@@ -72,6 +73,7 @@ export default async function AdminUsersPage() {
                 role={user.role}
                 accountStatus={user.status}
                 foundingMember={user.foundingMember}
+                foundingMemberNumber={user.foundingMemberNumber}
                 isDemo={user.isDemo}
                 membership={
                   membership

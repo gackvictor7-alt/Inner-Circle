@@ -42,6 +42,11 @@ export const users = sqliteTable(
     marketingOptIn: integer("marketingOptIn", { mode: "boolean" }).notNull().default(false),
     foundingMember: integer("foundingMember", { mode: "boolean" }).notNull().default(false),
     foundingMemberAt: ts("foundingMemberAt"),
+    /** Permanent ordinal within the exclusive #001–#050 Founding Member cohort. */
+    foundingMemberNumber: integer("foundingMemberNumber"),
+    /** Null for an indefinite admin suspension; otherwise access restores at this time. */
+    suspensionEndsAt: ts("suspensionEndsAt"),
+    suspensionReason: text("suspensionReason"),
     countryCode: text("countryCode"),
     locale: text("locale"),
     isDemo: integer("isDemo", { mode: "boolean" }).notNull().default(false),
@@ -50,7 +55,11 @@ export const users = sqliteTable(
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
-  (t) => [index("user_role_idx").on(t.role), index("user_demo_idx").on(t.isDemo)],
+  (t) => [
+    index("user_role_idx").on(t.role),
+    index("user_demo_idx").on(t.isDemo),
+    uniqueIndex("user_founding_number_unique").on(t.foundingMemberNumber),
+  ],
 );
 
 export const sessions = sqliteTable(
@@ -828,7 +837,7 @@ export const badges = sqliteTable("Badge", {
   descEn: text("descEn"),
   iconKey: text("iconKey").notNull().default("award"),
   position: integer("position").notNull().default(0),
-  /** special | verified | platform */
+  /** special | verified | reputation; legacy platform values are normalized in public mappers. */
   category: text("category").notNull().default("verified"),
   /** automatic | application | admin */
   grantMethod: text("grantMethod").notNull().default("admin"),
@@ -907,6 +916,8 @@ export const badgeApplications = sqliteTable(
     badgeId: text("badgeId").notNull().references(() => badges.id, { onDelete: "cascade" }),
     /** Why the member believes they qualify. */
     explanation: text("explanation").notNull(),
+    /** Explicit account-holder declaration captured with the application. */
+    identityConfirmedAt: ts("identityConfirmedAt"),
     /** Relevant, non-sensitive data as free text. */
     details: text("details"),
     /** 1–3 public proof URLs (JSON array of strings). */
@@ -929,6 +940,22 @@ export const badgeApplications = sqliteTable(
     index("badge_application_status_idx").on(t.status, t.createdAt),
     index("badge_application_badge_idx").on(t.badgeId, t.status),
   ],
+);
+
+/** Public applicant/admin timeline; internal review notes are never stored here. */
+export const badgeApplicationEvents = sqliteTable(
+  "BadgeApplicationEvent",
+  {
+    id: id(),
+    applicationId: text("applicationId").notNull().references(() => badgeApplications.id, { onDelete: "cascade" }),
+    actorId: text("actorId").references(() => users.id, { onDelete: "set null" }),
+    /** submitted | needs_more_information | member_response | approved | rejected | badge_revoked */
+    eventType: text("eventType").notNull(),
+    /** Applicant-visible request, response, or decision feedback only. */
+    message: text("message"),
+    createdAt: createdAt(),
+  },
+  (t) => [index("badge_application_event_history_idx").on(t.applicationId, t.createdAt)],
 );
 
 /* ------------------------------------------------------------- impact */

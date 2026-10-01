@@ -15,8 +15,30 @@ import { BADGE_CATALOG, DEACTIVATE_LEGACY_SLUGS } from "@/lib/badges/catalog-dat
 let mf: Miniflare;
 let d1: Awaited<ReturnType<Miniflare["getD1Database"]>>;
 
-// Mirrors `wrangler d1 execute --file`: one statement at a time, single line.
-const statements = (sql: string) => sql.split("\n").filter((l) => l.trim());
+// Mirrors `wrangler d1 execute --file`: split SQL statements while respecting
+// quoted strings (badge copy can legitimately contain semicolons).
+const statements = (sql: string) => {
+  const result: string[] = [];
+  let current = "";
+  let inString = false;
+  for (let index = 0; index < sql.length; index += 1) {
+    const character = sql[index];
+    if (character === "'" && inString && sql[index + 1] === "'") {
+      current += "''";
+      index += 1;
+      continue;
+    }
+    if (character === "'") inString = !inString;
+    if (character === ";" && !inString) {
+      if (current.trim()) result.push(`${current.trim()};`);
+      current = "";
+    } else {
+      current += character;
+    }
+  }
+  if (current.trim()) result.push(current.trim());
+  return result;
+};
 
 beforeAll(async () => {
   mf = new Miniflare(
@@ -57,7 +79,10 @@ describe("buildBootstrapSql", () => {
       goals: GOALS.length,
       badges: BADGE_CATALOG.length,
     });
-    expect(BADGE_CATALOG.length).toBe(12);
+    expect(BADGE_CATALOG.length).toBe(15);
+    expect(BADGE_CATALOG.filter((badge) => badge.grantMethod === "automatic")).toHaveLength(0);
+    const activeCatalog = await d1.prepare('SELECT count(*) AS total FROM "Badge" WHERE active = 1').first<{ total: number }>();
+    expect(activeCatalog?.total).toBe(15);
   });
 
   it("stores NULL thresholds and real values per badge; legacy slugs stay inactive", async () => {
@@ -73,10 +98,24 @@ describe("buildBootstrapSql", () => {
       .first();
     expect(volume).toEqual({ thresholdValue: 100000000, thresholdUnit: "cents" });
 
-    expect(DEACTIVATE_LEGACY_SLUGS).toEqual(["verified-activity", "partner"]);
-    for (const entry of BADGE_CATALOG.filter((e) => DEACTIVATE_LEGACY_SLUGS.includes(e.slug))) {
-      const row = await d1.prepare('SELECT active FROM "Badge" WHERE slug = ?').bind(entry.slug).first();
-      expect(row).toEqual({ active: 0 });
+    expect(DEACTIVATE_LEGACY_SLUGS).toEqual([
+      "verified-activity",
+      "partner",
+      "exit-founder",
+      "capital-raiser",
+      "top-performer",
+      "deal-volume-100k",
+      "verified-deal-maker",
+    ]);
+    for (const slug of DEACTIVATE_LEGACY_SLUGS) {
+      await d1.prepare(
+        'INSERT OR IGNORE INTO "Badge" (id, slug, kind, titleDe, titleEn, active) VALUES (?, ?, ?, ?, ?, 1)',
+      ).bind(`legacy-${slug}`, slug, "legacy", slug, slug).run();
+    }
+    for (const statement of statements(buildBootstrapSql())) await d1.prepare(statement).run();
+    for (const slug of DEACTIVATE_LEGACY_SLUGS) {
+      const row = await d1.prepare('SELECT id, active FROM "Badge" WHERE slug = ?').bind(slug).first();
+      expect(row).toEqual({ id: `legacy-${slug}`, active: 0 });
     }
   });
 });

@@ -3,7 +3,7 @@ import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/db/client";
 import { businessOpportunities, trustScoreSummaries, users } from "@/db/schema";
 import { requireUser } from "@/lib/access/server";
-import { myApplications } from "@/lib/platform/queries";
+import { myApplications, performanceVisibleUserIdsFor } from "@/lib/platform/queries";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -69,6 +69,7 @@ export default async function OpportunitiesPage({
     )
     .orderBy(desc(businessOpportunities.publishedAt))
     .limit(40);
+  const visibleOwnerIds = await performanceVisibleUserIdsFor(access.user.id, rows.map((row) => row.ownerId));
 
   const applications = await myApplications(access.user.id);
 
@@ -183,7 +184,7 @@ export default async function OpportunitiesPage({
                     {[row.location, row.remote ? "Remote" : null].filter(Boolean).join(" · ")}
                     {Number(row.applicationCount) > 0 && <><span aria-hidden="true"> · </span><Tr k="app.opportunities.detail.applications" params={{ count: Number(row.applicationCount) }} /></>}
                     {row.seeking && <><span aria-hidden="true"> · </span>{row.seeking}</>}
-                    {!row.isDemo && (
+                    {!row.isDemo && visibleOwnerIds.has(row.ownerId) && (
                       <>
                         {" · "}
                         <TrustBadge score10={row.ownerTrustScore10} verifiedReviewCount={row.ownerVerifiedReviews} />

@@ -13,6 +13,7 @@ import {
   users,
 } from "@/db/schema";
 import { requireUser } from "@/lib/access/server";
+import { performanceVisibleUserIdsFor } from "@/lib/platform/queries";
 import { integrationStatus } from "@/lib/env";
 import { enrollInCourseAction } from "@/app/actions/business";
 import { InlineAction } from "@/components/app/forms";
@@ -55,6 +56,9 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
   if (!listing.isDemo && !access.entitlements.marketplaceRealBrowse) {
     return <LockedArea access={access} icon="store" />;
   }
+  const visibleSellerIds = listing.isDemo
+    ? new Set<string>()
+    : await performanceVisibleUserIdsFor(access.user.id, [listing.sellerId]);
 
   const [course] = await db.select().from(courses).where(eq(courses.listingId, id)).limit(1);
 
@@ -113,7 +117,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
             </Link>
           )}
           {row.sellerHeadline && <span className="text-xs text-foreground-subtle">{row.sellerHeadline}</span>}
-          {!listing.isDemo && (
+          {!listing.isDemo && visibleSellerIds.has(listing.sellerId) && (
             <TrustBadge score10={row.sellerTrustScore10} verifiedReviewCount={row.sellerVerifiedReviews} />
           )}
         </div>

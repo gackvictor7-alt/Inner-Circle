@@ -172,6 +172,7 @@ export default async function DiscoverPage({
       bio: candidate.bio,
       isDemo: true,
       foundingMember: false,
+      foundingMemberNumber: null,
       roles: [locale === "en" ? candidate.profile.roleEn : candidate.profile.role],
       skills: candidate.skills,
       interests: candidate.interestLabels,
@@ -227,6 +228,7 @@ export default async function DiscoverPage({
     bio: candidate.bio,
     isDemo: candidate.isDemo,
     foundingMember: candidate.foundingMember,
+    foundingMemberNumber: candidate.foundingMemberNumber,
     /** The card renders at most 2 chips + "+N" (Sprint 18). */
     badges: candidate.badges.length > 0 ? candidate.badges : undefined,
     trustScore10: candidate.trustScore10,

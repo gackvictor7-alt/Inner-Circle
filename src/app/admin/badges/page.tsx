@@ -5,6 +5,7 @@ import {
   listBadgeApplicationsForAdmin,
   listGrantedBadgesForAdmin,
   reputationBadgesFor,
+  type BadgeApplicationHistoryEntry,
 } from "@/lib/badges/queries";
 import { Badge as UiBadge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
@@ -16,6 +17,24 @@ import { Tr } from "@/components/app/localized";
 
 export const dynamic = "force-dynamic";
 
+function AdminApplicationTimeline({ history, locale }: { history: BadgeApplicationHistoryEntry[]; locale: "de" | "en" }) {
+  if (history.length === 0) return null;
+  return (
+    <ol className="mt-3 space-y-2 border-l border-border pl-3">
+      {history.map((event) => (
+        <li key={event.id} className="relative text-xs leading-5">
+          <span className="absolute -left-[17px] top-1.5 h-2 w-2 rounded-full bg-electric-500" aria-hidden="true" />
+          <div className="flex flex-wrap items-baseline justify-between gap-x-3">
+            <span className="font-semibold"><Tr k={`app.badges.historyEvents.${event.eventType}`} /></span>
+            <time dateTime={event.createdAt.toISOString()} className="text-foreground-subtle">{formatDate(event.createdAt, locale)}</time>
+          </div>
+          {event.message && <p className="mt-1 whitespace-pre-wrap text-foreground-muted">{event.message}</p>}
+        </li>
+      ))}
+    </ol>
+  );
+}
+
 /**
  * Badge administration (Sprint 18):
  *   * applications – review evidence, approve / reject / request more info
@@ -26,24 +45,25 @@ export const dynamic = "force-dynamic";
  * application – server-side, admin role re-checked inside the action.
  */
 export default async function AdminBadgesPage() {
-  await requireAdmin();
-  const locale = "de";
+  const adminAccess = await requireAdmin();
+  const locale = adminAccess.user?.locale === "en" ? "en" : "de";
 
-  const [applications, granted, grantableBadges] = await Promise.all([
-    listBadgeApplicationsForAdmin(locale),
+  const [openApplications, finishedApplications, granted, grantableBadges] = await Promise.all([
+    listBadgeApplicationsForAdmin(locale, { status: "open" }),
+    listBadgeApplicationsForAdmin(locale, { status: "completed" }),
     listGrantedBadgesForAdmin(locale),
     db
-      .select({ slug: badges.slug, titleDe: badges.titleDe, active: badges.active })
+      .select({
+        slug: badges.slug,
+        titleDe: badges.titleDe,
+        titleEn: badges.titleEn,
+        category: badges.category,
+        grantMethod: badges.grantMethod,
+        active: badges.active,
+      })
       .from(badges)
       .orderBy(badges.priority),
   ]);
-
-  const openApplications = applications.filter(
-    (app) => app.status === "pending" || app.status === "needs_more_information",
-  );
-  const finishedApplications = applications.filter(
-    (app) => app.status === "approved" || app.status === "rejected",
-  );
 
   // Member's existing badges, for the review context (batched by member).
   const memberIds = [...new Set(openApplications.map((app) => app.userId))];
@@ -53,9 +73,11 @@ export default async function AdminBadgesPage() {
     badgesByMember.set(memberId, list.map((badge) => badge.title));
   }
 
-  // Platform honours only: active, non-founding badges (founding member stays
-  // in /admin/users with its cap + user flag).
-  const grantable = grantableBadges.filter((badge) => badge.active && badge.slug !== "founding-member");
+  // Only the four reputation definitions use this deliberate admin path.
+  // Verified badges can only be granted by reviewing their application.
+  const grantable = grantableBadges.filter(
+    (badge) => badge.active && badge.category === "reputation" && badge.grantMethod === "admin",
+  );
 
   return (
     <div className="space-y-8">
@@ -69,8 +91,8 @@ export default async function AdminBadgesPage() {
       </div>
 
       {/* 1 · Applications */}
-      <section aria-label="Anträge">
-        <h2 className="text-lg font-bold tracking-tight">
+      <section aria-labelledby="admin-badge-applications-title">
+        <h2 id="admin-badge-applications-title" className="text-lg font-bold tracking-tight">
           <Tr k="app.admin.badges.applications.title" />
         </h2>
         {openApplications.length === 0 ? (
@@ -128,6 +150,10 @@ export default async function AdminBadgesPage() {
                         <p className="text-[11px] font-bold uppercase tracking-wider text-foreground-subtle">
                           <Tr k="app.admin.badges.applications.evidence" />
                         </p>
+                        <p className="mt-0.5 text-xs text-foreground-subtle">
+                          <Tr k={app.identityConfirmedAt ? "app.badges.review.identityConfirmed" : "app.badges.review.identityNotConfirmed"} />
+                          {app.identityConfirmedAt && ` · ${formatDate(app.identityConfirmedAt, locale)}`}
+                        </p>
                         {app.evidenceUrls.length === 0 ? (
                           <p className="mt-0.5 text-sm text-foreground-subtle">
                             <Tr k="app.admin.badges.applications.noEvidence" />
@@ -160,6 +186,10 @@ export default async function AdminBadgesPage() {
                       <BadgeApplicationReview applicationId={app.id} />
                     </div>
                   </div>
+                  <div className="mt-4 border-t border-border pt-3">
+                    <h3 className="text-xs font-semibold text-foreground-muted"><Tr k="app.badges.historyTitle" /></h3>
+                    <AdminApplicationTimeline history={app.history} locale={locale} />
+                  </div>
                 </Card>
               </li>
             ))}
@@ -173,18 +203,21 @@ export default async function AdminBadgesPage() {
             </summary>
             <ul className="mt-3 divide-y divide-border border-y border-border">
               {finishedApplications.map((app) => (
-                <li key={app.id} className="flex flex-wrap items-center justify-between gap-2 py-3">
-                  <span className="text-sm">
-                    <span className="font-semibold">{app.badgeTitle}</span>
-                    <span className="text-foreground-subtle">
-                      {" "}
-                      – {app.memberFirstName} {app.memberLastName}
+                <li key={app.id} className="py-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="text-sm">
+                      <span className="font-semibold">{app.badgeTitle}</span>
+                      <span className="text-foreground-subtle">
+                        {" "}
+                        – {app.memberFirstName} {app.memberLastName}
+                      </span>
                     </span>
-                  </span>
-                  <span className="text-xs text-foreground-subtle">
-                    <Tr k={`app.admin.badges.statusLabels.${app.status}`} />
-                    {app.reviewedAt && ` · ${formatDate(app.reviewedAt, locale)}`}
-                  </span>
+                    <span className="text-xs text-foreground-subtle">
+                      <Tr k={`app.admin.badges.statusLabels.${app.status}`} />
+                      {app.reviewedAt && ` · ${formatDate(app.reviewedAt, locale)}`}
+                    </span>
+                  </div>
+                  <AdminApplicationTimeline history={app.history} locale={locale} />
                 </li>
               ))}
             </ul>
@@ -193,8 +226,8 @@ export default async function AdminBadgesPage() {
       </section>
 
       {/* 2 · Granted badges */}
-      <section aria-label="Vergebene Badges">
-        <h2 className="text-lg font-bold tracking-tight">
+      <section aria-labelledby="admin-granted-badges-title">
+        <h2 id="admin-granted-badges-title" className="text-lg font-bold tracking-tight">
           <Tr k="app.admin.badges.granted.title" />
         </h2>
         {granted.length === 0 ? (
@@ -238,7 +271,13 @@ export default async function AdminBadgesPage() {
                       </UiBadge>
                     </td>
                     <td className="py-2.5 text-right">
-                      {!row.revokedAt && <RevokeBadgeButton userBadgeId={row.id} />}
+                      {row.badgeSlug === "founding-member" ? (
+                        <span className="text-xs font-semibold text-sand-700 dark:text-sand-200">
+                          <Tr k="app.badges.review.permanentNote" />
+                        </span>
+                      ) : !row.revokedAt ? (
+                        <RevokeBadgeButton userBadgeId={row.id} />
+                      ) : null}
                     </td>
                   </tr>
                 ))}
@@ -249,15 +288,17 @@ export default async function AdminBadgesPage() {
       </section>
 
       {/* 3 · Grant a badge */}
-      <section aria-label="Badge vergeben">
-        <h2 className="text-lg font-bold tracking-tight">
+      <section aria-labelledby="admin-grant-badge-title">
+        <h2 id="admin-grant-badge-title" className="text-lg font-bold tracking-tight">
           <Tr k="app.admin.badges.grant.title" />
         </h2>
         <p className="mt-1 max-w-2xl text-sm text-foreground-muted">
           <Tr k="app.admin.badges.grant.lead" />
         </p>
         <Card className="mt-3 p-5">
-          <AdminBadgeGrantForm badgeOptions={grantable.map((badge) => ({ slug: badge.slug, title: badge.titleDe }))} />
+          <AdminBadgeGrantForm
+            badgeOptions={grantable.map((badge) => ({ slug: badge.slug, title: locale === "en" ? badge.titleEn : badge.titleDe }))}
+          />
         </Card>
       </section>
     </div>

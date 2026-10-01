@@ -9,6 +9,7 @@ import {
   type DiscoverFilterOptions,
 } from "@/components/app/DiscoverDeck";
 import { VerifiedBadges, VerifiedBadgesSection } from "@/components/app/VerifiedBadges";
+import { DiscoverBadgeChips } from "@/components/app/BadgeChips";
 import { EventsContent } from "@/app/(site)/events/EventsContent";
 import { HowItWorksContent } from "@/app/(site)/how-it-works/HowItWorksContent";
 import { PORTFOLIO_ALLOCATION } from "@/lib/demo";
@@ -346,23 +347,37 @@ describe("Discover – several compact profiles at once", () => {
   });
 });
 
-describe("VerifiedBadges – UI slot only, never fake badges", () => {
-  it("renders nothing without real badges", () => {
+describe("VerifiedBadges – server-owned founding identity and public chips", () => {
+  it("renders nothing without a founding-member record", () => {
     expect(render(<VerifiedBadges />)).toBe("");
-    expect(render(<VerifiedBadges foundingMember={false} badges={[]} />)).toBe("");
+    expect(render(<VerifiedBadges foundingMember={false} />)).toBe("");
   });
 
-  it("keeps the existing founding-member badge", () => {
-    const markup = render(<VerifiedBadges foundingMember />);
+  it("keeps the permanent founding-member badge and its stable number", () => {
+    const markup = render(<VerifiedBadges foundingMember foundingMemberNumber={7} />);
     expect(markup).toContain(de.app.card.founding);
+    expect(markup).toContain("#007");
   });
 
-  it("has a structural slot for later admin-verified badges (max 1–3)", () => {
+  it("renders only granted public badges in the compact Discover row", () => {
     const markup = render(
-      <VerifiedBadges foundingMember badges={[{ key: "investor", label: "Investor" }]} />,
+      <DiscoverBadgeChips badges={[{
+        id: "ub-investor",
+        slug: "verified-investor",
+        title: "Verified Investor",
+        category: "verified",
+        description: null,
+        iconKey: "investor-ledger",
+        priority: 4,
+        active: true,
+        grantedAt: "2026-01-01T00:00:00.000Z",
+        memberNumber: null,
+        publicSummary: null,
+        periodLabel: null,
+      }]} />,
     );
-    expect(markup).toContain(de.app.card.founding);
-    expect(markup).toContain("Investor");
+    expect(markup).toContain("Verified Investor");
+    expect(markup).not.toContain(de.app.card.founding);
   });
 
   it("VerifiedBadgesSection displays granted badges (incl. Founding Member) and links to badge management", () => {
@@ -377,7 +392,9 @@ describe("VerifiedBadges – UI slot only, never fake badges", () => {
             description: "Frühes, ausgewähltes Gründungsmitglied von INNER CIRCLE.",
             iconKey: "award",
             priority: 1,
-            verifiedAt: new Date("2026-01-01T00:00:00Z").toISOString(),
+            active: true,
+            grantedAt: new Date("2026-01-01T00:00:00Z").toISOString(),
+            memberNumber: 1,
             publicSummary: null,
             periodLabel: null,
           },
@@ -389,7 +406,6 @@ describe("VerifiedBadges – UI slot only, never fake badges", () => {
     expect(markup).toContain(de.app.profile.verifiedBadgesTitle);
     expect(markup).toContain(de.app.card.founding);
     expect(markup).toContain(de.app.badges.categories.special);
-    expect(markup).toContain(de.app.badges.verifiedSince);
     // "Meine Badges" management link is shown for the member's own profile
     expect(markup).toContain("/app/profile/badges");
     // Administrator system role is NOT displayed when adminRole is false
@@ -399,14 +415,13 @@ describe("VerifiedBadges – UI slot only, never fake badges", () => {
   it("VerifiedBadgesSection shows an honest empty state without fake awards", () => {
     const markup = render(<VerifiedBadgesSection badges={[]} adminRole={false} isSelf />);
     expect(markup).toContain(de.app.profile.verifiedBadgesTitle);
-    expect(markup).toContain(de.app.badges.verifiedEmptyTitle);
+    expect(markup).toContain(de.app.badges.verifiedEmptyText);
     expect(markup).not.toContain(de.app.card.founding);
   });
 
   it("VerifiedBadgesSection treats Administrator as technical system role, NOT as a community reputation badge", () => {
     const markup = render(<VerifiedBadgesSection badges={[]} adminRole isSelf />);
     expect(markup).toContain(de.app.profile.adminRoleBadge);
-    expect(markup).toContain(de.app.profile.adminRoleDescription);
     expect(markup).toContain(de.app.profile.adminNoticeText);
   });
 });

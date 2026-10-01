@@ -1,5 +1,7 @@
 import { and, count, desc, eq, inArray, isNull, or, sql } from "drizzle-orm";
 import { db } from "./client";
+import { hasPublicFoundingMemberBadge } from "@/lib/badges/founding";
+import { hasVerifiedPublicBadgeFor } from "@/lib/badges/queries";
 import {
   badges,
   betaAccess,
@@ -182,6 +184,7 @@ export async function findCardByPublicId(publicId: string): Promise<MemberCardRo
       avatarUrl: profiles.avatarUrl,
       headline: profiles.headline,
       foundingMember: users.foundingMember,
+      foundingMemberNumber: users.foundingMemberNumber,
       membershipPlan: memberships.plan,
       membershipStatus: memberships.status,
       membershipProvider: memberships.provider,
@@ -192,7 +195,16 @@ export async function findCardByPublicId(publicId: string): Promise<MemberCardRo
     .leftJoin(memberships, eq(memberships.userId, users.id))
     .where(eq(membershipCards.publicId, publicId))
     .limit(1);
-  return rows[0] ?? null;
+  const row = rows[0];
+  if (!row) return null;
+  const foundingMemberEligible = hasPublicFoundingMemberBadge(row.foundingMember, row.foundingMemberNumber);
+  const foundingMemberVerified = foundingMemberEligible
+    ? await hasVerifiedPublicBadgeFor(row.userId, "founding-member")
+    : false;
+  return {
+    ...row,
+    foundingMember: foundingMemberEligible && foundingMemberVerified,
+  };
 }
 
 /** Course library rows with module/lesson counts. */

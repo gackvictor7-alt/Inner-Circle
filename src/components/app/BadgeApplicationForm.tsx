@@ -8,15 +8,7 @@ import { useTr } from "@/components/app/localized";
 import { createBadgeApplicationAction } from "@/app/actions/badges";
 import { initialActionState } from "@/app/actions/state";
 
-/**
- * Badge application form (Sprint 18).
- *
- * A member claims an application-based badge with a short explanation,
- * optional relevant data and 1–3 public proof URLs. The submission is
- * server-validated; the status is always "pending" – a member can never
- * self-approve (there is no field for it, the server ignores everything
- * else).
- */
+/** Free application for an independently reviewed Verified badge. */
 export function BadgeApplicationForm({ badgeSlug }: { badgeSlug: string }) {
   const tr = useTr();
   const [open, setOpen] = useState(false);
@@ -36,9 +28,7 @@ export function BadgeApplicationForm({ badgeSlug }: { badgeSlug: string }) {
   return (
     <form action={formAction} className="space-y-3">
       <input type="hidden" name="badgeSlug" value={badgeSlug} />
-      <p className="text-xs leading-5 text-foreground-muted">
-        {tr("app.badges.form.lead")}
-      </p>
+      <p className="text-xs leading-5 text-foreground-muted">{tr("app.badges.form.lead")}</p>
       <Textarea
         label={tr("app.badges.form.explanationLabel")}
         name="explanation"
@@ -54,16 +44,29 @@ export function BadgeApplicationForm({ badgeSlug }: { badgeSlug: string }) {
         maxLength={2000}
         placeholder={tr("app.badges.form.detailsPlaceholder")}
       />
-      <Input
-        label={tr("app.badges.form.evidence1")}
-        name="evidenceUrl1"
-        type="url"
-        required
-        maxLength={500}
-        hint={tr("app.badges.form.evidenceHint")}
-      />
-      <Input label={tr("app.badges.form.evidence2")} name="evidenceUrl2" type="url" maxLength={500} />
-      <Input label={tr("app.badges.form.evidence3")} name="evidenceUrl3" type="url" maxLength={500} />
+      <div className="space-y-2 rounded-xl border border-border bg-surface p-3">
+        <p className="text-xs font-semibold">{tr("app.badges.form.acceptedEvidenceTitle")}</p>
+        <p className="text-xs leading-5 text-foreground-muted">{tr("app.badges.form.acceptedEvidenceText")}</p>
+        <Input
+          label={tr("app.badges.form.evidence1")}
+          name="evidenceUrl1"
+          type="url"
+          required
+          maxLength={500}
+          hint={tr("app.badges.form.evidenceHint")}
+        />
+        <Input label={tr("app.badges.form.evidence2")} name="evidenceUrl2" type="url" maxLength={500} />
+        <Input label={tr("app.badges.form.evidence3")} name="evidenceUrl3" type="url" maxLength={500} />
+        <p className="text-xs leading-5 text-foreground-subtle">
+          <span className="font-semibold text-foreground-muted">{tr("app.badges.form.socialOnlyTitle")}: </span>
+          {tr("app.badges.form.socialOnlyText")}
+        </p>
+      </div>
+      <label className="flex items-start gap-2 rounded-xl border border-border px-3 py-2.5 text-xs leading-5">
+        <input type="checkbox" name="identityConfirmed" value="true" required className="mt-1 accent-electric-600" />
+        <span>{tr("app.badges.form.identityLabel")}</span>
+      </label>
+      <p className="-mt-2 text-[11px] leading-4 text-foreground-subtle">{tr("app.badges.form.identityHint")}</p>
       <Textarea
         label={tr("app.badges.form.noteLabel")}
         name="adminNote"
@@ -86,11 +89,9 @@ export function BadgeApplicationForm({ badgeSlug }: { badgeSlug: string }) {
         <Button type="submit" size="sm" loading={pending}>
           {tr("app.badges.form.submit")}
         </Button>
-        {!state.status && (
-          <Button type="button" variant="ghost" size="sm" onClick={() => setOpen(false)} disabled={pending}>
-            {tr("app.common.cancel")}
-          </Button>
-        )}
+        <Button type="button" variant="ghost" size="sm" onClick={() => setOpen(false)} disabled={pending}>
+          {tr("app.common.cancel")}
+        </Button>
       </div>
     </form>
   );

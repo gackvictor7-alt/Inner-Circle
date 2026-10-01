@@ -82,7 +82,16 @@ export const getCurrentUser = cache(async (): Promise<UserContext | null> => {
   if (!session) return null;
 
   const user = await loadUserContext(session.userId);
-  if (!user || user.status === "suspended") return null;
+  if (!user) return null;
+  if (user.status === "suspended") {
+    const now = new Date();
+    if (!user.suspensionEndsAt || user.suspensionEndsAt.getTime() > now.getTime()) return null;
+    await db
+      .update(users)
+      .set({ status: "active", suspensionEndsAt: null, suspensionReason: null, updatedAt: now })
+      .where(eq(users.id, user.id));
+    return { ...user, status: "active", suspensionEndsAt: null, suspensionReason: null };
+  }
   return user;
 });
 

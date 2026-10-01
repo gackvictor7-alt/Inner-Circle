@@ -7,6 +7,7 @@ import { requireUser } from "@/lib/access/server";
 import {
   ownOfferingsFor,
   performanceCountsFor,
+  performanceVisibleUserIdsFor,
   profileStats,
   trustProfile,
   userPosts,
@@ -23,7 +24,6 @@ import { deletePostAction } from "@/app/actions/posts";
 import { ProfilePeopleModal } from "@/components/app/ProfilePeopleModal";
 import { TrustScoreBlock } from "@/components/app/TrustPanel";
 import { VerifiedBadgesSection } from "@/components/app/VerifiedBadges";
-import { ProfileBadgeCluster } from "@/components/app/BadgeChips";
 import { reputationBadgesFor } from "@/lib/badges/queries";
 import { showsProfileDemoPosts } from "@/lib/demo";
 import { getPublicUrl } from "@/lib/env";
@@ -101,7 +101,7 @@ export default async function OwnProfilePage({
     performanceCountsFor(user.id),
     ownOfferingsFor(user.id),
     loadPrivacy(user.id),
-    reputationBadgesFor(user.id, user.locale === "en" ? "en" : "de"),
+    reputationBadgesFor(user.id, user.locale === "en" ? "en" : "de", true),
   ]);
 
   const dict = dictionaries[user.locale === "en" ? "en" : "de"];
@@ -127,6 +127,15 @@ export default async function OwnProfilePage({
   const connectionIds = connectionRows.map((row) => row.userAId === user.id ? row.userBId : row.userAId);
   const connectedMembers = connectionIds.length ? await db.select({ id: users.id, firstName: users.firstName, lastName: users.lastName, handle: users.handle, headline: profiles.headline, company: profiles.company, avatarUrl: profiles.avatarUrl, score10: trustScoreSummaries.score10, verifiedReviewCount: trustScoreSummaries.verifiedReviewCount })
     .from(users).leftJoin(profiles, eq(profiles.userId, users.id)).leftJoin(trustScoreSummaries, eq(trustScoreSummaries.userId, users.id)).where(inArray(users.id, connectionIds)) : [];
+  const allPeopleIds = [...new Set([...followers, ...following, ...connectedMembers].map((person) => person.id))];
+  const visibleTrustMemberIds = await performanceVisibleUserIdsFor(user.id, allPeopleIds);
+  const privacyFilteredPeople = <T extends { id: string; score10: number | null; verifiedReviewCount: number | null }>(people: T[]) =>
+    people.map((person) => visibleTrustMemberIds.has(person.id)
+      ? person
+      : { ...person, score10: null, verifiedReviewCount: null });
+  const visibleFollowers = privacyFilteredPeople(followers);
+  const visibleFollowing = privacyFilteredPeople(following);
+  const visibleConnections = privacyFilteredPeople(connectedMembers);
   const roles = parseList(profile?.rolesJson);
   const skills = parseList(profile?.skillsJson);
   // Older profiles (and the dev seed) store goal slugs in the free-text lists –
@@ -170,8 +179,7 @@ export default async function OwnProfilePage({
     <div className="space-y-6">
       {/* --------------------------------------- compact identity header */}
       <Card className="p-0">
-        <div className="grid md:grid-cols-[minmax(0,1.65fr)_minmax(17rem,1fr)]">
-          <section className="min-w-0 p-5 sm:p-7" aria-label={dict.app.profile.title}>
+        <section className="min-w-0 p-5 sm:p-7" aria-label={dict.app.profile.title}>
             <div className="flex min-w-0 items-center gap-3.5 sm:gap-4">
               {/* Mobile: a smaller avatar leaves the name/role block its full
                   width, so nothing is squeezed on 360 px screens. */}
@@ -184,10 +192,6 @@ export default async function OwnProfilePage({
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <h1 className="text-xl font-bold tracking-tight sm:text-2xl">{user.firstName} {user.lastName}</h1>
-                  {/* Verified reputation badges (max 3 + "+N" → dialog). The
-                      Founding Member honour is part of this cluster; the
-                      Administrator chip stays separate as a system role. */}
-                  <ProfileBadgeCluster badges={reputationBadges} locale={user.locale === "en" ? "en" : "de"} />
                   {user.role === "admin" && <Badge variant="electric"><Tr k="app.access.levelAdmin" /></Badge>}
                   {user.isDemo && <Badge variant="outline"><Tr k="app.common.demo" /></Badge>}
                 </div>
@@ -213,7 +217,7 @@ export default async function OwnProfilePage({
                 locale={user.locale === "en" ? "en" : "de"}
                 label={dict.app.profile.metricFollowers}
                 count={stats.followers}
-                members={followers}
+                members={visibleFollowers}
                 openProfileLabel={dict.app.profile.relationshipOpenProfile}
                 emptyLabel={dict.app.profile.relationshipEmpty}
                 closeLabel={dict.app.common.close}
@@ -222,7 +226,7 @@ export default async function OwnProfilePage({
                 locale={user.locale === "en" ? "en" : "de"}
                 label={dict.app.profile.statsFollowing}
                 count={stats.following}
-                members={following}
+                members={visibleFollowing}
                 openProfileLabel={dict.app.profile.relationshipOpenProfile}
                 emptyLabel={dict.app.profile.relationshipEmpty}
                 closeLabel={dict.app.common.close}
@@ -231,7 +235,7 @@ export default async function OwnProfilePage({
                 locale={user.locale === "en" ? "en" : "de"}
                 label={dict.app.profile.metricConnections}
                 count={stats.connections}
-                members={connectedMembers}
+                members={visibleConnections}
                 openProfileLabel={dict.app.profile.relationshipOpenProfile}
                 emptyLabel={dict.app.profile.relationshipEmpty}
                 closeLabel={dict.app.common.close}
@@ -256,14 +260,25 @@ export default async function OwnProfilePage({
                 <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-surface-muted"><div className="h-full rounded-full bg-gradient-to-r from-electric-500 to-electric-400" style={{ width: `${profilePercent}%` }} /></div>
               </div>
             )}
-          </section>
+        </section>
+      </Card>
 
-          <TrustScoreBlock
-            detail={trust.detail}
-            memberName={`${user.firstName} ${user.lastName}`}
-            fullPageHref="/app/trust"
-          />
-        </div>
+      <Card className="p-5 sm:p-6">
+        <VerifiedBadgesSection
+          badges={reputationBadges}
+          adminRole={user.role === "admin"}
+          isSelf
+          locale={user.locale === "en" ? "en" : "de"}
+        />
+      </Card>
+
+      <Card className="overflow-hidden p-0">
+        <TrustScoreBlock
+          detail={trust.detail}
+          memberName={`${user.firstName} ${user.lastName}`}
+          fullPageHref="/app/trust"
+          variant="stacked"
+        />
       </Card>
 
       {/* ------------------------- tabs as central horizontal navigation */}
@@ -286,15 +301,6 @@ export default async function OwnProfilePage({
 
       {tab === "overview" && (
         <div className="mx-auto w-full max-w-3xl space-y-3">
-          <Card className="p-5">
-            <VerifiedBadgesSection
-              badges={reputationBadges}
-              adminRole={user.role === "admin"}
-              isSelf
-              locale={user.locale === "en" ? "en" : "de"}
-            />
-          </Card>
-
           {profile?.bio && (
             <Card className="p-5">
               <p className="ic-measure whitespace-pre-wrap text-sm leading-6 text-foreground-muted">
@@ -547,25 +553,6 @@ export default async function OwnProfilePage({
                     <Badge variant={record.verification === "verified" ? "forest" : "outline"}>
                       <Tr k={record.verification === "verified" ? "app.common.verified" : "app.common.selfReported"} />
                     </Badge>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Card>
-
-          <Card className="p-5">
-            <h3 className="text-sm font-bold tracking-tight">
-              <Tr k="app.profile.performanceBadges" />
-            </h3>
-            {trust.badges.length === 0 ? (
-              <p className="mt-2 text-sm text-foreground-muted">
-                <Tr k="app.profile.performanceNoBadges" />
-              </p>
-            ) : (
-              <ul className="mt-3 flex flex-wrap gap-2">
-                {trust.badges.map((badge) => (
-                  <li key={badge.id}>
-                    <Badge variant="sand">{user.locale === "en" ? badge.titleEn : badge.titleDe}</Badge>
                   </li>
                 ))}
               </ul>

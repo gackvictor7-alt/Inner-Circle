@@ -44,10 +44,11 @@ export function buildBootstrapSql(): string {
   // Badge catalog (Sprint 18): insert the full catalog so a fresh production
   // database has the same slugs/criteria as the app. Legacy slugs are
   // deactivated (row kept, never grantable) — mirrors the seed behaviour.
+  const legacySlugs: readonly string[] = DEACTIVATE_LEGACY_SLUGS;
   for (const entry of BADGE_CATALOG) {
-    const legacy = DEACTIVATE_LEGACY_SLUGS.includes(entry.slug);
+    const legacy = legacySlugs.includes(entry.slug);
     statements.push(
-      `INSERT OR IGNORE INTO "Badge" ("id","slug","kind","titleDe","titleEn","descDe","descEn","iconKey","category","grantMethod","publiclyVisible","position","priority","periodMonths","thresholdValue","thresholdUnit","evidenceDe","evidenceEn","active") VALUES (${[
+      `INSERT INTO "Badge" ("id","slug","kind","titleDe","titleEn","descDe","descEn","iconKey","category","grantMethod","publiclyVisible","position","priority","periodMonths","thresholdValue","thresholdUnit","evidenceDe","evidenceEn","active") VALUES (${[
         sqlString(createId("bdg")),
         sqlString(entry.slug),
         sqlString(entry.kind ?? entry.category),
@@ -71,8 +72,23 @@ export function buildBootstrapSql(): string {
         sqlString(entry.evidenceDe ?? null),
         sqlString(entry.evidenceEn ?? null),
         sqlString(legacy || entry.active === false ? 0 : 1),
-      ].join(",")});`,
+      ].join(",")})
+      ON CONFLICT("slug") DO UPDATE SET
+        "kind"=excluded."kind", "titleDe"=excluded."titleDe", "titleEn"=excluded."titleEn",
+        "descDe"=excluded."descDe", "descEn"=excluded."descEn", "iconKey"=excluded."iconKey",
+        "category"=excluded."category", "grantMethod"=excluded."grantMethod",
+        "publiclyVisible"=excluded."publiclyVisible", "position"=excluded."position",
+        "priority"=excluded."priority", "periodMonths"=excluded."periodMonths",
+        "thresholdValue"=excluded."thresholdValue", "thresholdUnit"=excluded."thresholdUnit",
+        "evidenceDe"=excluded."evidenceDe", "evidenceEn"=excluded."evidenceEn",
+        "active"=excluded."active";`,
     );
+  }
+
+  // Keep old definitions (and their IDs / existing UserBadge rows) intact,
+  // but stop offering the legacy slugs for new grants.
+  for (const slug of DEACTIVATE_LEGACY_SLUGS) {
+    statements.push(`UPDATE "Badge" SET "active" = 0 WHERE "slug" = ${sqlString(slug)};`);
   }
 
   // Final statement: report the totals so the outcome is visible for local and remote runs.

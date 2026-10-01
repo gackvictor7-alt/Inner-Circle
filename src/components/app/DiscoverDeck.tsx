@@ -42,6 +42,7 @@ export type DiscoverCardData = {
   bio: string | null;
   isDemo: boolean;
   foundingMember: boolean;
+  foundingMemberNumber?: number | null;
   /** Verified badges for the compact chip row (max 2 + "+N"); empty when none. */
   badges?: PublicBadge[];
   trustScore10?: number | null;
@@ -756,10 +757,10 @@ function IdentityBlock({
         {member.badges && member.badges.length > 0 ? (
           <DiscoverBadgeChips badges={member.badges} />
         ) : (
-          <VerifiedBadges foundingMember={member.foundingMember} />
+          <VerifiedBadges foundingMember={member.foundingMember} foundingMemberNumber={member.foundingMemberNumber} />
         )}
         {member.isDemo && (
-          <Badge variant="sand">{isDemo ? t.app.demo.profileBadge : t.app.discover.demoBadge}</Badge>
+          <Badge variant="outline">{isDemo ? t.app.demo.profileBadge : t.app.discover.demoBadge}</Badge>
         )}
         {member.requestPending && <Badge variant="electric">{t.app.discover.pendingBadge}</Badge>}
         {member.isConnected && <Badge variant="forest">{t.app.discover.connectedBadge}</Badge>}

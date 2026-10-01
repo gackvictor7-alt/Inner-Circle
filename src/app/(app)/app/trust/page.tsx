@@ -199,27 +199,6 @@ export default async function TrustPage() {
         )}
       </Card>
 
-      <Card className="p-6">
-        <h2 className="text-lg font-bold tracking-tight">
-          <Tr k="app.trust.badgesTitle" />
-        </h2>
-        {trust.badges.length === 0 ? (
-          <p className="mt-3 text-sm text-foreground-muted">
-            <Tr k="app.trust.badgesEmpty" />
-          </p>
-        ) : (
-          <ul className="mt-4 flex flex-wrap gap-2">
-            {trust.badges.map((badge) => (
-              <li key={badge.id}>
-                <Badge variant="sand">{badge.titleDe} / {badge.titleEn}</Badge>
-              </li>
-            ))}
-          </ul>
-        )}
-        <p className="mt-4 text-xs text-foreground-subtle">
-          <Tr k="app.trust.foundingBadgeText" />
-        </p>
-      </Card>
     </div>
   );
 }

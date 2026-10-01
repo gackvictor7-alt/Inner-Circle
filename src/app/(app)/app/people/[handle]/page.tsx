@@ -25,8 +25,8 @@ import { PostImage } from "@/components/app/PostImage";
 import { TrustReviewForm } from "@/components/app/TrustReviewForm";
 import { TrustScoreBlock } from "@/components/app/TrustPanel";
 import { VerifiedBadgesSection } from "@/components/app/VerifiedBadges";
-import { ProfileBadgeCluster } from "@/components/app/BadgeChips";
 import { reputationBadgesFor, type PublicBadge } from "@/lib/badges/queries";
+import { filterPublicBadgesForVisibility } from "@/lib/badges/visibility";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -43,6 +43,16 @@ function parseList(json: string | null | undefined): string[] {
     return Array.isArray(value) ? value.map(String).filter(Boolean) : [];
   } catch {
     return [];
+  }
+}
+
+function parseVisibility(json: string | null | undefined): Record<string, string> {
+  if (!json) return {};
+  try {
+    const value = JSON.parse(json);
+    return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, string> : {};
+  } catch {
+    return {};
   }
 }
 
@@ -123,8 +133,10 @@ export default async function MemberProfilePage({ params }: { params: Promise<{ 
   const showTrust =
     depth === "full" && (isSelf || access.entitlements.trustView) && performanceVisible(profile.privacyPerformance, relation);
   const showPosts = depth === "full" && (isSelf || access.entitlements.feedRead);
+  const metricVisibility = parseVisibility(profile.privacyMetricsVisibility);
+  const showBadgeFigures = isSelf || performanceVisible(metricVisibility.badgeNumbers ?? "private", relation, "private");
 
-  const [interestLabels, goalLabels, trust, posts, reputationBadges, goalLabelBySlug] = await Promise.all([
+  const [interestLabels, goalLabels, trust, posts, allPublicBadges, goalLabelBySlug] = await Promise.all([
     depth === "full" ? interestLabelsFor(profile.id, locale) : Promise.resolve([] as string[]),
     depth === "full" ? goalLabelsFor(profile.id, locale) : Promise.resolve([] as string[]),
     showTrust ? trustProfile(profile.id, viewerId) : Promise.resolve(null),
@@ -137,10 +149,14 @@ export default async function MemberProfilePage({ params }: { params: Promise<{ 
       : Promise.resolve([]),
     // Verified badges are public reputation data: full depth only (or self).
     isSelf || depth === "full"
-      ? reputationBadgesFor(profile.id, locale === "en" ? "en" : "de")
+      ? reputationBadgesFor(profile.id, locale === "en" ? "en" : "de", showBadgeFigures)
       : Promise.resolve([] as PublicBadge[]),
     goalLabelMap(locale === "en" ? "en" : "de"),
   ]);
+  const reputationBadges = filterPublicBadgesForVisibility(allPublicBadges, {
+    showPerformance: showTrust,
+    showBadgeFigures,
+  });
   const roles = parseList(profile.rolesJson);
   const skills = parseList(profile.skillsJson);
   const humanise = (values: string[]) => values.map((value) => goalLabelBySlug.get(value) ?? value);
@@ -170,10 +186,6 @@ export default async function MemberProfilePage({ params }: { params: Promise<{ 
               <h1 className="text-2xl font-bold tracking-tight">
                 {profile.firstName} {profile.lastName}
               </h1>
-              {/* Verified reputation badges (max 3 + "+N" → dialog). Founding
-                  Member is part of this cluster; the admin chip stays a
-                  separate system role. */}
-              <ProfileBadgeCluster badges={reputationBadges} locale={locale === "en" ? "en" : "de"} />
               {profile.role === "admin" && (
                 <Badge variant="outline">
                   <Tr k="app.beta.teamBadge" />

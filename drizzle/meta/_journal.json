@@ -50,6 +50,20 @@
       "when": 1790785628756,
       "tag": "0006_message_read_state",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1790867195183,
+      "tag": "0007_badge_verification_center",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1790871396486,
+      "tag": "0008_badge_application_events",
+      "breakpoints": true
     }
   ]
 }

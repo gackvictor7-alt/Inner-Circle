@@ -16,17 +16,19 @@ import { BADGE_CATALOG, DEACTIVATE_LEGACY_SLUGS, type BadgeCategory, type BadgeG
  * database (`ensureBadgeCatalog()`, idempotent by slug).
  *
  * Three families – deliberately separated from the Trust Score:
- *   * `special`  – INNER CIRCLE honours (Founding Member), admin only
- *   * `verified` – externally verified achievements, application + review
- *   * `platform` – earned from verifiable INNER CIRCLE data
+ *   * `special`    – INNER CIRCLE honours (Founding Member), admin only
+ *   * `verified`   – externally verified achievements, application + review
+ *   * `reputation` – internally reviewed, evidence-based platform signals
+ * Legacy database rows may still use `platform`; public queries normalize
+ * those historical categories to `reputation` without rewriting grant rows.
  *
  * Rules pinned here (and in tests):
  *   * there is NO "Administrator" badge – it is a system role (`users.role`),
  *     never reputation;
  *   * no badge is ever granted by the client: `grantMethod` decides the
  *     server-side path (automatic | application | admin);
- *   * amounts (thresholds) only appear when the underlying achievement was
- *     actually verified.
+ *   * exact progress remains owner-only by default; a reviewed public figure
+ *     is returned only when the profile owner explicitly shares it.
  */
 
 export type { BadgeCategory, BadgeGrantMethod, BadgeThresholdUnit, BadgeCatalogEntry };

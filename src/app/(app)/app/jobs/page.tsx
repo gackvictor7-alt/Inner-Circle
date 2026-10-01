@@ -3,6 +3,7 @@ import { and, desc, eq, ne, sql } from "drizzle-orm";
 import { db } from "@/db/client";
 import { businessOpportunities, profiles, trustScoreSummaries, users } from "@/db/schema";
 import { requireUser } from "@/lib/access/server";
+import { performanceVisibleUserIdsFor } from "@/lib/platform/queries";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { TrustBadge } from "@/components/app/TrustPanel";
@@ -45,6 +46,7 @@ export default async function JobsPage() {
       ownerFirstName: users.firstName,
       ownerLastName: users.lastName,
       ownerHandle: users.handle,
+      ownerId: users.id,
       ownerCompany: profiles.company,
       ownerTrustScore10: trustScoreSummaries.score10,
       ownerVerifiedReviews: trustScoreSummaries.verifiedReviewCount,
@@ -62,6 +64,7 @@ export default async function JobsPage() {
     )
     .orderBy(desc(businessOpportunities.publishedAt))
     .limit(40);
+  const visibleOwnerIds = await performanceVisibleUserIdsFor(access.user.id, rows.map((row) => row.ownerId));
 
   return (
     <div className="space-y-8">
@@ -104,7 +107,7 @@ export default async function JobsPage() {
                   <p className="mt-2 text-xs text-foreground-subtle">
                     {row.ownerCompany ?? `${row.ownerFirstName} ${row.ownerLastName}`} · {[row.location, row.remote ? "Remote" : null].filter(Boolean).join(" · ")}
                     {row.seeking && <><span aria-hidden="true"> · </span>{row.seeking}</>}
-                    {!row.isDemo && (
+                    {!row.isDemo && visibleOwnerIds.has(row.ownerId) && (
                       <>
                         {" · "}
                         <TrustBadge score10={row.ownerTrustScore10} verifiedReviewCount={row.ownerVerifiedReviews} />

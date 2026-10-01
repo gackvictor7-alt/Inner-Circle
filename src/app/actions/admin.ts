@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { and, eq } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import {
   accountDeletionRequests,
@@ -19,9 +19,8 @@ import { activateMembershipByAdmin, revokeMembershipByAdmin } from "@/lib/member
 import { audit } from "@/lib/admin/audit";
 import { notify } from "@/lib/notifications/service";
 import { refreshTrustSummaryFor } from "@/lib/trust/service";
+import { FOUNDING_MEMBER_LIMIT, foundingMemberOrdinalForRank } from "@/lib/badges/founding";
 import { fail, done, text, type ActionState } from "./state";
-
-const FOUNDING_MEMBER_LIMIT = 50;
 
 type AdminActor = { id: string };
 
@@ -95,55 +94,87 @@ export async function setFoundingMemberAction(_prev: ActionState, formData: Form
 
   const userId = text(formData, "userId", 64);
   const grant = text(formData, "grant", 8) === "1";
+  if (!grant) return fail("badgePermanent");
+  if (!userId) return fail("validation");
+
   const [target] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
   if (!target) return fail("notFound");
+  if (target.isDemo) return fail("membershipDemo");
+  if (target.status !== "active") return fail("validation");
 
-  if (grant) {
-    const granted = await db.select({ id: userBadges.id }).from(userBadges).limit(FOUNDING_MEMBER_LIMIT + 1);
-    if (granted.length >= FOUNDING_MEMBER_LIMIT && !target.foundingMember) {
-      return fail("limitReached", { limit: FOUNDING_MEMBER_LIMIT });
-    }
-  }
-
-  await db
-    .update(users)
-    .set({ foundingMember: grant, foundingMemberAt: grant ? new Date() : null, updatedAt: new Date() })
-    .where(eq(users.id, userId));
+  // The ordinal is the account's actual chronological rank, not the order in
+  // which administrators happen to grant the honour. This query is stable for
+  // concurrent grants; the unique ordinal index is the final race guard.
+  const cohort = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(eq(users.isDemo, false))
+    .orderBy(asc(users.createdAt), asc(users.id))
+    .limit(FOUNDING_MEMBER_LIMIT);
+  const rank = cohort.findIndex((member) => member.id === userId) + 1;
+  const foundingMemberNumber = foundingMemberOrdinalForRank(rank);
+  if (foundingMemberNumber === null) return fail("foundingMemberCohort");
 
   const [badge] = await db.select().from(badges).where(eq(badges.slug, "founding-member")).limit(1);
-  if (badge) {
-    if (grant) {
-      const [existing] = await db
-        .select({ id: userBadges.id })
-        .from(userBadges)
-        .where(and(eq(userBadges.userId, userId), eq(userBadges.badgeId, badge.id)))
-        .limit(1);
-      if (!existing) {
-        await db.insert(userBadges).values({
-          id: idFor.userBadge(),
-          userId,
-          badgeId: badge.id,
-          grantedAt: new Date(),
-          note: `granted by ${actor.id}`,
-        });
-      }
-    } else {
-      await db
-        .delete(userBadges)
-        .where(and(eq(userBadges.userId, userId), eq(userBadges.badgeId, badge.id)));
-    }
+  if (!badge || !badge.active || badge.category !== "special" || badge.grantMethod !== "admin") {
+    return fail("badgeNotApplicable");
   }
+
+  const now = new Date();
+  const updated = await db
+    .update(users)
+    .set({
+      foundingMember: true,
+      foundingMemberAt: target.foundingMemberAt ?? now,
+      foundingMemberNumber,
+      updatedAt: now,
+    })
+    .where(and(eq(users.id, userId), eq(users.isDemo, false), eq(users.status, "active")))
+    .returning({ id: users.id });
+  if (updated.length === 0) return fail("validation");
+
+  const note = `permanent founding honour #${String(foundingMemberNumber).padStart(3, "0")}`;
+  await db
+    .insert(userBadges)
+    .values({
+      id: idFor.userBadge(),
+      userId,
+      badgeId: badge.id,
+      source: "admin",
+      grantedById: actor.id,
+      grantedAt: now,
+      verifiedAt: now,
+      verifiedBy: actor.id,
+      note,
+    })
+    .onConflictDoUpdate({
+      target: [userBadges.userId, userBadges.badgeId],
+      set: {
+        source: "admin",
+        grantedById: actor.id,
+        verifiedAt: now,
+        verifiedBy: actor.id,
+        revokedAt: null,
+        revokedById: null,
+        note,
+      },
+    });
 
   await audit({
     actorId: actor.id,
-    action: grant ? "member.founding_granted" : "member.founding_revoked",
+    action: "member.founding_granted",
     entityType: "User",
     entityId: userId,
+    meta: { foundingMemberNumber },
   });
 
   revalidatePath("/admin/users");
   revalidatePath(`/app/people/${target.handle}`);
-  return done({ messageCode: grant ? "granted" : "revoked" });
+  revalidatePath("/app/profile/badges");
+  revalidatePath("/app/profile");
+  revalidatePath("/app/discover");
+  revalidatePath("/app/card");
+  return done({ messageCode: "granted" });
 }
 
 export async function setUserSuspendedAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
@@ -155,7 +186,10 @@ export async function setUserSuspendedAction(_prev: ActionState, formData: FormD
   if (!["active", "suspended", "pending"].includes(status)) return fail("validation");
   if (userId === actor.id) return fail("selfAction");
 
-  await db.update(users).set({ status, updatedAt: new Date() }).where(eq(users.id, userId));
+  await db
+    .update(users)
+    .set({ status, suspensionEndsAt: null, suspensionReason: null, updatedAt: new Date() })
+    .where(eq(users.id, userId));
   await audit({
     actorId: actor.id,
     action: `user.${status}`,
