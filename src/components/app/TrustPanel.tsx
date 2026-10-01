@@ -50,9 +50,11 @@ export function TrustScoreBlock({
         onClick={() => setOpen(true)}
         aria-haspopup="dialog"
         aria-label={tr("app.trust.openDetailsLabel")}
-        className={`group w-full ${variant === "seamless" ? "border-0" : "border-t border-border"} bg-surface-muted/50 p-5 text-left transition-colors hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-offset-[-3px] ${
-          variant === "split" ? "md:border-l md:border-t-0 md:p-7" : ""
-        }`}
+        className={`group w-full text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-[-3px] ${
+          variant === "seamless"
+            ? "border-0 bg-transparent p-0 hover:bg-transparent"
+            : "border-t border-border bg-surface-muted/50 p-5 hover:bg-surface-muted"
+        } ${variant === "split" ? "md:border-l md:border-t-0 md:p-7" : ""}`}
       >
         <div className="flex items-center justify-between gap-2">
           <span className="text-xs font-bold uppercase tracking-[0.14em] text-foreground-subtle">
@@ -88,7 +90,13 @@ export function TrustScoreBlock({
           </>
         ) : (
           <>
-            <h2 className="mt-5 text-lg font-bold tracking-tight sm:text-xl">{tr("app.trust.noRatingsTitle")}</h2>
+            <RatingStars
+              value={0}
+              size={18}
+              label={tr("app.trust.noRatingsTitle")}
+              className="mt-4"
+            />
+            <h2 className="mt-3 text-lg font-bold tracking-tight sm:text-xl">{tr("app.trust.noRatingsTitle")}</h2>
             <p className="mt-2 max-w-sm text-sm leading-6 text-foreground-muted">{tr("app.trust.noRatingsLead")}</p>
             <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-electric-600 dark:text-electric-300">
               {tr("app.trust.openDetails")}

@@ -32,11 +32,14 @@ export function VerifiedBadgesSection({
   badges = [],
   adminRole = false,
   isSelf = false,
+  compactGallery = false,
   className = "",
 }: {
   badges?: PublicBadge[];
   adminRole?: boolean;
   isSelf?: boolean;
+  /** Keep application badge rows readable in a narrow profile-header column. */
+  compactGallery?: boolean;
   /** Kept for callers; the badge detail copy follows the live locale. */
   locale?: "de" | "en";
   className?: string;
@@ -61,7 +64,7 @@ export function VerifiedBadgesSection({
           <p className={isSelf ? "mt-1" : ""}>{tr(isSelf ? "app.badges.verifiedEmptyText" : "app.badges.modalEmptyText")}</p>
         </div>
       ) : (
-        <ProfileBadgeGallery badges={sorted} />
+        <ProfileBadgeGallery badges={sorted} compact={compactGallery} />
       )}
 
       {adminRole && (

@@ -6,7 +6,11 @@ import { db } from "@/db/client";
 import { badgeApplicationEvents, badgeApplications, badges, userBadges, users } from "@/db/schema";
 import { idFor } from "@/db/ids";
 import { getAccessContext } from "@/lib/access/server";
-import { OPEN_APPLICATION_STATUSES, openApplicationCountFor } from "@/lib/badges/queries";
+import {
+  OPEN_APPLICATION_STATUSES,
+  openApplicationCountFor,
+  supportsBadgeApplicationEvents,
+} from "@/lib/badges/queries";
 import { consumeRateLimit } from "@/lib/rate-limit";
 import {
   DEAL_CONTRIBUTOR_DEAL_THRESHOLD,
@@ -79,6 +83,7 @@ function parseEvidenceUrls(formData: FormData): { urls: string[]; error: boolean
 }
 
 async function nextBadgeApplicationEventTime(applicationId: string, at = new Date()): Promise<Date> {
+  if (!(await supportsBadgeApplicationEvents())) return at;
   const [lastEvent] = await db
     .select({ createdAt: badgeApplicationEvents.createdAt })
     .from(badgeApplicationEvents)
@@ -86,6 +91,11 @@ async function nextBadgeApplicationEventTime(applicationId: string, at = new Dat
     .orderBy(desc(badgeApplicationEvents.createdAt))
     .limit(1);
   return new Date(Math.max(at.getTime(), (lastEvent?.createdAt.getTime() ?? 0) + 1));
+}
+
+async function recordBadgeApplicationEvent(event: typeof badgeApplicationEvents.$inferInsert): Promise<void> {
+  if (!(await supportsBadgeApplicationEvents())) return;
+  await db.insert(badgeApplicationEvents).values(event);
 }
 
 async function suspendForBadgeMisrepresentation(params: {
@@ -179,7 +189,7 @@ export async function createBadgeApplicationAction(_prev: ActionState, formData:
     createdAt: now,
     updatedAt: now,
   });
-  await db.insert(badgeApplicationEvents).values({
+  await recordBadgeApplicationEvent({
     id: idFor.badgeApplicationEvent(),
     applicationId: id,
     actorId: user.id,
@@ -233,7 +243,7 @@ export async function respondToBadgeApplicationAction(_prev: ActionState, formDa
     .returning({ id: badgeApplications.id });
   if (updated.length === 0) return fail("badgeApplicationNotWaiting");
 
-  await db.insert(badgeApplicationEvents).values({
+  await recordBadgeApplicationEvent({
     id: idFor.badgeApplicationEvent(),
     applicationId,
     actorId: user.id,
@@ -315,7 +325,7 @@ export async function reviewBadgeApplicationAction(
     .returning({ id: badgeApplications.id });
   if (transitioned.length === 0) return fail("notFound");
 
-  await db.insert(badgeApplicationEvents).values({
+  await recordBadgeApplicationEvent({
     id: idFor.badgeApplicationEvent(),
     applicationId,
     actorId: actor.id,
@@ -579,7 +589,7 @@ export async function revokeBadgeByAdminAction(_prev: ActionState, formData: For
     .limit(1);
   if (approvedApplication) {
     const eventAt = await nextBadgeApplicationEventTime(approvedApplication.id, now);
-    await db.insert(badgeApplicationEvents).values({
+    await recordBadgeApplicationEvent({
       id: idFor.badgeApplicationEvent(),
       applicationId: approvedApplication.id,
       actorId: actor.id,

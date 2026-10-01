@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, asc, count, desc, eq, inArray, isNotNull, isNull } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, isNotNull, isNull, sql } from "drizzle-orm";
 import { db } from "@/db/client";
 import { badges, badgeApplicationEvents, badgeApplications, userBadges, users } from "@/db/schema";
 import { hasPublicFoundingMemberBadge } from "@/lib/badges/founding";
@@ -52,6 +52,19 @@ export function badgeTimestampIso(verifiedAt: Date | null | undefined, grantedAt
     if (value instanceof Date && Number.isFinite(value.getTime())) return value.toISOString();
   }
   return "";
+}
+
+/**
+ * Version uploads do not apply D1 migrations. Migration 0008 introduced the
+ * optional event-history table, so older compatible databases must continue
+ * to use the application row's legacy status/review columns.
+ */
+export async function supportsBadgeApplicationEvents(): Promise<boolean> {
+  const schemaRow = await db.get<{ available: number }>(sql`select exists (
+    select 1 from sqlite_master
+    where type = 'table' and name = 'BadgeApplicationEvent'
+  ) as available`);
+  return schemaRow?.available === 1;
 }
 
 /** Server-side proof lookup for public badge markers outside the badge gallery. */
@@ -367,6 +380,13 @@ export async function listBadgeApplicationsForAdmin(
 
 async function withApplicationHistory<T extends BadgeApplicationRow>(applications: T[]): Promise<T[]> {
   if (applications.length === 0) return applications;
+  if (!(await supportsBadgeApplicationEvents())) {
+    return applications.map((application) => ({
+      ...application,
+      history: fallbackApplicationHistory(application),
+    }));
+  }
+
   const ids = applications.map((application) => application.id);
   const batches: string[][] = [];
   for (let index = 0; index < ids.length; index += 80) batches.push(ids.slice(index, index + 80));

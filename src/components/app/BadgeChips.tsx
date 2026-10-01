@@ -320,7 +320,7 @@ export function ProfileBadgeCluster({
 }
 
 /** A complete, responsive badge area for profile pages. */
-export function ProfileBadgeGallery({ badges }: { badges: PublicBadge[] }) {
+export function ProfileBadgeGallery({ badges, compact = false }: { badges: PublicBadge[]; compact?: boolean }) {
   const tr = useTr();
   const [selected, setSelected] = useState<PublicBadge | null>(null);
   const sorted = [...badges].sort((a, b) => a.priority - b.priority);
@@ -328,7 +328,7 @@ export function ProfileBadgeGallery({ badges }: { badges: PublicBadge[] }) {
 
   return (
     <>
-      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+      <div className={`grid gap-2 ${compact ? "grid-cols-1" : "sm:grid-cols-2 xl:grid-cols-3"}`}>
         {sorted.map((badge) => (
           <button
             type="button"

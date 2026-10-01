@@ -150,6 +150,9 @@ describe("trust score block on member profiles", () => {
       <TrustScoreBlock detail={detail()} memberName="Anna Beispiel" variant="seamless" showScoreNote />,
     );
     expect(emptyHtml).toContain("Noch kein Trust Score");
+    expect(emptyHtml).toContain('role="img" aria-label="Noch kein Trust Score"');
+    // One shield icon plus exactly five unfilled stars; no score is invented.
+    expect((emptyHtml.match(/<svg/g) ?? [])).toHaveLength(6);
     expect(emptyHtml).not.toContain("5,0");
     expect(emptyHtml).not.toContain("Durchschnitt aus allen verifizierten Bewertungen");
   });

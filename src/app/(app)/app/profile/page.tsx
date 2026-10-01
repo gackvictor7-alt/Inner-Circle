@@ -204,37 +204,114 @@ export default async function OwnProfilePage({
     <div className="w-full space-y-5 sm:space-y-6">
       {/* One continuous, full-width profile surface; sections are separated by fine dividers. */}
       <div className="overflow-hidden rounded-2xl border border-border bg-surface shadow-card">
-        <section
-          className="bg-gradient-to-br from-surface via-surface to-electric-500/5 p-5 sm:p-7"
-          aria-label={dict.app.profile.title}
-        >
-          <div className="flex min-w-0 items-start gap-4 sm:gap-5">
-            <span className="shrink-0 sm:hidden">
-              <Avatar user={{ firstName: user.firstName, lastName: user.lastName, avatarUrl: profile?.avatarUrl ?? null }} size={60} />
-            </span>
-            <span className="hidden shrink-0 sm:flex">
-              <Avatar user={{ firstName: user.firstName, lastName: user.lastName, avatarUrl: profile?.avatarUrl ?? null }} size={84} />
-            </span>
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{user.firstName} {user.lastName}</h1>
-                {user.role === "admin" && <Badge variant="electric"><Tr k="app.access.levelAdmin" /></Badge>}
-                {user.isDemo && <Badge variant="outline"><Tr k="app.common.demo" /></Badge>}
+        <div className="grid divide-y divide-border xl:grid-cols-3 xl:divide-x xl:divide-y-0">
+          <section
+            aria-label={dict.app.profile.title}
+            className="flex min-w-0 flex-col bg-gradient-to-br from-surface via-surface to-electric-500/5 p-5 sm:p-6"
+          >
+            <div className="flex min-w-0 items-start gap-4">
+              <span className="shrink-0">
+                <Avatar user={{ firstName: user.firstName, lastName: user.lastName, avatarUrl: profile?.avatarUrl ?? null }} size={72} />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-foreground-subtle">
+                  {dict.app.profile.title}
+                </p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h1 className="break-words text-xl font-bold tracking-tight sm:text-2xl">
+                    {user.firstName} {user.lastName}
+                  </h1>
+                  {user.role === "admin" && <Badge variant="electric"><Tr k="app.access.levelAdmin" /></Badge>}
+                  {user.isDemo && <Badge variant="outline"><Tr k="app.common.demo" /></Badge>}
+                </div>
+                <p className="mt-1 break-all text-sm font-medium text-foreground-subtle">@{user.handle}</p>
               </div>
-              <p className="mt-0.5 text-sm font-medium text-foreground-subtle">@{user.handle}</p>
-              {profile?.headline && (
-                <p className="mt-2 max-w-4xl break-words text-sm font-semibold leading-6 text-foreground sm:text-base">
-                  {profile.headline}
-                </p>
-              )}
-              {(profile?.jobTitle || profile?.company || profile?.location) && (
-                <p className="mt-1.5 break-words text-sm leading-6 text-foreground-muted">
-                  {[profile?.jobTitle, profile?.company, profile?.location].filter(Boolean).join(" · ")}
-                </p>
-              )}
             </div>
-          </div>
-        </section>
+
+            {(profile?.headline || profile?.jobTitle || profile?.company || profile?.location || profile?.bio) && (
+              <div className="mt-4 min-w-0 space-y-2">
+                {profile?.headline && (
+                  <p className="break-words text-sm font-semibold leading-5 text-foreground">{profile.headline}</p>
+                )}
+                {(profile?.jobTitle || profile?.company || profile?.location) && (
+                  <p className="break-words text-xs leading-5 text-foreground-muted">
+                    {[profile?.jobTitle, profile?.company, profile?.location].filter(Boolean).join(" · ")}
+                  </p>
+                )}
+                {profile?.bio && (
+                  <p className="line-clamp-3 whitespace-pre-line break-words text-xs leading-5 text-foreground-muted">
+                    {profile.bio}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {profilePercent < 100 && (
+              <div className="mt-5">
+                <div
+                  role="progressbar"
+                  aria-valuenow={profilePercent}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-label={dict.app.profile.profileCompletion.replace("{percent}", String(profilePercent))}
+                  className="flex items-center justify-between gap-3 text-[11px] font-medium text-foreground-muted"
+                >
+                  <span>{dict.app.profile.profileCompletion.replace("{percent}", String(profilePercent))}</span>
+                  <span className="font-semibold text-foreground">{profilePercent} %</span>
+                </div>
+                <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-surface-muted">
+                  <div className="h-full rounded-full bg-gradient-to-r from-electric-500 to-electric-400" style={{ width: `${profilePercent}%` }} />
+                </div>
+              </div>
+            )}
+
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <Button href="/app/profile/edit" size="sm" className="max-sm:h-11 max-sm:px-3">
+                <SparkleIcon size={15} />
+                <Tr k="app.profile.editTitle" />
+              </Button>
+              <ShareProfileButton url={shareUrl} className="max-sm:px-3" />
+              <Button href="/app/settings" size="sm" variant="ghost" className="max-sm:h-11 max-sm:px-3">
+                <SettingsIcon size={15} />
+                <Tr k="app.settings.title" />
+              </Button>
+            </div>
+          </section>
+
+          <section
+            aria-label={dict.app.profile.verifiedBadgesTitle}
+            className="min-w-0 p-5 sm:p-6"
+          >
+            <VerifiedBadgesSection
+              badges={reputationBadges}
+              adminRole={user.role === "admin"}
+              isSelf
+              compactGallery
+              locale={user.locale === "en" ? "en" : "de"}
+            />
+          </section>
+
+          <section className="flex min-w-0 flex-col p-5 sm:p-6">
+            <TrustScoreBlock
+              detail={trust.detail}
+              memberName={`${user.firstName} ${user.lastName}`}
+              fullPageHref="/app/trust"
+              variant="seamless"
+              showScoreNote
+            />
+            {/* The button only shares the profile link; a review is still accepted
+                server-side only after a verified collaboration. */}
+            <aside className="mt-5 border-t border-border pt-4">
+              <h2 className="text-sm font-bold tracking-tight"><Tr k="app.trust.requestReviewTitle" /></h2>
+              <p className="mt-1.5 text-xs leading-5 text-foreground-muted"><Tr k="app.trust.requestReviewHint" /></p>
+              <ShareProfileButton
+                url={shareUrl}
+                labelKey="app.trust.requestReview"
+                className="mt-3 w-full justify-center"
+              />
+            </aside>
+          </section>
+        </div>
 
         <div className="grid grid-cols-3 divide-x divide-border border-y border-border bg-surface-muted/30 px-1 py-3 sm:px-5 sm:py-4">
           <div className="min-w-0 px-1 sm:px-3">
@@ -273,73 +350,6 @@ export default async function OwnProfilePage({
               triggerClassName="w-full text-center sm:min-w-0"
             />
           </div>
-        </div>
-
-        <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:px-7">
-          {profilePercent < 100 && (
-            <div className="min-w-0 flex-1">
-              <div
-                role="progressbar"
-                aria-valuenow={profilePercent}
-                aria-valuemin={0}
-                aria-valuemax={100}
-                aria-label={dict.app.profile.profileCompletion.replace("{percent}", String(profilePercent))}
-                className="flex items-center justify-between gap-3 text-[11px] font-medium text-foreground-muted"
-              >
-                <span>{dict.app.profile.profileCompletion.replace("{percent}", String(profilePercent))}</span>
-                <span className="font-semibold text-foreground">{profilePercent} %</span>
-              </div>
-              <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-surface-muted">
-                <div className="h-full rounded-full bg-gradient-to-r from-electric-500 to-electric-400" style={{ width: `${profilePercent}%` }} />
-              </div>
-            </div>
-          )}
-          <div className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0 sm:flex-wrap sm:items-center">
-            <Button href="/app/profile/edit" size="sm" className="w-full max-sm:h-11 max-sm:px-3 sm:w-auto">
-              <SparkleIcon size={15} />
-              <Tr k="app.profile.editTitle" />
-            </Button>
-            <ShareProfileButton url={shareUrl} className="w-full justify-center sm:w-auto" />
-            <Button href="/app/settings" size="sm" variant="ghost" className="col-span-2 w-full max-sm:h-11 sm:w-auto">
-              <SettingsIcon size={15} />
-              <Tr k="app.settings.title" />
-            </Button>
-          </div>
-        </div>
-
-        <section
-          aria-label={dict.app.profile.verifiedBadgesTitle}
-          className="border-t border-border px-5 py-5 sm:px-7 sm:py-6"
-        >
-          <VerifiedBadgesSection
-            badges={reputationBadges}
-            adminRole={user.role === "admin"}
-            isSelf
-            locale={user.locale === "en" ? "en" : "de"}
-          />
-        </section>
-
-        <div className="grid border-t border-border md:grid-cols-[minmax(0,1fr)_20rem]">
-          <TrustScoreBlock
-            detail={trust.detail}
-            memberName={`${user.firstName} ${user.lastName}`}
-            fullPageHref="/app/trust"
-            variant="seamless"
-            showScoreNote
-          />
-          {/* No backend request model/action selects and stores a verified collaboration/recipient or notifies them yet.
-              This copies the public link for a manual ask; reviews remain server-gated by verified collaboration. */}
-          <aside className="flex flex-col justify-center gap-3 border-t border-border bg-surface-muted/25 p-5 sm:p-7 md:border-l md:border-t-0">
-            <div>
-              <h2 className="text-base font-bold tracking-tight"><Tr k="app.trust.requestReviewTitle" /></h2>
-              <p className="mt-1.5 text-xs leading-5 text-foreground-muted"><Tr k="app.trust.requestReviewHint" /></p>
-            </div>
-            <ShareProfileButton
-              url={shareUrl}
-              labelKey="app.trust.requestReview"
-              className="w-full justify-center"
-            />
-          </aside>
         </div>
 
         <nav aria-label={dict.app.profile.title} className="border-t border-border">
