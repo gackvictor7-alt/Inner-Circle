@@ -15,6 +15,7 @@ vi.mock("@/db/client", () => ({
 
 let mf: Miniflare;
 let listDiscoverCandidates: typeof import("@/lib/platform/queries").listDiscoverCandidates;
+let listDirectoryMembers: typeof import("@/lib/platform/queries").listDirectoryMembers;
 
 beforeAll(async () => {
   mf = new Miniflare(
@@ -39,18 +40,25 @@ beforeAll(async () => {
   );
 
   d1Ref.db = drizzleD1(d1, { schema }) as unknown as Database;
-  ({ listDiscoverCandidates } = await import("@/lib/platform/queries"));
+  ({ listDiscoverCandidates, listDirectoryMembers } = await import("@/lib/platform/queries"));
 }, 120_000);
 
 afterAll(async () => {
   await mf?.dispose();
 });
 
-describe("Discover query compatibility before migration 0007", () => {
+describe("queries against the pre-0007 D1 schema", () => {
   it("lists candidates when User.foundingMemberNumber has not been added yet", async () => {
     const candidates = await listDiscoverCandidates({ viewerId: "viewer", limit: 10 });
 
     expect(candidates.map((candidate) => candidate.id)).toContain("candidate");
     expect(candidates.find((candidate) => candidate.id === "candidate")?.foundingMemberNumber).toBeNull();
+  });
+
+  it("lists network members when User.foundingMemberNumber has not been added yet", async () => {
+    const members = await listDirectoryMembers({ viewerId: "viewer", limit: 10 });
+
+    expect(members.map((member) => member.id)).toContain("candidate");
+    expect(members.find((member) => member.id === "candidate")?.foundingMember).toBe(false);
   });
 });

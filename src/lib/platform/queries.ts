@@ -75,7 +75,6 @@ const memberColumns = {
   handle: users.handle,
   isDemo: users.isDemo,
   foundingMember: users.foundingMember,
-  foundingMemberNumber: users.foundingMemberNumber,
   performanceVisibility: privacySettings.performanceVisibility,
   lastLoginAt: users.lastLoginAt,
   trustScore10: trustScoreSummaries.score10,
@@ -86,6 +85,14 @@ const memberColumns = {
   avatarUrl: profiles.avatarUrl,
   showLocation: privacySettings.showLocation,
 };
+
+async function supportsFoundingMemberNumbers(): Promise<boolean> {
+  const schemaRow = await db.get<{ available: number }>(sql`select exists (
+    select 1 from sqlite_master
+    where type = 'table' and name = 'User' and instr(sql, 'foundingMemberNumber') > 0
+  ) as available`);
+  return schemaRow?.available === 1;
+}
 
 /** D1 allows at most 100 bound parameters per statement – keep IN lists below. */
 const IN_CHUNK = 90;
@@ -198,8 +205,11 @@ export async function listDirectoryMembers(options: {
 }): Promise<DirectoryMember[]> {
   const now = new Date();
   const like = (value: string) => `%${value.toLowerCase()}%`;
+  const foundingMemberNumberColumn = (await supportsFoundingMemberNumbers())
+    ? users.foundingMemberNumber
+    : sql<number | null>`null`;
   const rows = await db
-    .select(memberColumns)
+    .select({ ...memberColumns, foundingMemberNumber: foundingMemberNumberColumn })
     .from(users)
     .leftJoin(profiles, eq(profiles.userId, users.id))
     .leftJoin(privacySettings, eq(privacySettings.userId, users.id))
