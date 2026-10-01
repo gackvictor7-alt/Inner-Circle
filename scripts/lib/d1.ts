@@ -8,9 +8,10 @@
  */
 
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 
 export type D1Target = "local" | "remote";
 
@@ -64,6 +65,36 @@ export function extractTaxonomyTotals(result: D1ExecuteResult | null): TaxonomyT
   return null;
 }
 
+/**
+ * Command line for `wrangler d1 execute`. Wrangler's own entry script is run
+ * with the current Node binary and WITHOUT a shell. The previous `npx` +
+ * `shell: true` (Windows) joined the arguments with plain spaces, so an inline
+ * `--command` statement such as `SELECT (SELECT count(*) …) AS interests` was
+ * split into separate CLI arguments (`Unknown arguments: (SELECT, count(*), …`).
+ * Without a shell every element stays exactly one argument, on every platform
+ * (also for temp-file paths that contain spaces).
+ */
+export function wranglerCommand(
+  args: string[],
+  cwd: string = process.cwd(),
+): { command: string; args: string[] } {
+  let packageJson: string;
+  try {
+    packageJson = createRequire(join(cwd, "package.json")).resolve("wrangler/package.json");
+  } catch {
+    throw new Error("wrangler is not installed. Run `npm ci` first.");
+  }
+  const manifest = JSON.parse(readFileSync(packageJson, "utf8")) as { bin?: string | Record<string, string> };
+  const bin = typeof manifest.bin === "string" ? manifest.bin : manifest.bin?.wrangler;
+  if (!bin) throw new Error("Could not locate the wrangler executable in node_modules.");
+  return { command: process.execPath, args: [resolve(dirname(packageJson), bin), ...args] };
+}
+
+/** The wrangler arguments (without the executable) for one `d1 execute` call. */
+export function d1ExecuteArgs(target: D1Target, mode: "file" | "command", sqlOrFile: string): string[] {
+  return ["d1", "execute", D1_BINDING, `--${target}`, mode === "command" ? "--command" : "--file", sqlOrFile, "--json"];
+}
+
 export function executeSql(
   target: D1Target,
   sql: string,
@@ -74,25 +105,16 @@ export function executeSql(
   const file = join(dir, "statement.sql");
   writeFileSync(file, sql, "utf8");
 
-  const npx = process.platform === "win32" ? "npx.cmd" : "npx";
-  const args = [
-    "wrangler",
-    "d1",
-    "execute",
-    D1_BINDING,
-    `--${target}`,
-    ...(mode === "command" ? ["--command", sql] : ["--file", file]),
-    "--json",
-  ];
   console.log(`▶ ${label} (${target === "remote" ? "REMOTE Cloudflare D1" : "local D1 emulation"})`);
 
   try {
-    const stdout = execFileSync(npx, args, {
+    const wrangler = wranglerCommand(d1ExecuteArgs(target, mode, mode === "command" ? sql : file));
+    const stdout = execFileSync(wrangler.command, wrangler.args, {
       cwd: process.cwd(),
       env: process.env,
       encoding: "utf8",
       stdio: ["ignore", "pipe", "inherit"],
-      shell: process.platform === "win32",
+      shell: false,
       maxBuffer: 64 * 1024 * 1024,
     });
     // wrangler prints the JSON result as the last JSON document on stdout.

@@ -19,13 +19,15 @@ import { BADGE_CATALOG } from "../src/lib/badges/catalog-data";
 import { executeSql, extractTaxonomyTotals, parseTarget, type D1Target } from "./lib/d1";
 import { TAXONOMY_COUNT_SQL, buildBootstrapSql } from "./lib/bootstrap-sql";
 
-/** The inserts already succeeded at this point, so a failing count query must not fail the release. */
+/**
+ * The inserts already succeeded at this point (they are idempotent, so a re-run
+ * is always safe). Reading the counts is the verification step: if it fails or
+ * returns no numbers, the script fails loudly instead of reporting success.
+ */
 function readTotals(target: D1Target) {
-  try {
-    return extractTaxonomyTotals(executeSql(target, TAXONOMY_COUNT_SQL, "Reading taxonomy counts", "command"));
-  } catch {
-    return null;
-  }
+  const totals = extractTaxonomyTotals(executeSql(target, TAXONOMY_COUNT_SQL, "Reading taxonomy counts", "command"));
+  if (!totals) throw new Error("Taxonomy counts could not be read (no numeric interests/goals/badges in the wrangler result).");
+  return totals;
 }
 
 function main() {
@@ -35,9 +37,7 @@ function main() {
   const totals = extractTaxonomyTotals(result) ?? readTotals(target);
 
   console.log(
-    totals
-      ? `✓ Taxonomy ready – database now holds ${totals.interests} interests, ${totals.goals} goals, ${totals.badges} badges.`
-      : "✓ Taxonomy statements executed.",
+    `✓ Taxonomy ready – database now holds ${totals.interests} interests, ${totals.goals} goals, ${totals.badges} badges.`,
   );
   console.log(
     `  Source: scripts/taxonomy.ts (${INTERESTS.length} interests · ${GOALS.length} goals · ${BADGE_CATALOG.length} badges); existing rows are kept.`,
@@ -48,5 +48,6 @@ try {
   main();
 } catch (error) {
   console.error(`✗ ${(error as Error).message}`);
+  console.error("  The taxonomy statements may already be applied (idempotent); fix the cause above and re-run to verify the counts.");
   process.exit(1);
 }
