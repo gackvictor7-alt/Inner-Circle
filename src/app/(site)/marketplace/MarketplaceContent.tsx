@@ -17,7 +17,7 @@ import { PageHero } from "@/components/site/PageHero";
 import { Kicker, Section } from "@/components/site/Section";
 import { Reveal } from "@/components/site/Reveal";
 import { SiteImage } from "@/components/site/SiteImage";
-import { ComingSoonPanel } from "@/components/site/ComingSoonPanel";
+import { AvailableNowPanel } from "@/components/site/AvailableNowPanel";
 import { CtaBand } from "@/components/site/CtaBand";
 import { DEMO_CONTENT_ENABLED, DEMO_COURSES, DEMO_LISTINGS } from "@/lib/demo";
 
@@ -31,7 +31,8 @@ import { DEMO_CONTENT_ENABLED, DEMO_COURSES, DEMO_LISTINGS } from "@/lib/demo";
  * creates no revenue and disappears when demo mode is switched off.
  */
 export function MarketplaceContent() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
+  const en = locale === "en";
   const page = t.pages.marketplace;
   usePageMeta(page.metaTitle, page.metaDescription);
   const [activeTab, setActiveTab] = useState("marketplace");
@@ -105,7 +106,7 @@ export function MarketplaceContent() {
                 ))}
               </ul>
               <div className="flex items-start gap-2.5 rounded-xl bg-surface-muted px-4 py-3">
-                <Badge variant="neutral">{t.common.comingSoonShort}</Badge>
+                <Badge variant="neutral">{t.common.noteLabel}</Badge>
                 <p className="text-xs leading-5 text-foreground-muted">{page.creatorNote}</p>
               </div>
             </div>
@@ -122,8 +123,10 @@ export function MarketplaceContent() {
 
               {activeTab === "academy" ? (
                 <ul className="mt-5 grid gap-3">
-                  {DEMO_COURSES.map((course) => (
-                    <li key={course.key}>
+                  {DEMO_COURSES.map((demo) => {
+                    const course = en ? demo.en : demo;
+                    return (
+                    <li key={demo.key}>
                       <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-b border-border pb-3">
                         <span className="min-w-0">
                           <span className="block text-base font-bold tracking-tight">{course.title}</span>
@@ -134,12 +137,15 @@ export function MarketplaceContent() {
                         <span className="shrink-0 text-xs text-foreground-subtle">{course.metaLabel}</span>
                       </div>
                     </li>
-                  ))}
+                    );
+                  })}
                 </ul>
               ) : (
                 <ul className="mt-5 grid gap-3 sm:grid-cols-2">
-                  {DEMO_LISTINGS.map((listing) => (
-                    <li key={listing.key}>
+                  {DEMO_LISTINGS.map((demo) => {
+                    const listing = en ? demo.en : demo;
+                    return (
+                    <li key={demo.key}>
                       <Card className="flex h-full flex-col gap-2 p-4">
                         <div className="flex items-center justify-between gap-3">
                           <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-foreground-subtle">
@@ -155,7 +161,8 @@ export function MarketplaceContent() {
                         </p>
                       </Card>
                     </li>
-                  ))}
+                    );
+                  })}
                 </ul>
               )}
 
@@ -169,7 +176,7 @@ export function MarketplaceContent() {
 
       <Section bg="muted" width="wide">
         <Reveal>
-          <ComingSoonPanel title={page.comingSoonTitle} items={page.comingSoonItems} />
+          <AvailableNowPanel title={page.availableTitle} items={page.availableItems} />
         </Reveal>
       </Section>
 

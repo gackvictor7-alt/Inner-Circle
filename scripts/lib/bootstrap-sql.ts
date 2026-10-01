@@ -8,6 +8,10 @@ import { GOALS, INTERESTS } from "../taxonomy";
 import { BADGE_CATALOG, DEACTIVATE_LEGACY_SLUGS } from "../../src/lib/badges/catalog-data";
 import { sqlString } from "./d1";
 
+/** Counts of the base taxonomy tables (read after the bootstrap statements ran). */
+export const TAXONOMY_COUNT_SQL =
+  'SELECT (SELECT count(*) FROM "Interest") AS interests, (SELECT count(*) FROM "Goal") AS goals, (SELECT count(*) FROM "Badge") AS badges;';
+
 export function buildBootstrapSql(): string {
   const statements: string[] = [];
 
@@ -73,7 +77,7 @@ export function buildBootstrapSql(): string {
 
   // Final statement: report the totals so the outcome is visible for local and remote runs.
   statements.push(
-    'SELECT (SELECT count(*) FROM "Interest") AS interests, (SELECT count(*) FROM "Goal") AS goals, (SELECT count(*) FROM "Badge") AS badges;',
+    TAXONOMY_COUNT_SQL,
   );
 
   return statements.join("\n");

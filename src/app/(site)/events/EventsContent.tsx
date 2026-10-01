@@ -126,7 +126,7 @@ export function EventsContent() {
               <p className="max-w-md text-sm leading-6 text-foreground-muted">{page.upcomingEmpty}</p>
               <span className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1 text-xs font-semibold text-foreground-subtle">
                 <CalendarIcon size={13} />
-                {t.common.comingSoon}
+                {page.upcomingPill}
               </span>
             </Card>
             <p className="mt-5 text-center text-xs leading-5 text-foreground-subtle">

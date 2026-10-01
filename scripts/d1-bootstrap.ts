@@ -16,17 +16,23 @@
 
 import { GOALS, INTERESTS } from "./taxonomy";
 import { BADGE_CATALOG } from "../src/lib/badges/catalog-data";
-import { executeSql, parseTarget } from "./lib/d1";
-import { buildBootstrapSql } from "./lib/bootstrap-sql";
+import { executeSql, extractTaxonomyTotals, parseTarget, type D1Target } from "./lib/d1";
+import { TAXONOMY_COUNT_SQL, buildBootstrapSql } from "./lib/bootstrap-sql";
+
+/** The inserts already succeeded at this point, so a failing count query must not fail the release. */
+function readTotals(target: D1Target) {
+  try {
+    return extractTaxonomyTotals(executeSql(target, TAXONOMY_COUNT_SQL, "Reading taxonomy counts", "command"));
+  } catch {
+    return null;
+  }
+}
 
 function main() {
   const target = parseTarget(process.argv.slice(2));
   const result = executeSql(target, buildBootstrapSql(), "Inserting base taxonomy (interests, goals, badges)");
-  const totals = (result?.at(-1)?.results?.[0] ?? null) as {
-    interests: number;
-    goals: number;
-    badges: number;
-  } | null;
+  // `--remote --file` does not return the SELECT rows, so the counts are read with a separate query.
+  const totals = extractTaxonomyTotals(result) ?? readTotals(target);
 
   console.log(
     totals

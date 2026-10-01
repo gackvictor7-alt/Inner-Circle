@@ -14,7 +14,7 @@ import { PageHero } from "@/components/site/PageHero";
 import { Kicker, Section } from "@/components/site/Section";
 import { Reveal } from "@/components/site/Reveal";
 import { SiteImage } from "@/components/site/SiteImage";
-import { ComingSoonPanel } from "@/components/site/ComingSoonPanel";
+import { AvailableNowPanel } from "@/components/site/AvailableNowPanel";
 import { CtaBand } from "@/components/site/CtaBand";
 
 const featureIcons = [CompassIcon, ShieldCheckIcon, MessageIcon, StarIcon];
@@ -102,7 +102,7 @@ export function NetworkContent() {
 
       <Section bg="muted" width="wide">
         <Reveal>
-          <ComingSoonPanel title={page.comingSoonTitle} items={page.comingSoonItems} />
+          <AvailableNowPanel title={page.availableTitle} items={page.availableItems} />
         </Reveal>
       </Section>
 

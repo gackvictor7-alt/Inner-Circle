@@ -33,19 +33,57 @@ export function sqlString(value: string | number | null | undefined): string {
   return `'${value.replace(/'/g, "''")}'`;
 }
 
-type D1ExecuteResult = {
+export type D1ExecuteResult = {
   success?: boolean;
   results?: unknown[];
   meta?: { changes?: number; rows_written?: number; rows_read?: number };
 }[];
 
-export function executeSql(target: D1Target, sql: string, label: string): D1ExecuteResult | null {
+/**
+ * Pulls `{ interests, goals, badges }` out of a wrangler result. Local runs
+ * return the final SELECT as a normal result set, but `--remote --file` goes
+ * through D1's import API, whose result carries import statistics ("Total
+ * queries executed", …) instead of the SELECT rows. Anything without numeric
+ * counts yields `null`, so callers never print `undefined`.
+ */
+export type TaxonomyTotals = { interests: number; goals: number; badges: number };
+
+export function extractTaxonomyTotals(result: D1ExecuteResult | null): TaxonomyTotals | null {
+  if (!result) return null;
+  for (let i = result.length - 1; i >= 0; i--) {
+    const row = result[i]?.results?.[0] as Partial<Record<keyof TaxonomyTotals, unknown>> | undefined;
+    if (
+      row &&
+      typeof row.interests === "number" &&
+      typeof row.goals === "number" &&
+      typeof row.badges === "number"
+    ) {
+      return { interests: row.interests, goals: row.goals, badges: row.badges };
+    }
+  }
+  return null;
+}
+
+export function executeSql(
+  target: D1Target,
+  sql: string,
+  label: string,
+  mode: "file" | "command" = "file",
+): D1ExecuteResult | null {
   const dir = mkdtempSync(join(tmpdir(), "inner-circle-d1-"));
   const file = join(dir, "statement.sql");
   writeFileSync(file, sql, "utf8");
 
   const npx = process.platform === "win32" ? "npx.cmd" : "npx";
-  const args = ["wrangler", "d1", "execute", D1_BINDING, `--${target}`, "--file", file, "--json"];
+  const args = [
+    "wrangler",
+    "d1",
+    "execute",
+    D1_BINDING,
+    `--${target}`,
+    ...(mode === "command" ? ["--command", sql] : ["--file", file]),
+    "--json",
+  ];
   console.log(`▶ ${label} (${target === "remote" ? "REMOTE Cloudflare D1" : "local D1 emulation"})`);
 
   try {

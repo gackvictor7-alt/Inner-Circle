@@ -69,6 +69,9 @@ const siteDe = {
   common: {
     comingSoon: "Demnächst verfügbar",
     comingSoonShort: "Demnächst",
+    availableNow: "Verfügbar",
+    availableNote: "Der Zugriff hängt von deinem Konto-Status ab – Details findest du unter Mitgliedschaft.",
+    noteLabel: "Hinweis",
     previewLabel: "Vorschau",
     learnMore: "Mehr erfahren",
     discover: "Entdecken",
@@ -270,20 +273,21 @@ const siteDe = {
         },
         {
           title: "Nachrichten",
-          desc: "Direkter 1:1-Chat nach bestätigter Verbindung: Verlauf, Dateien, Ungelesen-Zähler.",
+          desc: "Direkter 1:1-Chat nach bestätigter Verbindung – mit Verlauf und Ungelesen-Zähler.",
         },
         {
           title: "Reputation sichtbar",
           desc: "Sternebewertungen und Auszeichnungen aus bestätigten Zusammenarbeiten – auf jedem Profil.",
         },
       ],
-      comingSoonTitle: "Was hier später entsteht",
-      comingSoonItems: [
-        "Mitgliederverzeichnis mit Suche & Filtern",
-        "Empfehlungen relevanter Mitglieder",
-        "Folgen vs. Vernetzen mit Anfrage-Workflow",
-        "1:1-Nachrichten mit Verlauf & Dateien",
-        "Blockieren & Melden mit Moderation",
+      availableTitle: "Das Netzwerk heute",
+      availableItems: [
+        "Mitgliederverzeichnis mit Suche und Filtern",
+        "Discover mit passenden Vorschlägen und Match-Gründen",
+        "Folgen oder Kontakt anfragen – mit persönlicher Nachricht",
+        "1:1-Nachrichten nach bestätigter Verbindung",
+        "Benachrichtigungen zu Anfragen und Nachrichten",
+        "Mitglieder blockieren, wenn ein Kontakt nicht passt",
       ],
       ctaTitle: "Bereit für deinen inneren Kreis?",
       ctaText:
@@ -443,8 +447,8 @@ const siteDe = {
     },
     marketplace: {
       kicker: "Marketplace & Academy",
-      title: "Wissen lernen. Wissen verkaufen. Leistungen buchen.",
-      lead: "Der Marktplatz von INNER CIRCLE verbindet Angebote der Community: Kurse und Workshops in der Academy, professionelle Dienstleistungen und Produkte im Marketplace.",
+      title: "Wissen lernen. Wissen anbieten. Leistungen entdecken.",
+      lead: "Der Marktplatz von INNER CIRCLE verbindet Angebote der Community: Kurse und Workshops in der Academy, Coaching, Beratung und professionelle Dienstleistungen im Marketplace.",
       metaTitle: "Marketplace & Academy – INNER CIRCLE",
       metaDescription:
         "Lerne neue Fähigkeiten, verkaufe dein Wissen und entdecke professionelle Dienstleistungen der INNER-CIRCLE-Community.",
@@ -453,19 +457,19 @@ const siteDe = {
       tabAcademy: "Academy",
       marketplaceTab: {
         headline: "Professionelle Leistungen aus der Community",
-        text: "Buche Dienstleistungen von Mitgliedern mit sichtbarer Reputation – oder biete deine eigenen Leistungen an.",
+        text: "Entdecke Angebote von Mitgliedern – oder veröffentliche deine eigenen Leistungen.",
         features: [
           {
-            title: "Services entdecken",
-            desc: "Agenturleistungen, Beratung, Design, Entwicklung und mehr – von Mitgliedern für Mitglieder.",
+            title: "Angebote entdecken",
+            desc: "Coaching, Beratung, Workshops und Dienstleistungen – von Mitgliedern für Mitglieder, filterbar nach Kategorie.",
           },
           {
-            title: "Mit Reputation buchen",
-            desc: "Bewertungen und bestätigte Aufträge zeigen dir, wen du vor dir hast.",
+            title: "Anbieter kennenlernen",
+            desc: "Zu jedem Angebot gibt es das Anbieterprofil und weitere Angebote derselben Person.",
           },
           {
-            title: "Selbst verkaufen",
-            desc: "Biete deine eigenen Leistungen und Produkte an – im Kreis passender Kunden.",
+            title: "Selbst anbieten",
+            desc: "Veröffentliche eigene Angebote mit Beschreibung und Preis – sichtbar für die Community.",
           },
         ],
       },
@@ -478,28 +482,27 @@ const siteDe = {
             desc: "Lerne von Unternehmern, Investoren und Creators – kompakt und anwendbar.",
           },
           {
-            title: "Wissen monetarisieren",
-            desc: "Verkaufe dein eigenes Wissen als Kurs oder Workshop an die Community.",
+            title: "Wissen anbieten",
+            desc: "Veröffentliche dein eigenes Wissen als Kurs oder Workshop für die Community.",
           },
           {
-            title: "Lernpfade",
-            desc: "Themenbündel führen dich strukturiert von Grundlagen zu Fortgeschrittenem.",
+            title: "Lernfortschritt",
+            desc: "Module und Lektionen mit Fortschrittsanzeige – du siehst, wo du stehst.",
           },
         ],
       },
       creatorNote:
-        "Geplant: Creators & Referrals – Mitglieder empfehlen INNER CIRCLE und erhalten faire Beteiligung.",
-      comingSoonTitle: "Was hier später entsteht",
-      comingSoonItems: [
-        "Kurskatalog mit Kauf & Zugang (Schritt 13)",
-        "Service-Listings mit Buchungsanfragen",
-        "Verkäufer-Profiles mit Reputation",
-        "Bewertungen für Kurse & Leistungen",
-        "Auszahlungen & Rechnungsgrundlagen",
+        "Zahlungsabwicklung und Auszahlungen sind noch nicht aktiv – Käufe und Buchungen laufen noch nicht über die Plattform.",
+      availableTitle: "Marketplace & Academy heute",
+      availableItems: [
+        "Angebote von Mitgliedern durchsuchen und nach Kategorie filtern",
+        "Eigene Angebote veröffentlichen – Kurs, Coaching, Workshop, Beratung oder Dienstleistung",
+        "Anbieterprofil und weitere Angebote je Anbieter",
+        "Academy: Kursbibliothek mit Modulen, Lektionen und Lernfortschritt",
       ],
       ctaTitle: "Teaching & Selling für Mitglieder.",
       ctaText:
-        "Sobald der Marktplatz startet, kannst du Wissen anbieten, Leistungen buchen und wachsen.",
+        "Entdecke Angebote der Community, teile dein Wissen und baue Reputation im Kreis auf.",
     },
     events: {
       kicker: "Events & Experiences",
@@ -524,11 +527,12 @@ const siteDe = {
         "Mehrtägige Formate in kleinem Kreis",
         "Nur für Mitglieder & eingeladene Gäste",
       ],
-      upcomingTitle: "Nächste Termine",
+      upcomingTitle: "Termine & Teilnahme",
       upcomingEmpty:
-        "Noch keine Termine veröffentlicht. Die ersten Events werden hier angekündigt, sobald sie feststehen.",
+        "Events werden von INNER CIRCLE kuratiert und im Mitgliederbereich unter „Events“ veröffentlicht. Dort kannst du als Mitglied die Teilnahme anfragen. Diese öffentliche Seite zeigt keine Termine.",
+      upcomingPill: "Im Mitgliederbereich",
       visionDisclaimer:
-        "Hinweis: Geplante Formate und konzeptionelle Vision – noch keine bestätigten Veranstaltungen.",
+        "Hinweis: Die beschriebenen Formate und Erlebnisse sind geplant und konzeptionell.",
       imageRegularAlt: "Networking-Abend auf einer Dachterrasse mit Stadtlichtern",
       imageVisionAlt: "Gruppe von Unternehmern auf einer Yacht an der Côte d'Azur vor Monaco",
       ctaTitle: "Dabei sein, wenn es startet.",
@@ -814,6 +818,9 @@ const siteEnRaw: SiteDictionary = {
   common: {
     comingSoon: "Coming soon",
     comingSoonShort: "Soon",
+    availableNow: "Available",
+    availableNote: "Access depends on your account status – see Membership for details.",
+    noteLabel: "Note",
     previewLabel: "Preview",
     learnMore: "Learn more",
     discover: "Discover",
@@ -1033,20 +1040,21 @@ const siteEnRaw: SiteDictionary = {
         },
         {
           title: "Messages",
-          desc: "Direct 1:1 chat after a confirmed connection: history, files, unread counter.",
+          desc: "Direct 1:1 chat after a confirmed connection – with history and an unread counter.",
         },
         {
           title: "Visible reputation",
           desc: "Star ratings and awards from verified collaborations – on every profile.",
         },
       ],
-      comingSoonTitle: "What will live here",
-      comingSoonItems: [
-        "Member directory with search & filters",
-        "Suggestions for relevant members",
-        "Follow vs. connect with request workflow",
-        "1:1 messaging with history & files",
-        "Blocking & reporting with moderation",
+      availableTitle: "The network today",
+      availableItems: [
+        "Member directory with search and filters",
+        "Discover with relevant suggestions and match reasons",
+        "Follow or request a connection – with a personal note",
+        "1:1 messages after a confirmed connection",
+        "Notifications for requests and messages",
+        "Block members when a contact is not a fit",
       ],
       ctaTitle: "Ready for your inner circle?",
       ctaText:
@@ -1203,8 +1211,8 @@ const siteEnRaw: SiteDictionary = {
     },
     marketplace: {
       kicker: "Marketplace & Academy",
-      title: "Learn knowledge. Sell knowledge. Book services.",
-      lead: "The INNER CIRCLE marketplace brings the community's offerings together: courses and workshops in the Academy, professional services and products in the Marketplace.",
+      title: "Learn knowledge. Offer knowledge. Discover services.",
+      lead: "The INNER CIRCLE marketplace brings the community's offerings together: courses and workshops in the Academy, coaching, consulting and professional services in the Marketplace.",
       metaTitle: "Marketplace & Academy – INNER CIRCLE",
       metaDescription:
         "Learn new skills, sell your knowledge and discover professional services from the INNER CIRCLE community.",
@@ -1213,19 +1221,19 @@ const siteEnRaw: SiteDictionary = {
       tabAcademy: "Academy",
       marketplaceTab: {
         headline: "Professional services from the community",
-        text: "Book services from members with visible reputation – or offer your own services.",
+        text: "Discover offers from members – or publish your own services.",
         features: [
           {
-            title: "Discover services",
-            desc: "Agency work, consulting, design, development and more – members for members.",
+            title: "Discover offers",
+            desc: "Coaching, consulting, workshops and services – members for members, filterable by category.",
           },
           {
-            title: "Book with reputation",
-            desc: "Ratings and verified projects show you exactly who you are dealing with.",
+            title: "Get to know providers",
+            desc: "Every offer links to the provider profile and to more offers by the same person.",
           },
           {
-            title: "Sell yourself",
-            desc: "Offer your own services and products – to a circle of fitting customers.",
+            title: "Offer your own",
+            desc: "Publish your own offers with a description and price – visible to the community.",
           },
         ],
       },
@@ -1238,28 +1246,27 @@ const siteEnRaw: SiteDictionary = {
             desc: "Learn from founders, investors and creators – compact and applicable.",
           },
           {
-            title: "Monetize knowledge",
-            desc: "Sell your own knowledge as a course or workshop to the community.",
+            title: "Offer your knowledge",
+            desc: "Publish your own knowledge as a course or workshop for the community.",
           },
           {
-            title: "Learning paths",
-            desc: "Topic bundles guide you from fundamentals to advanced levels.",
+            title: "Learning progress",
+            desc: "Modules and lessons with a progress indicator – you always see where you stand.",
           },
         ],
       },
       creatorNote:
-        "Planned: creators & referrals – members recommend INNER CIRCLE and receive a fair share.",
-      comingSoonTitle: "What will live here",
-      comingSoonItems: [
-        "Course catalog with purchase & access (Step 13)",
-        "Service listings with booking requests",
-        "Seller profiles with reputation",
-        "Ratings for courses & services",
-        "Payouts & invoicing basics",
+        "Payment processing and payouts are not active yet – purchases and bookings do not run through the platform yet.",
+      availableTitle: "Marketplace & Academy today",
+      availableItems: [
+        "Browse member offers and filter by category",
+        "Publish your own offers – course, coaching, workshop, consulting or service",
+        "Provider profile and more offers per provider",
+        "Academy: course library with modules, lessons and learning progress",
       ],
       ctaTitle: "Teaching & selling for members.",
       ctaText:
-        "When the marketplace starts, you can offer knowledge, book services and grow.",
+        "Discover offers from the community, share your knowledge and build reputation inside the circle.",
     },
     events: {
       kicker: "Events & Experiences",
@@ -1284,11 +1291,12 @@ const siteEnRaw: SiteDictionary = {
         "Multi-day formats in small circles",
         "Members & invited guests only",
       ],
-      upcomingTitle: "Upcoming dates",
+      upcomingTitle: "Dates & participation",
       upcomingEmpty:
-        "No dates published yet. The first events will be announced here once they are confirmed.",
+        "Events are curated by INNER CIRCLE and published in the member area under “Events”. Members can request to take part there. This public page does not list dates.",
+      upcomingPill: "In the member area",
       visionDisclaimer:
-        "Note: planned formats and conceptual vision – no confirmed events yet.",
+        "Note: the formats and experiences described above are planned and conceptual.",
       imageRegularAlt: "Rooftop networking evening with city lights",
       imageVisionAlt: "Group of entrepreneurs on a yacht on the Côte d'Azur off Monaco",
       ctaTitle: "Be there when it starts.",
