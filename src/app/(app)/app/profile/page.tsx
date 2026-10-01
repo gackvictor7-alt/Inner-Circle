@@ -46,6 +46,8 @@ import {
   WalletIcon,
   XSocialIcon,
 } from "@/components/ui/icons";
+import { investmentLabelKey } from "@/lib/platform/investment-labels";
+import { profileCompletionPercent } from "@/lib/platform/profile-completion";
 
 export const dynamic = "force-dynamic";
 
@@ -145,16 +147,17 @@ export default async function OwnProfilePage({
   const fallback = privacy?.performanceVisibility ?? "members";
   const visible = (key: string) => (metricsVisibility[key] ?? fallback) !== "private";
 
-  const profilePercent = calculateProfilePercent({
-    headline: profile?.headline ?? null,
-    bio: profile?.bio ?? null,
-    location: profile?.location ?? null,
-    avatarUrl: profile?.avatarUrl ?? null,
-    company: profile?.company ?? null,
-    roles: profile?.rolesJson ?? "[]",
-    skills: profile?.skillsJson ?? "[]",
-    offering: profile?.offeringJson ?? "[]",
-    interests: interestLabels.length,
+  const profilePercent = profileCompletionPercent({
+    hasAvatar: Boolean(profile?.avatarUrl),
+    hasName: Boolean(user.firstName && user.lastName),
+    hasRole: Boolean(profile?.headline || profile?.jobTitle),
+    hasCompany: Boolean(profile?.company),
+    hasLocation: Boolean(profile?.location),
+    interestCount: interestLabels.length,
+    goalCount: goalLabels.length,
+    lookingForCount: parseList(profile?.lookingForJson).length,
+    offeringCount: parseList(profile?.offeringJson).length,
+    hasBio: Boolean(profile?.bio),
   });
 
   const tabs: { key: ProfileTab; href: string; labelKey: string }[] = [
@@ -609,6 +612,7 @@ export default async function OwnProfilePage({
                     title: row.title,
                     href: `/app/opportunities/${row.id}`,
                     meta: row.status,
+                    metaKey: offerStatusKey("app.opportunities.statusLabels", ["draft", "published", "closed"], row.status),
                   }))}
                 />
               )}
@@ -627,6 +631,7 @@ export default async function OwnProfilePage({
                     title: row.title,
                     href: `/app/marketplace/${row.id}`,
                     meta: row.status,
+                    metaKey: offerStatusKey("app.marketplace.statusLabels", ["draft", "published", "archived"], row.status),
                   }))}
                 />
               )}
@@ -639,6 +644,7 @@ export default async function OwnProfilePage({
                     title: row.title,
                     href: `/app/investments/${row.id}`,
                     meta: row.status,
+                    metaKey: investmentLabelKey("status", row.status),
                   }))}
                 />
               )}
@@ -760,7 +766,7 @@ function OfferList({
 }: {
   titleKey: string;
   icon: React.ReactNode;
-  items: { id: string; title: string; href: string; meta: string }[];
+  items: { id: string; title: string; href: string; meta: string; metaKey?: string | null }[];
   className?: string;
 }) {
   return (
@@ -775,7 +781,7 @@ function OfferList({
             <Link href={item.href} className="min-w-0 text-sm font-medium hover:underline">
               {item.title}
             </Link>
-            <p className="shrink-0 text-xs text-foreground-subtle">{item.meta}</p>
+            <p className="shrink-0 text-xs text-foreground-subtle">{item.metaKey ? <Tr k={item.metaKey} /> : item.meta}</p>
           </li>
         ))}
       </ul>
@@ -783,27 +789,7 @@ function OfferList({
   );
 }
 
-function calculateProfilePercent(input: {
-  headline: string | null;
-  bio: string | null;
-  location: string | null;
-  avatarUrl: string | null;
-  company: string | null;
-  roles: string;
-  skills: string;
-  offering: string;
-  interests: number;
-}): number {
-  const weights: number[] = [
-    input.headline ? 16 : 0,
-    input.bio ? 16 : 0,
-    input.location ? 10 : 0,
-    input.avatarUrl ? 12 : 0,
-    input.company ? 10 : 0,
-    parseList(input.roles).length > 0 ? 10 : 0,
-    parseList(input.skills).length > 0 ? 8 : 0,
-    parseList(input.offering).length > 0 ? 8 : 0,
-    input.interests > 0 ? 10 : 0,
-  ];
-  return Math.min(100, weights.reduce((sum, value) => sum + value, 0));
+/** Localized status label key, or null for unknown values (the stored value is shown instead). */
+function offerStatusKey(prefix: string, known: readonly string[], value: string): string | null {
+  return known.includes(value) ? `${prefix}.${value}` : null;
 }

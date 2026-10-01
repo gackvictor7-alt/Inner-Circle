@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { startTransition, useActionState, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { Avatar } from "@/components/ui/Avatar";
@@ -80,6 +80,16 @@ export function ProfileEditForm({
   const { t } = useI18n();
   const router = useRouter();
   const [state, formAction, pending] = useActionState(updateProfileAction, initialActionState);
+
+  // React resets an uncontrolled <form action={fn}> after EVERY action – also
+  // after a server-side validation error, which wiped what the member had
+  // typed. Dispatching the action ourselves keeps the entered values.
+  const submitKeepingValues = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const submitter = (event.nativeEvent as SubmitEvent).submitter as HTMLElement | null;
+    const data = new FormData(event.currentTarget, submitter);
+    startTransition(() => formAction(data));
+  };
 
   // ---- Photo state ---------------------------------------------------------
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -162,7 +172,7 @@ export function ProfileEditForm({
     state.status === "error" ? tr(`app.errors.${state.errorCode ?? "generic"}`, state.errorParams) : null;
 
   return (
-    <form action={formAction} className="space-y-6" onInput={() => setDirty(true)}>
+    <form onSubmit={submitKeepingValues} className="space-y-6" onInput={() => setDirty(true)}>
       {hidden &&
         Object.entries(hidden).map(([name, value]) => (
           <input key={name} type="hidden" name={name} value={value} />

@@ -313,6 +313,36 @@ P2 mittelfristig · P3 Aufräumen.
   Browser-QA aller Seiten; übrige Lücken stehen in K-30. Die benötigten
   Browsermodule sind temporär und nicht Teil der Repo-Dependencies.
 
+### K-32 · Funktions-QA Kernplattform (2026-10-01): bewusst offene Beobachtungen
+
+Beim lokalen Browser-Durchlauf (Navigation, Profil/Netzwerk, Inbox, Posts,
+Marketplace, Events, Chancen/Jobs/Investments, Auth, Mobile) sind die echten
+Fehler behoben (Formular-Reset nach Serverfehlern, rohe Status-/Enum-Werte,
+`{minutes}`/`{count}`-Platzhalter, tote Demo-Profil-Links, abweichende
+Profilvollständigkeit). Offen und absichtlich nicht angefasst:
+
+- **Deep-Link nach Login:** `requireUser("/app")` im `(app)`-Layout setzt `next`
+  immer auf `/app`; ein Deep-Link (z. B. aus einer Benachrichtigung) landet nach
+  dem Login auf der Startseite. Ein genauer Rücksprung bräuchte Pfad-Zugriff
+  (Middleware) und damit eine Änderung der Auth-Architektur.
+- **Demo-Chancen/-Investments:** Auf den Detailseiten ist „Interesse senden“ /
+  „Interesse bekunden“ auch für Demo-Datensätze möglich und schreibt einen echten
+  Datensatz samt Admin-Benachrichtigung. Das ist eine Produktentscheidung
+  (sperren oder zulassen), keine reine Fehlerkorrektur.
+- **Generische Validierungsfehler:** Marketplace- und Investment-Formulare melden
+  zu kurze Texte nur mit „Bitte prüfe deine Eingaben.“ (Mindestlängen: Titel 6,
+  Kurzfassung 20, Beschreibung 40 bzw. 60 Zeichen); Chancen zeigen feldgenaue
+  Hinweise. Ungültige optionale Beträge werden stillschweigend ignoriert.
+- **Nach dem Posten** landet das Mitglied auf `/app?posted=1` (Startseite ohne
+  Bestätigung); der Beitrag erscheint im Profil. Die E2E-Spezifikation erwartet
+  diese URL.
+- **Kleinigkeiten:** `/login` zeigt eingeloggten Nutzern weiterhin das Formular;
+  die „Konto existiert bereits“-Meldung erscheint doppelt; ein Filter ohne
+  Treffer im Marketplace zeigt den Leerzustand „Noch keine Angebote
+  veröffentlicht“; Datumsformat in Events uneinheitlich (`5.11.2026` vs.
+  `01.10.2026`); „Meine Chancen“ verlinkt auf beendete Chancen (404 für
+  Nicht-Eigentümer).
+
 ## P2 – mittelfristig
 
 ### K-10 · Weitere Medientypen ohne Upload – Profil- und Post-Bilder gelöst

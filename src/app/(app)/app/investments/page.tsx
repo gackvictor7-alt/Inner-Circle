@@ -14,6 +14,7 @@ import { InvestmentsHub } from "@/components/app/InvestmentsHub";
 import { LockedArea } from "@/components/app/LockedArea";
 import { DemoAreaNotice } from "@/components/app/DemoAreaNotice";
 import { ImpactDashboard } from "@/components/app/ImpactDashboard";
+import { investmentLabelKey } from "@/lib/platform/investment-labels";
 
 export const dynamic = "force-dynamic";
 
@@ -228,7 +229,7 @@ export default async function InvestmentsPage({
               <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant="electric">{row.sector}</Badge><Badge variant="outline">{row.investmentType}</Badge><Badge variant="outline">{row.stage}</Badge>
+                    <Badge variant="electric">{row.sector}</Badge><Badge variant="outline">{investmentLabelKey("type", row.investmentType) ? <Tr k={investmentLabelKey("type", row.investmentType)!} /> : row.investmentType}</Badge><Badge variant="outline">{investmentLabelKey("stage", row.stage) ? <Tr k={investmentLabelKey("stage", row.stage)!} /> : row.stage}</Badge>
                     {row.isDemo && <Badge variant="sand"><Tr k="app.common.demo" /></Badge>}
                     {interestSet.has(row.id) && <Badge variant="forest"><Tr k="app.investments.detail.interestSent" /></Badge>}
                   </div>
@@ -255,7 +256,7 @@ export default async function InvestmentsPage({
                 <Card className="flex flex-wrap items-center justify-between gap-3 p-4">
                   <span className="text-sm font-medium">{row.publicName}</span>
                   <Badge variant={row.status === "approved" ? "forest" : row.status === "rejected" ? "warning" : "sand"}>
-                    {row.status}
+                    {investmentLabelKey("status", row.status) ? <Tr k={investmentLabelKey("status", row.status)!} /> : row.status}
                   </Badge>
                 </Card>
               </li>

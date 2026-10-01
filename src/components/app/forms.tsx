@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
+import { startTransition, useActionState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -68,6 +68,16 @@ export function ActionForm({
   const router = useRouter();
   const [state, formAction, pending] = useActionState(action, initialActionState);
 
+  // React resets an uncontrolled <form action={fn}> after EVERY action – also
+  // after a server-side validation error, which wiped what the member had
+  // typed. Dispatching the action ourselves keeps the entered values.
+  const submitKeepingValues = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const submitter = (event.nativeEvent as SubmitEvent).submitter as HTMLElement | null;
+    const data = new FormData(event.currentTarget, submitter);
+    startTransition(() => formAction(data));
+  };
+
   useEffect(() => {
     if (state.status !== "success") return;
     if (state.redirectTo) router.push(state.redirectTo);
@@ -87,7 +97,7 @@ export function ActionForm({
     .join(" ");
 
   const body = (
-    <form action={formAction} className="space-y-4" noValidate={false}>
+    <form onSubmit={submitKeepingValues} className="space-y-4" noValidate={false}>
       {hidden &&
         Object.entries(hidden).map(([name, value]) => (
           <input key={name} type="hidden" name={name} value={value} />

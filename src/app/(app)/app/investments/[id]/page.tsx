@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { LocalizedPageHeader, Tr } from "@/components/app/localized";
 import { LockedArea } from "@/components/app/LockedArea";
+import { investmentLabelKey } from "@/lib/platform/investment-labels";
 
 export const dynamic = "force-dynamic";
 
@@ -52,8 +53,8 @@ export default async function InvestmentDetailPage({ params }: { params: Promise
       <Card className="p-6">
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant="electric">{opportunity.sector}</Badge>
-          <Badge variant="outline">{opportunity.stage}</Badge>
-          <Badge variant={opportunity.status === "approved" ? "forest" : "sand"}>{opportunity.status}</Badge>
+          <Badge variant="outline">{investmentLabelKey("stage", opportunity.stage) ? <Tr k={investmentLabelKey("stage", opportunity.stage)!} /> : opportunity.stage}</Badge>
+          <Badge variant={opportunity.status === "approved" ? "forest" : "sand"}>{investmentLabelKey("status", opportunity.status) ? <Tr k={investmentLabelKey("status", opportunity.status)!} /> : opportunity.status}</Badge>
           {opportunity.isDemo && <Badge variant="sand"><Tr k="app.common.demo" /></Badge>}
         </div>
         <h2 className="mt-4 text-2xl font-bold tracking-tight">{opportunity.publicName}</h2>

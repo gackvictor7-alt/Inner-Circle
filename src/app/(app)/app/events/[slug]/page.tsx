@@ -120,7 +120,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ sl
 
         {myApplication && myApplication.status !== "canceled" ? (
           <Card className="p-5">
-            <Badge variant={myApplication.status === "confirmed" ? "forest" : "sand"}>{myApplication.status}</Badge>
+            <Badge variant={myApplication.status === "confirmed" ? "forest" : "sand"}><Tr k={`app.events.detail.${myApplication.status}`} /></Badge>
             {myApplication.note && <p className="mt-3 text-sm leading-6">{myApplication.note}</p>}
             <p className="mt-3 text-xs text-foreground-subtle"><Tr k="app.events.applySuccess" /></p>
           </Card>

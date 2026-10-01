@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useActionState, useEffect, useState, useSyncExternalStore } from "react";
+import { startTransition, useActionState, useEffect, useState, useSyncExternalStore } from "react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -291,6 +291,16 @@ export function RegisterForm() {
   const router = useRouter();
   const mounted = useMountedGate();
   const [state, action, pending] = useActionState(guardAction(registerAction), initialAuthState);
+
+  // React resets <form action={fn}> after every action, which un-ticked the
+  // (controlled) consent checkboxes on screen after a server error. Dispatching
+  // ourselves keeps the form exactly as the member left it.
+  const submitKeepingValues = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const submitter = (event.nativeEvent as SubmitEvent).submitter as HTMLElement | null;
+    const data = new FormData(event.currentTarget, submitter);
+    startTransition(() => action(data));
+  };
   const [method, setMethod] = useState<"email" | "phone">("email");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -340,7 +350,7 @@ export function RegisterForm() {
           ))}
         </div>
 
-        <form action={action} className="flex flex-col gap-5" noValidate>
+        <form onSubmit={submitKeepingValues} className="flex flex-col gap-5" noValidate>
           <input type="hidden" name="method" value={method} />
           <input type="hidden" name="locale" value={locale} />
           <FormError state={state} />

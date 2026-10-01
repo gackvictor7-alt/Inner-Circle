@@ -124,7 +124,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
         <Card className="p-6">
           <h3 className="text-lg font-bold tracking-tight"><Tr k="app.learn.title" /></h3>
           <p className="mt-1 text-sm text-foreground-muted">
-            <Tr k="app.learn.duration" />: {course.durationMin ?? "–"} min · <Tr k="app.learn.moduleCount" />: {modules.length}
+            <Tr k="app.learn.duration" params={{ minutes: course.durationMin ?? "–" }} /> · <Tr k="app.learn.moduleCount" params={{ count: modules.length }} />
           </p>
 
           {modules.length === 0 ? (

@@ -86,10 +86,10 @@ export default async function EventsPage({
                       {application.eventTitle}
                     </Link>
                     <p className="mt-1 text-xs text-foreground-subtle">
-                      {application.startsAt?.toLocaleDateString("de-DE")} · {application.guests} Gäste
+                      {application.startsAt?.toLocaleDateString("de-DE")} · <Tr k="app.events.detail.guestsCount" params={{ count: application.guests }} />
                     </p>
                   </div>
-                  <Badge variant={application.status === "confirmed" ? "forest" : "sand"}>{application.status}</Badge>
+                  <Badge variant={application.status === "confirmed" ? "forest" : "sand"}><Tr k={`app.events.detail.${application.status}`} /></Badge>
                 </Card>
               </li>
             ))}

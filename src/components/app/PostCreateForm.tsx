@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { startTransition, useActionState, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { createPostAction } from "@/app/actions/posts";
@@ -19,6 +19,16 @@ export function PostCreateForm() {
     createPostAction,
     initialActionState,
   );
+
+  // React resets an uncontrolled <form action={fn}> after EVERY action – also
+  // after a server-side validation error, which wiped what the member had
+  // typed. Dispatching the action ourselves keeps the entered values.
+  const submitKeepingValues = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const submitter = (event.nativeEvent as SubmitEvent).submitter as HTMLElement | null;
+    const data = new FormData(event.currentTarget, submitter);
+    startTransition(() => formAction(data));
+  };
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [imageError, setImageError] = useState<string | null>(null);
@@ -92,7 +102,7 @@ export function PostCreateForm() {
       : null;
 
   return (
-    <form action={formAction} className="space-y-6">
+    <form onSubmit={submitKeepingValues} className="space-y-6">
       <Card className="space-y-5 p-5 sm:p-6">
         <Textarea
           label={tr("app.posts.bodyLabel")}

@@ -187,9 +187,16 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
         </div>
 
         <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-border pt-5">
-          <Link href={`/app/people/${row.ownerHandle}`} className="text-sm font-semibold text-electric-600 dark:text-electric-300">
-            {row.ownerFirstName} {row.ownerLastName}
-          </Link>
+          {/* Demo owners have no public detail page (it 404s by design) – no link. */}
+          {opportunity.isDemo ? (
+            <span className="text-sm font-semibold">
+              {row.ownerFirstName} {row.ownerLastName}
+            </span>
+          ) : (
+            <Link href={`/app/people/${row.ownerHandle}`} className="text-sm font-semibold text-electric-600 dark:text-electric-300">
+              {row.ownerFirstName} {row.ownerLastName}
+            </Link>
+          )}
           {row.ownerHeadline && <span className="text-xs text-foreground-subtle">{row.ownerHeadline}</span>}
         </div>
       </Card>
@@ -199,7 +206,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
           <h2 className="mb-4 text-lg font-bold tracking-tight"><Tr k="app.opportunities.apply.title" /></h2>
           {myApplication ? (
             <Card className="p-5">
-              <Badge variant={myApplication.status === "accepted" ? "forest" : "sand"}>{myApplication.status}</Badge>
+              <Badge variant={myApplication.status === "accepted" ? "forest" : "sand"}><Tr k={`app.opportunities.applications.status.${myApplication.status}`} /></Badge>
               <p className="mt-3 whitespace-pre-wrap text-sm leading-6">{myApplication.reason}</p>
             </Card>
           ) : access.entitlements.opportunitiesApply ? (
@@ -231,7 +238,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
                         {application.firstName} {application.lastName}
                       </Link>
                       <Badge variant={application.status === "accepted" ? "forest" : application.status === "declined" ? "warning" : "sand"}>
-                        {application.status}
+                        <Tr k={`app.opportunities.applications.status.${application.status}`} />
                       </Badge>
                     </div>
                     {application.headline && <p className="mt-1 text-xs text-foreground-subtle">{application.headline}</p>}

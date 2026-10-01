@@ -208,7 +208,7 @@ export default async function OpportunitiesPage({
                 <Card className="flex flex-wrap items-center justify-between gap-3 p-4">
                   <span className="text-sm font-medium">{application.title}</span>
                   <Badge variant={application.status === "accepted" ? "forest" : application.status === "declined" ? "warning" : "sand"}>
-                    {application.status}
+                    <Tr k={`app.opportunities.applications.status.${application.status}`} />
                   </Badge>
                 </Card>
               </li>

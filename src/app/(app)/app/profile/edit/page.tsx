@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/Card";
 import { CheckIcon } from "@/components/ui/icons";
 import { formatDate } from "@/lib/datetime";
 import { isMediaStorageConfigured } from "@/lib/storage";
+import { profileCompletionSteps } from "@/lib/platform/profile-completion";
 
 export const dynamic = "force-dynamic";
 
@@ -45,18 +46,18 @@ export default async function ProfileEditPage({
   const lookingFor = parseList(profile?.lookingForJson);
   const offering = parseList(profile?.offeringJson);
 
-  const steps: { key: string; done: boolean }[] = [
-    { key: "app.beta.stepPhoto", done: Boolean(profile?.avatarUrl) },
-    { key: "app.beta.stepName", done: Boolean(user.firstName && user.lastName) },
-    { key: "app.beta.stepRole", done: Boolean(profile?.headline || profile?.jobTitle) },
-    { key: "app.beta.stepCompany", done: Boolean(profile?.company) },
-    { key: "app.beta.stepLocation", done: Boolean(profile?.location) },
-    { key: "app.beta.stepInterests", done: user.interests.length > 0 },
-    { key: "app.beta.stepGoals", done: user.goals.length > 0 },
-    { key: "app.beta.stepLookingFor", done: lookingFor.length > 0 },
-    { key: "app.beta.stepOffering", done: offering.length > 0 },
-    { key: "app.beta.stepBio", done: Boolean(profile?.bio) },
-  ];
+  const steps = profileCompletionSteps({
+    hasAvatar: Boolean(profile?.avatarUrl),
+    hasName: Boolean(user.firstName && user.lastName),
+    hasRole: Boolean(profile?.headline || profile?.jobTitle),
+    hasCompany: Boolean(profile?.company),
+    hasLocation: Boolean(profile?.location),
+    interestCount: user.interests.length,
+    goalCount: user.goals.length,
+    lookingForCount: lookingFor.length,
+    offeringCount: offering.length,
+    hasBio: Boolean(profile?.bio),
+  });
   const percent = Math.round((steps.filter((step) => step.done).length / steps.length) * 100);
   const missingSteps = steps.filter((step) => !step.done);
   const welcome = params.welcome === "beta" && access.beta?.active;
