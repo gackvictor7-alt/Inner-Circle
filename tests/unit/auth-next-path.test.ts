@@ -17,6 +17,14 @@ describe("safeNextPath", () => {
     expect(safeNextPath("javascript:alert(1)")).toBeNull();
   });
 
+  it("rejects dot segments and encoded separators that the browser would normalise", () => {
+    expect(safeNextPath("/app/../login")).toBeNull();
+    expect(safeNextPath("/app/./events")).toBeNull();
+    expect(safeNextPath("/app/%2e%2e/login")).toBeNull();
+    expect(safeNextPath("/app%2f..%2flogin")).toBeNull();
+    expect(safeNextPath("/app/events?next=../x")).toBe("/app/events?next=../x");
+  });
+
   it("rejects paths outside /app and /admin and look-alike prefixes", () => {
     expect(safeNextPath("/login")).toBeNull();
     expect(safeNextPath("/verify")).toBeNull();

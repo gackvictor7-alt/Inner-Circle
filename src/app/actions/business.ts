@@ -33,6 +33,7 @@ import { connectionPair } from "@/db/queries";
 import { notify } from "@/lib/notifications/service";
 import { consumeRateLimit } from "@/lib/rate-limit";
 import { fail, done, bool, eurosToCents, int, slugify, text, type ActionState } from "./state";
+import { isKnownListingKind } from "@/lib/platform/listing-kinds";
 
 const OPPORTUNITY_TYPES = [
   "co_founder",
@@ -323,7 +324,8 @@ export async function createListingAction(_prev: ActionState, formData: FormData
   const title = text(formData, "title", 140);
   const summary = text(formData, "summary", 300);
   const description = text(formData, "description", 4000);
-  const kind = text(formData, "kind", 24) || "service";
+  const rawKind = text(formData, "kind", 24);
+  const kind = isKnownListingKind(rawKind) ? rawKind : "service";
   const priceCents = eurosToCents(text(formData, "price", 20));
   if (title.length < 6 || summary.length < 20 || description.length < 40) return fail("validation");
   if (priceCents === null) return fail("validation");

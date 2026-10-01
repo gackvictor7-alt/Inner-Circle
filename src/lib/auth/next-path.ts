@@ -15,6 +15,11 @@ export function safeNextPath(raw: string | null | undefined): string | null {
   if (!value.startsWith("/") || value.startsWith("//")) return null;
   // Backslashes and control characters are treated as hostile by browsers.
   if (/[\\\u0000-\u001f\u007f]/.test(value)) return null;
+  // Dot segments and encoded separators would be normalised by the browser
+  // (`/app/../login`), so they never count as a signed-in-area path.
+  const path = value.split(/[?#]/, 1)[0];
+  if (path.split("/").some((segment) => segment === "." || segment === "..")) return null;
+  if (/%(2e|2f|5c)/i.test(value)) return null;
   const matches = ALLOWED_PREFIXES.some((prefix) => {
     if (!value.startsWith(prefix)) return false;
     const next = value.charAt(prefix.length);

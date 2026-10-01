@@ -242,6 +242,7 @@ export const appBusinessDe = {
       service: "Dienstleistung",
       physical: "Physisches Produkt",
     },
+    statusLabels: { draft: "Entwurf", published: "Veröffentlicht", archived: "Archiviert" },
     payoutNotice:
       "Auszahlungen sind noch nicht aktiv: Dafür müssen Zahlungsanbieter und Unternehmensdaten vollständig eingerichtet sein.",
     demoNotice: "Beispielangebot – kein echtes Angebot eines Mitglieds.",
@@ -1275,6 +1276,7 @@ export const appBusinessEn: AppBusinessDict = {
       service: "Service",
       physical: "Physical product",
     },
+    statusLabels: { draft: "Draft", published: "Published", archived: "Archived" },
     payoutNotice:
       "Payouts are not active yet: payment providers and company details must be fully set up first.",
     demoNotice: "Sample offer – not a real member offer.",

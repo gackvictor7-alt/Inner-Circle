@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/Button";
 import { LocalizedPageHeader, Tr } from "@/components/app/localized";
 import { TrustBadge } from "@/components/app/TrustPanel";
 import { LockedArea } from "@/components/app/LockedArea";
+import { isKnownListingKind } from "@/lib/platform/listing-kinds";
 
 export const dynamic = "force-dynamic";
 
@@ -87,9 +88,13 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
 
       <Card className="p-6">
         <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="sand">{listing.kind}</Badge>
+          <Badge variant="sand">
+            {isKnownListingKind(listing.kind) ? <Tr k={`app.marketplace.kinds.${listing.kind}`} /> : listing.kind}
+          </Badge>
           {listing.isDemo && <Badge variant="outline"><Tr k="app.common.demo" /></Badge>}
-          <Badge variant={listing.status === "published" ? "forest" : "warning"}>{listing.status}</Badge>
+          <Badge variant={listing.status === "published" ? "forest" : "warning"}>
+            {["draft", "published", "archived"].includes(listing.status) ? <Tr k={`app.marketplace.statusLabels.${listing.status}`} /> : listing.status}
+          </Badge>
         </div>
         <h2 className="mt-4 text-2xl font-bold tracking-tight">{listing.title}</h2>
         <p className="mt-3 text-base leading-7 text-foreground-muted">{listing.summary}</p>

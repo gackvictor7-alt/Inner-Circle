@@ -11,6 +11,7 @@ import { TrustBadge } from "@/components/app/TrustPanel";
 import { LocalizedEmptyState, LocalizedPageHeader, Tr } from "@/components/app/localized";
 import { MarketplaceDemoSection } from "@/components/app/DemoSections";
 import { DemoAreaNotice } from "@/components/app/DemoAreaNotice";
+import { isKnownListingKind } from "@/lib/platform/listing-kinds";
 
 export const dynamic = "force-dynamic";
 
@@ -127,7 +128,7 @@ export default async function MarketplacePage({
               <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant="sand">{row.category ?? <Tr k={`app.marketplace.kinds.${row.kind}`} />}</Badge>
+                    <Badge variant="sand">{isKnownListingKind(row.kind) ? <Tr k={`app.marketplace.kinds.${row.kind}`} /> : (row.category ?? row.kind)}</Badge>
                     {row.isDemo && <Badge variant="outline"><Tr k="app.common.demo" /></Badge>}
                   </div>
                   <Link href={`/app/marketplace/${row.id}`} className="mt-2 block text-base font-bold tracking-tight hover:underline">{row.title}</Link>
