@@ -1007,7 +1007,9 @@ export async function listDiscoverCandidates(options: {
   const now = new Date();
   const en = options.locale === "en";
 
-  const rows = await db
+  // Migration 0007 adds User.foundingMemberNumber; support D1 databases that
+  // have not applied it yet.
+  const rows = (await db
     .select({
       id: users.id,
       firstName: users.firstName,
@@ -1015,7 +1017,6 @@ export async function listDiscoverCandidates(options: {
       handle: users.handle,
       isDemo: users.isDemo,
       foundingMember: users.foundingMember,
-      foundingMemberNumber: users.foundingMemberNumber,
       trustScore10: trustScoreSummaries.score10,
       verifiedReviewCount: trustScoreSummaries.verifiedReviewCount,
       avatarUrl: profiles.avatarUrl,
@@ -1038,7 +1039,8 @@ export async function listDiscoverCandidates(options: {
     .leftJoin(trustScoreSummaries, eq(trustScoreSummaries.userId, users.id))
     .where(listedMemberSql(viewerId, now.getTime()))
     .orderBy(desc(users.lastLoginAt), desc(users.createdAt))
-    .limit(options.limit);
+    .limit(options.limit))
+    .map((row) => ({ ...row, foundingMemberNumber: null as number | null }));
 
   if (rows.length === 0) return [];
   const ids = rows.map((row) => row.id);
