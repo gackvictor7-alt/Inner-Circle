@@ -120,7 +120,7 @@ const siteDe = {
         points: [
           "Business Deals mit Bewerbungsprozess",
           "Geprüfte Investment-Chancen",
-          "Diskrete Deal-Räume für Verhandlungen",
+          "Abschlüsse beidseitig bestätigt",
         ],
       },
       marketplace: {
@@ -261,6 +261,7 @@ const siteDe = {
       metaDescription:
         "Entdecke Unternehmer, Geschäftspartner und Menschen mit ähnlichen Ambitionen im INNER-CIRCLE-Netzwerk.",
       imageAlt: "Zwei junge Business-Personen schauen gemeinsam auf ein Tablet in einem hellen Büro mit Glasfassade",
+      featuresKicker: "Im Überblick",
       howItWorksLink: "Wie Netzwerk, Kontakte und Vertrauen hier funktionieren",
       features: [
         {
@@ -296,20 +297,20 @@ const siteDe = {
     businessDeals: {
       kicker: "Business Deals",
       title: "Geschäftschancen, die wirklich passen.",
-      lead: "Von Vertriebspartnerschaften bis Unternehmensnachfolge: teile Geschäftschancen, bewirb dich gezielt und verhandle in diskreten Deal-Räumen – begleitet statt anonym.",
+      lead: "Teile Geschäftschancen, bewirb dich gezielt auf passende Anfragen und lass abgeschlossene Zusammenarbeiten beidseitig bestätigen – transparent statt anonym.",
       metaTitle: "Business Deals – INNER CIRCLE",
       metaDescription:
-        "Entdecke Geschäftsmöglichkeiten im INNER CIRCLE: Kooperationen, Aufträge, Partnerschaften und Nachfolgen mit klarem Bewerbungsprozess.",
+        "Entdecke Geschäftsmöglichkeiten im INNER CIRCLE: Co-Founder, Partnerschaften, Joint Ventures und Aufträge mit klarem Bewerbungsprozess.",
       imageAlt: "Zwei junge Projektentwickler besprechen Baupläne auf einer modernen Beton-Baustelle",
-      formatsTitle: "Geplante Deal-Formate",
-      formatsLead: "Sechs Formate sind für den Start geplant. Alle sind noch in Vorbereitung – nichts davon ist heute buchungsfähig.",
+      formatsTitle: "Chancen-Typen",
+      formatsLead: "Diese Typen kannst du als Chance einstellen – unter anderem. Mitglieder bewerben sich gezielt darauf.",
       formats: [
-        "Kooperation",
-        "Beteiligung",
+        "Co-Founder gesucht",
+        "Geschäftspartner gesucht",
         "Joint Venture",
-        "Unternehmensverkauf",
-        "Unternehmensnachfolge",
         "Strategische Partnerschaft",
+        "Kunden gesucht",
+        "Freelance-Auftrag",
       ],
       processTitle: "So läuft ein Deal ab",
       features: [
@@ -322,12 +323,12 @@ const siteDe = {
           desc: "Interessenten bewerben sich mit Aussage statt One-Click – Qualität statt Masse.",
         },
         {
-          title: "Deal-Raum öffnen",
-          desc: "Ausgewählte Kandidaten verhandeln in einem privaten, geschützten Raum.",
+          title: "Direkt austauschen",
+          desc: "Nimmst du eine Bewerbung an, entsteht eine Verbindung – ihr sprecht direkt per 1:1-Nachricht.",
         },
         {
           title: "Gemeinsam abschließen",
-          desc: "Vereinbarungen dokumentieren, umsetzen – und sich gegenseitig bewerten.",
+          desc: "Abgeschlossene Zusammenarbeit melden, beidseitig bestätigen und sich gegenseitig bewerten.",
         },
       ],
       noteTitle: "Vertrauen ist der Standard",
@@ -367,17 +368,18 @@ const siteDe = {
         "Der Anteil wird erst mit dem abgeschlossenen Deal fällig, nicht mit der Veröffentlichung einer Anzeige.",
       feeTermsNote:
         "Abgeschlossene Deals werden beidseitig bestätigt und fließen dadurch in die Reputation beider Parteien ein.",
-      comingSoonTitle: "Was hier später entsteht",
-      comingSoonItems: [
-        "Deal-Marktplatz mit Kategorien & Filtern",
-        "Bewerbungsprozess mit Auswahl",
-        "Private Deal-Räume mit Verlauf & Dateien",
-        "Deal-Abschluss-Bestätigung & Bewertung",
-        "Brokerage-Option für Vermittler",
+      availableTitle: "Business Deals heute",
+      availableItems: [
+        "Chancen mit Typ, Branche, Ort und Voraussetzungen einstellen",
+        "Chancen durchsuchen und nach Typ filtern",
+        "Mit Begründung bewerben – Annahme oder Ablehnung durch den Anbieter",
+        "Bei Annahme entsteht eine Verbindung für den direkten Austausch",
+        "Abgeschlossene Deals melden und beidseitig bestätigen",
+        "Bewertungen nach bestätigter Zusammenarbeit",
       ],
       ctaTitle: "Deine erste Chance wartet nicht.",
       ctaText:
-        "Sobald Business Deals live gehen, erblicken angemeldete Mitglieder neue Chancen zuerst.",
+        "Konto erstellen und Chancen im Mitgliederbereich entdecken – der Zugriff hängt von deinem Konto-Status ab.",
     },
     /* Investments (Sprint: Informationsarchitektur) – die Seite trennt zwei
        grundverschiedene Dinge: Opportunities FÜR Mitglieder und das eigene
@@ -650,9 +652,9 @@ const siteDe = {
     legalTitle: "Rechtliches",
     contact: "Kontakt",
     contactNote: "(Platzhalter bis zum Launch)",
-    copyright: "INNER CIRCLE – im Aufbau. Alle Rechte vorbehalten.",
+    copyright: "INNER CIRCLE. Alle Rechte vorbehalten.",
     disclaimer:
-      "Entwicklungsvorschau: Diese Website befindet sich im Aufbau. Noch nicht implementierte Funktionen sind als „Demnächst verfügbar“ gekennzeichnet. Ein Teil der Marketingbilder sind illustrative, teilweise KI-generierte Visualisierungen – sie zeigen keine echten Mitglieder, Events, Geschäftsabschlüsse oder Erfolge. Demo-Profile, Demo-Events und Beispielinhalte in der Plattform sind dort, wo Verwechslungsgefahr besteht, eindeutig als „Demo“ bzw. „Beispiel“ markiert. Keine Anlageberatung, keine Erfolgsversprechen. Preise können sich vor dem Launch ändern.",
+      "Ein Teil der Marketingbilder besteht aus illustrativen, teilweise KI-generierten Visualisierungen – sie zeigen keine echten Mitglieder, Events, Geschäftsabschlüsse oder Erfolge. Demo-Profile, Demo-Events und Beispielinhalte in der Plattform sind dort, wo Verwechslungsgefahr besteht, eindeutig als „Demo“ bzw. „Beispiel“ markiert. Keine Anlageberatung, keine Erfolgsversprechen.",
     imprint: "Impressum",
     privacy: "Datenschutz",
     terms: "AGB",
@@ -869,7 +871,7 @@ const siteEnRaw: SiteDictionary = {
         points: [
           "Business deals with an application process",
           "Reviewed investment opportunities",
-          "Discreet deal rooms for negotiations",
+          "Completed deals confirmed by both sides",
         ],
       },
       marketplace: {
@@ -1028,6 +1030,7 @@ const siteEnRaw: SiteDictionary = {
       metaDescription:
         "Meet founders, business partners and people with similar ambitions in the INNER CIRCLE network.",
       imageAlt: "Two young business people reviewing numbers on a tablet in a bright glass-fronted office",
+      featuresKicker: "At a glance",
       howItWorksLink: "How network, contacts and trust work here",
       features: [
         {
@@ -1063,20 +1066,20 @@ const siteEnRaw: SiteDictionary = {
     businessDeals: {
       kicker: "Business Deals",
       title: "Business opportunities that truly fit.",
-      lead: "From sales partnerships to business succession: share opportunities, apply with intent and negotiate in discreet deal rooms – accompanied instead of anonymous.",
+      lead: "Share business opportunities, apply with intent to fitting requests and have completed collaborations confirmed by both sides – transparent instead of anonymous.",
       metaTitle: "Business Deals – INNER CIRCLE",
       metaDescription:
-        "Discover business opportunities inside INNER CIRCLE: cooperations, projects, partnerships and successions with a clear application process.",
+        "Discover business opportunities inside INNER CIRCLE: co-founders, partnerships, joint ventures and projects with a clear application process.",
       imageAlt: "Two young project developers reviewing floor plans on a modern concrete construction site",
-      formatsTitle: "Planned deal formats",
-      formatsLead: "Six formats are planned for launch. All are still in preparation – none is bookable today.",
+      formatsTitle: "Opportunity types",
+      formatsLead: "These are some of the types you can post as an opportunity. Members apply to them with intent.",
       formats: [
-        "Cooperation",
-        "Equity participation",
+        "Co-founder wanted",
+        "Business partner wanted",
         "Joint venture",
-        "Company sale",
-        "Business succession",
         "Strategic partnership",
+        "Customers wanted",
+        "Freelance assignment",
       ],
       processTitle: "How a deal flows",
       features: [
@@ -1089,12 +1092,12 @@ const siteEnRaw: SiteDictionary = {
           desc: "Candidates apply with substance instead of one click – quality over volume.",
         },
         {
-          title: "Open a deal room",
-          desc: "Shortlisted candidates negotiate in a private, protected room.",
+          title: "Talk directly",
+          desc: "When you accept an application, a connection is created – you talk directly by 1:1 message.",
         },
         {
           title: "Close together",
-          desc: "Document agreements, deliver – and rate each other afterwards.",
+          desc: "Report the completed collaboration, confirm it on both sides and rate each other.",
         },
       ],
       noteTitle: "Trust is the standard",
@@ -1134,17 +1137,18 @@ const siteEnRaw: SiteDictionary = {
         "The share becomes due with the completed deal, not with the publication of a listing.",
       feeTermsNote:
         "Completed deals are confirmed by both sides and thereby count towards the reputation of both parties.",
-      comingSoonTitle: "What will live here",
-      comingSoonItems: [
-        "Deal marketplace with categories & filters",
-        "Application process with selection",
-        "Private deal rooms with history & files",
-        "Deal completion confirmation & rating",
-        "Brokerage option for intermediaries",
+      availableTitle: "Business Deals today",
+      availableItems: [
+        "Post opportunities with type, industry, location and requirements",
+        "Browse opportunities and filter by type",
+        "Apply with a reason – the provider accepts or declines",
+        "Accepting creates a connection for direct exchange",
+        "Report completed deals and confirm them on both sides",
+        "Ratings after a confirmed collaboration",
       ],
       ctaTitle: "Your next opportunity won't wait.",
       ctaText:
-        "When business deals go live, registered members see new opportunities first.",
+        "Create an account and discover opportunities in the member area – access depends on your account status.",
     },
     investments: {
       kicker: "Investments",
@@ -1394,9 +1398,9 @@ const siteEnRaw: SiteDictionary = {
     legalTitle: "Legal",
     contact: "Contact",
     contactNote: "(placeholder until launch)",
-    copyright: "INNER CIRCLE – in the making. All rights reserved.",
+    copyright: "INNER CIRCLE. All rights reserved.",
     disclaimer:
-      "Development preview: this website is under construction. Features that are not implemented yet are marked as “Coming soon”. Some marketing images are illustrative, partly AI-generated visualisations – they do not show real members, events, business transactions or achievements. Demo profiles, demo events and sample content inside the platform are clearly labelled “Demo” or “Example” wherever confusion is possible. No investment advice, no promises of success. Prices may change before launch.",
+      "Some marketing images are illustrative, partly AI-generated visualisations – they do not show real members, events, business transactions or achievements. Demo profiles, demo events and sample content inside the platform are clearly labelled “Demo” or “Example” wherever confusion is possible. No investment advice, no promises of success.",
     imprint: "Imprint",
     privacy: "Privacy",
     terms: "Terms",

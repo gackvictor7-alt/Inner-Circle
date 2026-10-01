@@ -22,7 +22,7 @@ nur konsolidiert wenn Verhalten 100% erhalten bleibt.
 | --- | ----- | ------- | ------ | ----- | ------------------------- |
 | `/` | Startseite – **statisch prerendered, getrennte Informationsdichte (Sprint 8)**: Mobile (`<lg`) Hero (1 Satz + CTA + Trial-Zeile) → 3 Outcomes (1 Zeile) → 6 Bereiche als 2×3-Icon-Übersicht → Trust-3-Punkte → kompakte Membership → Footer; Desktop (`lg+`) unverändert (reiche Bild-Text-Sektionen) | public | WORKING | keine DB (statisch) | `○` im Build-Route-Manifest; keine Request-Time-Queries, kein `getAccessContext()` |
 | `/network` | Preview Netzwerk | public | WORKING | keine DB; Inhalte aus i18n | Konto-CTAs verlinken auf `/register`; nicht aktive Teile als „Demnächst verfügbar" |
-| `/business-deals` | Preview Business Deals | public | WORKING | keine DB | `ComingSoonPanel` für Deal-Räume |
+| `/business-deals` | Preview Business Deals | public | WORKING | keine DB | `AvailableNowPanel` („Business Deals heute“); keine Deal-Räume behauptet |
 | `/investments` | Investments (öffentliche Story) | public | WORKING | keine DB | kompakte Zwei-Wege-Struktur (Sprint Informationsarchitektur): Hero mit zwei CTAs → „Für Mitglieder" (Opportunities, CTA → Registrierung) vs. „INNER CIRCLE Portfolio" (20/25/75-Modell, CTA → `/portfolio`) → eine kompakte Allocation-Visualisierung (`AllocationDonut`, 5/15/80, als „Geplante Struktur" gekennzeichnet) → geplantes Impact-Modell (5 % des Gewinns, ausdrücklich als geplant/ohne bestehende Stiftung) → CTA; kein Rendite-Wording, keine Beträge, keine erfundenen Portfoliowerte |
 | `/marketplace` | Preview Marktplatz & Academy | public | WORKING | keine DB | Tabs Marktplatz/Academy |
 | `/events` | Preview Events | public | WORKING | keine DB | ehrlicher Leerzustand, keine erfundenen Termine |
@@ -162,7 +162,7 @@ Für jede wichtige Route dokumentiert: Route, Public/Auth Required, Zweck, echte
 |-------|-------------|-------|--------------------|----------------|--------|------------|-----------------|
 | `/` | Public | Startseite, Conversion, Hero mit Preisen, 3 Outcomes, 6 Kernbereiche, Membership, Events, CTA | echte Daten (PlatformMetric) + statisch, Demo-Badge nur für illustrative Inhalte | „INNER CIRCLE entdecken", „48h kostenlos" | WORKING (statisch) | visitor | Keine |
 | `/network` (public) | Public | Preview Netzwerk | statisch, kein DB, Demo-Bild | „Join Inner Circle" | WORKING (statisch) | visitor | Keine |
-| `/business-deals` | Public | Preview Business Deals | statisch, ComingSoon für Deal-Räume | „Chancen entdecken" | WORKING (statisch) | visitor | Keine |
+| `/business-deals` | Public | Preview Business Deals | statisch, `AvailableNowPanel` (vorhandene Funktionen) | „Chancen entdecken" | WORKING (statisch) | visitor | Keine |
 | `/investments` (public) | Public | Investments – zwei Wege: Mitglieder-Investments vs. INNER CIRCLE Portfolio | statisch, kompakte Story (Hero → zwei Wege → Allocation-Figur → geplantes Impact-Modell → CTA) | „Investment Opportunities", „INNER CIRCLE Portfolio" | WORKING (statisch) | visitor | Keine erfundenen Beträge; Impact nur als geplant |
 | `/marketplace` (public) | Public | Preview Marketplace & Academy | statisch | „Marketplace ansehen" | WORKING (statisch) | visitor | Keine |
 | `/events` (public) | Public | Preview Events | statisch, ehrlicher Leerzustand | „Events ansehen" | WORKING (statisch) | visitor | Keine |

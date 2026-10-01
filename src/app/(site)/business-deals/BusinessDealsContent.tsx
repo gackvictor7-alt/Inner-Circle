@@ -2,13 +2,12 @@
 
 import { useI18n, usePageMeta } from "@/lib/i18n/context";
 import { Button } from "@/components/ui/Button";
-import { Badge } from "@/components/ui/Badge";
 import { ArrowRightIcon, ShieldCheckIcon } from "@/components/ui/icons";
 import { PageHero } from "@/components/site/PageHero";
 import { Kicker, Section } from "@/components/site/Section";
 import { Reveal } from "@/components/site/Reveal";
 import { SiteImage } from "@/components/site/SiteImage";
-import { ComingSoonPanel } from "@/components/site/ComingSoonPanel";
+import { AvailableNowPanel } from "@/components/site/AvailableNowPanel";
 import { CtaBand } from "@/components/site/CtaBand";
 import { DealFeeScale, type FeeScaleLabels } from "@/components/site/DealFeeScale";
 
@@ -90,9 +89,6 @@ export function BusinessDealsContent() {
                   </li>
                 ))}
               </ol>
-              <div className="mt-6">
-                <Badge variant="neutral">{t.common.comingSoon}</Badge>
-              </div>
             </div>
           </Reveal>
         </div>
@@ -173,7 +169,7 @@ export function BusinessDealsContent() {
 
       <Section bg="muted" width="wide">
         <Reveal>
-          <ComingSoonPanel title={page.comingSoonTitle} items={page.comingSoonItems} />
+          <AvailableNowPanel title={page.availableTitle} items={page.availableItems} />
         </Reveal>
       </Section>
 

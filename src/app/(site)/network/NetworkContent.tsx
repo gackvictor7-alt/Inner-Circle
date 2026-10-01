@@ -66,7 +66,7 @@ export function NetworkContent() {
           </Reveal>
           <Reveal className="flex">
             <div className="flex min-w-0 flex-1 flex-col justify-center gap-6">
-              <Kicker>{t.home2.enablesKicker}</Kicker>
+              <Kicker>{page.featuresKicker}</Kicker>
               <ul className="divide-y divide-border">
                 {page.features.map((feature, index) => {
                   const Icon = featureIcons[index] ?? CompassIcon;
