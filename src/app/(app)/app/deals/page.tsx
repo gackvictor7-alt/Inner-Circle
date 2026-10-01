@@ -92,8 +92,8 @@ export default async function DealsPage({
       {params.disputed ? <Notice messageKey="app.deals.list.disputed" /> : null}
 
       {/* ---------------------------------------------------- declaration */}
-      <section aria-label="Deal melden" className="space-y-4">
-        <h2 className="text-lg font-bold tracking-tight">
+      <section aria-labelledby="deals-declare-title" className="space-y-4">
+        <h2 id="deals-declare-title" className="text-lg font-bold tracking-tight">
           <Tr k="app.deals.declare.title" />
         </h2>
 
@@ -120,9 +120,9 @@ export default async function DealsPage({
       </section>
 
       {/* -------------------------------------------------------- the list */}
-      <section aria-label="Deine Deals" className="space-y-4">
+      <section aria-labelledby="deals-list-title" className="space-y-4">
         <div>
-          <h2 className="text-lg font-bold tracking-tight">
+          <h2 id="deals-list-title" className="text-lg font-bold tracking-tight">
             <Tr k="app.deals.list.title" />
           </h2>
           <p className="mt-1 text-sm leading-6 text-foreground-muted">

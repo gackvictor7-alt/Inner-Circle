@@ -37,8 +37,8 @@ export default async function MyBadgesPage() {
       <LocalizedPageHeader titleKey="app.badges.title" leadKey="app.badges.lead" />
 
       {/* 1 · Verified */}
-      <section aria-label="Verifiziert">
-        <h2 className="text-lg font-bold tracking-tight">
+      <section aria-labelledby="badges-verified-title">
+        <h2 id="badges-verified-title" className="text-lg font-bold tracking-tight">
           <Tr k="app.badges.verifiedTitle" />
         </h2>
         <p className="mt-1 text-sm text-foreground-muted">
@@ -72,8 +72,8 @@ export default async function MyBadgesPage() {
       </section>
 
       {/* 2 · Under review */}
-      <section aria-label="In Prüfung">
-        <h2 className="text-lg font-bold tracking-tight">
+      <section aria-labelledby="badges-pending-title">
+        <h2 id="badges-pending-title" className="text-lg font-bold tracking-tight">
           <Tr k="app.badges.pendingTitle" />
         </h2>
         <p className="mt-1 text-sm text-foreground-muted">
@@ -130,8 +130,8 @@ export default async function MyBadgesPage() {
       </section>
 
       {/* 3 · Available badges */}
-      <section aria-label="Verfügbare Badges">
-        <h2 className="text-lg font-bold tracking-tight">
+      <section aria-labelledby="badges-available-title">
+        <h2 id="badges-available-title" className="text-lg font-bold tracking-tight">
           <Tr k="app.badges.availableTitle" />
         </h2>
         <p className="mt-1 max-w-2xl text-sm text-foreground-muted">

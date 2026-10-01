@@ -195,7 +195,8 @@ export default async function InvestmentsPage({
       )}
 
       {sectors.length > 0 && (
-        <nav aria-label={access.user.locale === "en" ? "Investment categories" : "Investmentkategorien"} className="flex w-full gap-2 overflow-x-auto pb-1">
+        <nav aria-labelledby="investments-sector-label" className="flex w-full gap-2 overflow-x-auto pb-1">
+          <span id="investments-sector-label" className="sr-only"><Tr k="app.investments.filterSector" /></span>
           <Link href="/app/investments?view=opportunities" aria-current={!params.sector ? "page" : undefined} className={`shrink-0 rounded-full px-3 py-1.5 text-sm font-semibold ${!params.sector ? "bg-electric-500 text-white" : "border border-border text-foreground-muted hover:text-foreground"}`}><Tr k="app.common.all" /></Link>
           {sectors.map(({ sector }) => (
             <Link key={sector} href={`/app/investments?view=opportunities&sector=${encodeURIComponent(sector)}`} aria-current={params.sector === sector ? "page" : undefined} className={`shrink-0 rounded-full px-3 py-1.5 text-sm font-semibold ${params.sector === sector ? "bg-electric-500 text-white" : "border border-border text-foreground-muted hover:text-foreground"}`}>{sector}</Link>

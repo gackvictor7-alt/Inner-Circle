@@ -93,17 +93,19 @@ export default async function OpportunitiesPage({
 
       <Card className="p-4">
         <form className="grid gap-3 sm:grid-cols-[1fr_14rem_auto]" role="search">
+          <span id="opportunities-search-label" className="sr-only"><Tr k="app.common.search" /></span>
           <input
             type="search"
             name="q"
             defaultValue={params.q ?? ""}
-            aria-label="Suche / Search"
+            aria-labelledby="opportunities-search-label"
             className="rounded-xl border border-border bg-surface px-4 py-2.5 text-sm outline-none focus:border-electric-500"
           />
+          <span id="opportunities-type-label" className="sr-only"><Tr k="app.opportunities.filterType" /></span>
           <select
             name="type"
             defaultValue={params.type ?? ""}
-            aria-label="Typ / Type"
+            aria-labelledby="opportunities-type-label"
             className="rounded-xl border border-border bg-surface px-3 py-2.5 text-sm outline-none focus:border-electric-500"
           >
             <option value=""><Tr k="app.common.all" /></option>

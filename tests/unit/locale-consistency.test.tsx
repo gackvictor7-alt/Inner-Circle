@@ -170,3 +170,37 @@ describe("source guards for the member area", () => {
     }
   });
 });
+
+describe("billing and aria labels (German default)", () => {
+  it("shows readable German invoice status labels", () => {
+    const labels = ["paid", "open", "void", "refunded", "failed"].map((status) =>
+      render(<Tr k={`app.billing.invoiceStatuses.${status}`} />),
+    );
+    expect(labels).toEqual(["Bezahlt", "Offen", "Storniert", "Erstattet", "Fehlgeschlagen"]);
+  });
+
+  it("billing page does not print the raw invoice status", () => {
+    const source = readFileSync("src/app/(app)/app/billing/page.tsx", "utf8");
+    expect(source).not.toMatch(/>\{invoice\.status\}</);
+    expect(source).toContain("app.billing.invoiceStatuses.");
+  });
+
+  it("member pages carry no hard-coded or locale-ternary aria-labels", () => {
+    const offenders: string[] = [];
+    for (const file of appPagesForAria()) {
+      const source = readFileSync(file, "utf8");
+      for (const match of source.matchAll(/aria-label=("[^"]*"|\{[^}]*\})/g)) {
+        const value = match[1];
+        // Product terms identical in both languages are fine; everything else must come from the dictionaries.
+        if (/locale\s*===|\/ |"(Deal|Deine|Verifiziert|In Prüfung|Verfügbare|Suche|Kategorie|Typ|Interessen|Investmentkategorien)/.test(value)) {
+          offenders.push(`${file}: aria-label=${value}`);
+        }
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+});
+
+function appPagesForAria(): string[] {
+  return files("src/app/(app)/app");
+}

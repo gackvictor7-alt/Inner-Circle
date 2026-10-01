@@ -190,7 +190,6 @@ export default async function NetworkPage({
             <select
               name="interest"
               defaultValue={params.interest ?? ""}
-              aria-label="Interessen / Interests"
               className="w-full rounded-xl border border-border bg-surface px-3 py-2.5 text-sm outline-none focus:border-electric-500"
             >
               <option value="">

@@ -86,17 +86,19 @@ export default async function MarketplacePage({
 
       <Card className="p-4">
         <form className="grid gap-3 sm:grid-cols-[1fr_14rem_auto]" role="search">
+          <span id="marketplace-search-label" className="sr-only"><Tr k="app.common.search" /></span>
           <input
             type="search"
             name="q"
             defaultValue={params.q ?? ""}
-            aria-label="Suche / Search"
+            aria-labelledby="marketplace-search-label"
             className="rounded-xl border border-border bg-surface px-4 py-2.5 text-sm outline-none focus:border-electric-500"
           />
+          <span id="marketplace-kind-label" className="sr-only"><Tr k="app.marketplace.filterCategory" /></span>
           <select
             name="kind"
             defaultValue={params.kind ?? ""}
-            aria-label="Kategorie / Category"
+            aria-labelledby="marketplace-kind-label"
             className="rounded-xl border border-border bg-surface px-3 py-2.5 text-sm outline-none focus:border-electric-500"
           >
             <option value=""><Tr k="app.common.all" /></option>

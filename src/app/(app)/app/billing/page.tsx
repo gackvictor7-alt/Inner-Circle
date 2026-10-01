@@ -15,6 +15,9 @@ import { lockedCopyFor } from "@/components/app/LockedArea";
 
 export const dynamic = "force-dynamic";
 
+/** `invoices.status` values with a dictionary label (schema comment: paid | open | void | refunded | failed). */
+const INVOICE_STATUSES = new Set(["paid", "open", "void", "refunded", "failed"]);
+
 /**
  * Billing and membership. The checkout button posts to the server route, which
  * decides between the provider checkout and the explicitly labelled
@@ -317,7 +320,9 @@ export default async function BillingPage({
                 <span className="text-sm font-medium">
                   <LocalMoney cents={invoice.amountCents} currency={invoice.currency} />
                 </span>
-                <Badge variant={invoice.status === "paid" ? "forest" : "warning"}>{invoice.status}</Badge>
+                <Badge variant={invoice.status === "paid" ? "forest" : "warning"}>
+                  {INVOICE_STATUSES.has(invoice.status) ? <Tr k={`app.billing.invoiceStatuses.${invoice.status}`} /> : invoice.status}
+                </Badge>
               </li>
             ))}
           </ul>

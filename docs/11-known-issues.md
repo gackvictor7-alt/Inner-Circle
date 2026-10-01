@@ -626,11 +626,16 @@ nicht angefasst:
 - **Admin-Seiten, `DevOutboxList`:** unverändert (intern, deutsch).
 - **Statische deutsche `<title>`** auf EN-Seiten und deutsches Alt-Attribut in
   `HomeContent.tsx` (Audit 5).
-- **Statuslabels:** rohes `invoice.status` (Billing) und gemischtsprachige
-  `aria-label` mit `user.locale`-Ternary (`investments/page.tsx`,
-  `people/demo/[key]`) bleiben; es existiert kein passender Dictionary-Key.
+- **Demo-Profil-Inhalte** (`people/demo/[key]`) und Datenlabels folgen weiterhin
+  `user.locale` (siehe erster Punkt); die Seite hat selbst keine `aria-label`.
+- **Englische Produktbegriffe als `aria-label`** (`Investments`, `Investment
+  Opportunities`, `INNER CIRCLE Investment Pool`, `Events`, `Inbox`, `Academy`)
+  sind in beiden Sprachen gleich und bleiben bewusst.
 - **`/app?trial=…`, `?denied=admin`, `?admin=1`:** weiterhin ohne sichtbaren
   Hinweis (nachrangig, Wortlaut zur Trial-Sperre wäre eine Produktentscheidung).
-- **404-Darstellung:** `notFound()` in dynamischen App-Seiten wird von Next als
-  Streaming-404 ausgeliefert; der Body wird nach der Hydration clientseitig
-  gerendert (Status 404, App-Shell im Payload). Sichtprüfung im Browser steht aus.
+- **404-Darstellung:** `notFound()` in dynamischen App-Seiten liefert in Next
+  einen Streaming-404 (Status 404, Body wird nach der Hydration clientseitig
+  gerendert). Das war schon vor K-33 so (Baseline `3fd1f10` verglichen) und ist
+  kein Folgefehler der App-404. Unbekannte **öffentliche** URLs (z. B. `/xyz`)
+  zeigen weiterhin die englische Framework-404 ohne Branding; eine Root-
+  `not-found.tsx` wäre ein eigener Auftrag. Sichtprüfung im Browser steht aus.
