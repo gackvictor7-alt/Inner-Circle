@@ -243,6 +243,32 @@ P2 mittelfristig · P3 Aufräumen.
 - **Symptom:** `/imprint`, `/privacy`, `/terms` sind Platzhalter.
 - **Risiko:** kein öffentlicher Start ohne geprüfte Rechtstexte.
 - **Lösung:** Rechtsberatung (siehe [`12-roadmap.md`](12-roadmap.md) → LEGAL).
+- **Stand 2026-10-01 (Launch-Copy-Cleanup) – weiterhin offen, bewusst nicht erfunden:**
+  - `/imprint`, `/privacy`, `/terms`: Platzhalterseiten (`LegalPage`), kein echter Inhalt.
+  - **Kontakt:** Der Footer-Link zeigt auf `mailto:hello@inner-circle.example` mit dem Zusatz
+    „(Platzhalter bis zum Launch)“ (`SiteFooter.tsx`, `footer.contactNote`). Eine echte Adresse
+    muss der Betreiber vorgeben.
+  - **Investments:** `/investments` enthält einen Rechtshinweis („Rechtlicher Rahmen und
+    Prüfprozesse werden vor dem Launch finalisiert“, `pages.investments`). Formulierung und
+    Freigabe liegen beim Betreiber bzw. der Rechtsberatung.
+  - Footer-Link „Design-System (intern)“ (`/design`) und der Bildhinweis „Stimmungsbild ·
+    vorläufiger Platzhalter“ (`common.imageNote`) sind Produktentscheidungen, nicht geändert.
+
+### K-31 · Zahlung: Stripe nur im Testmodus, Live ist im Code gesperrt
+
+- **Symptom:** Checkout, Customer-Portal und signierter Webhook sind implementiert
+  (`/api/billing/checkout`, `/api/billing/portal`, `/api/webhooks/stripe`), laufen aber
+  ausschließlich mit `sk_test_`-Schlüsseln: `getStripe()` liefert für `sk_live_` `null`, die
+  Checkout-Route verlangt `!liveMode` (`src/lib/payments/stripe.ts`, `src/lib/env.ts`).
+  Ohne vollständige Konfiguration (Secret, beide Price-IDs, Webhook-Secret) antwortet die Route
+  mit `?error=stripeNotConfigured`. Echte Zahlungen sind damit nicht möglich.
+- **Konsequenz für die Copy:** Die Aussage „Die Zahlungsfunktion ist noch nicht aktiv“ auf
+  `/membership` (`pages.membership.payNote`, `membershipFootnote`, FAQ) bleibt korrekt und wurde
+  nicht geändert.
+- **Offen bis zur Aktivierung:** (1) bewusste Code-/Konfigurationsentscheidung für Live-Keys,
+  (2) Live-Preise und Webhook-Endpoint im Stripe-Dashboard, (3) der noch ausstehende echte
+  externe Testmodus-Durchlauf (siehe K-30/Sprint 18), (4) geprüfte AGB/Widerrufsbelehrung (K-09).
+  Danach die Texte auf `/membership` anpassen.
 
 ### K-25 · Gmail-Inbox-Platzierung der Verifizierungs-Mail — **OFFEN (Beobachtung)**
 

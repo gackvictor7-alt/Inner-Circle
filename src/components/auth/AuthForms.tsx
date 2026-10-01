@@ -430,7 +430,6 @@ export function RegisterForm() {
               {t.app.auth.toLogin}
             </Link>
           </p>
-          <p className="text-center text-xs text-foreground-subtle">{t.common.closesNote}</p>
         </form>
       </Card>
     </div>

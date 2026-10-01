@@ -67,8 +67,6 @@ const siteDe = {
     themeSystem: "System",
   },
   common: {
-    comingSoon: "Demnächst verfügbar",
-    comingSoonShort: "Demnächst",
     availableNow: "Verfügbar",
     availableNote: "Der Zugriff hängt von deinem Konto-Status ab – Details findest du unter Mitgliedschaft.",
     noteLabel: "Hinweis",
@@ -80,10 +78,6 @@ const siteDe = {
     skipToContent: "Direkt zum Inhalt springen",
     imageNote: "Stimmungsbild · vorläufiger Platzhalter",
     exampleLabel: "Beispieldarstellung",
-    notReleasedYet:
-      "Diese Funktion ist Teil der laufenden Entwicklung und noch nicht aktiv.",
-    closesNote: "Plattform im Aufbau",
-    stepNote: "Umfangreiche Funktionen werden schrittweise gemäß Roadmap aktiviert.",
     backHome: "Zur Startseite",
     pageNotFoundTitle: "Seite nicht gefunden",
     pageNotFoundText:
@@ -203,8 +197,6 @@ const siteDe = {
         "Nur für Mitglieder: unvergessliche Momente",
       ],
     },
-    eventsDisclaimer:
-      "Konzeptionelle Vision und geplante Formate – noch keine bestätigten Veranstaltungen. Termine werden zu gegebener Zeit hier angekündigt.",
     eventsCta: "Events entdecken",
     membershipKicker: "Membership",
     membershipTitle: "Eine Mitgliedschaft. Der Zugang zu allem.",
@@ -818,8 +810,6 @@ const siteEnRaw: SiteDictionary = {
     themeSystem: "System",
   },
   common: {
-    comingSoon: "Coming soon",
-    comingSoonShort: "Soon",
     availableNow: "Available",
     availableNote: "Access depends on your account status – see Membership for details.",
     noteLabel: "Note",
@@ -831,10 +821,6 @@ const siteEnRaw: SiteDictionary = {
     skipToContent: "Skip to content",
     imageNote: "Mood image · temporary placeholder",
     exampleLabel: "Illustrative example",
-    notReleasedYet:
-      "This feature is part of the ongoing development and is not active yet.",
-    closesNote: "Platform in the making",
-    stepNote: "Core features will be activated step by step according to the roadmap.",
     backHome: "Back to home",
     pageNotFoundTitle: "Page not found",
     pageNotFoundText:
@@ -954,8 +940,6 @@ const siteEnRaw: SiteDictionary = {
         "Members only: unforgettable moments",
       ],
     },
-    eventsDisclaimer:
-      "Conceptual vision and planned formats – no confirmed events yet. Dates will be announced here in due time.",
     eventsCta: "Discover events",
     membershipKicker: "Membership",
     membershipTitle: "One membership. Access to everything.",

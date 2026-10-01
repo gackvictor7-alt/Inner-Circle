@@ -7,8 +7,7 @@ import { Card } from "@/components/ui/Card";
 
 /**
  * "What you can do today" panel for public pages whose area already exists
- * in the product. Same layout as {@link ComingSoonPanel}, but lists only
- * functions that are live in the member area.
+ * in the product. Lists only functions that are live in the member area.
  */
 export function AvailableNowPanel({
   title,
