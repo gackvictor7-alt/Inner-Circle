@@ -339,8 +339,7 @@ Profilvollständigkeit). Offen und absichtlich nicht angefasst:
 - **Kleinigkeiten:** `/login` zeigt eingeloggten Nutzern weiterhin das Formular;
   die „Konto existiert bereits“-Meldung erscheint doppelt; ein Filter ohne
   Treffer im Marketplace zeigt den Leerzustand „Noch keine Angebote
-  veröffentlicht“; Datumsformat in Events uneinheitlich (`5.11.2026` vs.
-  `01.10.2026`); „Meine Chancen“ verlinkt auf beendete Chancen (404 für
+  veröffentlicht“; Datumsformat in Events uneinheitlich (seit K-33-Sprint behoben); „Meine Chancen“ verlinkt auf beendete Chancen (404 für
   Nicht-Eigentümer).
 
 ## P2 – mittelfristig
@@ -607,3 +606,31 @@ Meldungen im lokalen Preview bleiben beobachtet, nicht als Anwendungsfix gelöst
   Kopfzeilen-Chip, Badge neben der Begrüßung) – vorbestehende Elemente der
   `AppShell`/`DashboardScreen`, in Sprint 11 nur umbenannt; Reduktion wäre eine
   Gestaltungsentscheidung (Design Freeze).
+
+### K-33 · Locale-/Zeitzonen-Sprint (2026-10-01): bewusst offene Punkte
+
+Behoben: Event-Zeit ohne Zeitzone, harte `de-DE`-/`"de"`-Formate im App-Bereich,
+rohe Labels auf `/app/card`, doppelter Investment-Disclaimer, deutsche
+`/portfolio`-Platzhalter, fehlende App-404/-Error-Seiten. Offen und absichtlich
+nicht angefasst:
+
+- **Serverseitige Label-Auswahl über `user.locale`:** Interessen-, Ziel- und
+  Reputations-Labels (`interestLabelsFor`, `goalLabelsFor`, `reputationBadgesFor`,
+  `ProfileBadgeCluster`-Props) sowie Datenlabels in `queries.ts` folgen dem
+  Registrierungs-Locale, nicht dem Live-Umschalter. Die Sprache liegt nur
+  clientseitig (`localStorage`); eine Lösung braucht ein Locale-Cookie und damit
+  eine Architekturänderung.
+- **Event-Zeitzone:** `events` hat keine Zeitzonenspalte; alle Zeiten erscheinen
+  in `APP_TIME_ZONE` (Europe/Berlin). Für Events außerhalb dieser Zone wäre eine
+  Schemaänderung nötig (Migration, nicht Teil des Sprints).
+- **Admin-Seiten, `DevOutboxList`:** unverändert (intern, deutsch).
+- **Statische deutsche `<title>`** auf EN-Seiten und deutsches Alt-Attribut in
+  `HomeContent.tsx` (Audit 5).
+- **Statuslabels:** rohes `invoice.status` (Billing) und gemischtsprachige
+  `aria-label` mit `user.locale`-Ternary (`investments/page.tsx`,
+  `people/demo/[key]`) bleiben; es existiert kein passender Dictionary-Key.
+- **`/app?trial=…`, `?denied=admin`, `?admin=1`:** weiterhin ohne sichtbaren
+  Hinweis (nachrangig, Wortlaut zur Trial-Sperre wäre eine Produktentscheidung).
+- **404-Darstellung:** `notFound()` in dynamischen App-Seiten wird von Next als
+  Streaming-404 ausgeliefert; der Body wird nach der Hydration clientseitig
+  gerendert (Status 404, App-Shell im Payload). Sichtprüfung im Browser steht aus.

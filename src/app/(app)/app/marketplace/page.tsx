@@ -3,12 +3,11 @@ import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/db/client";
 import { marketplaceListings, profiles, trustScoreSummaries, users } from "@/db/schema";
 import { requireUser } from "@/lib/access/server";
-import { formatMoney } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { TrustBadge } from "@/components/app/TrustPanel";
-import { LocalizedEmptyState, LocalizedPageHeader, Tr } from "@/components/app/localized";
+import { LocalMoney, LocalizedEmptyState, LocalizedPageHeader, Tr } from "@/components/app/localized";
 import { MarketplaceDemoSection } from "@/components/app/DemoSections";
 import { DemoAreaNotice } from "@/components/app/DemoAreaNotice";
 import { isKnownListingKind } from "@/lib/platform/listing-kinds";
@@ -139,7 +138,7 @@ export default async function MarketplacePage({
                     ) : (
                       <Link href={`/app/people/${row.sellerHandle}`} className="hover:text-foreground hover:underline">{row.sellerCompany ?? `${row.sellerFirstName} ${row.sellerLastName}`}</Link>
                     )}
-                    <span aria-hidden="true"> · </span><span className="font-semibold text-foreground">{formatMoney(row.priceCents, row.currency, access.user.locale === "en" ? "en" : "de")}</span>
+                    <span aria-hidden="true"> · </span><span className="font-semibold text-foreground"><LocalMoney cents={row.priceCents} currency={row.currency} /></span>
                     {!row.isDemo && (
                       <>
                         {" · "}

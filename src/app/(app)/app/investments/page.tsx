@@ -3,11 +3,10 @@ import { and, desc, eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import { investmentInterests, investmentOpportunities } from "@/db/schema";
 import { requireUser } from "@/lib/access/server";
-import { formatMoney } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { LocalizedEmptyState, LocalizedPageHeader, LocalizedSectionHeading, Tr } from "@/components/app/localized";
+import { LocalMoney, LocalizedEmptyState, LocalizedPageHeader, LocalizedSectionHeading, Tr } from "@/components/app/localized";
 import { InvestmentsDemoSection, PortfolioSection } from "@/components/app/DemoSections";
 import { InvestmentPoolChart } from "@/components/app/InvestmentPoolChart";
 import { InvestmentsHub } from "@/components/app/InvestmentsHub";
@@ -236,8 +235,8 @@ export default async function InvestmentsPage({
                   <Link href={`/app/investments/${row.id}`} className="mt-2 block text-base font-bold tracking-tight hover:underline sm:text-lg">{row.publicName}</Link>
                   <p className="mt-1 line-clamp-2 text-sm leading-6 text-foreground-muted">{row.summary}</p>
                   <p className="mt-2 text-xs text-foreground-subtle">
-                    <span className="font-semibold text-foreground">{formatMoney(row.targetAmountCents, row.currency, "de")}</span> {" · "} <Tr k="app.investments.detail.target" />
-                    {" · "}<Tr k="app.investments.detail.minTicket" />: {formatMoney(row.minTicketCents, row.currency, "de")}
+                    <span className="font-semibold text-foreground"><LocalMoney cents={row.targetAmountCents} currency={row.currency} /></span> {" · "} <Tr k="app.investments.detail.target" />
+                    {" · "}<Tr k="app.investments.detail.minTicket" />: <LocalMoney cents={row.minTicketCents} currency={row.currency} />
                   </p>
                 </div>
                 <Button href={`/app/investments/${row.id}`} size="sm" variant="secondary" className="h-11 w-full sm:h-9 sm:w-auto"><Tr k="app.common.details" /></Button>

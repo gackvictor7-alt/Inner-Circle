@@ -4,23 +4,14 @@ import { and, count, eq, sql } from "drizzle-orm";
 import { db } from "@/db/client";
 import { eventApplications, events } from "@/db/schema";
 import { requireUser } from "@/lib/access/server";
-import { formatMoney } from "@/lib/utils";
 import { applyToEventAction, cancelEventApplicationAction } from "@/app/actions/business";
 import { ActionForm, InlineAction, type FormField } from "@/components/app/forms";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { LocalizedPageHeader, Tr } from "@/components/app/localized";
+import { LocalDate, LocalMoney, LocalizedPageHeader, Tr } from "@/components/app/localized";
 
 export const dynamic = "force-dynamic";
-
-/** Real date *and* time of an event – never a placeholder. */
-function formatWhen(date: Date | null): string {
-  if (!date) return "–";
-  const day = date.toLocaleDateString("de-DE");
-  const time = date.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
-  return `${day} · ${time}`;
-}
 
 export default async function EventDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -91,10 +82,10 @@ export default async function EventDetailPage({ params }: { params: Promise<{ sl
 
         <dl className="mt-5 grid gap-3 sm:grid-cols-4">
           {[
-            { key: "app.common.date", value: formatWhen(event.startsAt) },
+            { key: "app.common.date", value: event.startsAt ? <LocalDate value={event.startsAt.toISOString()} kind="dateTime" /> : "–" },
             { key: "app.common.location", value: [event.location, event.city, event.country].filter(Boolean).join(", ") },
             { key: "app.events.capacity", value: event.capacity ? `${taken}/${event.capacity}` : "–" },
-            { key: "app.events.price", value: event.priceCents ? formatMoney(event.priceCents, event.currency, "de") : "–" },
+            { key: "app.events.price", value: event.priceCents ? <LocalMoney cents={event.priceCents} currency={event.currency} /> : "–" },
           ].map((item) => (
             <div key={item.key} className="rounded-xl bg-surface-muted px-3 py-2">
               <dt className="text-xs text-foreground-muted"><Tr k={item.key} /></dt>

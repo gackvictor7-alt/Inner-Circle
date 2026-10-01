@@ -27,14 +27,14 @@ const ALLOCATION = PORTFOLIO_ALLOCATION;
 const EXAMPLE = PORTFOLIO_EXAMPLE_EUR;
 
 const previewRows: PortfolioPreviewRow[] = [
-  { label: "Mitglieder-Einblick gesamt", placeholder: "Später für Mitglieder" },
-  { label: "Netzwerk-Investments", placeholder: "Später: unterstützte IC-Unternehmen" },
-  { label: "Externe Investments", placeholder: "Später: Unternehmen, Startups, Immobilien, Aktien/ETFs" },
-  { label: "Updates", placeholder: "Später: Portfolio-Updates für Mitglieder" },
+  { label: "Mitglieder-Einblick gesamt", labelEn: "Member insight overall", placeholder: "Später für Mitglieder", placeholderEn: "Later for members" },
+  { label: "Netzwerk-Investments", labelEn: "Network investments", placeholder: "Später: unterstützte IC-Unternehmen", placeholderEn: "Later: supported IC companies" },
+  { label: "Externe Investments", labelEn: "External investments", placeholder: "Später: Unternehmen, Startups, Immobilien, Aktien/ETFs", placeholderEn: "Later: companies, start-ups, real estate, stocks/ETFs" },
+  { label: "Updates", labelEn: "Updates", placeholder: "Später: Portfolio-Updates für Mitglieder", placeholderEn: "Later: portfolio updates for members" },
 ];
 
 export function PortfolioContent() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const page = t.portfolio;
   usePageMeta(page.metaTitle, page.metaDescription);
 
@@ -157,9 +157,11 @@ export function PortfolioContent() {
                   >
                     <span className="flex items-center gap-2.5 text-sm font-medium">
                       <LockIcon size={15} className="text-electric-500" />
-                      {row.label}
+                      {locale === "en" ? row.labelEn : row.label}
                     </span>
-                    <span className="text-right text-xs text-foreground-subtle">{row.placeholder}</span>
+                    <span className="text-right text-xs text-foreground-subtle">
+                      {locale === "en" ? row.placeholderEn : row.placeholder}
+                    </span>
                   </div>
                 ))}
               </div>

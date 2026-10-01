@@ -14,13 +14,12 @@ import {
 } from "@/db/schema";
 import { requireUser } from "@/lib/access/server";
 import { integrationStatus } from "@/lib/env";
-import { formatMoney } from "@/lib/utils";
 import { enrollInCourseAction } from "@/app/actions/business";
 import { InlineAction } from "@/components/app/forms";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { LocalizedPageHeader, Tr } from "@/components/app/localized";
+import { LocalMoney, LocalizedPageHeader, Tr } from "@/components/app/localized";
 import { TrustBadge } from "@/components/app/TrustPanel";
 import { LockedArea } from "@/components/app/LockedArea";
 import { isKnownListingKind } from "@/lib/platform/listing-kinds";
@@ -98,7 +97,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
         </div>
         <h2 className="mt-4 text-2xl font-bold tracking-tight">{listing.title}</h2>
         <p className="mt-3 text-base leading-7 text-foreground-muted">{listing.summary}</p>
-        <p className="mt-5 text-2xl font-bold">{formatMoney(listing.priceCents, listing.currency, "de")}</p>
+        <p className="mt-5 text-2xl font-bold"><LocalMoney cents={listing.priceCents} currency={listing.currency} /></p>
 
         <p className="mt-5 whitespace-pre-wrap text-sm leading-7">{listing.description}</p>
 

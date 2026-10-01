@@ -5,7 +5,7 @@ import { membershipCards } from "@/db/schema";
 import { requireUser } from "@/lib/access/server";
 import QRCode from "qrcode";
 import { getPublicUrl } from "@/lib/env";
-import { Tr, LocalizedEmptyState, LocalizedPageHeader } from "@/components/app/localized";
+import { LocalDate, Tr, LocalizedEmptyState, LocalizedPageHeader } from "@/components/app/localized";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { InfoRow } from "@/components/app/ui";
@@ -82,9 +82,9 @@ export default async function MemberCardPage() {
             <Tr k="app.card.qrText" />
           </p>
           <dl className="mt-5 divide-y divide-border">
-            <InfoRow label="Kartennummer" value={<span className="font-mono">{card.cardNumber}</span>} />
+            <InfoRow label={<Tr k="app.card.cardNumber" />} value={<span className="font-mono">{card.cardNumber}</span>} />
             <InfoRow
-              label="Status"
+              label={<Tr k="app.common.status" />}
               value={
                 card.status === "active" ? (
                   <Badge variant="forest">
@@ -97,15 +97,15 @@ export default async function MemberCardPage() {
                 )
               }
             />
-            <InfoRow label="Ausgestellt" value={card.issuedAt.toLocaleDateString("de-DE")} />
+            <InfoRow label={<Tr k="app.card.issuedAt" />} value={<LocalDate value={card.issuedAt.toISOString()} />} />
             <InfoRow
-              label="Mitgliedschaft"
+              label={<Tr k="app.card.membership" />}
               value={
-                access.membership
-                  ? access.membership.plan === "annual"
-                    ? "Jahresmitgliedschaft"
-                    : "Monatsmitgliedschaft"
-                  : "–"
+                access.membership ? (
+                  <Tr k={access.membership.plan === "annual" ? "app.card.planAnnual" : "app.card.planMonthly"} />
+                ) : (
+                  "–"
+                )
               }
             />
           </dl>

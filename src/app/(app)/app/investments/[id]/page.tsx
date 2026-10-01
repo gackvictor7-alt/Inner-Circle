@@ -3,12 +3,11 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import { investmentInterests, investmentOpportunities } from "@/db/schema";
 import { requireUser } from "@/lib/access/server";
-import { formatMoney } from "@/lib/utils";
 import { expressInvestmentInterestAction } from "@/app/actions/business";
 import { ActionForm, type FormField } from "@/components/app/forms";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
-import { LocalizedPageHeader, Tr } from "@/components/app/localized";
+import { LocalMoney, LocalizedPageHeader, Tr } from "@/components/app/localized";
 import { LockedArea } from "@/components/app/LockedArea";
 import { investmentLabelKey } from "@/lib/platform/investment-labels";
 
@@ -62,8 +61,8 @@ export default async function InvestmentDetailPage({ params }: { params: Promise
 
         <dl className="mt-5 grid gap-3 sm:grid-cols-3">
           {[
-            { key: "app.investments.detail.target", value: formatMoney(opportunity.targetAmountCents, opportunity.currency, "de") },
-            { key: "app.investments.detail.minTicket", value: formatMoney(opportunity.minTicketCents, opportunity.currency, "de") },
+            { key: "app.investments.detail.target", value: <LocalMoney cents={opportunity.targetAmountCents} currency={opportunity.currency} /> },
+            { key: "app.investments.detail.minTicket", value: <LocalMoney cents={opportunity.minTicketCents} currency={opportunity.currency} /> },
             { key: "app.common.location", value: opportunity.location ?? "–" },
           ].map((item) => (
             <div key={item.key} className="rounded-xl bg-surface-muted px-3 py-2">
@@ -82,7 +81,6 @@ export default async function InvestmentDetailPage({ params }: { params: Promise
         )}
 
         <p className="mt-6 text-xs leading-5 text-foreground-subtle"><Tr k="app.investments.regulatedText" /></p>
-        <p className="mt-2 text-xs leading-5 text-foreground-subtle"><Tr k="app.investments.regulatedText" /></p>
       </Card>
 
       {!isSubmitter && opportunity.status === "approved" && (

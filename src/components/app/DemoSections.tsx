@@ -1122,8 +1122,8 @@ export function PortfolioSection() {
           {PORTFOLIO_DASHBOARD_PREVIEW.map((row) => (
             <li key={row.label}>
               <div className="flex items-start justify-between gap-4 rounded-xl border border-border bg-surface p-3.5">
-                <span className="text-sm font-medium">{row.label}</span>
-                <span className="text-right text-xs text-foreground-subtle">{row.placeholder}</span>
+                <span className="text-sm font-medium">{locale === "en" ? row.labelEn : row.label}</span>
+                <span className="text-right text-xs text-foreground-subtle">{locale === "en" ? row.placeholderEn : row.placeholder}</span>
               </div>
             </li>
           ))}

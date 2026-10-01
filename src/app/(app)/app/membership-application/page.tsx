@@ -4,7 +4,7 @@ import { membershipApplications } from "@/db/schema";
 import { requireUser } from "@/lib/access/server";
 import { submitMembershipApplicationAction } from "@/app/actions/membership";
 import { ActionForm, type FormField } from "@/components/app/forms";
-import { LocalizedEmptyState, LocalizedPageHeader, Tr } from "@/components/app/localized";
+import { LocalDate, LocalizedEmptyState, LocalizedPageHeader, Tr } from "@/components/app/localized";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -55,7 +55,7 @@ export default async function MembershipApplicationPage() {
               <Tr k={`app.memberApplication.status${application.status.charAt(0).toUpperCase()}${application.status.slice(1)}`} />
             </Badge>
             {application.reviewedAt && (
-              <span className="text-xs text-foreground-subtle">{application.reviewedAt.toLocaleDateString("de-DE")}</span>
+              <span className="text-xs text-foreground-subtle"><LocalDate value={application.reviewedAt.toISOString()} /></span>
             )}
           </div>
 

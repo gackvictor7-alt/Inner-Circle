@@ -9,7 +9,7 @@ import {
 import { ActionForm, InlineAction, type FormField } from "@/components/app/forms";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
-import { LocalizedEmptyState, LocalizedPageHeader, Tr } from "@/components/app/localized";
+import { LocalDate, LocalizedEmptyState, LocalizedPageHeader, Tr } from "@/components/app/localized";
 
 export const dynamic = "force-dynamic";
 
@@ -254,7 +254,7 @@ function DealRow({ deal }: { deal: DealRecordView }) {
             </span>
             {" · "}
             <Tr k="app.deals.list.closedOn" />{" "}
-            {deal.closedAt.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" })}
+            <LocalDate value={deal.closedAt.toISOString()} />
           </p>
         </div>
 

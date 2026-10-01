@@ -31,7 +31,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { GlobeIcon, InstagramIcon, LockIcon, MapPinIcon, XSocialIcon } from "@/components/ui/icons";
-import { Tr } from "@/components/app/localized";
+import { LocalDate, Tr } from "@/components/app/localized";
 import { NetworkLocked } from "@/components/app/NetworkLocked";
 
 export const dynamic = "force-dynamic";
@@ -146,10 +146,10 @@ export default async function MemberProfilePage({ params }: { params: Promise<{ 
   const humanise = (values: string[]) => values.map((value) => goalLabelBySlug.get(value) ?? value);
   const lookingFor = humanise(parseList(profile.lookingForJson));
   const offering = humanise(parseList(profile.offeringJson));
-  const memberSince = profile.createdAt.toLocaleDateString(locale === "en" ? "en-GB" : "de-DE", {
-    month: "long",
-    year: "numeric",
-  });
+  const memberSince = {
+    date: profile.createdAt.toISOString(),
+    options: { month: "long", year: "numeric" } as Intl.DateTimeFormatOptions,
+  };
   const requestsOpen = profile.participant && profile.allowConnectionRequests !== false;
 
   return (
@@ -394,7 +394,7 @@ export default async function MemberProfilePage({ params }: { params: Promise<{ 
                       <p className="whitespace-pre-wrap text-sm leading-6">{post.body}</p>
                       <PostImage imageUrl={post.imageUrl} />
                       <p className="mt-2 text-xs text-foreground-subtle">
-                        {post.createdAt.toLocaleDateString(locale === "en" ? "en-GB" : "de-DE")}
+                        <LocalDate value={post.createdAt.toISOString()} />
                       </p>
                     </Card>
                   </li>

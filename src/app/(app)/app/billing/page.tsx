@@ -5,15 +5,13 @@ import { requireUser } from "@/lib/access/server";
 import { flags, integrationStatus, membershipPricing, trialConfig } from "@/lib/env";
 import { stripeStatus } from "@/lib/payments/stripe";
 import { PLANS, annualSaving } from "@/lib/membership/plans";
-import { formatMoney } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { CheckIcon, InfoIcon } from "@/components/ui/icons";
-import { LocalizedPageHeader, Tr } from "@/components/app/localized";
+import { LocalDate, LocalMoney, LocalizedPageHeader, Tr } from "@/components/app/localized";
 import { InfoRow } from "@/components/app/ui";
 import { lockedCopyFor } from "@/components/app/LockedArea";
-import { formatDate } from "@/lib/datetime";
 
 export const dynamic = "force-dynamic";
 
@@ -128,7 +126,7 @@ export default async function BillingPage({
             />
             <InfoRow
               label={<Tr k="app.billing.renewalLabel" />}
-              value={membership?.currentPeriodEnd ? membership.currentPeriodEnd.toLocaleDateString("de-DE") : "–"}
+              value={membership?.currentPeriodEnd ? <LocalDate value={membership.currentPeriodEnd.toISOString()} /> : "–"}
             />
           </dl>
 
@@ -216,11 +214,10 @@ export default async function BillingPage({
                 <Tr
                   k="app.beta.billingCardActive"
                   params={{
-                    date: formatDate(access.beta.endsAt, access.user.locale === "en" ? "en" : "de", {
-                      day: "2-digit",
-                      month: "long",
-                      year: "numeric",
-                    }),
+                    date: {
+                      date: access.beta.endsAt.toISOString(),
+                      options: { day: "2-digit", month: "long", year: "numeric" },
+                    },
                   }}
                 />
               ) : (
@@ -250,7 +247,7 @@ export default async function BillingPage({
                   {plan.id === "annual" && <Badge variant="forest">{saving.percent}%</Badge>}
                 </div>
                 <p className="mt-3 text-3xl font-bold tracking-tight">
-                  {formatMoney(plan.priceCents, plan.currency, "de")}
+                  <LocalMoney cents={plan.priceCents} currency={plan.currency} />
                   <span className="ml-2 text-sm font-medium text-foreground-muted">
                     {plan.id === "annual" ? <Tr k="app.billing.perYear" /> : <Tr k="app.billing.perMonth" />}
                   </span>
@@ -258,14 +255,14 @@ export default async function BillingPage({
                 {plan.id === "monthly" ? (
                   <p className="mt-3 text-xs leading-5 text-foreground-subtle">
                     <Tr k="app.billing.annualHint" /> ·{" "}
-                    {formatMoney(PLANS.annual.priceCents, PLANS.annual.currency, "de")}
+                    <LocalMoney cents={PLANS.annual.priceCents} currency={PLANS.annual.currency} />
                   </p>
                 ) : (
                   <p className="mt-3 text-xs leading-5 text-foreground-muted">
                     <Tr
                       k="app.billing.annualSaving"
                       params={{
-                        amount: formatMoney(saving.cents, PLANS.annual.currency, "de"),
+                        amount: { money: saving.cents, currency: PLANS.annual.currency },
                         percent: saving.percent,
                       }}
                     />
@@ -316,9 +313,9 @@ export default async function BillingPage({
           <ul className="mt-4 divide-y divide-border">
             {myInvoices.map((invoice) => (
               <li key={invoice.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
-                <span className="text-sm">{invoice.createdAt.toLocaleDateString("de-DE")}</span>
+                <span className="text-sm"><LocalDate value={invoice.createdAt.toISOString()} /></span>
                 <span className="text-sm font-medium">
-                  {(invoice.amountCents / 100).toFixed(2)} {invoice.currency}
+                  <LocalMoney cents={invoice.amountCents} currency={invoice.currency} />
                 </span>
                 <Badge variant={invoice.status === "paid" ? "forest" : "warning"}>{invoice.status}</Badge>
               </li>
@@ -328,8 +325,8 @@ export default async function BillingPage({
       </Card>
 
       <p className="text-xs leading-5 text-foreground-subtle">
-        {formatMoney(membershipPricing.monthly.cents, membershipPricing.monthly.currency, "de")} ·{" "}
-        {formatMoney(membershipPricing.annual.cents, membershipPricing.annual.currency, "de")} ·{" "}
+        <LocalMoney cents={membershipPricing.monthly.cents} currency={membershipPricing.monthly.currency} /> ·{" "}
+        <LocalMoney cents={membershipPricing.annual.cents} currency={membershipPricing.annual.currency} /> ·{" "}
         {flags.devToolsVisible ? <Tr k="app.common.devMode" /> : null}
       </p>
     </div>

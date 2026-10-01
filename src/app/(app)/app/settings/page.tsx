@@ -8,7 +8,7 @@ import { requestAccountDeletionAction, updateNotificationPreferencesAction, upda
 import { ActionForm, type FormField } from "@/components/app/forms";
 import { AppearanceControl } from "@/components/app/AppearanceControl";
 import { LocaleSwitch } from "@/components/app/LocaleSwitch";
-import { LocalizedPageHeader, Tr } from "@/components/app/localized";
+import { LocalDate, LocalizedPageHeader, Tr } from "@/components/app/localized";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { InfoRow } from "@/components/app/ui";
@@ -148,7 +148,7 @@ export default async function SettingsPage() {
         {deletion[0] ? (
           <p className="mt-4 text-sm font-medium text-warning-600 dark:text-warning-400">
             <Tr k="app.settings.accountDeletionPending" />{" "}
-            <span className="text-foreground-subtle">({deletion[0].requestedAt.toLocaleDateString("de-DE")})</span>
+            <span className="text-foreground-subtle">(<LocalDate value={deletion[0].requestedAt.toISOString()} />)</span>
           </p>
         ) : (
           <div className="mt-4">

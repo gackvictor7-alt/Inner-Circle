@@ -1198,19 +1198,21 @@ export const PORTFOLIO_EXAMPLE_EUR = {
  */
 export type PortfolioPreviewRow = {
   label: string;
+  labelEn: string;
   /** What the column will show later – never a fake value today. */
   placeholder: string;
+  placeholderEn: string;
 };
 
 export const PORTFOLIO_DASHBOARD_PREVIEW: PortfolioPreviewRow[] = [
-  { label: "Gesamt investiertes Kapital", placeholder: "Noch keine echten Investments" },
-  { label: "Aktuelle Allokation", placeholder: "5 % Netzwerk · 15 % extern (Ziel)" },
-  { label: "Investments im Netzwerk", placeholder: "Später: unterstützte IC-Unternehmen" },
-  { label: "Externe Investments", placeholder: "Später: Unternehmen, Startups, Immobilien, Aktien/ETFs" },
-  { label: "Investitionsdatum", placeholder: "Später: je Investment" },
-  { label: "Ursprünglicher Investmentbetrag", placeholder: "Später: je Investment" },
-  { label: "Aktueller Status", placeholder: "Später: je Investment" },
-  { label: "Updates", placeholder: "Später: Portfolio-Updates für Mitglieder" },
+  { label: "Gesamt investiertes Kapital", labelEn: "Total capital invested", placeholder: "Noch keine echten Investments", placeholderEn: "No real investments yet" },
+  { label: "Aktuelle Allokation", labelEn: "Current allocation", placeholder: "5 % Netzwerk · 15 % extern (Ziel)", placeholderEn: "5 % network · 15 % external (target)" },
+  { label: "Investments im Netzwerk", labelEn: "Investments in the network", placeholder: "Später: unterstützte IC-Unternehmen", placeholderEn: "Later: supported IC companies" },
+  { label: "Externe Investments", labelEn: "External investments", placeholder: "Später: Unternehmen, Startups, Immobilien, Aktien/ETFs", placeholderEn: "Later: companies, start-ups, real estate, stocks/ETFs" },
+  { label: "Investitionsdatum", labelEn: "Investment date", placeholder: "Später: je Investment", placeholderEn: "Later: per investment" },
+  { label: "Ursprünglicher Investmentbetrag", labelEn: "Original investment amount", placeholder: "Später: je Investment", placeholderEn: "Later: per investment" },
+  { label: "Aktueller Status", labelEn: "Current status", placeholder: "Später: je Investment", placeholderEn: "Later: per investment" },
+  { label: "Updates", labelEn: "Updates", placeholder: "Später: Portfolio-Updates für Mitglieder", placeholderEn: "Later: portfolio updates for members" },
 ];
 
 /* ------------------------------------------------------------------ *

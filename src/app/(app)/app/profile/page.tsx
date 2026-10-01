@@ -15,7 +15,7 @@ import { loadPrivacy } from "@/lib/platform/queries";
 import { dictionaries } from "@/lib/i18n/dictionaries";
 import { Avatar } from "@/components/app/AppShell";
 import { ShareProfileButton } from "@/components/app/ShareProfileButton";
-import { LocalizedEmptyState, Tr } from "@/components/app/localized";
+import { LocalDate, LocalDecimal, LocalizedEmptyState, Tr } from "@/components/app/localized";
 import { ProfilePostsDemoSection } from "@/components/app/DemoSections";
 import { InlineAction } from "@/components/app/forms";
 import { PostImage } from "@/components/app/PostImage";
@@ -104,7 +104,6 @@ export default async function OwnProfilePage({
     reputationBadgesFor(user.id, user.locale === "en" ? "en" : "de"),
   ]);
 
-  const locale = user.locale === "en" ? "en-GB" : "de-DE";
   const dict = dictionaries[user.locale === "en" ? "en" : "de"];
   const score =
     trust.summary.verifiedReviewCount > 0 && trust.summary.score10 !== null
@@ -394,7 +393,7 @@ export default async function OwnProfilePage({
                   <PostImage imageUrl={post.imageUrl} />
                   <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
                     <p className="text-xs text-foreground-subtle">
-                      {post.createdAt.toLocaleDateString(locale, { day: "2-digit", month: "short", year: "numeric" })}
+                      <LocalDate value={post.createdAt.toISOString()} options={{ day: "2-digit", month: "short", year: "numeric" }} />
                     </p>
                     <InlineAction
                       action={deletePostAction}
@@ -439,7 +438,7 @@ export default async function OwnProfilePage({
                 ) : (
                   <>
                     <p className="mt-1.5 flex items-center gap-2 text-2xl font-bold tracking-tight">
-                      {score.toLocaleString(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
+                      <LocalDecimal value={score} />
                       <span className="text-sm font-medium text-foreground-subtle">
                         <Tr k="app.trust.scoreOfMax" />
                       </span>
@@ -524,7 +523,7 @@ export default async function OwnProfilePage({
                       </p>
                     )}
                     <p className="mt-2 text-xs text-foreground-subtle">
-                      {review.createdAt.toLocaleDateString(locale, { month: "long", year: "numeric" })}
+                      <LocalDate value={review.createdAt.toISOString()} options={{ month: "long", year: "numeric" }} />
                     </p>
                   </li>
                 ))}

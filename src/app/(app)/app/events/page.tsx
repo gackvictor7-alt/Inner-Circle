@@ -5,7 +5,7 @@ import { myEventApplications, upcomingEvents } from "@/lib/platform/queries";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { LocalizedEmptyState, LocalizedPageHeader, Tr } from "@/components/app/localized";
+import { LocalDate, LocalizedEmptyState, LocalizedPageHeader, Tr } from "@/components/app/localized";
 import { EventsDemoSection } from "@/components/app/DemoSections";
 
 export const dynamic = "force-dynamic";
@@ -86,7 +86,7 @@ export default async function EventsPage({
                       {application.eventTitle}
                     </Link>
                     <p className="mt-1 text-xs text-foreground-subtle">
-                      {application.startsAt?.toLocaleDateString("de-DE")} · <Tr k="app.events.detail.guestsCount" params={{ count: application.guests }} />
+                      <LocalDate value={application.startsAt?.toISOString()} /> · <Tr k="app.events.detail.guestsCount" params={{ count: application.guests }} />
                     </p>
                   </div>
                   <Badge variant={application.status === "confirmed" ? "forest" : "sand"}><Tr k={`app.events.detail.${application.status}`} /></Badge>
@@ -130,10 +130,9 @@ export default async function EventsPage({
                   </h2>
                   <p className="mt-2 line-clamp-2 text-sm leading-6 text-foreground-muted">{event.summary}</p>
                   <p className="mt-4 text-sm font-medium text-foreground-subtle">
-                    {event.startsAt?.toLocaleDateString("de-DE")}
-                    {event.startsAt ? ` · ${event.startsAt.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}` : ""}
+                    {event.startsAt ? <LocalDate value={event.startsAt.toISOString()} kind="dateTime" /> : null}
                     {" · "}{[event.location, event.city].filter(Boolean).join(", ")}
-                    {event.capacity ? ` · max. ${event.capacity}` : ""}
+                    {event.capacity ? <>{" · "}<Tr k="app.events.detail.capacityMax" params={{ count: event.capacity }} /></> : null}
                   </p>
                   <div className="mt-5"><Button href={`/app/events/${event.slug}`} size="sm" variant="secondary" className="h-11 w-full sm:h-9 sm:w-auto"><Tr k="app.events.viewEvent" /></Button></div>
                 </div>

@@ -2,6 +2,8 @@
 
 import type { ReactNode } from "react";
 import { useI18n } from "@/lib/i18n/context";
+import { formatDate, formatDateTime, formatTime } from "@/lib/datetime";
+import { formatMoney } from "@/lib/utils";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import {
@@ -44,11 +46,74 @@ function lookup(dictionary: unknown, path: string): string | null {
   return typeof value === "string" ? value : null;
 }
 
-export function Tr({ k, params }: { k: string; params?: Record<string, string | number> }) {
-  const { t, tf } = useI18n();
+/** A `Tr` parameter that is formatted for the live locale (money or date) instead of passed as text. */
+export type TrFormat =
+  | { money: number; currency?: string }
+  | { date: string | number; options?: Intl.DateTimeFormatOptions };
+
+export function Tr({ k, params }: { k: string; params?: Record<string, string | number | TrFormat> }) {
+  const { t, tf, locale } = useI18n();
   const value = lookup(t, k);
   if (!value) return <>{k}</>;
-  return <>{params ? tf(value, params) : value}</>;
+  if (!params) return <>{value}</>;
+  const resolved: Record<string, string | number> = {};
+  for (const [name, param] of Object.entries(params)) {
+    if (typeof param === "object") {
+      resolved[name] =
+        "money" in param
+          ? formatMoney(param.money, param.currency ?? "EUR", locale)
+          : formatDate(param.date, locale, param.options);
+    } else {
+      resolved[name] = param;
+    }
+  }
+  return <>{tf(value, resolved)}</>;
+}
+
+/**
+ * Date/time/money that follow the live DE/EN switch (like `Tr`) and the app time
+ * zone from `lib/datetime`. Server pages pass the raw value (ISO string or
+ * epoch ms – never a pre-formatted string), so the output is identical on
+ * server and client and never depends on the server's UTC clock.
+ */
+export function LocalDate({
+  value,
+  kind = "date",
+  options,
+}: {
+  value: string | number | null | undefined;
+  kind?: "date" | "time" | "dateTime";
+  options?: Intl.DateTimeFormatOptions;
+}) {
+  const { locale } = useI18n();
+  if (value === null || value === undefined || value === "") return <>–</>;
+  if (kind === "time") return <>{formatTime(value, locale)}</>;
+  if (kind === "dateTime") return <>{formatDateTime(value, locale)}</>;
+  return <>{formatDate(value, locale, options)}</>;
+}
+
+export function LocalMoney({
+  cents,
+  currency = "EUR",
+}: {
+  cents: number | null | undefined;
+  currency?: string;
+}) {
+  const { locale } = useI18n();
+  return <>{formatMoney(cents, currency, locale)}</>;
+}
+
+/** A number with a fixed number of decimals (e.g. trust scores), formatted for the live locale. */
+export function LocalDecimal({ value, digits = 1 }: { value: number; digits?: number }) {
+  const { locale } = useI18n();
+  return (
+    <>
+      {value.toLocaleString(locale === "en" ? "en-GB" : "de-DE", {
+        minimumFractionDigits: digits,
+        maximumFractionDigits: digits,
+      })}
+    </>
+  );
 }
 
 export function useTr() {

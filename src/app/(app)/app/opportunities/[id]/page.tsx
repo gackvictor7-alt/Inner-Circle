@@ -8,7 +8,7 @@ import { applyToOpportunityAction, respondApplicationAction, updateOpportunitySt
 import { ActionForm, InlineAction, type FormField } from "@/components/app/forms";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
-import { LocalizedPageHeader, Tr, LocalizedEmptyState } from "@/components/app/localized";
+import { LocalDate, LocalizedPageHeader, Tr, LocalizedEmptyState } from "@/components/app/localized";
 import { LockedArea } from "@/components/app/LockedArea";
 
 export const dynamic = "force-dynamic";
@@ -154,7 +154,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
           {[
             { key: "app.opportunities.industry", value: opportunity.industry },
             { key: "app.common.location", value: [opportunity.location, opportunity.remote ? "Remote" : null].filter(Boolean).join(" · ") },
-            { key: "app.common.date", value: (opportunity.publishedAt ?? opportunity.createdAt).toLocaleDateString("de-DE") },
+            { key: "app.common.date", value: <LocalDate value={(opportunity.publishedAt ?? opportunity.createdAt).toISOString()} /> },
           ]
             .filter((item) => item.value)
             .map((item) => (

@@ -1,7 +1,7 @@
 import { requireUser } from "@/lib/access/server";
 import { trustProfile } from "@/lib/platform/queries";
 import { collaborationOptionsFor } from "@/lib/trust/contexts";
-import { LocalizedPageHeader, LocalizedEmptyState, Tr } from "@/components/app/localized";
+import { LocalDate, LocalDecimal, LocalizedPageHeader, LocalizedEmptyState, Tr } from "@/components/app/localized";
 import { TrustReviewForm } from "@/components/app/TrustReviewForm";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
@@ -44,7 +44,6 @@ export default async function TrustPage() {
   ]);
   const { detail } = trust;
   const { score, reviews, signals } = detail;
-  const locale = user.locale === "en" ? "en-GB" : "de-DE";
   const hasScore = score.stars !== null && score.verifiedReviewCount > 0;
   const visibleReviews = reviews.filter((review) => !review.isDemo);
 
@@ -61,7 +60,7 @@ export default async function TrustPage() {
             {hasScore && score.stars !== null ? (
               <>
                 <p className="text-4xl font-bold tracking-tight">
-                  {score.stars.toLocaleString(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
+                  <LocalDecimal value={score.stars} />
                   <span className="text-lg font-medium text-foreground-subtle"> / 5</span>
                 </p>
                 <RatingStars value={score.stars} className="mt-2" />
@@ -130,7 +129,7 @@ export default async function TrustPage() {
                       {" · "}
                       <Tr k={`app.trust.context.${review.contextType}` as "app.trust.context.opportunity"} />
                       {" · "}
-                      {review.createdAt.toLocaleDateString(locale, { month: "long", year: "numeric" })}
+                      <LocalDate value={review.createdAt.toISOString()} options={{ month: "long", year: "numeric" }} />
                     </p>
                   </li>
                 ))}
