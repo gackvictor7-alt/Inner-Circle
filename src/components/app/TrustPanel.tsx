@@ -26,13 +26,16 @@ export function TrustScoreBlock({
   memberName,
   fullPageHref,
   variant = "split",
+  showScoreNote = false,
 }: {
   detail: TrustDetail;
   memberName: string;
   /** Optional link to the full trust page (own profile only). */
   fullPageHref?: string;
-  /** `split` = profile header column, `stacked` = card body. */
-  variant?: "split" | "stacked";
+  /** `split` = profile column, `stacked` = card body, `seamless` = shared profile surface. */
+  variant?: "split" | "stacked" | "seamless";
+  /** Show the score formula beneath the verified-review count. */
+  showScoreNote?: boolean;
 }) {
   const tr = useTr();
   const { locale } = useI18n();
@@ -47,7 +50,7 @@ export function TrustScoreBlock({
         onClick={() => setOpen(true)}
         aria-haspopup="dialog"
         aria-label={tr("app.trust.openDetailsLabel")}
-        className={`group w-full border-t border-border bg-surface-muted/50 p-5 text-left transition-colors hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-offset-[-3px] ${
+        className={`group w-full ${variant === "seamless" ? "border-0" : "border-t border-border"} bg-surface-muted/50 p-5 text-left transition-colors hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-offset-[-3px] ${
           variant === "split" ? "md:border-l md:border-t-0 md:p-7" : ""
         }`}
       >
@@ -75,6 +78,9 @@ export function TrustScoreBlock({
                 ? tr("app.trust.verifiedCountOne")
                 : tr("app.trust.verifiedCount", { count: score.verifiedReviewCount })}
             </p>
+            {showScoreNote && (
+              <p className="mt-2 max-w-xl text-xs leading-5 text-foreground-subtle">{tr("app.trust.scoreNote")}</p>
+            )}
             <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-electric-600 dark:text-electric-300">
               {tr("app.trust.openDetails")}
               <span aria-hidden="true">→</span>

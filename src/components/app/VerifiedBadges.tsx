@@ -53,24 +53,12 @@ export function VerifiedBadgesSection({
           </h2>
           <p className="mt-0.5 text-xs text-foreground-muted">{tr("app.profile.verifiedBadgesSubtitle")}</p>
         </div>
-        {isSelf && (
-          <Link
-            href="/app/profile/badges"
-            className="text-xs font-semibold text-electric-600 hover:underline dark:text-electric-300"
-          >
-            {tr("app.badges.viewAll")}
-          </Link>
-        )}
       </div>
 
       {sorted.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border/80 bg-surface-muted/40 p-4 text-sm text-foreground-muted">
-          <p>{tr(isSelf ? "app.badges.verifiedEmptyText" : "app.badges.modalEmptyText")}</p>
-          {isSelf && (
-            <Link href="/app/profile/badges" className="mt-2 inline-block font-semibold text-electric-600 hover:underline dark:text-electric-300">
-              {tr("app.badges.form.title")}
-            </Link>
-          )}
+          {isSelf && <h3 className="font-semibold text-foreground">{tr("app.badges.verifiedEmptyTitle")}</h3>}
+          <p className={isSelf ? "mt-1" : ""}>{tr(isSelf ? "app.badges.verifiedEmptyText" : "app.badges.modalEmptyText")}</p>
         </div>
       ) : (
         <ProfileBadgeGallery badges={sorted} />
@@ -80,6 +68,20 @@ export function VerifiedBadgesSection({
         <p className="rounded-lg border border-border/70 bg-surface-muted/50 px-3 py-2 text-xs leading-5 text-foreground-subtle">
           {tr("app.profile.adminNoticeText")}
         </p>
+      )}
+
+      {isSelf && (
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
+          <p className="max-w-xl text-xs leading-5 text-foreground-muted">{tr("app.profile.noVerifiedBadgesHint")}</p>
+          <Link
+            href="/app/profile/badges"
+            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-electric-500/30 bg-electric-500/10 px-4 text-sm font-semibold text-electric-700 transition-colors hover:bg-electric-500/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-electric-500 dark:text-electric-200"
+          >
+            <AwardIcon size={15} />
+            {tr("app.badges.form.title")}
+            <span aria-hidden="true">→</span>
+          </Link>
+        </div>
       )}
     </div>
   );

@@ -6,7 +6,15 @@ import { useTr } from "@/components/app/localized";
 import { ShareIcon } from "@/components/ui/icons";
 
 /** Copies the public member link – no external service involved. */
-export function ShareProfileButton({ url }: { url: string }) {
+export function ShareProfileButton({
+  url,
+  labelKey = "app.profile.actions.share",
+  className = "",
+}: {
+  url: string;
+  labelKey?: string;
+  className?: string;
+}) {
   const tr = useTr();
   const [copied, setCopied] = useState(false);
 
@@ -14,7 +22,7 @@ export function ShareProfileButton({ url }: { url: string }) {
     <Button
       size="sm"
       variant="secondary"
-      className="max-sm:h-11 max-sm:px-3"
+      className={`max-sm:h-11 max-sm:px-3 ${className}`}
       onClick={async () => {
         try {
           await navigator.clipboard.writeText(url);
@@ -27,7 +35,7 @@ export function ShareProfileButton({ url }: { url: string }) {
       }}
     >
       <ShareIcon size={15} />
-      {copied ? tr("app.common.copied") : tr("app.profile.actions.share")}
+      {copied ? tr("app.common.copied") : tr(labelKey)}
     </Button>
   );
 }

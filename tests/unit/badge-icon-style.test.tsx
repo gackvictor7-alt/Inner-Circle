@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import { ProfileBadgeGallery } from "@/components/app/BadgeChips";
+import { VerifiedBadgesSection } from "@/components/app/VerifiedBadges";
 import type { PublicBadge } from "@/lib/badges/queries";
 
 function badge(overrides: Partial<PublicBadge> = {}): PublicBadge {
@@ -40,5 +41,20 @@ describe("badge icon family", () => {
     expect(svgMarks[1]).toBe(svgMarks[3]); // one consistent verification mark
     expect(html).toContain("text-forest-700");
     expect(html).not.toContain("text-sand-"); // gold is reserved for Founding Member
+  });
+});
+
+describe("profile verified badge section", () => {
+  it("keeps the application action visible for the owner, including the empty state", () => {
+    const html = renderToStaticMarkup(<VerifiedBadgesSection badges={[]} isSelf />);
+    expect(html).toContain("Noch keine");
+    expect(html).toContain('href="/app/profile/badges"');
+    expect(html).toContain("Badge beantragen");
+  });
+
+  it("does not expose the owner-only application action on another member's profile", () => {
+    const html = renderToStaticMarkup(<VerifiedBadgesSection badges={[]} isSelf={false} />);
+    expect(html).not.toContain('href="/app/profile/badges"');
+    expect(html).not.toContain("Badge beantragen");
   });
 });

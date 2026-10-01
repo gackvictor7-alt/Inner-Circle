@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
-import { TrustDetailBody, TrustBadge } from "@/components/app/TrustPanel";
+import { TrustDetailBody, TrustBadge, TrustScoreBlock } from "@/components/app/TrustPanel";
 import { computeTrustScore, emptyTrustScore, type TrustScore } from "@/lib/trust/score";
 import type { TrustDetail, TrustReviewView } from "@/lib/trust/service";
 import type { ReputationSignal } from "@/lib/trust/reputation";
@@ -128,6 +128,30 @@ describe("trust detail view (Sprint 16)", () => {
   it("formats the score in English with a dot", () => {
     const html = render(<TrustDetailBody locale="en" detail={detail({ score: scored([47]) })} />);
     expect(html).toContain("4.7");
+  });
+});
+
+describe("trust score block on member profiles", () => {
+  it("shows the verified score, review count and explanation without inventing a score in the empty state", () => {
+    const scoredHtml = render(
+      <TrustScoreBlock
+        detail={detail({ score: scored([50]), reviews: [review()] })}
+        memberName="Anna Beispiel"
+        variant="seamless"
+        showScoreNote
+      />,
+    );
+    expect(scoredHtml).toContain("5,0");
+    expect(scoredHtml).toContain("1 verifizierte Bewertung");
+    expect(scoredHtml).toContain("Durchschnitt aus allen verifizierten Bewertungen");
+    expect(scoredHtml).toContain("Details zum Trust Score ansehen");
+
+    const emptyHtml = render(
+      <TrustScoreBlock detail={detail()} memberName="Anna Beispiel" variant="seamless" showScoreNote />,
+    );
+    expect(emptyHtml).toContain("Noch kein Trust Score");
+    expect(emptyHtml).not.toContain("5,0");
+    expect(emptyHtml).not.toContain("Durchschnitt aus allen verifizierten Bewertungen");
   });
 });
 

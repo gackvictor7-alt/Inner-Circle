@@ -31,6 +31,7 @@ export function ProfilePeopleModal({
   openProfileLabel,
   emptyLabel,
   closeLabel,
+  triggerClassName = "",
 }: {
   label: string;
   count: number;
@@ -39,6 +40,7 @@ export function ProfilePeopleModal({
   openProfileLabel: string;
   emptyLabel: string;
   closeLabel: string;
+  triggerClassName?: string;
 }) {
   const [open, setOpen] = useState(false);
   const title = `${count} ${label}`;
@@ -49,9 +51,9 @@ export function ProfilePeopleModal({
         type="button"
         aria-expanded={open}
         onClick={() => setOpen((current) => !current)}
-        className="min-w-0 rounded-md py-1 text-left sm:min-w-[6rem] transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-electric-500"
+        className={`min-w-0 rounded-md py-1 text-left transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-electric-500 ${triggerClassName}`}
       >
-        <span className="block text-sm font-bold">{count}</span>
+        <span className="block text-lg font-bold tracking-tight tabular-nums sm:text-xl">{count}</span>
         <span className="block text-xs leading-4 text-foreground-muted">{label}</span>
       </button>
 
