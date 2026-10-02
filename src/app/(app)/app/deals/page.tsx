@@ -84,7 +84,7 @@ export default async function DealsPage({
   ];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-5 sm:space-y-8">
       <LocalizedPageHeader titleKey="app.deals.declare.title" leadKey="app.deals.declare.lead" />
 
       {params.declared ? <Notice messageKey="app.deals.declare.declared" /> : null}

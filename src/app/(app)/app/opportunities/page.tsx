@@ -28,7 +28,7 @@ export default async function OpportunitiesPage({
     // opportunity query is never executed for a demo account.
     if (access.entitlements.demoAccess) {
       return (
-        <div className="space-y-8">
+        <div className="space-y-5 sm:space-y-8">
           <LocalizedPageHeader titleKey="app.opportunities.title" leadKey="app.opportunities.lead" />
           <DemoAreaNotice leadKey="app.demo.dealsDemoOnlyLead" />
           <DealsDemoSection />
@@ -74,7 +74,7 @@ export default async function OpportunitiesPage({
   const applications = await myApplications(access.user.id);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-5 sm:space-y-8">
       <LocalizedPageHeader
         titleKey="app.opportunities.title"
         leadKey="app.opportunities.lead"

@@ -5,6 +5,7 @@ import { db } from "@/db/client";
 import { connections, follows, profiles, trustScoreSummaries, users } from "@/db/schema";
 import { requireUser } from "@/lib/access/server";
 import {
+  interestGroupsFor,
   ownOfferingsFor,
   performanceCountsFor,
   performanceVisibleUserIdsFor,
@@ -14,16 +15,25 @@ import {
 } from "@/lib/platform/queries";
 import { loadPrivacy } from "@/lib/platform/queries";
 import { dictionaries } from "@/lib/i18n/dictionaries";
-import { Avatar } from "@/components/app/AppShell";
 import { ShareProfileButton } from "@/components/app/ShareProfileButton";
 import { LocalDate, LocalDecimal, LocalizedEmptyState, Tr } from "@/components/app/localized";
 import { ProfilePostsDemoSection } from "@/components/app/DemoSections";
 import { InlineAction } from "@/components/app/forms";
-import { PostImage } from "@/components/app/PostImage";
 import { deletePostAction } from "@/app/actions/posts";
-import { ProfilePeopleModal } from "@/components/app/ProfilePeopleModal";
-import { TrustScoreBlock } from "@/components/app/TrustPanel";
-import { VerifiedBadgesSection } from "@/components/app/VerifiedBadges";
+import {
+  parseProfileTab,
+  ProfileAccordion,
+  ProfileContactLinks,
+  ProfileEmptyBox,
+  ProfileMetricCell,
+  ProfileOfferList,
+  ProfilePostList,
+  ProfileSectionTitle,
+  ProfileTabHeader,
+  ProfileTagBlock,
+  ProfileView,
+  type ProfileTabKey,
+} from "@/components/app/ProfileView";
 import { reputationBadgesFor } from "@/lib/badges/queries";
 import { showsProfileDemoPosts } from "@/lib/demo";
 import { getPublicUrl } from "@/lib/env";
@@ -34,49 +44,18 @@ import { RatingStars } from "@/components/ui/RatingStars";
 import {
   BriefcaseIcon,
   ChartIcon,
-  ChevronDownIcon,
-  GlobeIcon,
   GraduationIcon,
-  InstagramIcon,
   SettingsIcon,
   ShieldCheckIcon,
   SparkleIcon,
   StoreIcon,
   TicketIcon,
   WalletIcon,
-  XSocialIcon,
 } from "@/components/ui/icons";
 import { investmentLabelKey } from "@/lib/platform/investment-labels";
 import { profileCompletionPercent } from "@/lib/platform/profile-completion";
 
 export const dynamic = "force-dynamic";
-
-type ProfileTab = "overview" | "activity" | "performance" | "offers";
-
-const postKindLabelKeys: Record<string, string> = {
-  post: "app.posts.typePost",
-  business_update: "app.posts.typeBusinessUpdate",
-  milestone: "app.posts.typeMilestone",
-  opportunity: "app.posts.typeOpportunity",
-  deal: "app.posts.typeDeal",
-  investment: "app.posts.typeInvestment",
-  purchase: "app.posts.typePurchase",
-  marketplace_purchase: "app.posts.typePurchase",
-  course: "app.posts.typeCourse",
-  event: "app.posts.typeEvent",
-};
-
-function safePostLink(value: string | null): string | null {
-  if (!value) return null;
-  try {
-    const url = new URL(value);
-    return (url.protocol === "http:" || url.protocol === "https:") && !url.username && !url.password
-      ? url.toString()
-      : null;
-  } catch {
-    return null;
-  }
-}
 
 function parseList(json: string | null | undefined): string[] {
   if (!json) return [];
@@ -99,10 +78,12 @@ function parseVisibility(json: string | null | undefined): Record<string, string
 }
 
 /**
- * Own profile – the business identity of a member (Sprint 3, spec §16–§21).
+ * Own profile – rendered through the ONE shared `ProfileView` (Profile/Badges/
+ * Mobile sprint), structurally identical to foreign member profiles; only the
+ * permissions and owner controls differ (edit actions, people-list modals,
+ * post management, account section).
  *
- * Header + four tabs. Trust & Performance lives here (no longer a primary
- * navigation entry), together with member card, membership and settings.
+ * Five tabs: Beiträge · Übersicht · Performance · Angebote · Interessen.
  */
 export default async function OwnProfilePage({
   searchParams,
@@ -114,22 +95,23 @@ export default async function OwnProfilePage({
   const profile = user.profile;
   const shareUrl = getPublicUrl(`/app/people/${encodeURIComponent(user.handle)}`);
   const params = await searchParams;
-  const tab: ProfileTab =
-    params.tab === "overview" || params.tab === "performance" || params.tab === "offers"
-      ? params.tab
-      : "activity";
+  const locale = user.locale === "en" ? "en" : "de";
+  const dict = dictionaries[locale];
 
-  const [stats, trust, posts, counts, offerings, privacy, reputationBadges] = await Promise.all([
+  const tabs: ProfileTabKey[] = ["activity", "overview", "performance", "offers", "interests"];
+  const tab = parseProfileTab(params.tab, tabs);
+
+  const [stats, trust, posts, counts, offerings, privacy, reputationBadges, interestGroups] = await Promise.all([
     profileStats(user.id),
     trustProfile(user.id),
     userPosts(user.id, 12, { viewerId: user.id }),
     performanceCountsFor(user.id),
     ownOfferingsFor(user.id),
     loadPrivacy(user.id),
-    reputationBadgesFor(user.id, user.locale === "en" ? "en" : "de", true),
+    reputationBadgesFor(user.id, locale, true),
+    interestGroupsFor(user.id, locale),
   ]);
 
-  const dict = dictionaries[user.locale === "en" ? "en" : "de"];
   const score =
     trust.summary.verifiedReviewCount > 0 && trust.summary.score10 !== null
       ? trust.summary.score10 / 10
@@ -149,371 +131,145 @@ export default async function OwnProfilePage({
     db.select({ userAId: connections.userAId, userBId: connections.userBId }).from(connections)
       .where(and(isNull(connections.endedAt), or(eq(connections.userAId, user.id), eq(connections.userBId, user.id)))).limit(100),
   ]);
-  const connectionIds = connectionRows.map((row) => row.userAId === user.id ? row.userBId : row.userAId);
-  const connectedMembers = connectionIds.length ? await db.select({ id: users.id, firstName: users.firstName, lastName: users.lastName, handle: users.handle, headline: profiles.headline, company: profiles.company, avatarUrl: profiles.avatarUrl, score10: trustScoreSummaries.score10, verifiedReviewCount: trustScoreSummaries.verifiedReviewCount })
-    .from(users).leftJoin(profiles, eq(profiles.userId, users.id)).leftJoin(trustScoreSummaries, eq(trustScoreSummaries.userId, users.id)).where(inArray(users.id, connectionIds)) : [];
+  const connectionIds = connectionRows.map((row) => (row.userAId === user.id ? row.userBId : row.userAId));
+  const connectedMembers = connectionIds.length
+    ? await db.select({ id: users.id, firstName: users.firstName, lastName: users.lastName, handle: users.handle, headline: profiles.headline, company: profiles.company, avatarUrl: profiles.avatarUrl, score10: trustScoreSummaries.score10, verifiedReviewCount: trustScoreSummaries.verifiedReviewCount })
+        .from(users).leftJoin(profiles, eq(profiles.userId, users.id)).leftJoin(trustScoreSummaries, eq(trustScoreSummaries.userId, users.id)).where(inArray(users.id, connectionIds))
+    : [];
   const allPeopleIds = [...new Set([...followers, ...following, ...connectedMembers].map((person) => person.id))];
   const visibleTrustMemberIds = await performanceVisibleUserIdsFor(user.id, allPeopleIds);
   const privacyFilteredPeople = <T extends { id: string; score10: number | null; verifiedReviewCount: number | null }>(people: T[]) =>
-    people.map((person) => visibleTrustMemberIds.has(person.id)
-      ? person
-      : { ...person, score10: null, verifiedReviewCount: null });
-  const visibleFollowers = privacyFilteredPeople(followers);
-  const visibleFollowing = privacyFilteredPeople(following);
-  const visibleConnections = privacyFilteredPeople(connectedMembers);
+    people.map((person) =>
+      visibleTrustMemberIds.has(person.id) ? person : { ...person, score10: null, verifiedReviewCount: null },
+    );
+
   const roles = parseList(profile?.rolesJson);
   const skills = parseList(profile?.skillsJson);
   // Older profiles (and the dev seed) store goal slugs in the free-text lists –
   // map them back to the taxonomy label so nothing unreadable is displayed.
-  const goalLabelBySlug = new Map(
-    user.goals.map((goal) => [goal.slug, user.locale === "en" ? goal.labelEn : goal.labelDe]),
-  );
+  const goalLabelBySlug = new Map(user.goals.map((goal) => [goal.slug, locale === "en" ? goal.labelEn : goal.labelDe]));
   const humanise = (values: string[]) => values.map((value) => goalLabelBySlug.get(value) ?? value);
   const lookingFor = humanise(parseList(profile?.lookingForJson));
   const offering = humanise(parseList(profile?.offeringJson));
-  const interestLabels = user.interests.map((interest) =>
-    user.locale === "en" ? interest.labelEn : interest.labelDe,
-  );
-  const goalLabels = user.goals.map((goal) => (user.locale === "en" ? goal.labelEn : goal.labelDe));
+  const goalLabels = user.goals.map((goal) => (locale === "en" ? goal.labelEn : goal.labelDe));
 
   const metricsVisibility = parseVisibility(privacy?.metricsVisibilityJson);
-  const fallback = privacy?.performanceVisibility ?? "members";
-  const visible = (key: string) => (metricsVisibility[key] ?? fallback) !== "private";
+  const metricsFallback = privacy?.performanceVisibility ?? "members";
+  const visible = (key: string) => (metricsVisibility[key] ?? metricsFallback) !== "private";
 
-  const profilePercent = profileCompletionPercent({
+  const completionPercent = profileCompletionPercent({
     hasAvatar: Boolean(profile?.avatarUrl),
     hasName: Boolean(user.firstName && user.lastName),
     hasRole: Boolean(profile?.headline || profile?.jobTitle),
     hasCompany: Boolean(profile?.company),
     hasLocation: Boolean(profile?.location),
-    interestCount: interestLabels.length,
+    interestCount: user.interests.length,
     goalCount: goalLabels.length,
     lookingForCount: parseList(profile?.lookingForJson).length,
     offeringCount: parseList(profile?.offeringJson).length,
     hasBio: Boolean(profile?.bio),
   });
 
-  const tabs: { key: ProfileTab; href: string; labelKey: string }[] = [
-    { key: "activity", href: "/app/profile", labelKey: "app.profile.tabsPosts" },
-    { key: "overview", href: "/app/profile?tab=overview", labelKey: "app.profile.tabsOverview" },
-    { key: "performance", href: "/app/profile?tab=performance", labelKey: "app.profile.tabsPerformance" },
-    { key: "offers", href: "/app/profile?tab=offers", labelKey: "app.profile.tabsOffers" },
-  ];
+  const hasContactLinks = Boolean(profile?.websiteUrl || profile?.xUrl || profile?.instagramUrl);
 
   return (
-    <div className="w-full space-y-5 sm:space-y-6">
-      {/* One continuous, full-width profile surface; sections are separated by fine dividers. */}
-      <div className="overflow-hidden rounded-2xl border border-border bg-surface shadow-card">
-        <div className="grid divide-y divide-border xl:grid-cols-3 xl:divide-x xl:divide-y-0">
-          <section
-            aria-label={dict.app.profile.title}
-            className="flex min-w-0 flex-col bg-gradient-to-br from-surface via-surface to-electric-500/5 p-5 sm:p-6"
-          >
-            <div className="flex min-w-0 items-start gap-4">
-              <span className="shrink-0">
-                <Avatar user={{ firstName: user.firstName, lastName: user.lastName, avatarUrl: profile?.avatarUrl ?? null }} size={72} />
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-foreground-subtle">
-                  {dict.app.profile.title}
-                </p>
-                <div className="flex flex-wrap items-center gap-2">
-                  <h1 className="break-words text-xl font-bold tracking-tight sm:text-2xl">
-                    {user.firstName} {user.lastName}
-                  </h1>
-                  {user.role === "admin" && <Badge variant="electric"><Tr k="app.access.levelAdmin" /></Badge>}
-                  {user.isDemo && <Badge variant="outline"><Tr k="app.common.demo" /></Badge>}
-                </div>
-                <p className="mt-1 break-all text-sm font-medium text-foreground-subtle">@{user.handle}</p>
-              </div>
-            </div>
-
-            {(profile?.headline || profile?.jobTitle || profile?.company || profile?.location || profile?.bio) && (
-              <div className="mt-4 min-w-0 space-y-2">
-                {profile?.headline && (
-                  <p className="break-words text-sm font-semibold leading-5 text-foreground">{profile.headline}</p>
-                )}
-                {(profile?.jobTitle || profile?.company || profile?.location) && (
-                  <p className="break-words text-xs leading-5 text-foreground-muted">
-                    {[profile?.jobTitle, profile?.company, profile?.location].filter(Boolean).join(" · ")}
-                  </p>
-                )}
-                {profile?.bio && (
-                  <p className="line-clamp-3 whitespace-pre-line break-words text-xs leading-5 text-foreground-muted">
-                    {profile.bio}
-                  </p>
-                )}
-              </div>
-            )}
-
-            {profilePercent < 100 && (
-              <div className="mt-5">
-                <div
-                  role="progressbar"
-                  aria-valuenow={profilePercent}
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                  aria-label={dict.app.profile.profileCompletion.replace("{percent}", String(profilePercent))}
-                  className="flex items-center justify-between gap-3 text-[11px] font-medium text-foreground-muted"
-                >
-                  <span>{dict.app.profile.profileCompletion.replace("{percent}", String(profilePercent))}</span>
-                  <span className="font-semibold text-foreground">{profilePercent} %</span>
-                </div>
-                <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-surface-muted">
-                  <div className="h-full rounded-full bg-gradient-to-r from-electric-500 to-electric-400" style={{ width: `${profilePercent}%` }} />
-                </div>
-              </div>
-            )}
-
-            <div className="mt-4 flex flex-wrap items-center gap-2">
-              <Button href="/app/profile/edit" size="sm" className="max-sm:h-11 max-sm:px-3">
-                <SparkleIcon size={15} />
-                <Tr k="app.profile.editTitle" />
-              </Button>
-              <ShareProfileButton url={shareUrl} className="max-sm:px-3" />
-              <Button href="/app/settings" size="sm" variant="ghost" className="max-sm:h-11 max-sm:px-3">
-                <SettingsIcon size={15} />
-                <Tr k="app.settings.title" />
-              </Button>
-            </div>
-
-            <div className="mt-5 grid w-full grid-cols-3 divide-x divide-border border-y border-border bg-surface-muted/30 px-0 py-3 sm:py-4">
-              <div className="min-w-0 px-1 sm:px-3">
-                <ProfilePeopleModal
-                  locale={user.locale === "en" ? "en" : "de"}
-                  label={dict.app.profile.metricFollowers}
-                  count={stats.followers}
-                  members={visibleFollowers}
-                  openProfileLabel={dict.app.profile.relationshipOpenProfile}
-                  emptyLabel={dict.app.profile.relationshipEmpty}
-                  closeLabel={dict.app.common.close}
-                  triggerClassName="w-full text-center sm:min-w-0"
-                />
-              </div>
-              <div className="min-w-0 px-1 sm:px-3">
-                <ProfilePeopleModal
-                  locale={user.locale === "en" ? "en" : "de"}
-                  label={dict.app.profile.statsFollowing}
-                  count={stats.following}
-                  members={visibleFollowing}
-                  openProfileLabel={dict.app.profile.relationshipOpenProfile}
-                  emptyLabel={dict.app.profile.relationshipEmpty}
-                  closeLabel={dict.app.common.close}
-                  triggerClassName="w-full text-center sm:min-w-0"
-                />
-              </div>
-              <div className="min-w-0 px-1 sm:px-3">
-                <ProfilePeopleModal
-                  locale={user.locale === "en" ? "en" : "de"}
-                  label={dict.app.profile.metricConnections}
-                  count={stats.connections}
-                  members={visibleConnections}
-                  openProfileLabel={dict.app.profile.relationshipOpenProfile}
-                  emptyLabel={dict.app.profile.relationshipEmpty}
-                  closeLabel={dict.app.common.close}
-                  triggerClassName="w-full text-center sm:min-w-0"
-                />
-              </div>
-            </div>
-          </section>
-
-          <section
-            aria-label={dict.app.profile.verifiedBadgesTitle}
-            className="min-w-0 p-5 sm:p-6"
-          >
-            <VerifiedBadgesSection
-              badges={reputationBadges}
-              adminRole={user.role === "admin"}
-              isSelf
-              compactGallery
-              locale={user.locale === "en" ? "en" : "de"}
-            />
-          </section>
-
-          <section className="flex min-w-0 flex-col p-5 sm:p-6">
-            <TrustScoreBlock
-              detail={trust.detail}
-              memberName={`${user.firstName} ${user.lastName}`}
-              fullPageHref="/app/trust"
-              variant="seamless"
-              showScoreNote
-            />
-            {/* The button only shares the profile link; a review is still accepted
-                server-side only after a verified collaboration. */}
-            <aside className="mt-5 border-t border-border pt-4">
-              <h2 className="text-sm font-bold tracking-tight"><Tr k="app.trust.requestReviewTitle" /></h2>
-              <p className="mt-1.5 text-xs leading-5 text-foreground-muted"><Tr k="app.trust.requestReviewHint" /></p>
-              <ShareProfileButton
-                url={shareUrl}
-                labelKey="app.trust.requestReview"
-                className="mt-3 w-full justify-center"
-              />
-            </aside>
-          </section>
-        </div>
-
-        <nav aria-label={dict.app.profile.title} className="w-full border-t border-border">
-          <div className="grid w-full grid-cols-4">
-            {tabs.map((item) => (
-              <Link
-                key={item.key}
-                href={item.href}
-                aria-current={tab === item.key ? "page" : undefined}
-                className={`flex min-h-12 min-w-0 items-center justify-center border-b-2 px-1 py-3 text-center text-[11px] font-semibold leading-4 transition-colors sm:px-4 sm:text-sm ${
-                  tab === item.key ? "border-electric-500 text-foreground" : "border-transparent text-foreground-muted hover:text-foreground"
-                }`}
-              >
-                <Tr k={item.labelKey} />
-              </Link>
-            ))}
-          </div>
-        </nav>
-      </div>
-
-      {tab === "overview" && (
-        <div className="mx-auto w-full max-w-3xl space-y-3">
-          {profile?.bio && (
-            <Card className="p-5">
-              <p className="ic-measure whitespace-pre-wrap text-sm leading-6 text-foreground-muted">
-                {profile.bio}
-              </p>
-            </Card>
-          )}
-
-          {/* secondary information as accordions, collapsed by default */}
-          <AccordionSection titleKey="app.profile.interestsSection">
-            <TagBlock labelKey="app.discover.interests" items={interestLabels} />
-            <TagBlock labelKey="app.profile.goalsTitle" items={goalLabels} />
-          </AccordionSection>
-
-          <AccordionSection titleKey="app.profile.seekingOffering">
-            <TagBlock labelKey="app.profile.lookingFor" items={lookingFor} tone="electric" />
-            <TagBlock labelKey="app.profile.offering" items={offering} tone="forest" />
-          </AccordionSection>
-
-          <AccordionSection titleKey="app.profile.rolesSkills">
-            <TagBlock labelKey="app.profile.roles" items={roles} />
-            <TagBlock labelKey="app.profile.skills" items={skills} />
-          </AccordionSection>
-
-          {(profile?.websiteUrl || profile?.xUrl || profile?.instagramUrl) && (
-            <AccordionSection titleKey="app.profile.links">
-              <div className="flex flex-wrap items-center gap-2">
-                {profile.websiteUrl && (
-                  <ExternalLink
-                    href={profile.websiteUrl.startsWith("http") ? profile.websiteUrl : `https://${profile.websiteUrl}`}
-                    icon={<GlobeIcon size={13} />}
-                    label="Website"
-                  />
-                )}
-                {profile.xUrl && (
-                  <ExternalLink
-                    href={profile.xUrl.startsWith("http") ? profile.xUrl : `https://x.com/${profile.xUrl.replace(/^@/, "")}`}
-                    icon={<XSocialIcon size={12} />}
-                    label={profile.xUrl.startsWith("@") ? profile.xUrl : `@${profile.xUrl}`}
-                  />
-                )}
-                {profile.instagramUrl && (
-                  <ExternalLink
-                    href={
-                      profile.instagramUrl.startsWith("http")
-                        ? profile.instagramUrl
-                        : `https://instagram.com/${profile.instagramUrl.replace(/^@/, "")}`
-                    }
-                    icon={<InstagramIcon size={13} />}
-                    label={profile.instagramUrl.startsWith("@") ? profile.instagramUrl : `@${profile.instagramUrl}`}
-                  />
-                )}
-              </div>
-            </AccordionSection>
-          )}
-
-          <AccordionSection titleKey="app.profile.accountSection">
-            <ul className="-mx-2 space-y-0.5">
-              <AccountLink href="/app/card" icon={<TicketIcon size={15} />} labelKey="app.profile.accountCard" />
-              <AccountLink href="/app/billing" icon={<WalletIcon size={15} />} labelKey="app.profile.accountMembership" />
-              <AccountLink href="/app/beta" icon={<ShieldCheckIcon size={15} />} labelKey="app.beta.accountBeta" />
-              <AccountLink href="/app/trust" icon={<ChartIcon size={15} />} labelKey="app.profile.accountTrust" />
-              <AccountLink href="/app/settings" icon={<SettingsIcon size={15} />} labelKey="app.profile.accountSettings" />
-            </ul>
-          </AccordionSection>
-        </div>
-      )}
-
+    <ProfileView
+      locale={locale}
+      isSelf
+      baseUrl="/app/profile"
+      tab={tab}
+      tabs={tabs}
+      identity={{
+        firstName: user.firstName,
+        lastName: user.lastName,
+        handle: user.handle,
+        avatarUrl: profile?.avatarUrl ?? null,
+        headline: profile?.headline ?? null,
+        jobTitle: profile?.jobTitle ?? null,
+        company: profile?.company ?? null,
+        location: profile?.location ?? null,
+        bio: profile?.bio ?? null,
+        roleAdmin: user.role === "admin",
+        isDemo: user.isDemo,
+        memberSinceIso: user.createdAt instanceof Date ? user.createdAt.toISOString() : null,
+        completionPercent,
+      }}
+      badges={reputationBadges}
+      stats={{ followers: stats.followers, following: stats.following, connections: stats.connections }}
+      people={{
+        followers: privacyFilteredPeople(followers),
+        following: privacyFilteredPeople(following),
+        connections: privacyFilteredPeople(connectedMembers),
+      }}
+      kickerKey="app.profile.title"
+      contactLinks={
+        hasContactLinks ? (
+          <ProfileContactLinks
+            websiteUrl={profile?.websiteUrl}
+            xUrl={profile?.xUrl}
+            instagramUrl={profile?.instagramUrl}
+          />
+        ) : null
+      }
+      actions={
+        <>
+          <Button href="/app/profile/edit" size="sm" className="max-sm:h-11 max-sm:px-3">
+            <SparkleIcon size={15} />
+            <Tr k="app.profile.editTitle" />
+          </Button>
+          <ShareProfileButton url={shareUrl} className="max-sm:h-11 max-sm:px-3" />
+          <Button href="/app/settings" size="sm" variant="ghost" className="max-sm:h-11 max-sm:px-3">
+            <SettingsIcon size={15} />
+            <Tr k="app.settings.title" />
+          </Button>
+        </>
+      }
+      trust={{ detail: trust.detail, showScoreNote: true, fullPageHref: "/app/trust" }}
+      trustAside={
+        <>
+          <h2 className="text-sm font-bold tracking-tight">
+            <Tr k="app.trust.requestReviewTitle" />
+          </h2>
+          <p className="mt-1.5 text-xs leading-5 text-foreground-muted">
+            <Tr k="app.trust.requestReviewHint" />
+          </p>
+          {/* The button only shares the profile link; a review is still accepted
+              server-side only after a verified collaboration. */}
+          <ShareProfileButton url={shareUrl} labelKey="app.trust.requestReview" className="mt-3 w-full justify-center" />
+        </>
+      }
+    >
       {tab === "activity" && (
-        <section className="space-y-5">
-          <div className="flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <h2 className="text-lg font-bold tracking-tight">
-                <Tr k="app.profile.tabsPosts" />
-              </h2>
-              <p className="mt-1 max-w-2xl text-sm leading-6 text-foreground-muted">
-                <Tr k="app.profile.activityLead" />
-              </p>
-            </div>
-            {access.entitlements.postCreate && (
-              <Button href="/app/create/post" size="sm" variant="secondary">
-                <Tr k="app.posts.createTitle" />
-              </Button>
-            )}
-          </div>
+        <section className="space-y-4 sm:space-y-5">
+          <ProfileTabHeader
+            titleKey="app.profile.tabsPosts"
+            leadKey="app.profile.activityLead"
+            action={
+              access.entitlements.postCreate ? (
+                <Button href="/app/create/post" size="sm" variant="secondary" className="max-sm:h-11">
+                  <Tr k="app.posts.createTitle" />
+                </Button>
+              ) : null
+            }
+          />
 
           {posts.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-border bg-surface-muted/30 px-5 py-6 sm:px-7">
-              <p className="max-w-2xl text-sm leading-6 text-foreground-muted">
-                <Tr k="app.profile.activityEmptyText" />
-              </p>
-            </div>
+            <ProfileEmptyBox>
+              <Tr k="app.profile.activityEmptyText" />
+            </ProfileEmptyBox>
           ) : (
-            <ul className="overflow-hidden rounded-2xl border border-border bg-surface divide-y divide-border">
-              {posts.map((post) => {
-                const postLink = safePostLink(post.linkUrl);
-                return (
-                  <li key={post.id} className="px-4 py-5 sm:px-6 sm:py-6">
-                    <article>
-                      <header className="flex flex-wrap items-center justify-between gap-3">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <Badge variant={post.verified ? "forest" : "electric"}>
-                            <Tr k={postKindLabelKeys[post.kind] ?? "app.posts.typePost"} />
-                          </Badge>
-                          {post.verified && (
-                            <Badge variant="forest"><ShieldCheckIcon size={13} /><Tr k="app.posts.verifiedBadge" /></Badge>
-                          )}
-                        </div>
-                        <p className="text-xs text-foreground-subtle">
-                          <LocalDate value={post.createdAt.toISOString()} options={{ day: "2-digit", month: "short", year: "numeric" }} />
-                        </p>
-                      </header>
-
-                      <p className="mt-3 whitespace-pre-wrap break-words text-[15px] leading-7">{post.body}</p>
-                      <PostImage imageUrl={post.imageUrl} />
-                      {postLink && (
-                        <a
-                          href={postLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-electric-700 hover:underline dark:text-electric-300"
-                        >
-                          <GlobeIcon size={14} />
-                          <Tr k="app.posts.linkOpen" />
-                          <span aria-hidden="true">↗</span>
-                        </a>
-                      )}
-
-                      <footer className="mt-3 flex justify-end">
-                        <InlineAction
-                          action={deletePostAction}
-                          hidden={{ postId: post.id }}
-                          labelKey="app.common.delete"
-                          variant="ghost"
-                          confirmKey="app.posts.deleteConfirm"
-                        />
-                      </footer>
-                    </article>
-                  </li>
-                );
-              })}
-            </ul>
+            <ProfilePostList
+              posts={posts}
+              footer={(post) => (
+                <InlineAction
+                  action={deletePostAction}
+                  hidden={{ postId: post.id }}
+                  labelKey="app.common.delete"
+                  variant="ghost"
+                  confirmKey="app.posts.deleteConfirm"
+                />
+              )}
+            />
           )}
 
           {/* Sample posts belong to fictional demo accounts only – real members
@@ -522,16 +278,43 @@ export default async function OwnProfilePage({
         </section>
       )}
 
+      {tab === "overview" && (
+        <div className="mx-auto w-full max-w-3xl space-y-3">
+          {profile?.bio && (
+            <Card className="p-4 sm:p-5">
+              <p className="ic-measure whitespace-pre-wrap text-sm leading-6 text-foreground-muted">{profile.bio}</p>
+            </Card>
+          )}
+
+          {(lookingFor.length > 0 || offering.length > 0) && (
+            <ProfileAccordion titleKey="app.profile.seekingOffering">
+              <ProfileTagBlock labelKey="app.profile.lookingFor" items={lookingFor} tone="electric" />
+              <ProfileTagBlock labelKey="app.profile.offering" items={offering} tone="forest" />
+            </ProfileAccordion>
+          )}
+
+          {(roles.length > 0 || skills.length > 0) && (
+            <ProfileAccordion titleKey="app.profile.rolesSkills">
+              <ProfileTagBlock labelKey="app.profile.roles" items={roles} />
+              <ProfileTagBlock labelKey="app.profile.skills" items={skills} />
+            </ProfileAccordion>
+          )}
+
+          <ProfileAccordion titleKey="app.profile.accountSection">
+            <ul className="-mx-2 space-y-0.5">
+              <AccountLink href="/app/card" icon={<TicketIcon size={15} />} labelKey="app.profile.accountCard" />
+              <AccountLink href="/app/billing" icon={<WalletIcon size={15} />} labelKey="app.profile.accountMembership" />
+              <AccountLink href="/app/beta" icon={<ShieldCheckIcon size={15} />} labelKey="app.beta.accountBeta" />
+              <AccountLink href="/app/trust" icon={<ChartIcon size={15} />} labelKey="app.profile.accountTrust" />
+              <AccountLink href="/app/settings" icon={<SettingsIcon size={15} />} labelKey="app.profile.accountSettings" />
+            </ul>
+          </ProfileAccordion>
+        </div>
+      )}
+
       {tab === "performance" && (
-        <div className="space-y-6">
-          <div>
-            <h2 className="text-lg font-bold tracking-tight">
-              <Tr k="app.profile.performanceTitle" />
-            </h2>
-            <p className="mt-1 max-w-2xl text-sm leading-6 text-foreground-muted">
-              <Tr k="app.profile.performanceLead" />
-            </p>
-          </div>
+        <div className="space-y-5 sm:space-y-6">
+          <ProfileTabHeader titleKey="app.profile.performanceTitle" leadKey="app.profile.performanceLead" />
 
           <div className="ic-grid">
             <div className="ic-span-6 lg:col-span-3">
@@ -565,40 +348,40 @@ export default async function OwnProfilePage({
             </div>
             {visible("deals") && (
               <div className="ic-span-6 lg:col-span-3">
-                <MetricCell labelKey="app.profile.metricDeals" value={counts.opportunities} />
+                <ProfileMetricCell labelKey="app.profile.metricDeals" value={counts.opportunities} />
               </div>
             )}
             {visible("customers") && (
               <div className="ic-span-6 lg:col-span-3">
-                <MetricCell labelKey="app.profile.metricCustomers" value={counts.followers} />
+                <ProfileMetricCell labelKey="app.profile.metricCustomers" value={counts.followers} />
               </div>
             )}
             {visible("marketplace") && (
               <div className="ic-span-6 lg:col-span-3">
-                <MetricCell labelKey="app.profile.metricMarketplace" value={counts.listings} />
+                <ProfileMetricCell labelKey="app.profile.metricMarketplace" value={counts.listings} />
               </div>
             )}
             {visible("courses") && (
               <div className="ic-span-6 lg:col-span-3">
-                <MetricCell labelKey="app.profile.metricCourses" value={counts.courseListings} />
+                <ProfileMetricCell labelKey="app.profile.metricCourses" value={counts.courseListings} />
               </div>
             )}
             {visible("investments") && (
               <div className="ic-span-6 lg:col-span-3">
-                <MetricCell labelKey="app.profile.metricInvestments" value={counts.investments} />
+                <ProfileMetricCell labelKey="app.profile.metricInvestments" value={counts.investments} />
               </div>
             )}
             {visible("events") && (
               <div className="ic-span-6 lg:col-span-3">
-                <MetricCell labelKey="app.profile.metricEvents" value={counts.events} />
+                <ProfileMetricCell labelKey="app.profile.metricEvents" value={counts.events} />
               </div>
             )}
             <div className="ic-span-6 lg:col-span-3">
-              <MetricCell labelKey="app.profile.metricConnections" value={counts.connections} />
+              <ProfileMetricCell labelKey="app.profile.metricConnections" value={counts.connections} />
             </div>
           </div>
 
-          <Card className="p-5">
+          <Card className="p-4 sm:p-5">
             <h3 className="text-sm font-bold tracking-tight">
               <Tr k="app.profile.performanceReviews" />
             </h3>
@@ -623,10 +406,14 @@ export default async function OwnProfilePage({
                           <Tr k="app.common.verified" />
                         </Badge>
                       )}
-                      {review.isDemo && <Badge variant="outline"><Tr k="app.common.demo" /></Badge>}
+                      {review.isDemo && (
+                        <Badge variant="outline">
+                          <Tr k="app.common.demo" />
+                        </Badge>
+                      )}
                     </div>
                     {review.comment && (
-                      <p className="mt-2 text-sm leading-6 break-words text-foreground-muted [overflow-wrap:anywhere]">
+                      <p className="mt-2 break-words text-sm leading-6 text-foreground-muted [overflow-wrap:anywhere]">
                         {review.comment}
                       </p>
                     )}
@@ -639,7 +426,7 @@ export default async function OwnProfilePage({
             )}
           </Card>
 
-          <Card className="p-5">
+          <Card className="p-4 sm:p-5">
             <h3 className="text-sm font-bold tracking-tight">
               <Tr k="app.profile.performanceRecords" />
             </h3>
@@ -651,7 +438,9 @@ export default async function OwnProfilePage({
               <ul className="mt-3 divide-y divide-border">
                 {trust.performance.map((record) => (
                   <li key={record.id} className="flex items-center justify-between gap-3 py-2.5">
-                    <span className="text-sm">{user.locale === "en" ? record.labelEn ?? record.label : record.labelDe ?? record.label}</span>
+                    <span className="text-sm">
+                      {locale === "en" ? (record.labelEn ?? record.label) : (record.labelDe ?? record.label)}
+                    </span>
                     <Badge variant={record.verification === "verified" ? "forest" : "outline"}>
                       <Tr k={record.verification === "verified" ? "app.common.verified" : "app.common.selfReported"} />
                     </Badge>
@@ -671,15 +460,8 @@ export default async function OwnProfilePage({
       )}
 
       {tab === "offers" && (
-        <div className="space-y-6">
-          <div>
-            <h2 className="text-lg font-bold tracking-tight">
-              <Tr k="app.profile.offersTitle" />
-            </h2>
-            <p className="mt-1 max-w-2xl text-sm leading-6 text-foreground-muted">
-              <Tr k="app.profile.offersLead" />
-            </p>
-          </div>
+        <div className="space-y-5 sm:space-y-6">
+          <ProfileTabHeader titleKey="app.profile.offersTitle" leadKey="app.profile.offersLead" />
 
           {offerings.opportunities.length === 0 &&
           offerings.listings.length === 0 &&
@@ -692,7 +474,7 @@ export default async function OwnProfilePage({
           ) : (
             <div className="space-y-5">
               {offerings.opportunities.length > 0 && (
-                <OfferList
+                <ProfileOfferList
                   titleKey="app.profile.offersOpportunities"
                   icon={<BriefcaseIcon size={15} />}
                   items={offerings.opportunities.map((row) => ({
@@ -705,14 +487,10 @@ export default async function OwnProfilePage({
                 />
               )}
               {offerings.listings.length > 0 && (
-                <OfferList
+                <ProfileOfferList
                   titleKey="app.profile.offersListings"
                   icon={
-                    offerings.listings[0]?.kind === "course" ? (
-                      <GraduationIcon size={15} />
-                    ) : (
-                      <StoreIcon size={15} />
-                    )
+                    offerings.listings[0]?.kind === "course" ? <GraduationIcon size={15} /> : <StoreIcon size={15} />
                   }
                   items={offerings.listings.map((row) => ({
                     id: row.id,
@@ -724,7 +502,7 @@ export default async function OwnProfilePage({
                 />
               )}
               {offerings.investments.length > 0 && (
-                <OfferList
+                <ProfileOfferList
                   titleKey="app.profile.offersInvestments"
                   icon={<ChartIcon size={15} />}
                   items={offerings.investments.map((row) => ({
@@ -740,140 +518,59 @@ export default async function OwnProfilePage({
           )}
         </div>
       )}
-    </div>
+
+      {tab === "interests" && (
+        <div className="space-y-4 sm:space-y-5">
+          <ProfileTabHeader titleKey="app.profile.tabsInterests" leadKey="app.profile.interestsTabLeadSelf" />
+
+          {interestGroups.length === 0 && goalLabels.length === 0 ? (
+            <ProfileEmptyBox>
+              <p>{dict.app.profile.interestsEmptySelf}</p>
+              <Button href="/app/profile/edit" size="sm" variant="secondary" className="mt-3 max-sm:h-11">
+                <SparkleIcon size={15} />
+                <Tr k="app.profile.interestsEmptySelfCta" />
+              </Button>
+            </ProfileEmptyBox>
+          ) : (
+            <Card className="space-y-5 p-4 sm:p-5">
+              {interestGroups.map((group) => (
+                <div key={group.group}>
+                  <ProfileSectionTitle text={group.group} />
+                  <div className="mt-2.5">
+                    <ProfileTagBlock items={group.labels} />
+                  </div>
+                </div>
+              ))}
+              {goalLabels.length > 0 && (
+                <div className="border-t border-border pt-5">
+                  <ProfileTagBlock labelKey="app.profile.goalsTitle" items={goalLabels} tone="forest" />
+                </div>
+              )}
+              <div className="border-t border-border pt-4">
+                <Button href="/app/profile/edit" size="sm" variant="ghost" className="max-sm:h-11">
+                  <SparkleIcon size={15} />
+                  <Tr k="app.profile.editTitle" />
+                </Button>
+              </div>
+            </Card>
+          )}
+        </div>
+      )}
+    </ProfileView>
   );
 }
 
-function ExternalLink({ href, icon, label }: { href: string; icon: React.ReactNode; label: string }) {
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-2.5 py-1 text-xs text-foreground-muted transition-colors hover:text-foreground"
-    >
-      {icon}
-      <span>{label}</span>
-    </a>
-  );
-}
-
-
-
-/**
- * Collapsible section for secondary profile information – native
- * `<details>`/`<summary>` so it works without client-side JavaScript and
- * stays inside the server component.
- */
-function AccordionSection({ titleKey, children }: { titleKey: string; children: React.ReactNode }) {
-  return (
-    <details className="group rounded-2xl border border-border bg-surface">
-      <summary className="flex cursor-pointer select-none items-center justify-between gap-3 rounded-2xl px-5 py-3.5 [&::-webkit-details-marker]:hidden">
-        <span className="text-sm font-bold tracking-tight">
-          <Tr k={titleKey} />
-        </span>
-        <ChevronDownIcon
-          size={16}
-          className="shrink-0 text-foreground-subtle transition-transform duration-200 group-open:rotate-180"
-        />
-      </summary>
-      <div className="space-y-5 border-t border-border px-5 py-4">{children}</div>
-    </details>
-  );
-}
-
-function MetricCell({ labelKey, value }: { labelKey: string; value: number }) {
-  return (
-    <Card className="h-full p-4">
-      <p className="text-xs font-semibold uppercase tracking-wide text-foreground-subtle">
-        <Tr k={labelKey} />
-      </p>
-      <p className="mt-1.5 text-2xl font-bold tracking-tight">{value}</p>
-    </Card>
-  );
-}
-
-function TagBlock({
-  labelKey,
-  items,
-  tone = "neutral",
-}: {
-  labelKey: string;
-  items: string[];
-  tone?: "neutral" | "electric" | "forest";
-}) {
-  if (items.length === 0) return null;
-  const tones = {
-    neutral: "bg-surface-muted text-foreground",
-    electric: "bg-electric-500/10 text-electric-600 dark:text-electric-300",
-    forest: "bg-forest-500/10 text-forest-600 dark:text-forest-300",
-  } as const;
-  return (
-    <div>
-      <h3 className="text-xs font-bold uppercase tracking-[0.16em] text-foreground-subtle">
-        <Tr k={labelKey} />
-      </h3>
-      <ul className="mt-2.5 flex flex-wrap gap-2">
-        {items.map((item) => (
-          <li key={item}>
-            <span className={`rounded-full px-3 py-1 text-xs font-medium ${tones[tone]}`}>{item}</span>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-function AccountLink({
-  href,
-  icon,
-  labelKey,
-}: {
-  href: string;
-  icon: React.ReactNode;
-  labelKey: string;
-}) {
+function AccountLink({ href, icon, labelKey }: { href: string; icon: React.ReactNode; labelKey: string }) {
   return (
     <li>
       <Link
         href={href}
-        className="flex items-center gap-2.5 rounded-lg px-2 py-2 text-sm font-medium text-foreground-muted transition-colors hover:bg-surface-muted hover:text-foreground"
+        className="flex min-h-11 items-center gap-2.5 rounded-lg px-2 py-2 text-sm font-medium text-foreground-muted transition-colors hover:bg-surface-muted hover:text-foreground"
       >
         {icon}
         <Tr k={labelKey} />
       </Link>
     </li>
-  );
-}
-
-function OfferList({
-  titleKey,
-  icon,
-  items,
-  className = "",
-}: {
-  titleKey: string;
-  icon: React.ReactNode;
-  items: { id: string; title: string; href: string; meta: string; metaKey?: string | null }[];
-  className?: string;
-}) {
-  return (
-    <section className={`border-y border-border py-4 ${className}`}>
-      <h3 className="flex items-center gap-2 text-sm font-bold tracking-tight">
-        {icon}
-        <Tr k={titleKey} />
-      </h3>
-      <ul className="mt-3 divide-y divide-border">
-        {items.map((item) => (
-          <li key={item.id} className="flex items-center justify-between gap-4 py-3">
-            <Link href={item.href} className="min-w-0 text-sm font-medium hover:underline">
-              {item.title}
-            </Link>
-            <p className="shrink-0 text-xs text-foreground-subtle">{item.metaKey ? <Tr k={item.metaKey} /> : item.meta}</p>
-          </li>
-        ))}
-      </ul>
-    </section>
   );
 }
 

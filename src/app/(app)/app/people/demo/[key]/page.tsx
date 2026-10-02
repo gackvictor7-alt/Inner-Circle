@@ -56,7 +56,7 @@ export default async function DemoProfilePage({ params }: { params: Promise<{ ke
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-5 sm:space-y-8">
       <LocalizedPageHeader
         titleKey="app.demo.discoverDetailTitle"
         actions={

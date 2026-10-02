@@ -8,8 +8,11 @@ import {
   connectionRequestState,
   goalLabelMap,
   goalLabelsFor,
-  interestLabelsFor,
+  interestGroupsFor,
   memberProfileByHandle,
+  ownOfferingsFor,
+  performanceCountsFor,
+  profileStats,
   trustProfile,
   userPosts,
 } from "@/lib/platform/queries";
@@ -21,18 +24,40 @@ import {
   type ViewerRelation,
 } from "@/lib/network/privacy";
 import { ProfileActions } from "@/components/app/ProfileActions";
-import { PostImage } from "@/components/app/PostImage";
 import { TrustReviewForm } from "@/components/app/TrustReviewForm";
-import { TrustScoreBlock } from "@/components/app/TrustPanel";
-import { VerifiedBadgesSection } from "@/components/app/VerifiedBadges";
 import { reputationBadgesFor, type PublicBadge } from "@/lib/badges/queries";
 import { filterPublicBadgesForVisibility } from "@/lib/badges/visibility";
-import { Badge } from "@/components/ui/Badge";
+import {
+  parseProfileTab,
+  ProfileAccordion,
+  ProfileContactLinks,
+  ProfileEmptyBox,
+  ProfileMetricCell,
+  ProfileOfferList,
+  ProfilePostList,
+  ProfileSectionTitle,
+  ProfileTabHeader,
+  ProfileTagBlock,
+  ProfileView,
+  type ProfileTabKey,
+} from "@/components/app/ProfileView";
+import { LocalDecimal, Tr } from "@/components/app/localized";
+import { NetworkLocked } from "@/components/app/NetworkLocked";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { GlobeIcon, InstagramIcon, LockIcon, MapPinIcon, XSocialIcon } from "@/components/ui/icons";
-import { LocalDate, Tr } from "@/components/app/localized";
-import { NetworkLocked } from "@/components/app/NetworkLocked";
+import { RatingStars } from "@/components/ui/RatingStars";
+import {
+  BriefcaseIcon,
+  ChartIcon,
+  GraduationIcon,
+  LockIcon,
+  SettingsIcon,
+  SparkleIcon,
+  StoreIcon,
+} from "@/components/ui/icons";
+import { investmentLabelKey } from "@/lib/platform/investment-labels";
+import { ShareProfileButton } from "@/components/app/ShareProfileButton";
+import { getPublicUrl } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 
@@ -56,13 +81,11 @@ function parseVisibility(json: string | null | undefined): Record<string, string
   }
 }
 
-function externalHref(value: string, base?: string) {
-  if (value.startsWith("http://") || value.startsWith("https://")) return value;
-  return base ? `${base}${value.replace(/^@/, "")}` : `https://${value}`;
-}
-
 /**
- * Real member profile (Sprint 12).
+ * Real member profile – rendered through the ONE shared `ProfileView`, so the
+ * layout is structurally identical to `/app/profile`; only the permissions
+ * differ (follow / message / contact-request actions instead of owner
+ * controls, privacy-gated sections).
  *
  * Access (server-side, before any data is rendered):
  *   * own profile – always
@@ -74,9 +97,15 @@ function externalHref(value: string, base?: string) {
  *     to people they sent a request to
  * Privacy settings decide the depth: reduced card for "connections only",
  * contact links only per contact visibility, location only if shown, trust
- * block only for members and only if the owner shares it.
+ * block and tabs only for members and only if the owner shares them.
  */
-export default async function MemberProfilePage({ params }: { params: Promise<{ handle: string }> }) {
+export default async function MemberProfilePage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ handle: string }>;
+  searchParams?: Promise<{ tab?: string }>;
+}) {
   const { handle } = await params;
   const access = await requireUser(`/app/people/${handle}`);
   const profile = await memberProfileByHandle(handle);
@@ -127,143 +156,162 @@ export default async function MemberProfilePage({ params }: { params: Promise<{ 
   if (!isSelf && relation === "network" && !listed && !blockedByMe && !requestState.outgoingRequestId) notFound();
 
   const depth = blockedByMe ? "limited" : profileDepth(profile.privacyVisibility ?? profile.profileVisibility, relation);
+  const full = depth === "full";
   const showContacts = !blockedByMe && contactsVisible(profile.contactVisibility, relation);
   const showLocation = locationVisible(profile.showLocation, relation);
   const locale = access.user.locale === "en" ? "en" : "de";
   const showTrust =
-    depth === "full" && (isSelf || access.entitlements.trustView) && performanceVisible(profile.privacyPerformance, relation);
-  const showPosts = depth === "full" && (isSelf || access.entitlements.feedRead);
+    full && (isSelf || access.entitlements.trustView) && performanceVisible(profile.privacyPerformance, relation);
+  const showPosts = full && (isSelf || access.entitlements.feedRead);
   const metricVisibility = parseVisibility(profile.privacyMetricsVisibility);
   const showBadgeFigures = isSelf || performanceVisible(metricVisibility.badgeNumbers ?? "private", relation, "private");
+  const requestsOpen = profile.participant && profile.allowConnectionRequests !== false;
 
-  const [interestLabels, goalLabels, trust, posts, allPublicBadges, goalLabelBySlug] = await Promise.all([
-    depth === "full" ? interestLabelsFor(profile.id, locale) : Promise.resolve([] as string[]),
-    depth === "full" ? goalLabelsFor(profile.id, locale) : Promise.resolve([] as string[]),
-    showTrust ? trustProfile(profile.id, viewerId) : Promise.resolve(null),
-    showPosts
-      ? userPosts(profile.id, 10, {
-          viewerId,
-          canReadMemberPosts: access.entitlements.feedRead,
-          isConnected: connected,
-        })
-      : Promise.resolve([]),
-    // Verified badges are public reputation data: full depth only (or self).
-    isSelf || depth === "full"
-      ? reputationBadgesFor(profile.id, locale === "en" ? "en" : "de", showBadgeFigures)
-      : Promise.resolve([] as PublicBadge[]),
-    goalLabelMap(locale === "en" ? "en" : "de"),
-  ]);
+  const [stats, interestGroups, goalLabels, trust, counts, posts, offerings, allPublicBadges, goalLabelBySlug] =
+    await Promise.all([
+      full ? profileStats(profile.id) : Promise.resolve(null),
+      full ? interestGroupsFor(profile.id, locale) : Promise.resolve([] as { group: string; labels: string[] }[]),
+      full ? goalLabelsFor(profile.id, locale) : Promise.resolve([] as string[]),
+      showTrust ? trustProfile(profile.id, viewerId) : Promise.resolve(null),
+      showTrust ? performanceCountsFor(profile.id) : Promise.resolve(null),
+      showPosts
+        ? userPosts(profile.id, 10, {
+            viewerId,
+            canReadMemberPosts: access.entitlements.feedRead,
+            isConnected: connected,
+          })
+        : Promise.resolve([]),
+      // Public offers only: published opportunities/listings, approved investments.
+      full ? ownOfferingsFor(profile.id, { publishedOnly: true }) : Promise.resolve(null),
+      // Verified badges are public reputation data: full depth only (or self).
+      isSelf || full
+        ? reputationBadgesFor(profile.id, locale, showBadgeFigures)
+        : Promise.resolve([] as PublicBadge[]),
+      goalLabelMap(locale),
+    ]);
   const reputationBadges = filterPublicBadgesForVisibility(allPublicBadges, {
     showPerformance: showTrust,
     showBadgeFigures,
   });
+
   const roles = parseList(profile.rolesJson);
   const skills = parseList(profile.skillsJson);
   const humanise = (values: string[]) => values.map((value) => goalLabelBySlug.get(value) ?? value);
   const lookingFor = humanise(parseList(profile.lookingForJson));
   const offering = humanise(parseList(profile.offeringJson));
-  const memberSince = {
-    date: profile.createdAt.toISOString(),
-    options: { month: "long", year: "numeric" } as Intl.DateTimeFormatOptions,
-  };
-  const requestsOpen = profile.participant && profile.allowConnectionRequests !== false;
+
+  // Permission-filtered tab list – same five tabs as the own profile, reduced
+  // by the owner's privacy and the viewer's entitlements.
+  const tabs: ProfileTabKey[] = full
+    ? [
+        ...(showPosts ? (["activity"] as ProfileTabKey[]) : []),
+        "overview",
+        ...(showTrust ? (["performance"] as ProfileTabKey[]) : []),
+        "offers",
+        "interests",
+      ]
+    : [];
+  const search = searchParams ? await searchParams : undefined;
+  const tab = parseProfileTab(search?.tab, tabs.length > 0 ? tabs : ["overview"]);
+
+  // Metric cells respect the OWNER's per-metric visibility (same rules the
+  // owner's own performance tab applies), interpreted for this relation.
+  const metricsFallback = profile.privacyPerformance ?? "members";
+  const metricVisible = (key: string) =>
+    performanceVisible(metricVisibility[key] ?? metricsFallback, relation);
+
+  const score =
+    trust && trust.summary.verifiedReviewCount > 0 && trust.summary.score10 !== null
+      ? trust.summary.score10 / 10
+      : null;
+
+  const hasContactLinks = Boolean(profile.websiteUrl || profile.xUrl || profile.instagramUrl);
+  const shareUrl = getPublicUrl(`/app/people/${encodeURIComponent(profile.handle)}`);
 
   return (
-    <div className="mx-auto w-full max-w-4xl space-y-5">
-      <Card className="p-5 sm:p-7">
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
-          {profile.avatarUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={profile.avatarUrl} alt="" className="h-24 w-24 shrink-0 rounded-2xl object-cover" />
-          ) : (
-            <span className="inline-flex h-24 w-24 shrink-0 items-center justify-center rounded-2xl bg-surface-muted text-2xl font-bold text-foreground-muted">
-              {profile.firstName.charAt(0)}
-              {profile.lastName.charAt(0)}
-            </span>
-          )}
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-2xl font-bold tracking-tight">
-                {profile.firstName} {profile.lastName}
-              </h1>
-              {profile.role === "admin" && (
-                <Badge variant="outline">
-                  <Tr k="app.beta.teamBadge" />
-                </Badge>
-              )}
-            </div>
-            {profile.headline && <p className="mt-1.5 text-base leading-7">{profile.headline}</p>}
-            <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-foreground-muted">
-              {[profile.jobTitle, profile.company].filter(Boolean).length > 0 && (
-                <span>{[profile.jobTitle, profile.company].filter(Boolean).join(" · ")}</span>
-              )}
-              {showLocation && profile.location && (
-                <span className="inline-flex items-center gap-1">
-                  <MapPinIcon size={13} />
-                  {profile.location}
-                </span>
-              )}
+    <ProfileView
+      locale={locale}
+      isSelf={isSelf}
+      baseUrl={`/app/people/${encodeURIComponent(profile.handle)}`}
+      tab={tab}
+      tabs={tabs}
+      identity={{
+        firstName: profile.firstName,
+        lastName: profile.lastName,
+        handle: profile.handle,
+        avatarUrl: profile.avatarUrl,
+        headline: profile.headline,
+        jobTitle: profile.jobTitle,
+        company: profile.company,
+        location: showLocation ? profile.location : null,
+        // Reduced profiles never expose the bio (existing privacy rule).
+        bio: full ? profile.bio : null,
+        roleAdmin: profile.role === "admin",
+        isDemo: profile.isDemo,
+        memberSinceIso: profile.createdAt.toISOString(),
+        completionPercent: null,
+      }}
+      badges={reputationBadges}
+      showBadgesSection={full}
+      stats={stats}
+      people={null}
+      contactLinks={
+        showContacts && hasContactLinks ? (
+          <ProfileContactLinks
+            websiteUrl={profile.websiteUrl}
+            xUrl={profile.xUrl}
+            instagramUrl={profile.instagramUrl}
+          />
+        ) : null
+      }
+      actions={
+        isSelf ? (
+          <>
+            <Button href="/app/profile/edit" size="sm" className="max-sm:h-11 max-sm:px-3">
+              <SparkleIcon size={15} />
+              <Tr k="app.profile.editTitle" />
+            </Button>
+            <ShareProfileButton url={shareUrl} className="max-sm:h-11 max-sm:px-3" />
+            <Button href="/app/settings" size="sm" variant="ghost" className="max-sm:h-11 max-sm:px-3">
+              <SettingsIcon size={15} />
+              <Tr k="app.beta.privacyCta" />
+            </Button>
+          </>
+        ) : (
+          <ProfileActions
+            userId={profile.id}
+            handle={profile.handle}
+            firstName={profile.firstName}
+            isConnected={connected}
+            isBlocked={blockedByMe}
+            canFollow={access.entitlements.follow && !blockedByMe}
+            isFollowing={followRows.length > 0}
+            canConnect={access.entitlements.connect !== "no" && !blockedByMe && requestsOpen}
+            canMessage={access.entitlements.messaging}
+            outgoingRequestId={requestState.outgoingRequestId}
+            incomingRequestId={requestState.incomingRequestId}
+            cooldownUntil={requestState.cooldownUntil ? requestState.cooldownUntil.toISOString() : null}
+            requestsClosed={!requestsOpen && !connected}
+          />
+        )
+      }
+      trust={showTrust && trust ? { detail: trust.detail } : null}
+      trustAside={
+        showTrust && trust && trust.detail.reviewable.length > 0 ? (
+          <>
+            <h2 className="text-sm font-bold tracking-tight">
+              <Tr k="app.trust.reviewSectionTitle" />
+            </h2>
+            <p className="mt-1.5 mb-4 text-xs leading-5 text-foreground-muted">
+              <Tr k="app.trust.reviewSectionLead" />
             </p>
-            <p className="mt-1 text-xs text-foreground-subtle">
-              <Tr k="app.beta.memberSince" params={{ date: memberSince }} />
-            </p>
-
-            {showContacts && (profile.websiteUrl || profile.xUrl || profile.instagramUrl) && (
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                {profile.websiteUrl && (
-                  <ContactLink href={externalHref(profile.websiteUrl)} icon={<GlobeIcon size={13} />} label="Website" />
-                )}
-                {profile.xUrl && (
-                  <ContactLink
-                    href={externalHref(profile.xUrl, "https://x.com/")}
-                    icon={<XSocialIcon size={12} />}
-                    label={profile.xUrl.startsWith("http") ? "X" : `@${profile.xUrl.replace(/^@/, "")}`}
-                  />
-                )}
-                {profile.instagramUrl && (
-                  <ContactLink
-                    href={externalHref(profile.instagramUrl, "https://instagram.com/")}
-                    icon={<InstagramIcon size={13} />}
-                    label={profile.instagramUrl.startsWith("http") ? "Instagram" : `@${profile.instagramUrl.replace(/^@/, "")}`}
-                  />
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="mt-5 border-t border-border pt-4">
-          {isSelf ? (
-            <div className="flex flex-wrap gap-2">
-              <Button href="/app/profile/edit" size="sm">
-                <Tr k="app.profile.editTitle" />
-              </Button>
-              <Button href="/app/settings" size="sm" variant="secondary">
-                <Tr k="app.beta.privacyCta" />
-              </Button>
-            </div>
-          ) : (
-            <ProfileActions
-              userId={profile.id}
-              handle={profile.handle}
-              firstName={profile.firstName}
-              isConnected={connected}
-              isBlocked={blockedByMe}
-              canFollow={access.entitlements.follow && !blockedByMe}
-              isFollowing={followRows.length > 0}
-              canConnect={access.entitlements.connect !== "no" && !blockedByMe && requestsOpen}
-              canMessage={access.entitlements.messaging}
-              outgoingRequestId={requestState.outgoingRequestId}
-              incomingRequestId={requestState.incomingRequestId}
-              cooldownUntil={requestState.cooldownUntil ? requestState.cooldownUntil.toISOString() : null}
-              requestsClosed={!requestsOpen && !connected}
-            />
-          )}
-        </div>
-      </Card>
-
-      {depth === "limited" ? (
-        <Card className="flex items-start gap-3 p-5">
+            <TrustReviewForm options={trust.detail.reviewable} emptyMessageKey="app.trust.reviewNoneForMember" />
+          </>
+        ) : null
+      }
+    >
+      {!full ? (
+        <Card className="flex items-start gap-3 p-4 sm:p-5">
           <LockIcon size={18} className="mt-0.5 shrink-0 text-foreground-subtle" />
           <div>
             <p className="text-sm font-semibold">
@@ -276,182 +324,262 @@ export default async function MemberProfilePage({ params }: { params: Promise<{ 
         </Card>
       ) : (
         <>
-          <Card className="p-5 sm:p-6">
-            <VerifiedBadgesSection
-              badges={reputationBadges}
-              adminRole={profile.role === "admin"}
-              isSelf={isSelf}
-              locale={locale === "en" ? "en" : "de"}
-            />
-          </Card>
-
-          {profile.bio && (
-            <Card className="p-5 sm:p-6">
-              <SectionTitle k="app.beta.aboutTitle" />
-              <p className="ic-measure mt-3 whitespace-pre-wrap text-sm leading-7 text-foreground-muted">{profile.bio}</p>
-            </Card>
+          {tab === "activity" && showPosts && (
+            <section className="space-y-4 sm:space-y-5">
+              <ProfileTabHeader titleKey="app.profile.tabsPosts" />
+              {posts.length === 0 ? (
+                <ProfileEmptyBox>
+                  <Tr k="app.profile.activityEmptyOther" />
+                </ProfileEmptyBox>
+              ) : (
+                <ProfilePostList posts={posts} />
+              )}
+            </section>
           )}
 
-          {(lookingFor.length > 0 || offering.length > 0) && (
-            <div className="grid gap-5 md:grid-cols-2">
-              {lookingFor.length > 0 && (
-                <Card className="p-5">
-                  <SectionTitle k="app.profile.lookingFor" />
-                  <TagRow items={lookingFor} />
+          {tab === "overview" && (
+            <div className="mx-auto w-full max-w-3xl space-y-3">
+              {profile.bio && (
+                <Card className="p-4 sm:p-5">
+                  <ProfileSectionTitle k="app.beta.aboutTitle" />
+                  <p className="ic-measure mt-3 whitespace-pre-wrap text-sm leading-6 text-foreground-muted sm:leading-7">
+                    {profile.bio}
+                  </p>
                 </Card>
               )}
-              {offering.length > 0 && (
-                <Card className="p-5">
-                  <SectionTitle k="app.profile.offering" />
-                  <TagRow items={offering} />
+
+              {(lookingFor.length > 0 || offering.length > 0) && (
+                <ProfileAccordion titleKey="app.profile.seekingOffering">
+                  <ProfileTagBlock labelKey="app.profile.lookingFor" items={lookingFor} tone="electric" />
+                  <ProfileTagBlock labelKey="app.profile.offering" items={offering} tone="forest" />
+                </ProfileAccordion>
+              )}
+
+              {(roles.length > 0 || skills.length > 0) && (
+                <ProfileAccordion titleKey="app.profile.rolesSkills">
+                  <ProfileTagBlock labelKey="app.profile.roles" items={roles} />
+                  <ProfileTagBlock labelKey="app.profile.skills" items={skills} />
+                </ProfileAccordion>
+              )}
+
+              {!profile.bio && lookingFor.length === 0 && offering.length === 0 && interestGroups.length === 0 && (
+                <Card className="p-4 text-sm text-foreground-muted sm:p-5">
+                  <Tr k="app.beta.profileSparse" />
                 </Card>
               )}
             </div>
           )}
 
-          {(interestLabels.length > 0 || goalLabels.length > 0 || roles.length > 0 || skills.length > 0) && (
-            <Card className="space-y-5 p-5 sm:p-6">
-              {interestLabels.length > 0 && (
-                <div>
-                  <SectionTitle k="app.discover.interests" />
-                  <TagRow items={interestLabels} />
-                </div>
-              )}
-              {goalLabels.length > 0 && (
-                <div>
-                  <SectionTitle k="app.profile.goalsTitle" />
-                  <TagRow items={goalLabels} />
-                </div>
-              )}
-              {roles.length > 0 && (
-                <div>
-                  <SectionTitle k="app.profile.roles" />
-                  <TagRow items={roles} />
-                </div>
-              )}
-              {skills.length > 0 && (
-                <div>
-                  <SectionTitle k="app.profile.skills" />
-                  <TagRow items={skills} />
-                </div>
-              )}
-            </Card>
-          )}
+          {tab === "performance" && showTrust && trust && (
+            <div className="space-y-5 sm:space-y-6">
+              <ProfileTabHeader titleKey="app.profile.performanceTitle" leadKey="app.profile.performanceLeadOther" />
 
-          {!profile.bio && lookingFor.length === 0 && offering.length === 0 && interestLabels.length === 0 && (
-            <Card className="p-5 text-sm text-foreground-muted">
-              <Tr k="app.beta.profileSparse" />
-            </Card>
-          )}
-
-          {/* Trust: the score block is the entry point into the detail view.
-              The review form only exists when the server found a provable
-              collaboration between the viewer and this member – there is no
-              public "rate anyone" button. */}
-          {showTrust && trust && (
-            <Card className="p-0">
-              <TrustScoreBlock
-                detail={trust.detail}
-                memberName={`${profile.firstName} ${profile.lastName}`}
-                variant="stacked"
-              />
-              {trust.reviews.length > 0 && (
-                <div className="border-t border-border p-5">
-                  <SectionTitle k="app.trust.detailScoreTitle" />
-                  <ul className="mt-3 space-y-3">
-                    {trust.reviews.slice(0, 3).map((review) => (
-                      <li key={review.id} className="rounded-xl bg-surface-muted p-3">
-                        {review.comment && (
-                          <p className="text-sm leading-6 break-words [overflow-wrap:anywhere]">{review.comment}</p>
-                        )}
-                        <p className="mt-1 text-xs text-foreground-subtle">
-                          <Tr
-                            k="app.trust.reviewBy"
-                            params={{ name: `${review.authorFirstName} ${review.authorLastName}` }}
-                          />
-                          {" · "}
-                          <Tr k={`app.trust.context.${review.contextType}` as "app.trust.context.opportunity"} />
+              <div className="ic-grid">
+                <div className="ic-span-6 lg:col-span-3">
+                  <Card className="p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-foreground-subtle">
+                      <Tr k="app.trust.scoreTitle" />
+                    </p>
+                    {score === null ? (
+                      <p className="mt-1.5 text-sm text-foreground-muted">
+                        <Tr k="app.profile.performanceTrustEmpty" />
+                      </p>
+                    ) : (
+                      <>
+                        <p className="mt-1.5 flex items-center gap-2 text-2xl font-bold tracking-tight">
+                          <LocalDecimal value={score} />
+                          <span className="text-sm font-medium text-foreground-subtle">
+                            <Tr k="app.trust.scoreOfMax" />
+                          </span>
+                          <RatingStars value={score} size={14} />
                         </p>
+                        <p className="mt-1 text-xs text-foreground-muted">
+                          {trust.summary.verifiedReviewCount === 1 ? (
+                            <Tr k="app.trust.verifiedCountOne" />
+                          ) : (
+                            <Tr k="app.trust.verifiedCount" params={{ count: trust.summary.verifiedReviewCount }} />
+                          )}
+                        </p>
+                      </>
+                    )}
+                  </Card>
+                </div>
+                {counts && metricVisible("deals") && (
+                  <div className="ic-span-6 lg:col-span-3">
+                    <ProfileMetricCell labelKey="app.profile.metricDeals" value={counts.opportunities} />
+                  </div>
+                )}
+                {counts && metricVisible("customers") && (
+                  <div className="ic-span-6 lg:col-span-3">
+                    <ProfileMetricCell labelKey="app.profile.metricCustomers" value={counts.followers} />
+                  </div>
+                )}
+                {counts && metricVisible("marketplace") && (
+                  <div className="ic-span-6 lg:col-span-3">
+                    <ProfileMetricCell labelKey="app.profile.metricMarketplace" value={counts.listings} />
+                  </div>
+                )}
+                {counts && metricVisible("courses") && (
+                  <div className="ic-span-6 lg:col-span-3">
+                    <ProfileMetricCell labelKey="app.profile.metricCourses" value={counts.courseListings} />
+                  </div>
+                )}
+                {counts && metricVisible("investments") && (
+                  <div className="ic-span-6 lg:col-span-3">
+                    <ProfileMetricCell labelKey="app.profile.metricInvestments" value={counts.investments} />
+                  </div>
+                )}
+                {counts && metricVisible("events") && (
+                  <div className="ic-span-6 lg:col-span-3">
+                    <ProfileMetricCell labelKey="app.profile.metricEvents" value={counts.events} />
+                  </div>
+                )}
+                {counts && (
+                  <div className="ic-span-6 lg:col-span-3">
+                    <ProfileMetricCell labelKey="app.profile.metricConnections" value={counts.connections} />
+                  </div>
+                )}
+              </div>
+
+              <Card className="p-4 sm:p-5">
+                <h3 className="text-sm font-bold tracking-tight">
+                  <Tr k="app.profile.performanceReviews" />
+                </h3>
+                {trust.reviews.length === 0 ? (
+                  <p className="mt-2 text-sm text-foreground-muted">
+                    <Tr k="app.profile.performanceNoReviews" />
+                  </p>
+                ) : (
+                  <ul className="mt-3 space-y-3">
+                    {trust.reviews.map((review) => (
+                      <li key={review.id} className="rounded-xl border border-border p-3.5">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <RatingStars value={review.stars} size={13} />
+                          <span className="text-xs text-foreground-subtle">
+                            {review.authorFirstName} {review.authorLastName}
+                          </span>
+                          <span className="text-xs text-foreground-subtle">
+                            · <Tr k={`app.trust.context.${review.contextType}` as "app.trust.context.opportunity"} />
+                          </span>
+                        </div>
+                        {review.comment && (
+                          <p className="mt-2 break-words text-sm leading-6 text-foreground-muted [overflow-wrap:anywhere]">
+                            {review.comment}
+                          </p>
+                        )}
                       </li>
                     ))}
                   </ul>
-                </div>
-              )}
-              {trust.detail.reviewable.length > 0 && (
-                <div className="border-t border-border p-5">
-                  <h3 className="text-sm font-bold tracking-tight">
-                    <Tr k="app.trust.reviewSectionTitle" />
-                  </h3>
-                  <p className="mt-1.5 mb-4 text-sm leading-6 text-foreground-muted">
-                    <Tr k="app.trust.reviewSectionLead" />
-                  </p>
-                  <TrustReviewForm
-                    options={trust.detail.reviewable}
-                    emptyMessageKey="app.trust.reviewNoneForMember"
-                  />
-                </div>
-              )}
-            </Card>
+                )}
+              </Card>
+            </div>
           )}
 
-          {showPosts && posts.length > 0 && (
-            <section>
-              <h2 className="mb-3 text-base font-bold tracking-tight">
-                <Tr k="app.posts.feedTitle" />
-              </h2>
-              <ul className="space-y-3">
-                {posts.map((post) => (
-                  <li key={post.id}>
-                    <Card className="p-4">
-                      <p className="whitespace-pre-wrap text-sm leading-6">{post.body}</p>
-                      <PostImage imageUrl={post.imageUrl} />
-                      <p className="mt-2 text-xs text-foreground-subtle">
-                        <LocalDate value={post.createdAt.toISOString()} />
-                      </p>
-                    </Card>
-                  </li>
-                ))}
-              </ul>
-            </section>
+          {tab === "offers" && (
+            <div className="space-y-5 sm:space-y-6">
+              <ProfileTabHeader titleKey="app.profile.offersTitle" leadKey="app.profile.offersLeadOther" />
+
+              {!offerings ||
+              (offerings.opportunities.length === 0 &&
+                offerings.listings.length === 0 &&
+                offerings.investments.length === 0) ? (
+                <ProfileEmptyBox>
+                  <Tr k="app.profile.offersEmptyOther" />
+                </ProfileEmptyBox>
+              ) : (
+                <div className="space-y-5">
+                  {offerings.opportunities.length > 0 && (
+                    <ProfileOfferList
+                      titleKey="app.profile.offersOpportunities"
+                      icon={<BriefcaseIcon size={15} />}
+                      items={offerings.opportunities.map((row) => ({
+                        id: row.id,
+                        title: row.title,
+                        href: `/app/opportunities/${row.id}`,
+                        meta: row.status,
+                        metaKey: offerStatusKey(
+                          "app.opportunities.statusLabels",
+                          ["draft", "published", "closed"],
+                          row.status,
+                        ),
+                      }))}
+                    />
+                  )}
+                  {offerings.listings.length > 0 && (
+                    <ProfileOfferList
+                      titleKey="app.profile.offersListings"
+                      icon={
+                        offerings.listings[0]?.kind === "course" ? (
+                          <GraduationIcon size={15} />
+                        ) : (
+                          <StoreIcon size={15} />
+                      )
+                      }
+                      items={offerings.listings.map((row) => ({
+                        id: row.id,
+                        title: row.title,
+                        href: `/app/marketplace/${row.id}`,
+                        meta: row.status,
+                        metaKey: offerStatusKey(
+                          "app.marketplace.statusLabels",
+                          ["draft", "published", "archived"],
+                          row.status,
+                        ),
+                      }))}
+                    />
+                  )}
+                  {offerings.investments.length > 0 && (
+                    <ProfileOfferList
+                      titleKey="app.profile.offersInvestments"
+                      icon={<ChartIcon size={15} />}
+                      items={offerings.investments.map((row) => ({
+                        id: row.id,
+                        title: row.title,
+                        href: `/app/investments/${row.id}`,
+                        meta: row.status,
+                        metaKey: investmentLabelKey("status", row.status),
+                      }))}
+                    />
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {tab === "interests" && (
+            <div className="space-y-4 sm:space-y-5">
+              <ProfileTabHeader titleKey="app.profile.tabsInterests" leadKey="app.profile.interestsTabLeadOther" />
+
+              {interestGroups.length === 0 && goalLabels.length === 0 ? (
+                <ProfileEmptyBox>
+                  <Tr k="app.profile.interestsEmptyOther" />
+                </ProfileEmptyBox>
+              ) : (
+                <Card className="space-y-5 p-4 sm:p-5">
+                  {interestGroups.map((group) => (
+                    <div key={group.group}>
+                      <ProfileSectionTitle text={group.group} />
+                      <div className="mt-2.5">
+                        <ProfileTagBlock items={group.labels} />
+                      </div>
+                    </div>
+                  ))}
+                  {goalLabels.length > 0 && (
+                    <div className="border-t border-border pt-5">
+                      <ProfileTagBlock labelKey="app.profile.goalsTitle" items={goalLabels} tone="forest" />
+                    </div>
+                  )}
+                </Card>
+              )}
+            </div>
           )}
         </>
       )}
-    </div>
+    </ProfileView>
   );
 }
 
-function SectionTitle({ k }: { k: string }) {
-  return (
-    <h2 className="text-[11px] font-bold uppercase tracking-[0.14em] text-foreground-subtle">
-      <Tr k={k} />
-    </h2>
-  );
-}
-
-function TagRow({ items }: { items: string[] }) {
-  return (
-    <ul className="mt-2.5 flex flex-wrap gap-1.5">
-      {items.map((item) => (
-        <li key={item}>
-          <span className="inline-flex rounded-full bg-surface-muted px-2.5 py-1 text-xs font-medium text-foreground">
-            {item}
-          </span>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-function ContactLink({ href, icon, label }: { href: string; icon: React.ReactNode; label: string }) {
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer nofollow"
-      className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-2.5 py-1 text-xs text-foreground-muted transition-colors hover:text-foreground"
-    >
-      {icon}
-      <span>{label}</span>
-    </a>
-  );
+/** Localized status label key, or null for unknown values (the stored value is shown instead). */
+function offerStatusKey(prefix: string, known: readonly string[], value: string): string | null {
+  return known.includes(value) ? `${prefix}.${value}` : null;
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
-import { ProfileBadgeGallery } from "@/components/app/BadgeChips";
+import { BadgeDetail, ProfileBadgeGallery } from "@/components/app/BadgeChips";
 import { VerifiedBadgesSection } from "@/components/app/VerifiedBadges";
 import type { PublicBadge } from "@/lib/badges/queries";
 
@@ -15,6 +15,8 @@ function badge(overrides: Partial<PublicBadge> = {}): PublicBadge {
     priority: 1,
     active: true,
     grantedAt: "2026-01-01T00:00:00.000Z",
+    verifiedAt: "2026-01-01T00:00:00.000Z",
+    source: "admin",
     memberNumber: null,
     publicSummary: null,
     periodLabel: null,
@@ -56,5 +58,46 @@ describe("profile verified badge section", () => {
     const html = renderToStaticMarkup(<VerifiedBadgesSection badges={[]} isSelf={false} />);
     expect(html).not.toContain('href="/app/profile/badges"');
     expect(html).not.toContain("Badge beantragen");
+  });
+});
+
+describe("badge glyphs are unique per catalog entry", () => {
+  it("renders Community Builder with its own orbit glyph, not the Million Club mark", () => {
+    const html = renderToStaticMarkup(
+      <ProfileBadgeGallery
+        badges={[
+          badge({ id: "community", slug: "network-builder", title: "Community Builder", iconKey: "community-orbit", category: "reputation" }),
+          badge({ id: "million", slug: "deal-volume-1m", title: "IC Million Club", iconKey: "million-mark", category: "reputation" }),
+        ]}
+      />,
+    );
+    const svgMarks = [...html.matchAll(/<svg\b[^>]*>(.*?)<\/svg>/g)].map((match) => match[1]);
+    // Each card shows its own glyph; the two card glyphs must differ.
+    expect(svgMarks.length).toBeGreaterThanOrEqual(2);
+    expect(svgMarks[0]).not.toBe(svgMarks[1]);
+  });
+});
+
+describe("badge detail view", () => {
+  it("shows the verification date and the grant method", () => {
+    const html = renderToStaticMarkup(
+      <BadgeDetail badge={badge({ verifiedAt: "2026-03-05T10:00:00.000Z", source: "application" })} />,
+    );
+    expect(html).toContain("Verifiziert am");
+    expect(html).toContain("2026");
+    expect(html).toContain("Geprüfter Verifizierungsantrag");
+  });
+
+  it("labels direct admin grants as such", () => {
+    const html = renderToStaticMarkup(<BadgeDetail badge={badge({ source: "admin" })} />);
+    expect(html).toContain("Direkte Vergabe durch INNER CIRCLE");
+  });
+});
+
+describe("badge empty state on foreign profiles", () => {
+  it("stays visible with the 'Noch keine Badges' title and an explanation", () => {
+    const html = renderToStaticMarkup(<VerifiedBadgesSection badges={[]} isSelf={false} />);
+    expect(html).toContain("Noch keine Badges");
+    expect(html).toContain("Hier erscheinen vergebene Badges");
   });
 });

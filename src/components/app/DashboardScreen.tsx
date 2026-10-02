@@ -144,7 +144,7 @@ export function DashboardScreen({ data }: { data: DashboardData }) {
   } as const;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-5 sm:space-y-8">
       {/* ------------------------------------------------- compact header */}
       <header className="flex flex-wrap items-center justify-between gap-x-3 gap-y-3">
         <div className="flex min-w-0 max-w-full flex-wrap items-center gap-x-3 gap-y-1.5">

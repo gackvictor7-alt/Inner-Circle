@@ -74,7 +74,7 @@ export default async function BillingPage({
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-5 sm:space-y-8">
       <LocalizedPageHeader titleKey="app.billing.title" leadKey="app.billing.lead" />
 
       {params.paywall && (

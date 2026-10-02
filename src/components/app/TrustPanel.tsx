@@ -162,7 +162,7 @@ export function TrustDetailBody({ detail, locale }: { detail: TrustDetail; local
   const { score, reviews, signals, demoReviewCount } = detail;
 
   return (
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {/* ------------------------------------------------------------ score */}
         <section>
           {score.stars === null ? (

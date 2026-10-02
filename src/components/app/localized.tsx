@@ -167,7 +167,7 @@ export function LocalizedPageHeader({
   return (
     <header className="flex flex-wrap items-end justify-between gap-4">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{tr(titleKey)}</h1>
+        <h1 className="text-xl font-bold tracking-tight sm:text-3xl">{tr(titleKey)}</h1>
         {/* Mobile (Sprint 8, TEIL V): title first – the lead sentence only
             from `sm` up, where it does not add scroll length. */}
         {leadKey && (

@@ -1,5 +1,6 @@
+import { and, asc, eq } from "drizzle-orm";
 import { db } from "@/db/client";
-import { badges } from "@/db/schema";
+import { badges, users } from "@/db/schema";
 import { requireAdmin } from "@/lib/access/server";
 import {
   listBadgeApplicationsForAdmin,
@@ -48,7 +49,7 @@ export default async function AdminBadgesPage() {
   const adminAccess = await requireAdmin();
   const locale = adminAccess.user?.locale === "en" ? "en" : "de";
 
-  const [openApplications, finishedApplications, granted, grantableBadges] = await Promise.all([
+  const [openApplications, finishedApplications, granted, grantableBadges, memberRows] = await Promise.all([
     listBadgeApplicationsForAdmin(locale, { status: "open" }),
     listBadgeApplicationsForAdmin(locale, { status: "completed" }),
     listGrantedBadgesForAdmin(locale),
@@ -63,6 +64,14 @@ export default async function AdminBadgesPage() {
       })
       .from(badges)
       .orderBy(badges.priority),
+    // Real, active members for the direct-grant picker. The admin's own
+    // account is deliberately included (explicit, audited self-grant).
+    db
+      .select({ handle: users.handle, firstName: users.firstName, lastName: users.lastName })
+      .from(users)
+      .where(and(eq(users.status, "active"), eq(users.isDemo, false)))
+      .orderBy(asc(users.firstName), asc(users.lastName))
+      .limit(1000),
   ]);
 
   // Member's existing badges, for the review context (batched by member).
@@ -298,6 +307,10 @@ export default async function AdminBadgesPage() {
         <Card className="mt-3 p-5">
           <AdminBadgeGrantForm
             badgeOptions={grantable.map((badge) => ({ slug: badge.slug, title: locale === "en" ? badge.titleEn : badge.titleDe }))}
+            memberOptions={memberRows.map((member) => ({
+              handle: member.handle,
+              name: `${member.firstName} ${member.lastName}`,
+            }))}
           />
         </Card>
       </section>

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { Dialog } from "@/components/ui/Dialog";
-import { useTr } from "@/components/app/localized";
+import { LocalDate, useTr } from "@/components/app/localized";
 import type { PublicBadge } from "@/lib/badges/queries";
 
 const FAMILY_CLASSES: Record<PublicBadge["category"], string> = {
@@ -76,6 +76,7 @@ function BadgeGlyph({ iconKey, size = 18 }: { iconKey: string; size?: number }) 
       break;
     case "community-orbit":
       mark = <><circle cx="12" cy="12" r="2.2" /><circle cx="6" cy="7" r="1.7" /><circle cx="18" cy="7" r="1.7" /><circle cx="6" cy="17" r="1.7" /><circle cx="18" cy="17" r="1.7" /><path d="m7.5 8.2 2.7 2.2M16.5 8.2l-2.7 2.2M7.5 15.8l2.7-2.2M16.5 15.8l-2.7-2.2" /></>;
+      break;
     case "million-mark":
       mark = <><circle cx="12" cy="12" r="9" /><path d="M6.5 16V8l2.2 2 2.2-2v8M14 8h2.2a2.2 2.2 0 0 1 0 4.4H14V8Zm0 4.4 3 3.6" /></>;
       break;
@@ -139,7 +140,8 @@ function BadgeToken({ badge, onClick }: { badge: PublicBadge; onClick: () => voi
   );
 }
 
-function BadgeDetail({ badge }: { badge: PublicBadge }) {
+/** The badge detail body (rendered inside the dialog; exported for tests). */
+export function BadgeDetail({ badge }: { badge: PublicBadge }) {
   const tr = useTr();
   const detailKeyBySlug: Record<string, string> = {
     "founding-member": "foundingMember",
@@ -196,6 +198,28 @@ function BadgeDetail({ badge }: { badge: PublicBadge }) {
           </dt>
           <dd className="mt-1 text-sm leading-6 text-foreground-muted">{value("evidence")}</dd>
         </div>
+        {badge.verifiedAt && (
+          <div>
+            <dt className="text-[10px] font-bold uppercase tracking-[0.14em] text-foreground-subtle">
+              {tr("app.badges.detailLabels.verifiedAt")}
+            </dt>
+            <dd className="mt-1 text-sm leading-6 text-foreground">
+              <LocalDate value={badge.verifiedAt} options={{ day: "2-digit", month: "long", year: "numeric" }} />
+            </dd>
+          </div>
+        )}
+        <div>
+          <dt className="text-[10px] font-bold uppercase tracking-[0.14em] text-foreground-subtle">
+            {tr("app.badges.detailLabels.grantSource")}
+          </dt>
+          <dd className="mt-1 text-sm leading-6 text-foreground">
+            {tr(
+              badge.source === "application"
+                ? "app.badges.detailLabels.sourceApplication"
+                : "app.badges.detailLabels.sourceAdmin",
+            )}
+          </dd>
+        </div>
       </dl>
 
       {badge.description && detailKey === "generic" && (
@@ -246,7 +270,8 @@ function BadgeDetail({ badge }: { badge: PublicBadge }) {
   );
 }
 
-function BadgeDetailDialog({ badge, onClose }: { badge: PublicBadge | null; onClose: () => void }) {
+/** Compact badge detail view (also rendered directly in tests). */
+export function BadgeDetailDialog({ badge, onClose }: { badge: PublicBadge | null; onClose: () => void }) {
   const tr = useTr();
   return (
     <Dialog

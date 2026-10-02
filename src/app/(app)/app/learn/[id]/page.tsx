@@ -56,7 +56,7 @@ export default async function CoursePage({
   const isLocked = current ? !canPlay && !current.lesson.isPreview : false;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-5 sm:space-y-8">
       <LocalizedPageHeader
         titleKey="app.learn.player"
         actions={

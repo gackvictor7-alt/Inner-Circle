@@ -72,8 +72,10 @@ export function MembershipBlock({
             </span>
           </p>
           <div className="mt-5">
+            {/* Membership sprint: klarer Mitgliedschafts-CTA statt
+                missverständlichem „Zur Plattform“ auf dem /register-Link. */}
             <Button href="/register" size="lg" fullWidth>
-              {t.home2.heroTrialCta}
+              {t.home2.heroJoinCta}
             </Button>
           </div>
           <Link

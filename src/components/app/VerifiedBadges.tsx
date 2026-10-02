@@ -59,9 +59,11 @@ export function VerifiedBadgesSection({
       </div>
 
       {sorted.length === 0 ? (
+        // The area stays visible without badges: title + a short explanation
+        // of what verified badges mean (owner variant explains how to earn them).
         <div className="rounded-xl border border-dashed border-border/80 bg-surface-muted/40 p-4 text-sm text-foreground-muted">
-          {isSelf && <h3 className="font-semibold text-foreground">{tr("app.badges.verifiedEmptyTitle")}</h3>}
-          <p className={isSelf ? "mt-1" : ""}>{tr(isSelf ? "app.badges.verifiedEmptyText" : "app.badges.modalEmptyText")}</p>
+          <h3 className="font-semibold text-foreground">{tr("app.badges.verifiedEmptyTitle")}</h3>
+          <p className="mt-1">{tr(isSelf ? "app.badges.verifiedEmptyText" : "app.badges.modalEmptyText")}</p>
         </div>
       ) : (
         <ProfileBadgeGallery badges={sorted} compact={compactGallery} />
@@ -76,14 +78,23 @@ export function VerifiedBadgesSection({
       {isSelf && (
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
           <p className="max-w-xl text-xs leading-5 text-foreground-muted">{tr("app.profile.noVerifiedBadgesHint")}</p>
-          <Link
-            href="/app/profile/badges/available"
-            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-electric-500/30 bg-electric-500/10 px-4 text-sm font-semibold text-electric-700 transition-colors hover:bg-electric-500/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-electric-500 dark:text-electric-200"
-          >
-            <AwardIcon size={15} />
-            {tr("app.badges.form.title")}
-            <span aria-hidden="true">→</span>
-          </Link>
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Explains the badge system (catalog, criteria, own applications). */}
+            <Link
+              href="/app/profile/badges"
+              className="inline-flex min-h-10 items-center justify-center rounded-full border border-border px-4 text-sm font-semibold text-foreground-muted transition-colors hover:border-border-strong hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-electric-500"
+            >
+              {tr("app.badges.moreAbout")}
+            </Link>
+            <Link
+              href="/app/profile/badges/available"
+              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-electric-500/30 bg-electric-500/10 px-4 text-sm font-semibold text-electric-700 transition-colors hover:bg-electric-500/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-electric-500 dark:text-electric-200"
+            >
+              <AwardIcon size={15} />
+              {tr("app.badges.form.title")}
+              <span aria-hidden="true">→</span>
+            </Link>
+          </div>
         </div>
       )}
     </div>

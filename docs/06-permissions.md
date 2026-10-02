@@ -366,6 +366,27 @@ Private Beta:
 ergänzt, serverseitig geprüft und **dieses Dokument aktualisiert**. UI-Prüfungen
 allein sind ungültig.
 
+### 3g. Vereinheitlichte Profile, Tab-Gating und direkte Badge-Vergabe (Sprint 2026-10-02)
+
+Eigenes Profil (`/app/profile`) und Fremdprofil (`/app/people/[handle]`) teilen
+sich die Komponente `ProfileView`; **alle** Unterschiede werden serverseitig in
+den Page-Server-Components entschieden (nie im Client):
+
+| Regel | Umsetzung |
+| ----- | --------- |
+| Tab-Gating nach Beziehung | `?tab=` wird serverseitig gegen die erlaubte Tab-Liste geprüft (`parseProfileTab`): fremde Profile erhalten Performance/Angebote nur bei bestehender Verbindung/offener Anfrage/admin; Interessen fremd nur, wenn das Ziel `interests` nicht auf privat steht; unbekannter Tab-Parameter fällt auf den Standard-Tab zurück |
+| Privatsphäre bleibt serverseitig | Kennzahlen (`badgeNumbers`, `performance`, …) über `metricsVisibility`/`src/lib/network/privacy.ts` (§3d); `interestGroupsFor()` liefert fremd nur freigegebene Gruppen; begrenzte Profile (`limited`) rendern Rumpf ohne Stats/Tabs/Badges/Bio |
+| Aktionen je Profil | Eigen: Bearbeiten/Teilen/Einstellungen + Post-Verwaltung (Footer-Render-Prop der eigenen Page). Fremd: Folgen, Nachricht, Kontakt anfragen – dieselben Server-Actions und Prüfungen wie vor dem Sprint |
+| Badge-Sichtbarkeit | Öffentlich sind nur verifizierte, nicht widerrufene Badges (`reputationBadgesFor` mit `isNotNull(verifiedAt)`); Founding Member zusätzlich nur mit echter Nummer 1–50 (`hasPublicFoundingMemberBadge`) |
+| Admin „Badge direkt vergeben" | `grantBadgeByAdminAction` in `src/app/actions/badges.ts`: `getAccessContext()` → nur `role=admin`; Ziel per Handle/E-Mail; Schwellen-Badges (z. B. `deal-volume-1m`) weiterhin nur bei erfüllter Progression (`reputationProgressFor`); Demo-Ziele werden abgelehnt; **eigenes Admin-Konto ist als Ziel erlaubt** (explizite Vergabe, kein Antragsflow) |
+| Audit-Pflicht | Jede direkte Vergabe schreibt `AdminAuditLog` (`action = 'badge.granted'`, `entityId = UserBadge.id`, `metaJson` mit `userId`, `badgeSlug`, `internalReason`, `periodLabel`) über `audit()` in `src/lib/admin/audit.ts` |
+| Selbstgenehmigungs-Schutz unverändert | Im **Antragsflow** (`reviewBadgeApplicationAction`) darf der eigene Antrag weiterhin nicht selbst genehmigt/abgelehnt werden (`selfAction`); die direkte Vergabe ist ein davon getrennter, expliziter Admin-Pfad |
+
+Nachweis: `tests/integration/badge-admin-direct-grant.test.ts` (Selbst-Vergabe
+inkl. Auditlog-Zeile, Schwellen-Guard, Nicht-Admin → `forbidden`,
+Selbstgenehmigung → `selfAction`) und `tests/unit/profile-unified.test.tsx`
+(identische Header-/Tab-Struktur eigen vs. fremd).
+
 ## 5. Rollen, die (noch) nicht existieren
 
 | Rolle | Zustand |

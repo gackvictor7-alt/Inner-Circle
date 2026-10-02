@@ -102,7 +102,7 @@ export function PostCreateForm() {
       : null;
 
   return (
-    <form onSubmit={submitKeepingValues} className="space-y-6">
+    <form onSubmit={submitKeepingValues} className="space-y-4 sm:space-y-6">
       <Card className="space-y-5 p-5 sm:p-6">
         <Textarea
           label={tr("app.posts.bodyLabel")}

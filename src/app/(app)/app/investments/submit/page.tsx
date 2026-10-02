@@ -56,7 +56,7 @@ export default async function SubmitInvestmentPage() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <LocalizedPageHeader titleKey="app.investments.detail.submitCta" leadKey="app.investments.detail.submitLead" />
       <Card className="p-5">
         <p className="text-sm leading-6 text-foreground-muted"><Tr k="app.investments.regulatedText" /></p>

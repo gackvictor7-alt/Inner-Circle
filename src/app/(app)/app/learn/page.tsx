@@ -54,7 +54,7 @@ export default async function LearnPage({ searchParams }: { searchParams: Promis
     .limit(24);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-5 sm:space-y-8">
       <LocalizedPageHeader titleKey="app.learn.title" leadKey="app.learn.lead" />
 
       <nav aria-label="Academy" className="flex w-full overflow-x-auto no-scrollbar border-b border-border">

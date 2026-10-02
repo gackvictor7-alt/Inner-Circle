@@ -79,7 +79,7 @@ export default async function SettingsPage() {
   ];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-5 sm:space-y-8">
       <LocalizedPageHeader titleKey="app.settings.title" leadKey="app.settings.lead" />
 
       <Card className="p-6">

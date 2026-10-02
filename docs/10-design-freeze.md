@@ -772,3 +772,48 @@ Stufen, Dark-/Light-Mode und DE/EN bleiben unverändert; kein neues Token.
   aufklappbare optionale Felder Link-URL/Bild-URL (`app.posts.moreOptions`);
   Submit auf dem Handy volle Breite. Upload-, Validierungs- und Server-Logik
   sind unverändert (Feldnamen `imageFile`, `imageUrl`, `linkUrl` bleiben).
+
+## 1.25 Sprint Profile, Badges & Mobile-Polish (2026-10-02, ausdrücklicher Gründerauftrag)
+
+Festgeschrieben – Änderungen brauchen eine bewusste Entscheidung und einen
+Eintrag hier:
+
+- **Ein Profilsystem:** `/app/profile` und `/app/people/[handle]` rendern über
+  dieselbe Komponente `src/components/app/ProfileView.tsx` – identische
+  Struktur, Typografie, Spacing, Karten und Tabs; Unterschiede ausschließlich
+  über Props (`isSelf`, `actions`, Tab-Gating, Privacy). Reihenfolge mobil:
+  Kopf (Avatar/Name/Badge-Cluster/@handle/Bio) → Stats (Follower · Folgt ·
+  Business Connections, 3 Spalten) → Trust Score → Verifizierte Badges →
+  Tabs → Inhalt. Ab `xl` drei Spalten (Identität | Badges | Trust).
+- **Profil-Tabs:** Beiträge | Übersicht | Performance | Angebote |
+  **Interessen** (fester Fünfer-Order); Tab-Leiste als statisches
+  `grid-cols-N`, Labels `text-[10px]`/ab `sm` `text-[13px]`, Touch-Targets
+  `min-h-12`, aktiver Tab mit `border-b-2` electric.
+- **Badges:** jedes Badge hat eine eigene, handgezeichnete SVG-Glyph im
+  INNER-CIRCLE-Stil (navy/electric/forest, Strichstärke 1.8, **kein Gold,
+  keine Trophäen**), einheitliche Größenlogik; verifizierter Status sichtbar;
+  Klick öffnet kompaktes Detail (Name, Bedeutung, Verifizierungsstatus,
+  „Verifiziert am"-Datum, Vergabeart „Geprüfter Verifizierungsantrag" bzw.
+  „Direkte Vergabe durch INNER CIRCLE"). Leerzustand „Noch keine Badges"
+  bleibt auf **beiden** Profilen sichtbar; eigenes Profil zusätzlich mit
+  Erklärung + „Mehr über Badges". Der Badge-Katalog (15 Badges) ist
+  vollständig erhalten.
+- **Admin „Badge direkt vergeben":** `/admin/badges` – Mitglied-Dropdown
+  (echte Mitglieder, inkl. eigenes Admin-Konto) + Badge + interner Grund
+  (Pflicht) + optionaler Zeitraum; jeder Grant wird audit-loggiert
+  (`badge.granted`). Antrags-Selbstgenehmigungsschutz bleibt getrennt
+  unangetastet.
+- **Mobile-Typografie systematisch:** geteilte Seiten-H1s mobil `text-xl`
+  (ab `sm` unverändert `text-3xl`); Seiten-Wrapper-Abstände mobil
+  `space-y-5`/`space-y-4` (ab `sm` `space-y-8`/`space-y-6`); Bottom-Bar,
+  44/48-px-Touch-Targets und Dialog-Bottom-Sheets gemäß §1.21/§1.24
+  unverändert. Kein horizontaler Overflow (Audit 390 px; Admin-Tabellen
+  bleiben in `overflow-x-auto`).
+- **Website-CTA-Hierarchie (Membership):** primär **„Jetzt Mitglied werden"**
+  (`home2.heroJoinCta`, `nav.join` DE/EN) → `/register`, electric; sekundär
+  „Mehr erfahren" → `#outcomes`, outline; Plattform-Link nur noch leise
+  (underline) in der Preishinweis-Zeile direkt unter den Hero-CTAs
+  (24,99 €/Monat · 249,99 €/Jahr · monatlich kündbar, Werte aus `PLANS`).
+  MembershipBlock mobil: gleicher CTA statt „Zur Plattform". Die
+  Sprint-15-Pins in `tests/e2e/sprint15-browser.mjs` wurden auf diese neue,
+  gewollte Hierarchie aktualisiert (alte Pins: „Mehr erfahren" primär).

@@ -86,7 +86,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
   const paymentsLive = integration.stripeConfigured;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-5 sm:space-y-8">
       <LocalizedPageHeader titleKey="app.marketplace.detailTitle" />
 
       <Card className="p-6">

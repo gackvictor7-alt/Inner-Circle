@@ -38,7 +38,7 @@ export default async function EventsPage({
   const shown = tab === "concepts" ? concepts : confirmed;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-5 sm:space-y-8">
       <LocalizedPageHeader titleKey="app.events.title" leadKey="app.events.lead" />
 
       {/* Events are curated by INNER CIRCLE – members never publish them (spec §14).

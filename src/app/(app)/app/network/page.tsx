@@ -123,7 +123,7 @@ export default async function NetworkPage({
   const canConnect = access.entitlements.connect !== "no" || isDemo;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-5 sm:space-y-8">
       <LocalizedPageHeader
         titleKey="app.network.title"
         leadKey="app.network.lead"
