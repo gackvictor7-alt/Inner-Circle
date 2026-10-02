@@ -32,7 +32,7 @@ export default async function InvestmentsPage({
     // interest or submission query runs for a demo account.
     if (access.entitlements.demoAccess) {
       return (
-        <div className="space-y-8">
+        <div className="space-y-5 sm:space-y-8">
           <LocalizedPageHeader titleKey="app.investments.title" leadKey="app.investments.lead" />
           <DemoAreaNotice leadKey="app.demo.investmentsLead" />
           <Card className="p-5">
@@ -75,7 +75,7 @@ export default async function InvestmentsPage({
   /* ------------------------------------------------------------- hub view */
   if (view === "hub") {
     return (
-      <div className="space-y-8">
+      <div className="space-y-5 sm:space-y-8">
         <LocalizedPageHeader
           titleKey="app.investments.title"
           leadKey="app.investments.lead"
@@ -93,7 +93,7 @@ export default async function InvestmentsPage({
      commitment now has its own tab (?view=impact) to keep the areas clean. */
   if (view === "portfolio") {
     return (
-      <div className="space-y-8">
+      <div className="space-y-5 sm:space-y-8">
         <LocalizedPageHeader
           titleKey="app.investments.title"
           leadKey="app.investments.lead"
@@ -103,7 +103,7 @@ export default async function InvestmentsPage({
         <p className="text-sm leading-6 text-foreground-muted">
           <Tr k="app.investments.portfolioLead" />
         </p>
-        <section aria-label="INNER CIRCLE Investment Pool" className="space-y-6">
+        <section aria-label="INNER CIRCLE Investment Pool" className="space-y-4 sm:space-y-6">
           <InvestmentPoolChart />
           <PortfolioSection />
         </section>
@@ -117,7 +117,7 @@ export default async function InvestmentsPage({
      never demo amounts. */
   if (view === "impact") {
     return (
-      <div className="space-y-8">
+      <div className="space-y-5 sm:space-y-8">
         <LocalizedPageHeader
           titleKey="app.investments.title"
           leadKey="app.investments.lead"
@@ -175,7 +175,7 @@ export default async function InvestmentsPage({
     .orderBy(desc(investmentOpportunities.createdAt));
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-5 sm:space-y-8">
       <LocalizedPageHeader
         titleKey="app.investments.title"
         leadKey="app.investments.lead"
@@ -205,7 +205,7 @@ export default async function InvestmentsPage({
       )}
 
       {/* Unterstruktur (spec): Opportunities für Mitglieder – klar getrennt vom IC Portfolio. */}
-      <section aria-label="Investment Opportunities" className="space-y-6">
+      <section aria-label="Investment Opportunities" className="space-y-4 sm:space-y-6">
         <LocalizedSectionHeading titleKey="app.investments.opportunitiesSectionTitle" />
 
         <Card className="p-5">

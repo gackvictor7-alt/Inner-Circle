@@ -262,11 +262,11 @@ export function DiscoverDeck({
     "h-10 w-full min-w-0 rounded-xl border border-border bg-background px-3 text-sm font-normal text-foreground placeholder:text-foreground-subtle outline-none focus:border-electric-500 transition-colors";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* ------------------------------------------------------------ header */}
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{t.app.discover.title}</h1>
+          <h1 className="text-xl font-bold tracking-tight sm:text-3xl">{t.app.discover.title}</h1>
           <p className="mt-1 max-w-2xl text-sm leading-6 text-foreground-muted">
             {isDemo ? t.app.demo.discoverDemoLead : t.app.discover.leadShort}
           </p>

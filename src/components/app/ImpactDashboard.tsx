@@ -77,7 +77,7 @@ export async function ImpactDashboard({ locale }: { locale: Locale }) {
       : impact.metrics.projectsMany.replace("{count}", String(data.projectCount));
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-5 sm:space-y-8">
       {/* 1 · The commitment – planned, not a foundation claim. */}
       <Card className="border-sand-400/40 bg-sand-200/20 p-5 dark:bg-sand-400/5 sm:p-6">
         <div className="flex flex-wrap items-center gap-2">

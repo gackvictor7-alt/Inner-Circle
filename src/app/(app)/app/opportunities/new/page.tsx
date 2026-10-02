@@ -70,7 +70,7 @@ export default async function NewOpportunityPage({
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <LocalizedPageHeader titleKey="app.opportunities.create" leadKey="app.opportunities.createLead" />
       <ActionForm
         action={createOpportunityAction}

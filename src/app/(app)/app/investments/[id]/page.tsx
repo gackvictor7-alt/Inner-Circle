@@ -46,7 +46,7 @@ export default async function InvestmentDetailPage({ params }: { params: Promise
   ];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-5 sm:space-y-8">
       <LocalizedPageHeader titleKey="app.investments.detailTitle" />
 
       <Card className="p-6">

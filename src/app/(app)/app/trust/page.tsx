@@ -48,7 +48,7 @@ export default async function TrustPage() {
   const visibleReviews = reviews.filter((review) => !review.isDemo);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-5 sm:space-y-8">
       <LocalizedPageHeader titleKey="app.trust.title" leadKey="app.trust.lead" />
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,20rem)_1fr]">

@@ -310,7 +310,7 @@ export function MessagesView({
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {!embedded && <PageHeader title={t.app.messages.title} lead={t.app.messages.lead} />}
 
       {/* -------------------------------------------------- mobile: chat */}

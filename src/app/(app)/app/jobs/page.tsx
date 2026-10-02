@@ -22,7 +22,7 @@ export default async function JobsPage() {
     // Discovery demo (Sprint 11): fictional examples only, no member query.
     if (access.entitlements.demoAccess) {
       return (
-        <div className="space-y-8">
+        <div className="space-y-5 sm:space-y-8">
           <LocalizedPageHeader titleKey="app.jobs.title" leadKey="app.jobs.lead" />
           <DemoAreaNotice leadKey="app.demo.jobsDemoOnlyLead" />
           <JobsDemoSection />
@@ -67,7 +67,7 @@ export default async function JobsPage() {
   const visibleOwnerIds = await performanceVisibleUserIdsFor(access.user.id, rows.map((row) => row.ownerId));
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-5 sm:space-y-8">
       <LocalizedPageHeader
         titleKey="app.jobs.title"
         leadKey="app.jobs.lead"

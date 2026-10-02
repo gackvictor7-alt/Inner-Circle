@@ -43,7 +43,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ sl
   ];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-5 sm:space-y-8">
       <LocalizedPageHeader
         titleKey="app.events.detailTitle"
         actions={

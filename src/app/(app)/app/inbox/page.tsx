@@ -58,10 +58,10 @@ export default async function InboxPage({
   const chatOpen = tab === "messages" && Boolean(params.c || params.to);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <header className={`${chatOpen ? "hidden lg:flex" : "flex"} flex-wrap items-end justify-between gap-3`}>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
+          <h1 className="text-xl font-bold tracking-tight sm:text-3xl">
             <Tr k="app.inbox.title" />
           </h1>
           <p className="mt-1 hidden max-w-2xl text-sm leading-6 text-foreground-muted sm:block">
@@ -225,7 +225,7 @@ async function RequestsTab({
   ]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <ConnectionsView
         embedded
         tab={activeSub}

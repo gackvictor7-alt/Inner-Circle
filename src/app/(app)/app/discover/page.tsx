@@ -253,7 +253,7 @@ export default async function DiscoverPage({
 
   if (cards.length === 0) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {welcome}
         <LocalizedPageHeader titleKey="app.discover.title" leadKey="app.discover.leadShort" />
         {hasActiveFilters(filters) ? (
@@ -276,7 +276,7 @@ export default async function DiscoverPage({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {welcome}
       <DiscoverDeck
         members={cards}

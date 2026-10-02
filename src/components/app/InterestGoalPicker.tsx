@@ -74,7 +74,7 @@ export function InterestGoalPicker({
   const ready = pickedInterests.length >= 3;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2 className="text-lg font-bold tracking-tight">{t.app.profile.interestsSection}</h2>

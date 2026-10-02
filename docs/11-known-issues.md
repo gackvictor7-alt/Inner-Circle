@@ -639,3 +639,32 @@ nicht angefasst:
   kein Folgefehler der App-404. Unbekannte **öffentliche** URLs (z. B. `/xyz`)
   zeigen weiterhin die englische Framework-404 ohne Branding; eine Root-
   `not-found.tsx` wäre ein eigener Auftrag. Sichtprüfung im Browser steht aus.
+
+### K-34 · Profile/Badges/Mobile-Sprint (2026-10-02): bewusst offene Punkte
+
+- **Keine Browser-Sichtprüfung im Environment (K-26):** Die manuelle
+  20-Punkte-Prüfung lief per Dev-Server + `scripts/dev-session.ts` über curl
+  (SSR-HTML/RSC-Payload) sowie über Unit-/Integration-Tests. Pixelprüfungen
+  (echter Viewport 390 px, Dark Mode, iOS Safari/Android Chrome) stehen aus –
+  `tests/e2e/sprint15-browser.mjs` (aktualisierte CTA-Pins) und
+  `sprint18-private-beta-browser.mjs` können lokal mit Chromium laufen.
+- **Seed-Daten und Founding-Badges:** `scripts/seed.ts` legt
+  Founding-Member-Zeilen ohne `verifiedAt`/`foundingMemberNumber` an; sie
+  bleiben gemäß den bestehenden Härtungsregeln privat, bis ein Admin sie
+  (nach)verifiziert. Für die lokale Badge-Darstellungsprüfung wurden in
+  `dev.db` (nur lokal, nicht committet) zwei verifizierte Badges für
+  `lena.hartmann` gesetzt. Produktion/Seed-Logik unverändert.
+- **Migration `0009` (`Profile.tiktokUrl`) ist nur lokal generiert/geprüft:**
+  bewusst keine Anwendung auf die Produktions-D1 (kein Deploy in diesem
+  Sprint). Vor dem nächsten Production-Deploy muss `0009` wie üblich
+  über den Migrationspfad angewendet werden (`docs/05-database.md`).
+- **Admin-Routen `/admin/trust` und `/admin/audit` existieren nicht** (404 im
+  Smoke-Sweep) – Trust-Review bzw. Auditlog leben innerhalb bestehender
+  Admin-Seiten; kein Befund dieses Sprints, nur dokumentiert.
+- **`/app/notifications` redirectet (307)** auf die Inbox – bestehendes
+  Verhalten, unverändert.
+- **Client-`tr()`-Strings** (z. B. `app.profile.noVerifiedBadgesHint`)
+  rendern im SSR-HTML zunächst DE und wechseln nach Hydration zur
+  Nutzer-Locale – bestehende i18n-Architektur (K-33-Kontext), keine
+  Regression dieses Sprints; serverseitig aufgelöste Labels (Stats, Tabs über
+  Page-Props) sind sofort locale-korrekt.

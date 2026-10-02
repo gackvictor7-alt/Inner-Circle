@@ -64,6 +64,13 @@
       "when": 1790871396486,
       "tag": "0008_badge_application_events",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1790984084543,
+      "tag": "0009_profile_tiktok_link",
+      "breakpoints": true
     }
   ]
 }

@@ -45,7 +45,7 @@ machen.
 | ~~S-9 Lint aufräumen~~ | erledigt 2026-10-01 (K-15 behoben, Lint 0/0) | – |
 | **S-10 Private Beta ausrollen** | Workers Paid bestätigen (K-24), Migration `0002` auf der Produktions-D1 (`cf:release`), erste Schlüssel über `/admin/beta`, Feedback der 10–30 Tester sammeln; danach E-Mail-Benachrichtigung bei neuer Anfrage/Nachricht mit Opt-in und Entscheidung „Schreiben an abgelaufene Tester“ (K-22) | N-1 (Mail-Domain) für E-Mails |
 | **S-11 Layout-Klassen bereinigen** | `.ic-span-*` in `@layer components` verschieben oder Profil/Einstellungen auf `col-span-12 lg:col-span-*` umstellen (K-23) | Design-Freeze beachten |
-| **S-12 Verifizierte Reputation-Badges** | Besondere Badges zusätzlich zum Trust Score (Founding Member, Investor, Founder, Entrepreneur, Verified Business Owner, Exit/Acquisition, High Deal Volume, Creator …). Teilweise **nicht** automatisch: Mitglied reicht Nachweis ein, Admin prüft, erst dann Freischaltung. **UI ist vorbereitet** (`VerifiedBadges` in Discover/Profilstruktur, max. 1–3 kleine Badges neben Name/Trust Score, keine Fake-Badges); offen: Migration/Badge-Tabelle, Proof-Upload, Admin-Workflow | eigener Sprint |
+| **S-12 Verifizierte Reputation-Badges** | **Erledigt (Badge-Sprints bis 2026-10-02):** 15-Badge-Katalog mit eigenen Icons im INNER-CIRCLE-Stil, Antragsflow mit Nachweis + Admin-Review (Selbstgenehmigungsschutz), direkte Admin-Vergabe inkl. Auditlog (`badge.granted`), kompaktes Badge-Detail (Bedeutung, Status, Verifizierungsdatum, Vergabeart) auf eigenen **und** fremden Profilen über die vereinheitlichte `ProfileView`; Leerzustand „Noch keine Badges“ mit Erklärung. Siehe `06-permissions.md` §3g und `10-design-freeze.md` §1.25 | abgeschlossen |
 
 ## LATER – größere Funktionen
 

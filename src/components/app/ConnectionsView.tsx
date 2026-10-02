@@ -110,7 +110,7 @@ export function ConnectionsView({
   const errorState = [respondState, withdrawState, disconnectState].find((state) => state.status === "error");
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {!embedded && <PageHeader title={t.app.connections.title} lead={t.app.connections.lead} />}
 
       <nav aria-label={t.app.connections.title} className="grid grid-cols-3 gap-1.5 sm:flex sm:flex-wrap sm:gap-2">

@@ -245,11 +245,12 @@ try {
   );
 
   /* =============================================== A · landing-page CTAs
-     Desktop DE/EN + mobile DE/EN: „Mehr erfahren“ first and blue, „Zur INNER
-     CIRCLE Plattform“ second, anchor target exists, no layout shift. */
+     Desktop DE/EN + mobile DE/EN (Membership sprint 2026-10-02): „Jetzt
+     Mitglied werden“ first and blue (/register), „Mehr erfahren“ second
+     (#outcomes); the platform link moved quietly into the price-hint line. */
   const CTA = {
-    de: { primary: "Mehr erfahren", secondary: "Zur INNER CIRCLE Plattform" },
-    en: { primary: "Learn more", secondary: "Go to the INNER CIRCLE platform" },
+    de: { primary: "Jetzt Mitglied werden", secondary: "Mehr erfahren" },
+    en: { primary: "Become a member now", secondary: "Learn more" },
   };
   const BLUE = "rgb(54, 108, 245)";
   for (const locale of ["de", "en"]) {
@@ -279,10 +280,10 @@ try {
       check(Array.isArray(pair) && pair.length === 2, `exactly two hero CTAs (${combo})`, JSON.stringify(pair));
       if (Array.isArray(pair) && pair.length === 2) {
         check(pair[0].text === CTA[locale].primary, `first CTA is „${CTA[locale].primary}“ (${combo})`, pair[0].text);
-        check(pair[0].href === "#outcomes", `first CTA points to #outcomes (${combo})`, pair[0].href);
+        check(pair[0].href === "/register", `first CTA points to /register (${combo})`, pair[0].href);
         check(pair[0].bg === BLUE, `first CTA is blue/electric (${combo})`, pair[0].bg);
         check(pair[1].text === CTA[locale].secondary, `second CTA is „${CTA[locale].secondary}“ (${combo})`, pair[1].text);
-        check(pair[1].href === "/app", `second CTA points to /app (${combo})`, pair[1].href);
+        check(pair[1].href === "#outcomes", `second CTA points to #outcomes (${combo})`, pair[1].href);
         check(pair[1].bg !== BLUE, `second CTA is not the blue primary (${combo})`, pair[1].bg);
       }
 
@@ -312,7 +313,7 @@ try {
       check(anchored.hash === "#outcomes" && anchored.inView, `„Mehr erfahren“ scrolls to the info section (${combo})`, JSON.stringify(anchored));
 
       if (!mobile && locale === "de") {
-        await page.locator('a[href="/app"]').filter({ visible: true }).nth(1).click();
+        await page.locator('a[href="/app"]').filter({ visible: true }).first().click();
         await page.waitForURL(/\/login/, { timeout: 30000 }).catch(() => {});
         check(/\/login/.test(page.url()), "platform CTA leads anonymous visitors into the login flow", page.url());
       }

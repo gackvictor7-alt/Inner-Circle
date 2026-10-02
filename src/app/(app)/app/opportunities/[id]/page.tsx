@@ -118,7 +118,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
   ];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-5 sm:space-y-8">
       <LocalizedPageHeader
         titleKey="app.opportunities.detailTitle"
         actions={

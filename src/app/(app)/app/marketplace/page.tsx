@@ -30,7 +30,7 @@ export default async function MarketplacePage({
     // The demo marketplace is the product preview, not the 48h interactive demo.
     // It uses fictional providers like "Nina Kovač (Beispiel)" – no real member data.
     return (
-      <div className="space-y-8">
+      <div className="space-y-5 sm:space-y-8">
         <LocalizedPageHeader titleKey="app.marketplace.title" leadKey="app.marketplace.lead" />
         <DemoAreaNotice leadKey="app.demo.marketplaceDemoOnlyLead" />
         <MarketplaceDemoSection />
@@ -74,7 +74,7 @@ export default async function MarketplacePage({
   const visibleSellerIds = await performanceVisibleUserIdsFor(access.user.id, rows.map((row) => row.sellerId));
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-5 sm:space-y-8">
       <LocalizedPageHeader
         titleKey="app.marketplace.title"
         leadKey="app.marketplace.lead"

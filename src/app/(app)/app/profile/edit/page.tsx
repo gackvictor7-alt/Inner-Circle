@@ -83,6 +83,7 @@ export default async function ProfileEditPage({
     { name: "website", labelKey: "app.profile.website", kind: "url", value: profile?.websiteUrl ?? "" },
     { name: "xHandle", labelKey: "app.profile.x", value: profile?.xUrl ?? "" },
     { name: "instagram", labelKey: "app.profile.instagram", value: profile?.instagramUrl ?? "" },
+    { name: "tiktok", labelKey: "app.profile.tiktok", value: profile?.tiktokUrl ?? "" },
   ];
 
   const sections: ProfileEditSection[] = [

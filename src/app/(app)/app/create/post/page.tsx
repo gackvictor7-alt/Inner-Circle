@@ -22,7 +22,7 @@ export default async function CreatePostPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <LocalizedPageHeader
         titleKey="app.posts.createTitle"
         leadKey="app.posts.createLead"

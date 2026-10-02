@@ -22,7 +22,7 @@ export default async function MemberCardPage() {
 
   if (!access.entitlements.memberCard) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         <LocalizedPageHeader titleKey="app.card.title" leadKey="app.card.lead" />
         <LocalizedEmptyState
           icon="ticket"
@@ -38,7 +38,7 @@ export default async function MemberCardPage() {
 
   if (!card) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         <LocalizedPageHeader titleKey="app.card.title" leadKey="app.card.lead" />
         <LocalizedEmptyState
           icon="ticket"
@@ -64,7 +64,7 @@ export default async function MemberCardPage() {
   });
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-5 sm:space-y-8">
       <LocalizedPageHeader titleKey="app.card.title" leadKey="app.card.lead" />
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,26rem)_1fr]">

@@ -12,9 +12,10 @@ import type { Locale } from "@/lib/i18n/dictionaries";
  * Privacy boundary:
  *   * `PublicBadge` is the allowlisted public badge shape – title, category,
  *     criteria description, icon, a founding ordinal (for that honour only),
- *     and an optional period. Verification dates and private evidence never
- *     leave this module; reviewed figures are included only when the caller
- *     has applied the owner's explicit visibility choice.
+ *     an optional period, the verification date and the grant method shown in
+ *     the badge detail view. Private evidence (URLs, explanations, admin
+ *     notes) never leaves this module; reviewed figures are included only
+ *     when the caller has applied the owner's explicit visibility choice.
  *   * `BadgeApplicationRow` (private evidence URLs, explanations, admin
  *     notes) is only returned for the applicant or for administration,
  *     and never joined into `PublicBadge`.
@@ -32,6 +33,10 @@ export type PublicBadge = {
   active: boolean;
   /** ISO unlock timestamp: verifiedAt preferred, grantedAt fallback; empty if both are malformed. */
   grantedAt: string;
+  /** ISO verification date for the badge detail view; empty when malformed. */
+  verifiedAt: string;
+  /** How the badge was granted (`application` | `admin`) – badge detail view only. */
+  source: string;
   /** Only populated for the permanent Founding Member honour. */
   memberNumber: number | null;
   publicSummary: string | null;
@@ -118,6 +123,7 @@ function toPublic(row: {
   active: boolean;
   grantedAt: Date;
   verifiedAt: Date | null;
+  source: string;
   memberNumber: number | null;
   publicSummary: string | null;
   periodLabel: string | null;
@@ -132,6 +138,8 @@ function toPublic(row: {
     priority: row.priority,
     active: row.active,
     grantedAt: badgeTimestampIso(row.verifiedAt, row.grantedAt),
+    verifiedAt: badgeTimestampIso(row.verifiedAt, null),
+    source: row.source === "application" ? "application" : "admin",
     memberNumber: row.slug === "founding-member" ? row.memberNumber : null,
     publicSummary: row.publicSummary,
     periodLabel: row.periodLabel,
@@ -161,6 +169,7 @@ export async function reputationBadgesFor(
         active: badges.active,
         grantedAt: userBadges.grantedAt,
         verifiedAt: userBadges.verifiedAt,
+        source: userBadges.source,
         publicSummary: userBadges.publicSummary,
         periodLabel: userBadges.periodLabel,
       })

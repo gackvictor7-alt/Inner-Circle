@@ -710,6 +710,40 @@ export async function interestLabelsFor(userId: string, locale: "de" | "en") {
   return rows.map((row) => (locale === "en" ? row.labelEn : row.labelDe));
 }
 
+/**
+ * Interests grouped by their taxonomy group (Business, Finance, …) for the
+ * profile "Interessen" tab. Groups are ordered by the smallest position of
+ * their members, which matches the onboarding picker order.
+ */
+export async function interestGroupsFor(
+  userId: string,
+  locale: "de" | "en",
+): Promise<{ group: string; labels: string[] }[]> {
+  const rows = await db
+    .select({
+      labelDe: interests.labelDe,
+      labelEn: interests.labelEn,
+      groupDe: interests.groupDe,
+      groupEn: interests.groupEn,
+      position: interests.position,
+    })
+    .from(userInterests)
+    .innerJoin(interests, eq(interests.id, userInterests.interestId))
+    .where(eq(userInterests.userId, userId))
+    .orderBy(interests.position);
+  const groups = new Map<string, { group: string; labels: string[]; position: number }>();
+  for (const row of rows) {
+    const group = locale === "en" ? row.groupEn : row.groupDe;
+    const entry = groups.get(group) ?? { group, labels: [], position: row.position };
+    entry.labels.push(locale === "en" ? row.labelEn : row.labelDe);
+    entry.position = Math.min(entry.position, row.position);
+    groups.set(group, entry);
+  }
+  return [...groups.values()]
+    .sort((a, b) => a.position - b.position)
+    .map(({ group, labels }) => ({ group, labels }));
+}
+
 /** Goal labels for one member (locale-aware, taxonomy order). */
 export async function goalLabelsFor(userId: string, locale: "de" | "en") {
   const rows = await db
@@ -751,6 +785,7 @@ export async function memberProfileByHandle(handle: string) {
       linkedinUrl: profiles.linkedinUrl,
       xUrl: profiles.xUrl,
       instagramUrl: profiles.instagramUrl,
+      tiktokUrl: profiles.tiktokUrl,
       rolesJson: profiles.rolesJson,
       skillsJson: profiles.skillsJson,
       lookingForJson: profiles.lookingForJson,
@@ -1094,6 +1129,7 @@ export async function listDiscoverCandidates(options: {
             active: badges.active,
             grantedAt: userBadges.grantedAt,
             verifiedAt: userBadges.verifiedAt,
+            source: userBadges.source,
             publicSummary: userBadges.publicSummary,
             periodLabel: userBadges.periodLabel,
           })
@@ -1195,6 +1231,8 @@ export async function listDiscoverCandidates(options: {
           priority: badge.priority,
           active: badge.active,
           grantedAt: badgeTimestampIso(badge.verifiedAt, badge.grantedAt),
+          verifiedAt: badgeTimestampIso(badge.verifiedAt, null),
+          source: badge.source === "application" ? "application" : "admin",
           memberNumber: badge.slug === "founding-member" ? owner?.foundingMemberNumber ?? null : null,
           publicSummary: showReviewedFigures ? badge.publicSummary : null,
           periodLabel: badge.periodLabel,
@@ -1480,8 +1518,15 @@ export async function performanceCountsFor(userId: string) {
   };
 }
 
-/** Own listings/investments/events for the profile "Angebote" tab. */
-export async function ownOfferingsFor(userId: string) {
+/**
+ * Listings/investments/opportunities for the profile "Angebote" tab.
+ * `publishedOnly` is the public variant for foreign profiles: it returns
+ * exactly the items that are publicly visible anyway (published
+ * opportunities and listings, approved investment submissions) – drafts,
+ * archived and pending rows stay owner-only.
+ */
+export async function ownOfferingsFor(userId: string, options?: { publishedOnly?: boolean }) {
+  const publishedOnly = options?.publishedOnly === true;
   const [opportunityRows, listingRows, investmentRows] = await Promise.all([
     db
       .select({
@@ -1493,7 +1538,13 @@ export async function ownOfferingsFor(userId: string) {
         createdAt: businessOpportunities.createdAt,
       })
       .from(businessOpportunities)
-      .where(and(eq(businessOpportunities.ownerId, userId), isNull(businessOpportunities.deletedAt)))
+      .where(
+        and(
+          eq(businessOpportunities.ownerId, userId),
+          isNull(businessOpportunities.deletedAt),
+          publishedOnly ? eq(businessOpportunities.status, "published") : undefined,
+        ),
+      )
       .orderBy(desc(businessOpportunities.createdAt))
       .limit(12),
     db
@@ -1506,7 +1557,12 @@ export async function ownOfferingsFor(userId: string) {
         createdAt: marketplaceListings.createdAt,
       })
       .from(marketplaceListings)
-      .where(eq(marketplaceListings.sellerId, userId))
+      .where(
+        and(
+          eq(marketplaceListings.sellerId, userId),
+          publishedOnly ? eq(marketplaceListings.status, "published") : undefined,
+        ),
+      )
       .orderBy(desc(marketplaceListings.createdAt))
       .limit(12),
     db
@@ -1517,7 +1573,12 @@ export async function ownOfferingsFor(userId: string) {
         createdAt: investmentOpportunities.createdAt,
       })
       .from(investmentOpportunities)
-      .where(eq(investmentOpportunities.submittedById, userId))
+      .where(
+        and(
+          eq(investmentOpportunities.submittedById, userId),
+          publishedOnly ? eq(investmentOpportunities.status, "approved") : undefined,
+        ),
+      )
       .orderBy(desc(investmentOpportunities.createdAt))
       .limit(12),
   ]);

@@ -172,7 +172,7 @@ export function ProfileEditForm({
     state.status === "error" ? tr(`app.errors.${state.errorCode ?? "generic"}`, state.errorParams) : null;
 
   return (
-    <form onSubmit={submitKeepingValues} className="space-y-6" onInput={() => setDirty(true)}>
+    <form onSubmit={submitKeepingValues} className="space-y-4 sm:space-y-6" onInput={() => setDirty(true)}>
       {hidden &&
         Object.entries(hidden).map(([name, value]) => (
           <input key={name} type="hidden" name={name} value={value} />

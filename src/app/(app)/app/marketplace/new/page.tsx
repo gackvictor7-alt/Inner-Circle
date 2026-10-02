@@ -63,7 +63,7 @@ export default async function NewListingPage({
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <LocalizedPageHeader titleKey="app.marketplace.create.title" leadKey="app.marketplace.payoutNotice" />
       <ActionForm
         action={createListingAction}

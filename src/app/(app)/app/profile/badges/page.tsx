@@ -83,7 +83,7 @@ export default async function MyBadgesPage() {
   const volumeProgress = progressWidth(progress.confirmedVolumeCents, IC_MILLION_CLUB_VOLUME_CENTS);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-5 sm:space-y-8">
       <LocalizedPageHeader titleKey="app.badges.center.title" leadKey="app.badges.center.lead" />
 
       <Card className="space-y-4 border-electric-500/20 bg-electric-500/[0.025] p-5">

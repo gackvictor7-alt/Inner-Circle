@@ -77,6 +77,7 @@ export async function updateProfileAction(_prev: ActionState, formData: FormData
   const website = text(formData, "website", 300);
   const xHandle = text(formData, "xHandle", 120);
   const instagram = text(formData, "instagram", 120);
+  const tiktok = text(formData, "tiktok", 120);
 
   // ---- Profile photo: an uploaded file wins over the URL field -------------
   const avatarValue = formData.get("avatarFile");
@@ -157,6 +158,7 @@ export async function updateProfileAction(_prev: ActionState, formData: FormData
     linkedinUrl: existing?.linkedinUrl ?? null,
     xUrl: xHandle || null,
     instagramUrl: instagram || null,
+    tiktokUrl: tiktok || null,
     avatarUrl: finalAvatarUrl,
     rolesJson: JSON.stringify(roles),
     skillsJson: JSON.stringify(skills),

@@ -33,6 +33,9 @@ export const siteV2De = {
     heroCtaPrimary: "Mehr erfahren",
     heroCtaSecondary: "Zur INNER CIRCLE Plattform",
     heroMembershipHint: "24,99 € im Monat oder 249,99 € im Jahr · monatlich kündbar",
+    /** Primärer Mitgliedschafts-CTA (Profile/Badges/Mobile-Sprint): deutlich sichtbar
+        im Hero, im Membership-Block und in der Navigation. */
+    heroJoinCta: "Jetzt Mitglied werden",
     /** Mobile small-text Link unter dem primären Button (Sprint 8) –
         wird derzeit durch den sekundären CTA ersetzt; bleibt aus Kompatibilität. */
     heroTrialCta: "Zur Plattform",
@@ -349,6 +352,7 @@ export const siteV2En: SiteV2Dict = {
     heroCtaPrimary: "Learn more",
     heroCtaSecondary: "Go to the INNER CIRCLE platform",
     heroMembershipHint: "€24.99 a month or €249.99 a year · cancel monthly",
+    heroJoinCta: "Become a member now",
     heroTrialCta: "Go to platform",
     heroCtaTertiary: "How it works",
     heroTrialBadge: "Includes 48 hours of discovery",

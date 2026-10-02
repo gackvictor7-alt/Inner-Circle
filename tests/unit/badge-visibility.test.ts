@@ -13,6 +13,8 @@ function badge(overrides: Partial<PublicBadge> = {}): PublicBadge {
     priority: 1,
     active: true,
     grantedAt: "2026-01-01T00:00:00.000Z",
+    verifiedAt: "2026-01-01T00:00:00.000Z",
+    source: "application",
     memberNumber: null,
     publicSummary: null,
     periodLabel: null,

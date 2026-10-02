@@ -117,24 +117,34 @@ export function HomeContent() {
                 <span className="block whitespace-nowrap">{t.home2.heroV3TitleB}</span>
               </h1>
               <p className="mt-7 max-w-[540px] text-[20px] leading-[1.5] text-white/90">{t.home2.heroV3Lead}</p>
-              <div className="mt-9 flex items-center gap-4">
-                {/* Sprint 14: „Mehr erfahren" ist der primäre CTA (Besucher scrollt
-                    zu den Ergebnissen/Bereichen), „Zur INNER CIRCLE Plattform"
-                    der sekundäre. Desktop Hero, dark. */}
+              <div className="mt-9 flex flex-wrap items-center gap-4">
+                {/* Membership sprint (2026-10-02): „Jetzt Mitglied werden“ ist der
+                    deutlich sichtbare primäre CTA; „Mehr erfahren“ bleibt der
+                    sekundäre Scroll-CTA, der Plattform-Link wird leise und der
+                    Preis steht direkt darunter. Desktop Hero, dark. */}
                 <Link
-                  href="#outcomes"
+                  href="/register"
                   className="flex h-[52px] items-center gap-3 rounded-full bg-electric-500 px-8 font-serif text-[17px] text-white hover:bg-electric-600"
                 >
-                  {t.home2.heroV3CtaSecondary}
+                  {t.home2.heroJoinCta}
                   <ArrowRightIcon size={18} />
                 </Link>
                 <Link
-                  href="/app"
+                  href="#outcomes"
                   className="flex h-[52px] items-center rounded-full border border-white/80 px-10 font-serif text-[17px] text-white hover:bg-white/10"
+                >
+                  {t.home2.heroV3CtaSecondary}
+                </Link>
+              </div>
+              <p className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[14px] text-white/80">
+                <span>{t.home2.heroMembershipHint}</span>
+                <Link
+                  href="/app"
+                  className="font-medium text-white/90 underline decoration-white/40 underline-offset-4 hover:text-white"
                 >
                   {t.home2.heroV3CtaPrimary}
                 </Link>
-              </div>
+              </p>
             </div>
             <div className="self-end pb-4 text-[13px] font-medium leading-[1.9] tracking-[0.3em] text-white/90">
               {t.home2.heroV3Claims.map((c) => (
@@ -203,27 +213,34 @@ export function HomeContent() {
             <p className="mt-4 max-w-2xl text-[15px] leading-6 text-paper-50/85 sm:mt-6 sm:text-lg sm:leading-8">
               {t.home2.heroLead}
             </p>
-            {/* Mobile (Sprint 14, polished 2026-09-28): primär „Mehr erfahren"
-                (scrollt zu den Ergebnissen), sekundär „Zur INNER CIRCLE
-                Plattform". Both are real buttons in the required order; the
-                secondary one is a quiet outline, not a plain text link, so it
-                stays recognisable. Price note keeps its own line below. */}
+            {/* Mobile (Membership sprint 2026-10-02): klare CTA-Hierarchie –
+                „Jetzt Mitglied werden“ primär (electric), „Mehr erfahren“
+                sekundär (outline), der Plattform-Link leise neben dem Preis,
+                der direkt unter den CTAs sichtbar bleibt. */}
             <div className="mt-7 flex flex-col items-stretch gap-3 sm:mt-8 sm:flex-row sm:flex-wrap sm:items-center">
               <Link
-                href="#outcomes"
+                href="/register"
                 className="inline-flex h-12 w-full items-center justify-center gap-2.5 whitespace-nowrap rounded-full bg-electric-500 px-5 font-serif text-[16px] text-white transition-colors hover:bg-electric-600 sm:w-auto sm:px-7 sm:text-[17px]"
               >
-                {t.home2.heroCtaPrimary}
+                {t.home2.heroJoinCta}
                 <ArrowRightIcon size={18} />
               </Link>
               <Link
-                href="/app"
+                href="#outcomes"
                 className="inline-flex h-12 w-full items-center justify-center whitespace-nowrap rounded-full border border-paper-50/50 px-5 font-serif text-[16px] text-paper-50/90 transition-colors hover:border-paper-50/80 hover:bg-white/10 hover:text-paper-50 sm:w-auto sm:px-7 sm:text-[17px]"
+              >
+                {t.home2.heroCtaPrimary}
+              </Link>
+            </div>
+            <p className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] font-medium text-paper-50/75 sm:text-sm">
+              <span>{t.home2.heroMembershipHint}</span>
+              <Link
+                href="/app"
+                className="font-semibold text-paper-50/90 underline decoration-paper-50/40 underline-offset-4"
               >
                 {t.home2.heroCtaSecondary}
               </Link>
-            </div>
-            <p className="mt-5 text-[13px] font-medium text-paper-50/75 sm:mt-5 sm:text-sm">{t.home2.heroMembershipHint}</p>
+            </p>
             <ul className="mt-6 hidden grid-cols-2 gap-x-5 gap-y-2 border-t border-white/15 pt-4 sm:grid sm:mt-9 sm:gap-x-6 sm:pt-5 lg:grid-cols-5">
               {Object.entries(t.home2.heroFacts).map(([key, label]) => (
                 <li key={key} className="flex items-center gap-2 text-[12px] text-paper-50/70 sm:text-[13px]">
