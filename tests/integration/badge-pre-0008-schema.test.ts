@@ -38,6 +38,7 @@ import {
   revokeBadgeByAdminAction,
 } from "@/app/actions/badges";
 import MyBadgesPage from "../../src/app/(app)/app/profile/badges/page";
+import AvailableBadgesPage from "../../src/app/(app)/app/profile/badges/available/page";
 import { ensureBadgeCatalog } from "@/lib/badges/catalog";
 
 let mf: Miniflare;
@@ -76,6 +77,10 @@ afterAll(async () => {
 });
 
 describe("badge verification center on a pre-0008 D1 schema", () => {
+  it("redirects the explicit available route to the existing application section", () => {
+    expect(() => AvailableBadgesPage()).toThrow("redirect:/app/profile/badges#available");
+  });
+
   it("renders application actions at the direct-entry anchor for a verified owner", async () => {
     currentUserId = "badge-applicant";
     const html = renderToStaticMarkup(await MyBadgesPage());

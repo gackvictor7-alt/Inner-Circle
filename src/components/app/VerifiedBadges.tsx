@@ -77,7 +77,7 @@ export function VerifiedBadgesSection({
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
           <p className="max-w-xl text-xs leading-5 text-foreground-muted">{tr("app.profile.noVerifiedBadgesHint")}</p>
           <Link
-            href="/app/profile/badges#available"
+            href="/app/profile/badges/available"
             className="inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-electric-500/30 bg-electric-500/10 px-4 text-sm font-semibold text-electric-700 transition-colors hover:bg-electric-500/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-electric-500 dark:text-electric-200"
           >
             <AwardIcon size={15} />

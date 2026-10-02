@@ -48,7 +48,7 @@ describe("profile verified badge section", () => {
   it("keeps the application action visible for the owner, including the empty state", () => {
     const html = renderToStaticMarkup(<VerifiedBadgesSection badges={[]} isSelf />);
     expect(html).toContain("Noch keine");
-    expect(html).toContain('href="/app/profile/badges#available"');
+    expect(html).toContain('href="/app/profile/badges/available"');
     expect(html).toContain("Badge beantragen");
   });
 
