@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import { renderToStaticMarkup } from "react-dom/server";
 import { Miniflare, convertV4MiniflareOptions } from "miniflare";
 import { drizzle as drizzleD1 } from "drizzle-orm/d1";
 import * as schema from "@/db/schema";
@@ -75,6 +76,14 @@ afterAll(async () => {
 });
 
 describe("badge verification center on a pre-0008 D1 schema", () => {
+  it("renders application actions at the direct-entry anchor for a verified owner", async () => {
+    currentUserId = "badge-applicant";
+    const html = renderToStaticMarkup(await MyBadgesPage());
+
+    expect(html).toContain('id="available"');
+    expect(html).toContain("Kostenlos beantragen");
+  });
+
   it("loads existing application history without BadgeApplicationEvent", async () => {
     const now = Date.now();
     await d1.exec(

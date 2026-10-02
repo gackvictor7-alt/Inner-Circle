@@ -249,7 +249,7 @@ export default async function MyBadgesPage() {
         <p className="mt-3 text-xs leading-5 text-foreground-subtle"><Tr k="app.badges.center.noAnnualRenewal" /></p>
       </section>
 
-      <section aria-labelledby="badge-available-title">
+      <section id="available" aria-labelledby="badge-available-title" className="scroll-mt-20">
         <div>
           <h2 id="badge-available-title" className="text-lg font-bold tracking-tight"><Tr k="app.badges.availableTitle" /></h2>
           <p className="mt-1 max-w-3xl text-sm leading-6 text-foreground-muted"><Tr k="app.badges.availableLead" /></p>
