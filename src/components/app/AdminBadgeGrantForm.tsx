@@ -3,7 +3,7 @@
 import { useActionState } from "react";
 
 import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
+import { Input, Textarea } from "@/components/ui/Input";
 import { useTr } from "@/components/app/localized";
 import { grantBadgeByAdminAction } from "@/app/actions/badges";
 import { initialActionState } from "@/app/actions/state";
@@ -13,11 +13,7 @@ export type GrantableBadgeOption = {
   title: string;
 };
 
-/**
- * Deliberate admin assignment of a badge (Sprint 18) – e.g. a quarterly
- * "Top Performer · Q3 2026" honour. The Founding Member honour keeps its
- * own flow in /admin/users (cap + user flag).
- */
+/** Internal confirmation of a platform-backed reputation badge. */
 export function AdminBadgeGrantForm({ badgeOptions }: { badgeOptions: GrantableBadgeOption[] }) {
   const tr = useTr();
   const [state, formAction, pending] = useActionState(grantBadgeByAdminAction, initialActionState);
@@ -33,11 +29,12 @@ export function AdminBadgeGrantForm({ badgeOptions }: { badgeOptions: GrantableB
           name="userIdentifier"
           required
           maxLength={200}
-          placeholder="@handle oder e-mail"
+          placeholder={tr("app.admin.badges.grant.userPlaceholder")}
         />
         <select
           name="badgeSlug"
           required
+          aria-label={tr("app.admin.badges.grant.badge")}
           className="h-11 rounded-xl border border-border bg-surface px-3 text-sm text-foreground outline-none focus:border-electric-500"
           defaultValue=""
         >
@@ -45,13 +42,22 @@ export function AdminBadgeGrantForm({ badgeOptions }: { badgeOptions: GrantableB
             {tr("app.admin.badges.grant.badge")} …
           </option>
           {badgeOptions.map((badge) => (
-            <option key={badge.slug} value={badge.slug}>
-              {badge.title}
-            </option>
+            <option key={badge.slug} value={badge.slug}>{badge.title}</option>
           ))}
         </select>
-        <Input label={tr("app.admin.badges.grant.summary")} name="publicSummary" maxLength={200} />
-        <Input label={tr("app.admin.badges.grant.period")} name="periodLabel" maxLength={40} placeholder="Q3 2026" />
+        <Input
+          label={tr("app.badges.review.publicSummary")}
+          name="publicSummary"
+          maxLength={200}
+          hint={tr("app.badges.detailLabels.privacy")}
+        />
+        <Textarea
+          label={tr("app.badges.review.internalReason")}
+          name="reviewNote"
+          required
+          rows={2}
+          maxLength={1200}
+        />
       </div>
       {errorMessage && (
         <p role="alert" className="rounded-xl bg-danger-500/10 px-3 py-2 text-sm text-danger-700 dark:text-danger-200">
@@ -64,9 +70,7 @@ export function AdminBadgeGrantForm({ badgeOptions }: { badgeOptions: GrantableB
         </p>
       )}
       <div className="flex justify-end">
-        <Button type="submit" size="sm" loading={pending}>
-          {tr("app.admin.badges.grant.submit")}
-        </Button>
+        <Button type="submit" size="sm" loading={pending}>{tr("app.admin.badges.grant.submit")}</Button>
       </div>
     </form>
   );

@@ -88,7 +88,7 @@ export default async function DemoProfilePage({ params }: { params: Promise<{ ke
               <h2 className="text-2xl font-bold tracking-tight">
                 {profile.firstName} {profile.lastName}
               </h2>
-              <Badge variant="sand">
+              <Badge variant="outline">
                 <Tr k="app.demo.profileBadge" />
               </Badge>
               <Badge variant="outline">{text.role}</Badge>

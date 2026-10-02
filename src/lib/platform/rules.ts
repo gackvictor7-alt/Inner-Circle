@@ -21,6 +21,7 @@ export const PROFILE_METRIC_KEYS = [
   "courses",
   "investments",
   "events",
+  "badgeNumbers",
 ] as const;
 
 export type ProfileMetricKey = (typeof PROFILE_METRIC_KEYS)[number];

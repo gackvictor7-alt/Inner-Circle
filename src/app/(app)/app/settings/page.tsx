@@ -51,6 +51,7 @@ export default async function SettingsPage() {
     { key: "courses", labelKey: "app.settings.metricCourses" },
     { key: "investments", labelKey: "app.settings.metricInvestments" },
     { key: "events", labelKey: "app.settings.metricEvents" },
+    { key: "badgeNumbers", labelKey: "app.settings.metricBadgeFigures" },
   ];
 
   const privacyFields: FormField[] = [
@@ -66,7 +67,7 @@ export default async function SettingsPage() {
       kind: "select",
       labelKey: metric.labelKey,
       options: visibilityOptions,
-      defaultValue: storedMetrics[metric.key] ?? metricFallback,
+      defaultValue: storedMetrics[metric.key] ?? (metric.key === "badgeNumbers" ? "private" : metricFallback),
     })),
   ];
 

@@ -182,10 +182,17 @@ export async function loginAction(_prev: AuthState, formData: FormData): Promise
     return { status: "error", errorCode: "validation", fieldErrors };
   }
 
-  const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
+  let [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
   const ok = user ? await verifyPassword(password, user.passwordHash) : false;
   if (!user || !ok) {
     return { status: "error", errorCode: "invalidCredentials" };
+  }
+  if (user.status === "suspended" && user.suspensionEndsAt && user.suspensionEndsAt.getTime() <= Date.now()) {
+    await db
+      .update(users)
+      .set({ status: "active", suspensionEndsAt: null, suspensionReason: null, updatedAt: new Date() })
+      .where(eq(users.id, user.id));
+    user = { ...user, status: "active", suspensionEndsAt: null, suspensionReason: null };
   }
   if (user.status === "suspended" || user.status === "deleted") {
     return { status: "error", errorCode: "accountSuspended" };

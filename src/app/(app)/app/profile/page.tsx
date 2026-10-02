@@ -7,6 +7,7 @@ import { requireUser } from "@/lib/access/server";
 import {
   ownOfferingsFor,
   performanceCountsFor,
+  performanceVisibleUserIdsFor,
   profileStats,
   trustProfile,
   userPosts,
@@ -23,7 +24,6 @@ import { deletePostAction } from "@/app/actions/posts";
 import { ProfilePeopleModal } from "@/components/app/ProfilePeopleModal";
 import { TrustScoreBlock } from "@/components/app/TrustPanel";
 import { VerifiedBadgesSection } from "@/components/app/VerifiedBadges";
-import { ProfileBadgeCluster } from "@/components/app/BadgeChips";
 import { reputationBadgesFor } from "@/lib/badges/queries";
 import { showsProfileDemoPosts } from "@/lib/demo";
 import { getPublicUrl } from "@/lib/env";
@@ -52,6 +52,31 @@ import { profileCompletionPercent } from "@/lib/platform/profile-completion";
 export const dynamic = "force-dynamic";
 
 type ProfileTab = "overview" | "activity" | "performance" | "offers";
+
+const postKindLabelKeys: Record<string, string> = {
+  post: "app.posts.typePost",
+  business_update: "app.posts.typeBusinessUpdate",
+  milestone: "app.posts.typeMilestone",
+  opportunity: "app.posts.typeOpportunity",
+  deal: "app.posts.typeDeal",
+  investment: "app.posts.typeInvestment",
+  purchase: "app.posts.typePurchase",
+  marketplace_purchase: "app.posts.typePurchase",
+  course: "app.posts.typeCourse",
+  event: "app.posts.typeEvent",
+};
+
+function safePostLink(value: string | null): string | null {
+  if (!value) return null;
+  try {
+    const url = new URL(value);
+    return (url.protocol === "http:" || url.protocol === "https:") && !url.username && !url.password
+      ? url.toString()
+      : null;
+  } catch {
+    return null;
+  }
+}
 
 function parseList(json: string | null | undefined): string[] {
   if (!json) return [];
@@ -101,7 +126,7 @@ export default async function OwnProfilePage({
     performanceCountsFor(user.id),
     ownOfferingsFor(user.id),
     loadPrivacy(user.id),
-    reputationBadgesFor(user.id, user.locale === "en" ? "en" : "de"),
+    reputationBadgesFor(user.id, user.locale === "en" ? "en" : "de", true),
   ]);
 
   const dict = dictionaries[user.locale === "en" ? "en" : "de"];
@@ -127,6 +152,15 @@ export default async function OwnProfilePage({
   const connectionIds = connectionRows.map((row) => row.userAId === user.id ? row.userBId : row.userAId);
   const connectedMembers = connectionIds.length ? await db.select({ id: users.id, firstName: users.firstName, lastName: users.lastName, handle: users.handle, headline: profiles.headline, company: profiles.company, avatarUrl: profiles.avatarUrl, score10: trustScoreSummaries.score10, verifiedReviewCount: trustScoreSummaries.verifiedReviewCount })
     .from(users).leftJoin(profiles, eq(profiles.userId, users.id)).leftJoin(trustScoreSummaries, eq(trustScoreSummaries.userId, users.id)).where(inArray(users.id, connectionIds)) : [];
+  const allPeopleIds = [...new Set([...followers, ...following, ...connectedMembers].map((person) => person.id))];
+  const visibleTrustMemberIds = await performanceVisibleUserIdsFor(user.id, allPeopleIds);
+  const privacyFilteredPeople = <T extends { id: string; score10: number | null; verifiedReviewCount: number | null }>(people: T[]) =>
+    people.map((person) => visibleTrustMemberIds.has(person.id)
+      ? person
+      : { ...person, score10: null, verifiedReviewCount: null });
+  const visibleFollowers = privacyFilteredPeople(followers);
+  const visibleFollowing = privacyFilteredPeople(following);
+  const visibleConnections = privacyFilteredPeople(connectedMembers);
   const roles = parseList(profile?.rolesJson);
   const skills = parseList(profile?.skillsJson);
   // Older profiles (and the dev seed) store goal slugs in the free-text lists –
@@ -167,134 +201,177 @@ export default async function OwnProfilePage({
   ];
 
   return (
-    <div className="space-y-6">
-      {/* --------------------------------------- compact identity header */}
-      <Card className="p-0">
-        <div className="grid md:grid-cols-[minmax(0,1.65fr)_minmax(17rem,1fr)]">
-          <section className="min-w-0 p-5 sm:p-7" aria-label={dict.app.profile.title}>
-            <div className="flex min-w-0 items-center gap-3.5 sm:gap-4">
-              {/* Mobile: a smaller avatar leaves the name/role block its full
-                  width, so nothing is squeezed on 360 px screens. */}
-              <span className="sm:hidden">
-                <Avatar user={{ firstName: user.firstName, lastName: user.lastName, avatarUrl: profile?.avatarUrl ?? null }} size={56} />
-              </span>
-              <span className="hidden sm:flex">
+    <div className="w-full space-y-5 sm:space-y-6">
+      {/* One continuous, full-width profile surface; sections are separated by fine dividers. */}
+      <div className="overflow-hidden rounded-2xl border border-border bg-surface shadow-card">
+        <div className="grid divide-y divide-border xl:grid-cols-3 xl:divide-x xl:divide-y-0">
+          <section
+            aria-label={dict.app.profile.title}
+            className="flex min-w-0 flex-col bg-gradient-to-br from-surface via-surface to-electric-500/5 p-5 sm:p-6"
+          >
+            <div className="flex min-w-0 items-start gap-4">
+              <span className="shrink-0">
                 <Avatar user={{ firstName: user.firstName, lastName: user.lastName, avatarUrl: profile?.avatarUrl ?? null }} size={72} />
               </span>
               <div className="min-w-0 flex-1">
+                <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-foreground-subtle">
+                  {dict.app.profile.title}
+                </p>
                 <div className="flex flex-wrap items-center gap-2">
-                  <h1 className="text-xl font-bold tracking-tight sm:text-2xl">{user.firstName} {user.lastName}</h1>
-                  {/* Verified reputation badges (max 3 + "+N" → dialog). The
-                      Founding Member honour is part of this cluster; the
-                      Administrator chip stays separate as a system role. */}
-                  <ProfileBadgeCluster badges={reputationBadges} locale={user.locale === "en" ? "en" : "de"} />
+                  <h1 className="break-words text-xl font-bold tracking-tight sm:text-2xl">
+                    {user.firstName} {user.lastName}
+                  </h1>
                   {user.role === "admin" && <Badge variant="electric"><Tr k="app.access.levelAdmin" /></Badge>}
                   {user.isDemo && <Badge variant="outline"><Tr k="app.common.demo" /></Badge>}
                 </div>
-                <p className="text-sm text-foreground-subtle">@{user.handle}</p>
-                {/* Up to two lines on phones, one line from `sm` – the role is
-                    the most important line after the name, so on a narrow
-                    screen it wraps instead of disappearing behind an ellipsis.
-                    Two elements instead of `line-clamp-2 sm:truncate`, because
-                    `truncate` does not reset `-webkit-box` reliably. */}
-                {profile?.headline && (
-                  <>
-                    <p className="mt-1 line-clamp-2 text-sm font-medium sm:hidden">{profile.headline}</p>
-                    <p className="mt-1 hidden truncate text-sm font-medium sm:block">{profile.headline}</p>
-                  </>
-                )}
-                <p className="mt-0.5 line-clamp-2 break-words text-sm text-foreground-subtle sm:line-clamp-1">{[profile?.jobTitle, profile?.company, profile?.location].filter(Boolean).join(" · ")}</p>
+                <p className="mt-1 break-all text-sm font-medium text-foreground-subtle">@{user.handle}</p>
               </div>
             </div>
 
-            {/* Phones: three equal columns (Follower · Folgt · Connections) instead of a ragged wrap. */}
-            <div className="mt-5 grid grid-cols-3 gap-2 border-t border-border pt-4 sm:flex sm:flex-wrap sm:gap-x-5 sm:gap-y-3">
-              <ProfilePeopleModal
-                locale={user.locale === "en" ? "en" : "de"}
-                label={dict.app.profile.metricFollowers}
-                count={stats.followers}
-                members={followers}
-                openProfileLabel={dict.app.profile.relationshipOpenProfile}
-                emptyLabel={dict.app.profile.relationshipEmpty}
-                closeLabel={dict.app.common.close}
-              />
-              <ProfilePeopleModal
-                locale={user.locale === "en" ? "en" : "de"}
-                label={dict.app.profile.statsFollowing}
-                count={stats.following}
-                members={following}
-                openProfileLabel={dict.app.profile.relationshipOpenProfile}
-                emptyLabel={dict.app.profile.relationshipEmpty}
-                closeLabel={dict.app.common.close}
-              />
-              <ProfilePeopleModal
-                locale={user.locale === "en" ? "en" : "de"}
-                label={dict.app.profile.metricConnections}
-                count={stats.connections}
-                members={connectedMembers}
-                openProfileLabel={dict.app.profile.relationshipOpenProfile}
-                emptyLabel={dict.app.profile.relationshipEmpty}
-                closeLabel={dict.app.common.close}
-              />
-            </div>
-
-            {/* Phones: two equal 44 px buttons + full-width settings; from `sm` the original inline row. */}
-            <div className="mt-5 grid grid-cols-1 gap-2 min-[380px]:grid-cols-2 sm:flex sm:flex-wrap sm:items-center">
-              <Button href="/app/profile/edit" size="sm" className="max-sm:h-11 max-sm:px-3"><SparkleIcon size={15} /><Tr k="app.profile.editTitle" /></Button>
-              <ShareProfileButton url={shareUrl} />
-              <Button href="/app/settings" size="sm" variant="ghost" className="max-sm:h-11 min-[380px]:max-sm:col-span-2"><SettingsIcon size={15} /><Tr k="app.settings.title" /></Button>
-            </div>
+            {(profile?.headline || profile?.jobTitle || profile?.company || profile?.location || profile?.bio) && (
+              <div className="mt-4 min-w-0 space-y-2">
+                {profile?.headline && (
+                  <p className="break-words text-sm font-semibold leading-5 text-foreground">{profile.headline}</p>
+                )}
+                {(profile?.jobTitle || profile?.company || profile?.location) && (
+                  <p className="break-words text-xs leading-5 text-foreground-muted">
+                    {[profile?.jobTitle, profile?.company, profile?.location].filter(Boolean).join(" · ")}
+                  </p>
+                )}
+                {profile?.bio && (
+                  <p className="line-clamp-3 whitespace-pre-line break-words text-xs leading-5 text-foreground-muted">
+                    {profile.bio}
+                  </p>
+                )}
+              </div>
+            )}
 
             {profilePercent < 100 && (
               <div className="mt-5">
-                <div role="progressbar" aria-valuenow={profilePercent} aria-valuemin={0} aria-valuemax={100}
+                <div
+                  role="progressbar"
+                  aria-valuenow={profilePercent}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
                   aria-label={dict.app.profile.profileCompletion.replace("{percent}", String(profilePercent))}
-                  className="flex items-center justify-between gap-3 text-[11px] font-medium text-foreground-muted">
+                  className="flex items-center justify-between gap-3 text-[11px] font-medium text-foreground-muted"
+                >
                   <span>{dict.app.profile.profileCompletion.replace("{percent}", String(profilePercent))}</span>
                   <span className="font-semibold text-foreground">{profilePercent} %</span>
                 </div>
-                <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-surface-muted"><div className="h-full rounded-full bg-gradient-to-r from-electric-500 to-electric-400" style={{ width: `${profilePercent}%` }} /></div>
+                <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-surface-muted">
+                  <div className="h-full rounded-full bg-gradient-to-r from-electric-500 to-electric-400" style={{ width: `${profilePercent}%` }} />
+                </div>
               </div>
             )}
+
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <Button href="/app/profile/edit" size="sm" className="max-sm:h-11 max-sm:px-3">
+                <SparkleIcon size={15} />
+                <Tr k="app.profile.editTitle" />
+              </Button>
+              <ShareProfileButton url={shareUrl} className="max-sm:px-3" />
+              <Button href="/app/settings" size="sm" variant="ghost" className="max-sm:h-11 max-sm:px-3">
+                <SettingsIcon size={15} />
+                <Tr k="app.settings.title" />
+              </Button>
+            </div>
+
+            <div className="mt-5 grid w-full grid-cols-3 divide-x divide-border border-y border-border bg-surface-muted/30 px-0 py-3 sm:py-4">
+              <div className="min-w-0 px-1 sm:px-3">
+                <ProfilePeopleModal
+                  locale={user.locale === "en" ? "en" : "de"}
+                  label={dict.app.profile.metricFollowers}
+                  count={stats.followers}
+                  members={visibleFollowers}
+                  openProfileLabel={dict.app.profile.relationshipOpenProfile}
+                  emptyLabel={dict.app.profile.relationshipEmpty}
+                  closeLabel={dict.app.common.close}
+                  triggerClassName="w-full text-center sm:min-w-0"
+                />
+              </div>
+              <div className="min-w-0 px-1 sm:px-3">
+                <ProfilePeopleModal
+                  locale={user.locale === "en" ? "en" : "de"}
+                  label={dict.app.profile.statsFollowing}
+                  count={stats.following}
+                  members={visibleFollowing}
+                  openProfileLabel={dict.app.profile.relationshipOpenProfile}
+                  emptyLabel={dict.app.profile.relationshipEmpty}
+                  closeLabel={dict.app.common.close}
+                  triggerClassName="w-full text-center sm:min-w-0"
+                />
+              </div>
+              <div className="min-w-0 px-1 sm:px-3">
+                <ProfilePeopleModal
+                  locale={user.locale === "en" ? "en" : "de"}
+                  label={dict.app.profile.metricConnections}
+                  count={stats.connections}
+                  members={visibleConnections}
+                  openProfileLabel={dict.app.profile.relationshipOpenProfile}
+                  emptyLabel={dict.app.profile.relationshipEmpty}
+                  closeLabel={dict.app.common.close}
+                  triggerClassName="w-full text-center sm:min-w-0"
+                />
+              </div>
+            </div>
           </section>
 
-          <TrustScoreBlock
-            detail={trust.detail}
-            memberName={`${user.firstName} ${user.lastName}`}
-            fullPageHref="/app/trust"
-          />
-        </div>
-      </Card>
-
-      {/* ------------------------- tabs as central horizontal navigation */}
-      <nav aria-label={dict.app.profile.title} className="-mt-2 flex w-full overflow-x-auto no-scrollbar border-b border-border">
-        <div className="flex min-w-max items-center gap-2">
-          {tabs.map((item) => (
-            <Link
-              key={item.key}
-              href={item.href}
-              aria-current={tab === item.key ? "page" : undefined}
-              className={`border-b-2 px-4 py-3 text-sm font-semibold transition-colors ${
-                tab === item.key ? "border-electric-500 text-foreground" : "border-transparent text-foreground-muted hover:text-foreground"
-              }`}
-            >
-              <Tr k={item.labelKey} />
-            </Link>
-          ))}
-        </div>
-      </nav>
-
-      {tab === "overview" && (
-        <div className="mx-auto w-full max-w-3xl space-y-3">
-          <Card className="p-5">
+          <section
+            aria-label={dict.app.profile.verifiedBadgesTitle}
+            className="min-w-0 p-5 sm:p-6"
+          >
             <VerifiedBadgesSection
               badges={reputationBadges}
               adminRole={user.role === "admin"}
               isSelf
+              compactGallery
               locale={user.locale === "en" ? "en" : "de"}
             />
-          </Card>
+          </section>
 
+          <section className="flex min-w-0 flex-col p-5 sm:p-6">
+            <TrustScoreBlock
+              detail={trust.detail}
+              memberName={`${user.firstName} ${user.lastName}`}
+              fullPageHref="/app/trust"
+              variant="seamless"
+              showScoreNote
+            />
+            {/* The button only shares the profile link; a review is still accepted
+                server-side only after a verified collaboration. */}
+            <aside className="mt-5 border-t border-border pt-4">
+              <h2 className="text-sm font-bold tracking-tight"><Tr k="app.trust.requestReviewTitle" /></h2>
+              <p className="mt-1.5 text-xs leading-5 text-foreground-muted"><Tr k="app.trust.requestReviewHint" /></p>
+              <ShareProfileButton
+                url={shareUrl}
+                labelKey="app.trust.requestReview"
+                className="mt-3 w-full justify-center"
+              />
+            </aside>
+          </section>
+        </div>
+
+        <nav aria-label={dict.app.profile.title} className="w-full border-t border-border">
+          <div className="grid w-full grid-cols-4">
+            {tabs.map((item) => (
+              <Link
+                key={item.key}
+                href={item.href}
+                aria-current={tab === item.key ? "page" : undefined}
+                className={`flex min-h-12 min-w-0 items-center justify-center border-b-2 px-1 py-3 text-center text-[11px] font-semibold leading-4 transition-colors sm:px-4 sm:text-sm ${
+                  tab === item.key ? "border-electric-500 text-foreground" : "border-transparent text-foreground-muted hover:text-foreground"
+                }`}
+              >
+                <Tr k={item.labelKey} />
+              </Link>
+            ))}
+          </div>
+        </nav>
+      </div>
+
+      {tab === "overview" && (
+        <div className="mx-auto w-full max-w-3xl space-y-3">
           {profile?.bio && (
             <Card className="p-5">
               <p className="ic-measure whitespace-pre-wrap text-sm leading-6 text-foreground-muted">
@@ -382,29 +459,60 @@ export default async function OwnProfilePage({
           </div>
 
           {posts.length === 0 ? (
-            <p className="rounded-2xl border border-border bg-surface px-5 py-4 text-sm leading-6 text-foreground-muted">
-              <Tr k="app.profile.activityEmptyText" />
-            </p>
+            <div className="rounded-2xl border border-dashed border-border bg-surface-muted/30 px-5 py-6 sm:px-7">
+              <p className="max-w-2xl text-sm leading-6 text-foreground-muted">
+                <Tr k="app.profile.activityEmptyText" />
+              </p>
+            </div>
           ) : (
-            <ul className="divide-y divide-border border-y border-border">
-              {posts.map((post) => (
-                <li key={post.id} className="py-4 sm:py-5">
-                  <p className="whitespace-pre-wrap text-[15px] leading-7">{post.body}</p>
-                  <PostImage imageUrl={post.imageUrl} />
-                  <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-                    <p className="text-xs text-foreground-subtle">
-                      <LocalDate value={post.createdAt.toISOString()} options={{ day: "2-digit", month: "short", year: "numeric" }} />
-                    </p>
-                    <InlineAction
-                      action={deletePostAction}
-                      hidden={{ postId: post.id }}
-                      labelKey="app.common.delete"
-                      variant="ghost"
-                      confirmKey="app.posts.deleteConfirm"
-                    />
-                  </div>
-                </li>
-              ))}
+            <ul className="overflow-hidden rounded-2xl border border-border bg-surface divide-y divide-border">
+              {posts.map((post) => {
+                const postLink = safePostLink(post.linkUrl);
+                return (
+                  <li key={post.id} className="px-4 py-5 sm:px-6 sm:py-6">
+                    <article>
+                      <header className="flex flex-wrap items-center justify-between gap-3">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Badge variant={post.verified ? "forest" : "electric"}>
+                            <Tr k={postKindLabelKeys[post.kind] ?? "app.posts.typePost"} />
+                          </Badge>
+                          {post.verified && (
+                            <Badge variant="forest"><ShieldCheckIcon size={13} /><Tr k="app.posts.verifiedBadge" /></Badge>
+                          )}
+                        </div>
+                        <p className="text-xs text-foreground-subtle">
+                          <LocalDate value={post.createdAt.toISOString()} options={{ day: "2-digit", month: "short", year: "numeric" }} />
+                        </p>
+                      </header>
+
+                      <p className="mt-3 whitespace-pre-wrap break-words text-[15px] leading-7">{post.body}</p>
+                      <PostImage imageUrl={post.imageUrl} />
+                      {postLink && (
+                        <a
+                          href={postLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-electric-700 hover:underline dark:text-electric-300"
+                        >
+                          <GlobeIcon size={14} />
+                          <Tr k="app.posts.linkOpen" />
+                          <span aria-hidden="true">↗</span>
+                        </a>
+                      )}
+
+                      <footer className="mt-3 flex justify-end">
+                        <InlineAction
+                          action={deletePostAction}
+                          hidden={{ postId: post.id }}
+                          labelKey="app.common.delete"
+                          variant="ghost"
+                          confirmKey="app.posts.deleteConfirm"
+                        />
+                      </footer>
+                    </article>
+                  </li>
+                );
+              })}
             </ul>
           )}
 
@@ -547,25 +655,6 @@ export default async function OwnProfilePage({
                     <Badge variant={record.verification === "verified" ? "forest" : "outline"}>
                       <Tr k={record.verification === "verified" ? "app.common.verified" : "app.common.selfReported"} />
                     </Badge>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Card>
-
-          <Card className="p-5">
-            <h3 className="text-sm font-bold tracking-tight">
-              <Tr k="app.profile.performanceBadges" />
-            </h3>
-            {trust.badges.length === 0 ? (
-              <p className="mt-2 text-sm text-foreground-muted">
-                <Tr k="app.profile.performanceNoBadges" />
-              </p>
-            ) : (
-              <ul className="mt-3 flex flex-wrap gap-2">
-                {trust.badges.map((badge) => (
-                  <li key={badge.id}>
-                    <Badge variant="sand">{user.locale === "en" ? badge.titleEn : badge.titleDe}</Badge>
                   </li>
                 ))}
               </ul>

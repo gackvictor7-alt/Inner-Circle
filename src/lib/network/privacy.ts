@@ -49,9 +49,13 @@ export function locationVisible(showLocation: boolean | null | undefined, relati
 }
 
 /** Trust & performance block (same semantics as the contact rule, default "members"). */
-export function performanceVisible(visibility: string | null | undefined, relation: ViewerRelation): boolean {
+export function performanceVisible(
+  visibility: string | null | undefined,
+  relation: ViewerRelation,
+  fallback: Visibility = "members",
+): boolean {
   if (relation === "self") return true;
-  const level = normalizeVisibility(visibility, "members");
+  const level = normalizeVisibility(visibility, fallback);
   if (level === "private") return false;
   if (relation === "connected") return true;
   return level === "public" || level === "members";

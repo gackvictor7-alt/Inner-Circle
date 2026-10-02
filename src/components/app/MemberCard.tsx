@@ -143,7 +143,7 @@ export function MemberCard({
             <Link href={profileHref} className="truncate font-bold tracking-tight hover:underline">
               {member.firstName} {member.lastName}
             </Link>
-            {isDemoCard && <Badge variant="sand">{t.app.demo.profileBadge}</Badge>}
+            {isDemoCard && <Badge variant="outline">{t.app.demo.profileBadge}</Badge>}
             {member.foundingMember && (
               <Badge variant="sand">
                 <AwardIcon size={12} />

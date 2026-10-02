@@ -1,12 +1,22 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { and, eq, inArray, or } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, or } from "drizzle-orm";
 import { db } from "@/db/client";
-import { badgeApplications, badges, userBadges, users } from "@/db/schema";
+import { badgeApplicationEvents, badgeApplications, badges, userBadges, users } from "@/db/schema";
 import { idFor } from "@/db/ids";
 import { getAccessContext } from "@/lib/access/server";
-import { OPEN_APPLICATION_STATUSES, openApplicationCountFor } from "@/lib/badges/queries";
+import {
+  OPEN_APPLICATION_STATUSES,
+  openApplicationCountFor,
+  supportsBadgeApplicationEvents,
+} from "@/lib/badges/queries";
+import { consumeRateLimit } from "@/lib/rate-limit";
+import {
+  DEAL_CONTRIBUTOR_DEAL_THRESHOLD,
+  IC_MILLION_CLUB_VOLUME_CENTS,
+  reputationProgressFor,
+} from "@/lib/badges/progress";
 import { audit } from "@/lib/admin/audit";
 import { notify } from "@/lib/notifications/service";
 import { fail, done, text, type ActionState } from "./state";
@@ -24,17 +34,33 @@ import { fail, done, text, type ActionState } from "./state";
  *     and revoked badges disappear from every public surface.
  */
 
-const MAX_OPEN_APPLICATIONS = 5;
+const MAX_OPEN_APPLICATIONS = 10;
 const URL_RE = /^https?:\/\/[^\s/$.?#].[^\s]*$/i;
+const MISREPRESENTATION_SUSPENSION_DAYS = 30;
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 type AdminActor = { id: string };
 
-async function requireUserActor(): Promise<{ error: ActionState | null; user: { id: string; isDemo: boolean } | null }> {
+async function requireUserActor(): Promise<{
+  error: ActionState | null;
+  user: { id: string; isDemo: boolean; emailVerifiedAt: Date | null; phoneVerifiedAt: Date | null } | null;
+}> {
   const access = await getAccessContext();
   const user = access.user;
   if (!user) return { error: fail("unauthorized"), user: null };
   if (user.isDemo) return { error: fail("validation"), user: null };
-  return { error: null, user: { id: user.id, isDemo: user.isDemo } };
+  // Be explicit: a badge application requires a verified email or phone, not
+  // merely a broader access flag whose meaning could change independently.
+  if (!user.emailVerifiedAt && !user.phoneVerifiedAt) return { error: fail("verificationRequired"), user: null };
+  return {
+    error: null,
+    user: {
+      id: user.id,
+      isDemo: user.isDemo,
+      emailVerifiedAt: user.emailVerifiedAt,
+      phoneVerifiedAt: user.phoneVerifiedAt,
+    },
+  };
 }
 
 async function requireAdminActor(): Promise<{ error: ActionState | null; actor: AdminActor | null }> {
@@ -56,6 +82,54 @@ function parseEvidenceUrls(formData: FormData): { urls: string[]; error: boolean
   return { urls, error: false };
 }
 
+async function nextBadgeApplicationEventTime(applicationId: string, at = new Date()): Promise<Date> {
+  if (!(await supportsBadgeApplicationEvents())) return at;
+  const [lastEvent] = await db
+    .select({ createdAt: badgeApplicationEvents.createdAt })
+    .from(badgeApplicationEvents)
+    .where(eq(badgeApplicationEvents.applicationId, applicationId))
+    .orderBy(desc(badgeApplicationEvents.createdAt))
+    .limit(1);
+  return new Date(Math.max(at.getTime(), (lastEvent?.createdAt.getTime() ?? 0) + 1));
+}
+
+async function recordBadgeApplicationEvent(event: typeof badgeApplicationEvents.$inferInsert): Promise<void> {
+  if (!(await supportsBadgeApplicationEvents())) return;
+  await db.insert(badgeApplicationEvents).values(event);
+}
+
+async function suspendForBadgeMisrepresentation(params: {
+  userId: string;
+  actorId: string;
+  reason: string;
+  entityId: string;
+}) {
+  const now = new Date();
+  const suspensionEndsAt = new Date(now.getTime() + MISREPRESENTATION_SUSPENSION_DAYS * DAY_MS);
+  await db
+    .update(users)
+    .set({
+      status: "suspended",
+      suspensionEndsAt,
+      suspensionReason: params.reason,
+      updatedAt: now,
+    })
+    .where(eq(users.id, params.userId));
+
+  await audit({
+    actorId: params.actorId,
+    action: "user.suspended_for_badge_misrepresentation",
+    entityType: "User",
+    entityId: params.userId,
+    meta: {
+      badgeEntityId: params.entityId,
+      reason: params.reason,
+      durationDays: MISREPRESENTATION_SUSPENSION_DAYS,
+      suspensionEndsAt: suspensionEndsAt.toISOString(),
+    },
+  });
+}
+
 /**
  * A member applies for an application-based badge.
  *
@@ -71,10 +145,16 @@ export async function createBadgeApplicationAction(_prev: ActionState, formData:
   const explanation = text(formData, "explanation", 1200);
   const details = text(formData, "details", 2000);
   const adminNote = text(formData, "adminNote", 800);
+  const identityConfirmed = formData.get("identityConfirmed") === "on" || formData.get("identityConfirmed") === "true";
   const { urls, error: urlError } = parseEvidenceUrls(formData);
+  const rateLimit = await consumeRateLimit(`badge-application:${user.id}`, 15, 3600);
+  if (!rateLimit.allowed) return fail("rateLimited", { seconds: rateLimit.retryAfterSeconds });
 
   const [badge] = await db.select().from(badges).where(eq(badges.slug, badgeSlug)).limit(1);
-  if (!badge || !badge.active || badge.grantMethod !== "application") return fail("badgeNotApplicable");
+  if (!badge || !badge.active || badge.grantMethod !== "application" || badge.category !== "verified") {
+    return fail("badgeNotApplicable");
+  }
+  if (!identityConfirmed) return fail("badgeIdentityConfirmation");
   if (explanation.trim().length < 10) return fail("badgeExplanation");
   if (urlError || urls.length < 1 || urls.length > 3) return fail("badgeEvidence");
 
@@ -101,6 +181,7 @@ export async function createBadgeApplicationAction(_prev: ActionState, formData:
     userId: user.id,
     badgeId: badge.id,
     explanation,
+    identityConfirmedAt: now,
     details: details || null,
     evidenceUrlsJson: JSON.stringify(urls),
     adminNote: adminNote || null,
@@ -108,17 +189,79 @@ export async function createBadgeApplicationAction(_prev: ActionState, formData:
     createdAt: now,
     updatedAt: now,
   });
+  await recordBadgeApplicationEvent({
+    id: idFor.badgeApplicationEvent(),
+    applicationId: id,
+    actorId: user.id,
+    eventType: "submitted",
+    message: null,
+    createdAt: now,
+  });
 
   await audit({
     actorId: user.id,
     action: "badge_application.created",
     entityType: "BadgeApplication",
     entityId: id,
-    meta: { badgeSlug },
+    meta: { badgeSlug, identityConfirmed: true, evidenceCount: urls.length },
   });
 
   revalidatePath("/app/profile/badges");
   return done({ messageCode: "submitted" });
+}
+
+/** Applicant response to an explicit request for more information. */
+export async function respondToBadgeApplicationAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const { error, user } = await requireUserActor();
+  if (error || !user) return error ?? fail("unauthorized");
+
+  const applicationId = text(formData, "applicationId", 64);
+  const response = text(formData, "response", 1200).trim();
+  const { urls, error: urlError } = parseEvidenceUrls(formData);
+  if (!applicationId) return fail("validation");
+  if (response.length < 10) return fail("badgeResponseRequired");
+  if (urlError) return fail("badgeEvidence");
+
+  const rateLimit = await consumeRateLimit(`badge-response:${user.id}`, 15, 3600);
+  if (!rateLimit.allowed) return fail("rateLimited", { seconds: rateLimit.retryAfterSeconds });
+
+  const now = await nextBadgeApplicationEventTime(applicationId);
+  const updated = await db
+    .update(badgeApplications)
+    .set({
+      status: "pending",
+      ...(urls.length > 0 ? { evidenceUrlsJson: JSON.stringify(urls) } : {}),
+      updatedAt: now,
+    })
+    .where(
+      and(
+        eq(badgeApplications.id, applicationId),
+        eq(badgeApplications.userId, user.id),
+        eq(badgeApplications.status, "needs_more_information"),
+      ),
+    )
+    .returning({ id: badgeApplications.id });
+  if (updated.length === 0) return fail("badgeApplicationNotWaiting");
+
+  await recordBadgeApplicationEvent({
+    id: idFor.badgeApplicationEvent(),
+    applicationId,
+    actorId: user.id,
+    eventType: "member_response",
+    message: response,
+    createdAt: now,
+  });
+  await audit({
+    actorId: user.id,
+    action: "badge_application.member_response",
+    entityType: "BadgeApplication",
+    entityId: applicationId,
+    meta: { evidenceCount: urls.length, responseLength: response.length },
+  });
+
+  revalidatePath("/app/profile/badges");
+  revalidatePath("/admin/badges");
+  return done({ messageCode: "badgeResponseSubmitted" });
 }
 
 /**
@@ -136,12 +279,19 @@ export async function reviewBadgeApplicationAction(
   if (error || !actor) return error ?? fail("unauthorized");
 
   const applicationId = text(formData, "applicationId", 64);
-  const decision = text(formData, "decision", 24);
-  const reviewNote = text(formData, "reviewNote", 1200);
-  const feedbackNote = text(formData, "feedbackNote", 800);
+  const decision = text(formData, "decision", 32);
+  const reviewNote = text(formData, "reviewNote", 1200).trim();
+  const feedbackNote = text(formData, "feedbackNote", 800).trim();
   const publicSummary = text(formData, "publicSummary", 200);
+  const seriousDeception = formData.get("seriousDeception") === "on" || formData.get("seriousDeception") === "true";
+  const allowedDecisions = ["approve", "reject", "reject_false_evidence", "needs_more_information"];
   if (!applicationId) return fail("validation");
-  if (!["approve", "reject", "needs_more_information"].includes(decision)) return fail("validation");
+  if (!allowedDecisions.includes(decision)) return fail("validation");
+  if (reviewNote.length < 5) return fail("badgeInternalReason");
+  if (decision === "needs_more_information" || decision === "reject" || decision === "reject_false_evidence") {
+    if (feedbackNote.length < 10) return fail("badgeFeedbackRequired");
+  }
+  if (decision === "reject_false_evidence" && reviewNote.length < 10) return fail("badgeFraudReason");
 
   const [application] = await db
     .select()
@@ -152,23 +302,37 @@ export async function reviewBadgeApplicationAction(
   if (!OPEN_APPLICATION_STATUSES.includes(application.status as (typeof OPEN_APPLICATION_STATUSES)[number])) {
     return fail("notFound");
   }
-  // No self-approval: an admin may never decide about their own application.
   if (application.userId === actor.id) return fail("selfAction");
 
-  const now = new Date();
-  const status = decision === "approve" ? "approved" : decision === "reject" ? "rejected" : "needs_more_information";
+  const [badge] = await db.select().from(badges).where(eq(badges.id, application.badgeId)).limit(1);
+  if (!badge || badge.category !== "verified" || badge.grantMethod !== "application") return fail("badgeNotApplicable");
+  if (decision === "approve" && (!badge.active || !application.identityConfirmedAt)) return fail("badgeNotApplicable");
 
-  await db
+  const now = await nextBadgeApplicationEventTime(applicationId);
+  const status = decision === "approve" ? "approved" : decision === "needs_more_information" ? "needs_more_information" : "rejected";
+
+  const transitioned = await db
     .update(badgeApplications)
     .set({
       status,
-      reviewNote: reviewNote || null,
+      reviewNote,
       feedbackNote: feedbackNote || null,
       reviewedAt: now,
       reviewedById: actor.id,
       updatedAt: now,
     })
-    .where(eq(badgeApplications.id, applicationId));
+    .where(and(eq(badgeApplications.id, applicationId), inArray(badgeApplications.status, OPEN_APPLICATION_STATUSES)))
+    .returning({ id: badgeApplications.id });
+  if (transitioned.length === 0) return fail("notFound");
+
+  await recordBadgeApplicationEvent({
+    id: idFor.badgeApplicationEvent(),
+    applicationId,
+    actorId: actor.id,
+    eventType: status,
+    message: feedbackNote || null,
+    createdAt: now,
+  });
 
   if (decision === "approve") {
     const [existing] = await db
@@ -177,7 +341,6 @@ export async function reviewBadgeApplicationAction(
       .where(and(eq(userBadges.userId, application.userId), eq(userBadges.badgeId, application.badgeId)))
       .limit(1);
     if (existing) {
-      // Re-granting an already held badge: reactivate it, never duplicate.
       await db
         .update(userBadges)
         .set({
@@ -205,12 +368,47 @@ export async function reviewBadgeApplicationAction(
     }
   }
 
+  if (decision === "reject_false_evidence") {
+    const [existingGrant] = await db
+      .select({ id: userBadges.id })
+      .from(userBadges)
+      .where(
+        and(
+          eq(userBadges.userId, application.userId),
+          eq(userBadges.badgeId, application.badgeId),
+          isNull(userBadges.revokedAt),
+        ),
+      )
+      .limit(1);
+    if (existingGrant) {
+      await db
+        .update(userBadges)
+        .set({ revokedAt: now, revokedById: actor.id })
+        .where(eq(userBadges.id, existingGrant.id));
+    }
+    if (seriousDeception) {
+      await suspendForBadgeMisrepresentation({
+        userId: application.userId,
+        actorId: actor.id,
+        reason: reviewNote,
+        entityId: applicationId,
+      });
+    }
+  }
+
   await audit({
     actorId: actor.id,
-    action: `badge_application.${status}`,
+    action: decision === "reject_false_evidence" ? "badge_application.rejected_false_evidence" : `badge_application.${status}`,
     entityType: "BadgeApplication",
     entityId: applicationId,
-    meta: { userId: application.userId, badgeId: application.badgeId, feedbackNote },
+    meta: {
+      userId: application.userId,
+      badgeId: application.badgeId,
+      feedbackNote,
+      reviewNote,
+      falseEvidence: decision === "reject_false_evidence",
+      seriousDeception: decision === "reject_false_evidence" && seriousDeception,
+    },
   });
 
   await notify({
@@ -249,7 +447,9 @@ export async function grantBadgeByAdminAction(_prev: ActionState, formData: Form
   const badgeSlug = text(formData, "badgeSlug", 64);
   const publicSummary = text(formData, "publicSummary", 200);
   const periodLabel = text(formData, "periodLabel", 40);
+  const internalReason = text(formData, "reviewNote", 1200).trim();
   if (!userIdentifier || !badgeSlug) return fail("validation");
+  if (internalReason.length < 5) return fail("badgeInternalReason");
 
   const [target] = await db
     .select()
@@ -258,10 +458,21 @@ export async function grantBadgeByAdminAction(_prev: ActionState, formData: Form
     .limit(1);
   if (!target) return fail("notFound");
   if (target.isDemo) return fail("membershipDemo");
+  if (target.status !== "active") return fail("validation");
 
   const [badge] = await db.select().from(badges).where(eq(badges.slug, badgeSlug)).limit(1);
-  if (!badge || !badge.active) return fail("badgeNotApplicable");
-  if (badge.slug === "founding-member") return fail("badgeNotApplicable");
+  if (!badge || !badge.active || badge.category !== "reputation" || badge.grantMethod !== "admin") {
+    return fail("badgeNotApplicable");
+  }
+  if (badge.slug === "deal-maker" || badge.slug === "deal-volume-1m") {
+    const progress = await reputationProgressFor(target.id);
+    if (badge.slug === "deal-maker" && progress.confirmedDealCount < DEAL_CONTRIBUTOR_DEAL_THRESHOLD) {
+      return fail("badgeProgressNotReached");
+    }
+    if (badge.slug === "deal-volume-1m" && progress.confirmedVolumeCents < IC_MILLION_CLUB_VOLUME_CENTS) {
+      return fail("badgeProgressNotReached");
+    }
+  }
 
   const now = new Date();
   const [existing] = await db
@@ -269,6 +480,7 @@ export async function grantBadgeByAdminAction(_prev: ActionState, formData: Form
     .from(userBadges)
     .where(and(eq(userBadges.userId, target.id), eq(userBadges.badgeId, badge.id)))
     .limit(1);
+  const badgeGrantId = existing?.id ?? idFor.userBadge();
   if (existing) {
     await db
       .update(userBadges)
@@ -278,13 +490,14 @@ export async function grantBadgeByAdminAction(_prev: ActionState, formData: Form
         verifiedBy: actor.id,
         publicSummary: publicSummary || null,
         periodLabel: periodLabel || null,
+        note: internalReason,
         revokedAt: null,
         revokedById: null,
       })
       .where(eq(userBadges.id, existing.id));
   } else {
     await db.insert(userBadges).values({
-      id: idFor.userBadge(),
+      id: badgeGrantId,
       userId: target.id,
       badgeId: badge.id,
       source: "admin",
@@ -294,7 +507,7 @@ export async function grantBadgeByAdminAction(_prev: ActionState, formData: Form
       verifiedBy: actor.id,
       publicSummary: publicSummary || null,
       periodLabel: periodLabel || null,
-      note: `granted by ${actor.id}`,
+      note: internalReason,
     });
   }
 
@@ -302,8 +515,8 @@ export async function grantBadgeByAdminAction(_prev: ActionState, formData: Form
     actorId: actor.id,
     action: "badge.granted",
     entityType: "UserBadge",
-    entityId: existing?.id ?? null,
-    meta: { userId: target.id, badgeSlug, periodLabel, publicSummary },
+    entityId: badgeGrantId,
+    meta: { userId: target.id, badgeSlug, periodLabel, publicSummary, internalReason },
   });
 
   await notify({
@@ -319,6 +532,9 @@ export async function grantBadgeByAdminAction(_prev: ActionState, formData: Form
 
   revalidatePath("/admin/badges");
   revalidatePath(`/app/people/${target.handle}`);
+  revalidatePath("/app/profile/badges");
+  revalidatePath("/app/profile");
+  revalidatePath("/app/discover");
   return done({ messageCode: "granted" });
 }
 
@@ -331,28 +547,83 @@ export async function revokeBadgeByAdminAction(_prev: ActionState, formData: For
   if (error || !actor) return error ?? fail("unauthorized");
 
   const userBadgeId = text(formData, "userBadgeId", 64);
+  const reason = text(formData, "reason", 1200).trim();
+  const falseEvidence = formData.get("falseEvidence") === "on" || formData.get("falseEvidence") === "true";
+  const seriousDeception = formData.get("seriousDeception") === "on" || formData.get("seriousDeception") === "true";
   if (!userBadgeId) return fail("validation");
+  if (reason.length < 5) return fail("badgeInternalReason");
+  if (falseEvidence && reason.length < 10) return fail("badgeFraudReason");
 
   const [grant] = await db
-    .select()
+    .select({
+      id: userBadges.id,
+      userId: userBadges.userId,
+      badgeId: userBadges.badgeId,
+      revokedAt: userBadges.revokedAt,
+      badgeSlug: badges.slug,
+    })
     .from(userBadges)
+    .innerJoin(badges, eq(badges.id, userBadges.badgeId))
     .where(eq(userBadges.id, userBadgeId))
     .limit(1);
   if (!grant || grant.revokedAt) return fail("notFound");
+  if (grant.badgeSlug === "founding-member") return fail("badgePermanent");
 
+  const now = new Date();
   await db
     .update(userBadges)
-    .set({ revokedAt: new Date(), revokedById: actor.id })
+    .set({ revokedAt: now, revokedById: actor.id })
     .where(eq(userBadges.id, userBadgeId));
+
+  const [approvedApplication] = await db
+    .select({ id: badgeApplications.id })
+    .from(badgeApplications)
+    .where(
+      and(
+        eq(badgeApplications.userId, grant.userId),
+        eq(badgeApplications.badgeId, grant.badgeId),
+        eq(badgeApplications.status, "approved"),
+      ),
+    )
+    .orderBy(desc(badgeApplications.createdAt))
+    .limit(1);
+  if (approvedApplication) {
+    const eventAt = await nextBadgeApplicationEventTime(approvedApplication.id, now);
+    await recordBadgeApplicationEvent({
+      id: idFor.badgeApplicationEvent(),
+      applicationId: approvedApplication.id,
+      actorId: actor.id,
+      eventType: "badge_revoked",
+      message: null,
+      createdAt: eventAt,
+    });
+  }
+
+  if (falseEvidence && seriousDeception) {
+    await suspendForBadgeMisrepresentation({
+      userId: grant.userId,
+      actorId: actor.id,
+      reason,
+      entityId: userBadgeId,
+    });
+  }
 
   await audit({
     actorId: actor.id,
-    action: "badge.revoked",
+    action: falseEvidence ? "badge.revoked_for_false_evidence" : "badge.revoked",
     entityType: "UserBadge",
     entityId: userBadgeId,
-    meta: { userId: grant.userId, badgeId: grant.badgeId },
+    meta: {
+      userId: grant.userId,
+      badgeId: grant.badgeId,
+      reason,
+      falseEvidence,
+      seriousDeception: falseEvidence && seriousDeception,
+      suspensionDays: falseEvidence && seriousDeception ? MISREPRESENTATION_SUSPENSION_DAYS : null,
+    },
   });
 
+  const [target] = await db.select({ handle: users.handle }).from(users).where(eq(users.id, grant.userId)).limit(1);
   await notify({
     userId: grant.userId,
     actorId: actor.id,
@@ -365,7 +636,10 @@ export async function revokeBadgeByAdminAction(_prev: ActionState, formData: For
   });
 
   revalidatePath("/admin/badges");
+  revalidatePath("/admin/users");
   revalidatePath("/app/profile");
+  revalidatePath("/app/profile/badges");
   revalidatePath("/app/discover");
+  if (target?.handle) revalidatePath(`/app/people/${target.handle}`);
   return done({ messageCode: "revoked" });
 }

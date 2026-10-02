@@ -1,7 +1,7 @@
 import "server-only";
 
 import { cache } from "react";
-import { and, desc, eq, gte, inArray, isNull, ne, or, sql, count } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, isNotNull, isNull, ne, or, sql, count } from "drizzle-orm";
 import { db } from "@/db/client";
 import {
   businessOpportunities,
@@ -33,9 +33,11 @@ import {
 } from "@/db/schema";
 import { idFor } from "@/db/ids";
 import { connectionPair } from "@/db/queries";
-import type { PublicBadge } from "@/lib/badges/queries";
+import { badgeTimestampIso, verifiedPublicBadgeUserIdsFor, type PublicBadge } from "@/lib/badges/queries";
+import { hasPublicFoundingMemberBadge } from "@/lib/badges/founding";
 import { listedMemberSql, realParticipantSql } from "@/lib/network/eligibility";
 import { CONNECTION_REQUEST_COOLDOWN_DAYS } from "@/lib/platform/rules";
+import { performanceVisible } from "@/lib/network/privacy";
 import { trustDetailFor } from "@/lib/trust/service";
 
 export type DirectoryMember = {
@@ -73,6 +75,7 @@ const memberColumns = {
   handle: users.handle,
   isDemo: users.isDemo,
   foundingMember: users.foundingMember,
+  performanceVisibility: privacySettings.performanceVisibility,
   lastLoginAt: users.lastLoginAt,
   trustScore10: trustScoreSummaries.score10,
   verifiedReviewCount: trustScoreSummaries.verifiedReviewCount,
@@ -82,6 +85,14 @@ const memberColumns = {
   avatarUrl: profiles.avatarUrl,
   showLocation: privacySettings.showLocation,
 };
+
+async function supportsFoundingMemberNumbers(): Promise<boolean> {
+  const schemaRow = await db.get<{ available: number }>(sql`select exists (
+    select 1 from sqlite_master
+    where type = 'table' and name = 'User' and instr(sql, 'foundingMemberNumber') > 0
+  ) as available`);
+  return schemaRow?.available === 1;
+}
 
 /** D1 allows at most 100 bound parameters per statement – keep IN lists below. */
 const IN_CHUNK = 90;
@@ -141,6 +152,40 @@ export async function viewerRelations(viewerId: string, now = new Date()) {
   };
 }
 
+function relationForViewer(
+  viewerId: string,
+  ownerId: string,
+  relations: Awaited<ReturnType<typeof viewerRelations>>,
+): "self" | "connected" | "requester" | "network" {
+  if (ownerId === viewerId) return "self";
+  if (relations.connected.has(ownerId)) return "connected";
+  if (relations.incoming.has(ownerId)) return "requester";
+  return "network";
+}
+
+/** Server-side allowlist for Trust/Performance rows; hidden scores never reach a client component. */
+export async function performanceVisibleUserIdsFor(viewerId: string, ownerIds: string[]): Promise<Set<string>> {
+  const uniqueIds = [...new Set(ownerIds)];
+  if (uniqueIds.length === 0) return new Set();
+  const [privacyRows, relations] = await Promise.all([
+    Promise.all(
+      chunkIds(uniqueIds).map((chunk) =>
+        db
+          .select({ userId: privacySettings.userId, visibility: privacySettings.performanceVisibility })
+          .from(privacySettings)
+          .where(inArray(privacySettings.userId, chunk)),
+      ),
+    ).then((parts) => parts.flat()),
+    viewerRelations(viewerId),
+  ]);
+  const visibilityByOwner = new Map(privacyRows.map((row) => [row.userId, row.visibility]));
+  return new Set(
+    uniqueIds.filter((ownerId) =>
+      performanceVisible(visibilityByOwner.get(ownerId), relationForViewer(viewerId, ownerId, relations)),
+    ),
+  );
+}
+
 /**
  * Member directory (Sprint 12): only REAL, network-visible participants –
  * active, verified, onboarded, not a demo account, current network access
@@ -160,8 +205,11 @@ export async function listDirectoryMembers(options: {
 }): Promise<DirectoryMember[]> {
   const now = new Date();
   const like = (value: string) => `%${value.toLowerCase()}%`;
+  const foundingMemberNumberColumn = (await supportsFoundingMemberNumbers())
+    ? users.foundingMemberNumber
+    : sql<number | null>`null`;
   const rows = await db
-    .select(memberColumns)
+    .select({ ...memberColumns, foundingMemberNumber: foundingMemberNumberColumn })
     .from(users)
     .leftJoin(profiles, eq(profiles.userId, users.id))
     .leftJoin(privacySettings, eq(privacySettings.userId, users.id))
@@ -201,7 +249,7 @@ export async function listDirectoryMembers(options: {
   if (rows.length === 0) return [];
 
   const ids = rows.map((row) => row.id);
-  const [relations, interestRows] = await Promise.all([
+  const [relations, interestRows, verifiedFounders] = await Promise.all([
     viewerRelations(options.viewerId, now),
     Promise.all(
       chunkIds(ids).map((chunk) =>
@@ -213,6 +261,7 @@ export async function listDirectoryMembers(options: {
           .orderBy(interests.position),
       ),
     ).then((parts) => parts.flat()),
+    verifiedPublicBadgeUserIdsFor(ids, "founding-member"),
   ]);
 
   const interestsByUser = new Map<string, string[]>();
@@ -222,28 +271,35 @@ export async function listDirectoryMembers(options: {
     interestsByUser.set(row.userId, list);
   }
 
-  return rows.map((row) => ({
-    id: row.id,
-    firstName: row.firstName,
-    lastName: row.lastName,
-    handle: row.handle,
-    headline: row.headline,
-    location: row.showLocation === false ? null : row.location,
-    company: row.company,
-    avatarUrl: row.avatarUrl,
-    isDemo: row.isDemo,
-    foundingMember: row.foundingMember,
-    lastLoginAt: row.lastLoginAt,
-    trustScore10: row.trustScore10,
-    verifiedReviewCount: row.verifiedReviewCount,
-    interests: interestsByUser.get(row.id) ?? [],
-    isFollowing: relations.following.has(row.id),
-    isConnected: relations.connected.has(row.id),
-    requestPending: relations.outgoing.has(row.id) || relations.incoming.has(row.id),
-    outgoingRequestId: relations.outgoing.get(row.id) ?? null,
-    incomingRequestId: relations.incoming.get(row.id) ?? null,
-    requestCooldown: relations.cooldown.has(row.id),
-  }));
+  return rows.map((row) => {
+    const visiblePerformance = performanceVisible(
+      row.performanceVisibility,
+      relationForViewer(options.viewerId, row.id, relations),
+    );
+    return {
+      id: row.id,
+      firstName: row.firstName,
+      lastName: row.lastName,
+      handle: row.handle,
+      headline: row.headline,
+      location: row.showLocation === false ? null : row.location,
+      company: row.company,
+      avatarUrl: row.avatarUrl,
+      isDemo: row.isDemo,
+      foundingMember:
+        hasPublicFoundingMemberBadge(row.foundingMember, row.foundingMemberNumber) && verifiedFounders.has(row.id),
+      lastLoginAt: row.lastLoginAt,
+      trustScore10: visiblePerformance ? row.trustScore10 : null,
+      verifiedReviewCount: visiblePerformance ? row.verifiedReviewCount : null,
+      interests: interestsByUser.get(row.id) ?? [],
+      isFollowing: relations.following.has(row.id),
+      isConnected: relations.connected.has(row.id),
+      requestPending: relations.outgoing.has(row.id) || relations.incoming.has(row.id),
+      outgoingRequestId: relations.outgoing.get(row.id) ?? null,
+      incomingRequestId: relations.incoming.get(row.id) ?? null,
+      requestCooldown: relations.cooldown.has(row.id),
+    };
+  });
 }
 
 export async function listInterests() {
@@ -683,6 +739,7 @@ export async function memberProfileByHandle(handle: string) {
       status: users.status,
       isDemo: users.isDemo,
       foundingMember: users.foundingMember,
+      foundingMemberNumber: users.foundingMemberNumber,
       createdAt: users.createdAt,
       headline: profiles.headline,
       bio: profiles.bio,
@@ -701,6 +758,7 @@ export async function memberProfileByHandle(handle: string) {
       profileVisibility: profiles.profileVisibility,
       privacyVisibility: privacySettings.profileVisibility,
       privacyPerformance: privacySettings.performanceVisibility,
+      privacyMetricsVisibility: privacySettings.metricsVisibilityJson,
       contactVisibility: privacySettings.contactVisibility,
       showLocation: privacySettings.showLocation,
       discoverable: privacySettings.discoverable,
@@ -714,7 +772,15 @@ export async function memberProfileByHandle(handle: string) {
     .where(eq(users.handle, handle))
     .limit(1);
   if (!row) return null;
-  return { ...row, participant: Number(row.participant) === 1 };
+  const foundingMemberEligible = hasPublicFoundingMemberBadge(row.foundingMember, row.foundingMemberNumber);
+  const foundingMemberVerified = foundingMemberEligible
+    ? await verifiedPublicBadgeUserIdsFor([row.id], "founding-member")
+    : new Set<string>();
+  return {
+    ...row,
+    foundingMember: foundingMemberEligible && foundingMemberVerified.has(row.id),
+    participant: Number(row.participant) === 1,
+  };
 }
 
 export async function profileStats(userId: string) {
@@ -796,7 +862,7 @@ export async function feedPosts(viewerId: string, limit = 20) {
  * `TrustScoreSummary` row is only used by the list views.
  */
 export async function trustProfile(userId: string, viewerId?: string) {
-  const [detail, performance, earnedBadges] = await Promise.all([
+  const [detail, performance] = await Promise.all([
     trustDetailFor(userId, { viewerId: viewerId ?? null, reviewLimit: 20 }),
     db
       .select()
@@ -804,11 +870,6 @@ export async function trustProfile(userId: string, viewerId?: string) {
       .where(eq(performanceRecords.userId, userId))
       .orderBy(desc(performanceRecords.updatedAt))
       .limit(20),
-    db
-      .select({ id: badges.id, titleDe: badges.titleDe, titleEn: badges.titleEn, kind: badges.kind, iconKey: badges.iconKey })
-      .from(userBadges)
-      .innerJoin(badges, eq(badges.id, userBadges.badgeId))
-      .where(eq(userBadges.userId, userId)),
   ]);
 
   return {
@@ -821,7 +882,6 @@ export async function trustProfile(userId: string, viewerId?: string) {
     detail,
     reviews: detail.reviews,
     performance,
-    badges: earnedBadges,
   };
 }
 
@@ -898,6 +958,7 @@ export type DiscoverCandidate = {
   bio: string | null;
   isDemo: boolean;
   foundingMember: boolean;
+  foundingMemberNumber: number | null;
   /** Verified, public badges in reputation priority order (Sprint 18). */
   badges: PublicBadge[];
   trustScore10: number | null;
@@ -919,6 +980,16 @@ export type DiscoverCandidate = {
   requestPending: boolean;
   requestCooldown: boolean;
 };
+
+function parseJsonObject(json: string | null | undefined): Record<string, unknown> {
+  if (!json) return {};
+  try {
+    const value: unknown = JSON.parse(json);
+    return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
+  } catch {
+    return {};
+  }
+}
 
 function parseJsonList(json: string | null | undefined): string[] {
   if (!json) return [];
@@ -946,7 +1017,9 @@ export async function listDiscoverCandidates(options: {
   const now = new Date();
   const en = options.locale === "en";
 
-  const rows = await db
+  // Migration 0007 adds User.foundingMemberNumber; support D1 databases that
+  // have not applied it yet.
+  const rows = (await db
     .select({
       id: users.id,
       firstName: users.firstName,
@@ -967,6 +1040,8 @@ export async function listDiscoverCandidates(options: {
       lookingForJson: profiles.lookingForJson,
       offeringJson: profiles.offeringJson,
       showLocation: privacySettings.showLocation,
+      performanceVisibility: privacySettings.performanceVisibility,
+      metricsVisibilityJson: privacySettings.metricsVisibilityJson,
     })
     .from(users)
     .leftJoin(profiles, eq(profiles.userId, users.id))
@@ -974,7 +1049,8 @@ export async function listDiscoverCandidates(options: {
     .leftJoin(trustScoreSummaries, eq(trustScoreSummaries.userId, users.id))
     .where(listedMemberSql(viewerId, now.getTime()))
     .orderBy(desc(users.lastLoginAt), desc(users.createdAt))
-    .limit(options.limit);
+    .limit(options.limit))
+    .map((row) => ({ ...row, foundingMemberNumber: null as number | null }));
 
   if (rows.length === 0) return [];
   const ids = rows.map((row) => row.id);
@@ -1010,9 +1086,12 @@ export async function listDiscoverCandidates(options: {
             slug: badges.slug,
             titleDe: badges.titleDe,
             titleEn: badges.titleEn,
+            descriptionDe: badges.descDe,
+            descriptionEn: badges.descEn,
             category: badges.category,
             iconKey: badges.iconKey,
             priority: badges.priority,
+            active: badges.active,
             grantedAt: userBadges.grantedAt,
             verifiedAt: userBadges.verifiedAt,
             publicSummary: userBadges.publicSummary,
@@ -1024,6 +1103,7 @@ export async function listDiscoverCandidates(options: {
             and(
               inArray(userBadges.userId, chunk),
               isNull(userBadges.revokedAt),
+              isNotNull(userBadges.verifiedAt),
               eq(badges.active, true),
               eq(badges.publiclyVisible, true),
             ),
@@ -1072,6 +1152,10 @@ export async function listDiscoverCandidates(options: {
   const goalLabelBySlug = new Map(goalRows.map((row) => [row.slug, en ? row.labelEn : row.labelDe]));
   const humanise = (values: string[]) => values.map((value) => goalLabelBySlug.get(value) ?? value);
 
+  // A public Founding Member marker requires the actual verified UserBadge row;
+  // the server-owned flag alone is not sufficient proof.
+  const rowsById = new Map(rows.map((row) => [row.id, row]));
+
   // Verified badges per candidate, already in reputation priority order.
   const badgesByUser = new Map<string, typeof badgeRows>();
   for (const row of badgeRows) {
@@ -1079,24 +1163,44 @@ export async function listDiscoverCandidates(options: {
     list.push(row);
     badgesByUser.set(row.userId, list);
   }
-  const candidateBadges = (userId: string): PublicBadge[] =>
-    (badgesByUser.get(userId) ?? []).map((badge) => {
-      const verified = badge.verifiedAt ?? badge.grantedAt;
-      const category: PublicBadge["category"] =
-        badge.category === "special" || badge.category === "platform" ? badge.category : "verified";
-      return {
-        id: badge.id,
-        slug: badge.slug,
-        title: en ? badge.titleEn : badge.titleDe,
-        category,
-        description: null,
-        iconKey: badge.iconKey,
-        priority: badge.priority,
-        verifiedAt: verified ? verified.toISOString() : null,
-        publicSummary: badge.publicSummary,
-        periodLabel: badge.periodLabel,
-      };
-    });
+  const candidateBadges = (userId: string): PublicBadge[] => {
+    const owner = rowsById.get(userId);
+    const relation = relationForViewer(viewerId, userId, relations);
+    const showPerformance = performanceVisible(owner?.performanceVisibility, relation);
+    const metricVisibility = parseJsonObject(owner?.metricsVisibilityJson);
+    const showReviewedFigures = showPerformance && performanceVisible(
+      typeof metricVisibility.badgeNumbers === "string" ? metricVisibility.badgeNumbers : "private",
+      relation,
+      "private",
+    );
+
+    return (badgesByUser.get(userId) ?? [])
+      .filter((badge) => {
+        if (badge.slug === "founding-member") {
+          return hasPublicFoundingMemberBadge(owner?.foundingMember, owner?.foundingMemberNumber);
+        }
+        const isReputation = badge.category === "platform" || badge.category === "reputation";
+        return !isReputation || showPerformance;
+      })
+      .map((badge) => {
+        const category: PublicBadge["category"] =
+          badge.category === "special" ? "special" : badge.category === "platform" || badge.category === "reputation" ? "reputation" : "verified";
+        return {
+          id: badge.id,
+          slug: badge.slug,
+          title: en ? badge.titleEn : badge.titleDe,
+          category,
+          description: en ? badge.descriptionEn : badge.descriptionDe,
+          iconKey: badge.iconKey,
+          priority: badge.priority,
+          active: badge.active,
+          grantedAt: badgeTimestampIso(badge.verifiedAt, badge.grantedAt),
+          memberNumber: badge.slug === "founding-member" ? owner?.foundingMemberNumber ?? null : null,
+          publicSummary: showReviewedFigures ? badge.publicSummary : null,
+          periodLabel: badge.periodLabel,
+        };
+      });
+  };
 
   const neighboursOf = new Map<string, Set<string>>();
   for (const row of secondDegree) {
@@ -1114,6 +1218,11 @@ export async function listDiscoverCandidates(options: {
     const myGoals = goalsByUser.get(row.id) ?? [];
     const neighbours = neighboursOf.get(row.id) ?? new Set<string>();
     const shared = [...myNeighbours].filter((id) => neighbours.has(id));
+    const relation = relationForViewer(viewerId, row.id, relations);
+    const visiblePerformance = performanceVisible(row.performanceVisibility, relation);
+    const hasVerifiedFoundingGrant = (badgesByUser.get(row.id) ?? []).some((badge) => badge.slug === "founding-member");
+    const hasFoundingMember =
+      hasPublicFoundingMemberBadge(row.foundingMember, row.foundingMemberNumber) && hasVerifiedFoundingGrant;
 
     return {
       id: row.id,
@@ -1127,10 +1236,11 @@ export async function listDiscoverCandidates(options: {
       location: row.showLocation === false ? null : row.location,
       bio: row.bio,
       isDemo: row.isDemo,
-      foundingMember: row.foundingMember,
+      foundingMember: hasFoundingMember,
+      foundingMemberNumber: hasFoundingMember ? row.foundingMemberNumber : null,
       badges: candidateBadges(row.id),
-      trustScore10: row.trustScore10,
-      verifiedReviewCount: row.verifiedReviewCount,
+      trustScore10: visiblePerformance ? row.trustScore10 : null,
+      verifiedReviewCount: visiblePerformance ? row.verifiedReviewCount : null,
       interestSlugs: myInterests.map((interest) => interest.slug),
       interestLabels: myInterests.map((interest) => (en ? interest.labelEn : interest.labelDe)),
       goalSlugs: myGoals.map((goal) => goal.slug),

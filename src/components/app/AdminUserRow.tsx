@@ -32,6 +32,7 @@ export function AdminUserRow({
   role,
   accountStatus,
   foundingMember,
+  foundingMemberNumber,
   isDemo,
   membership,
   betaActive,
@@ -45,6 +46,7 @@ export function AdminUserRow({
   role: string;
   accountStatus: string;
   foundingMember: boolean;
+  foundingMemberNumber: number | null;
   isDemo: boolean;
   membership: AdminMembershipInfo | null;
   betaActive: boolean;
@@ -93,7 +95,11 @@ export function AdminUserRow({
               </Badge>
             )}
             {betaActive && <Badge variant="electric">{tr("app.admin.users.betaBadge")}</Badge>}
-            {foundingMember && <Badge variant="sand">{tr("app.card.founding")}</Badge>}
+            {foundingMember && (
+              <Badge variant="sand">
+                {tr("app.card.founding")}{foundingMemberNumber ? ` · #${String(foundingMemberNumber).padStart(3, "0")}` : ""}
+              </Badge>
+            )}
             {isDemo && <Badge variant="outline">{tr("app.common.demo")}</Badge>}
           </p>
           <p className="mt-1 text-xs text-foreground-subtle">
@@ -115,13 +121,15 @@ export function AdminUserRow({
                 </Button>
               </form>
             )}
-            <form action={founding}>
-              <input type="hidden" name="userId" value={userId} />
-              <input type="hidden" name="grant" value={foundingMember ? "0" : "1"} />
-              <Button type="submit" size="sm" variant="ghost" loading={foundingPending}>
-                {foundingMember ? tr("app.admin.users.revokeFounding") : tr("app.admin.users.grantFounding")}
-              </Button>
-            </form>
+            {!foundingMember && (
+              <form action={founding}>
+                <input type="hidden" name="userId" value={userId} />
+                <input type="hidden" name="grant" value="1" />
+                <Button type="submit" size="sm" variant="ghost" loading={foundingPending}>
+                  {tr("app.admin.users.grantFounding")}
+                </Button>
+              </form>
+            )}
           </div>
           <div className="flex flex-wrap items-center gap-2 sm:justify-end">
             <span className="text-xs text-foreground-subtle">
