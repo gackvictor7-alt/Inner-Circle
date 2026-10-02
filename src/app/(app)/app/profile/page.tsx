@@ -170,7 +170,7 @@ export default async function OwnProfilePage({
     hasBio: Boolean(profile?.bio),
   });
 
-  const hasContactLinks = Boolean(profile?.websiteUrl || profile?.xUrl || profile?.instagramUrl);
+  const hasContactLinks = Boolean(profile?.websiteUrl || profile?.xUrl || profile?.instagramUrl || profile?.tiktokUrl);
 
   return (
     <ProfileView
@@ -208,6 +208,7 @@ export default async function OwnProfilePage({
             websiteUrl={profile?.websiteUrl}
             xUrl={profile?.xUrl}
             instagramUrl={profile?.instagramUrl}
+            tiktokUrl={profile?.tiktokUrl}
           />
         ) : null
       }

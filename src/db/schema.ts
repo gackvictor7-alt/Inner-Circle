@@ -126,6 +126,8 @@ export const profiles = sqliteTable("Profile", {
   linkedinUrl: text("linkedinUrl"),
   xUrl: text("xUrl"),
   instagramUrl: text("instagramUrl"),
+  /** TikTok handle or profile URL (Profile/Badges/Mobile sprint 2026-10-02). */
+  tiktokUrl: text("tiktokUrl"),
   avatarUrl: text("avatarUrl"),
   coverUrl: text("coverUrl"),
   rolesJson: text("rolesJson").notNull().default("[]"),

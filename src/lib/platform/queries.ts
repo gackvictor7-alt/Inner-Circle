@@ -785,6 +785,7 @@ export async function memberProfileByHandle(handle: string) {
       linkedinUrl: profiles.linkedinUrl,
       xUrl: profiles.xUrl,
       instagramUrl: profiles.instagramUrl,
+      tiktokUrl: profiles.tiktokUrl,
       rolesJson: profiles.rolesJson,
       skillsJson: profiles.skillsJson,
       lookingForJson: profiles.lookingForJson,

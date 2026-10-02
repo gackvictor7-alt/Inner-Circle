@@ -4,6 +4,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import {
   parseProfileTab,
   profileTabHref,
+  ProfileContactLinks,
   ProfileView,
   type ProfileIdentity,
   type ProfileTabKey,
@@ -150,5 +151,37 @@ describe("profile tab routing helpers", () => {
   it("keeps the default tab as the clean URL", () => {
     expect(profileTabHref("/app/profile", "activity")).toBe("/app/profile");
     expect(profileTabHref("/app/profile", "interests")).toBe("/app/profile?tab=interests");
+  });
+});
+
+/* ------------------------------------------------- contact links + TikTok */
+
+describe("ProfileContactLinks (Sprint 2026-10-02: + TikTok)", () => {
+  it("normalises a bare TikTok handle into a profile URL and shows @handle", () => {
+    const html = renderToStaticMarkup(<ProfileContactLinks tiktokUrl="lena.dances" />);
+    expect(html).toContain('href="https://www.tiktok.com/@lena.dances"');
+    expect(html).toContain("@lena.dances");
+    expect(html).toContain('rel="noopener noreferrer nofollow"');
+    expect(html).toContain('target="_blank"');
+  });
+
+  it("keeps a full TikTok URL (label \"TikTok\") and strips a leading @", () => {
+    const full = renderToStaticMarkup(<ProfileContactLinks tiktokUrl="https://www.tiktok.com/@lena" />);
+    expect(full).toContain('href="https://www.tiktok.com/@lena"');
+    expect(full).toContain(">TikTok<");
+    const at = renderToStaticMarkup(<ProfileContactLinks tiktokUrl="@lena" />);
+    expect(at).toContain('href="https://www.tiktok.com/@lena"');
+    expect(at).toContain("@lena");
+  });
+
+  it("renders nothing without links and all four chips side by side", () => {
+    expect(renderToStaticMarkup(<ProfileContactLinks />)).toBe("");
+    const html = renderToStaticMarkup(
+      <ProfileContactLinks websiteUrl="paula.example" xUrl="@paula" instagramUrl="@paula.ig" tiktokUrl="@paula.tt" />,
+    );
+    expect(html).toContain("Website");
+    expect(html).toContain("@paula");
+    expect(html).toContain("@paula.ig");
+    expect(html).toContain('href="https://www.tiktok.com/@paula.tt"');
   });
 });

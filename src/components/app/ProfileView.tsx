@@ -19,6 +19,7 @@ import {
   GlobeIcon,
   InstagramIcon,
   MapPinIcon,
+  TikTokIcon,
   XSocialIcon,
 } from "@/components/ui/icons";
 
@@ -473,17 +474,19 @@ export function ProfileOfferList({
   );
 }
 
-/** External contact chips (website / X / Instagram) – identical on both profiles. */
+/** External contact chips (website / X / Instagram / TikTok) – identical on both profiles. */
 export function ProfileContactLinks({
   websiteUrl,
   xUrl,
   instagramUrl,
+  tiktokUrl,
 }: {
   websiteUrl?: string | null;
   xUrl?: string | null;
   instagramUrl?: string | null;
+  tiktokUrl?: string | null;
 }) {
-  if (!websiteUrl && !xUrl && !instagramUrl) return null;
+  if (!websiteUrl && !xUrl && !instagramUrl && !tiktokUrl) return null;
   return (
     <div className="flex flex-wrap items-center gap-2">
       {websiteUrl && (
@@ -505,6 +508,13 @@ export function ProfileContactLinks({
           href={instagramUrl.startsWith("http") ? instagramUrl : `https://instagram.com/${instagramUrl.replace(/^@/, "")}`}
           icon={<InstagramIcon size={13} />}
           label={instagramUrl.startsWith("@") || !instagramUrl.startsWith("http") ? `@${instagramUrl.replace(/^@/, "")}` : "Instagram"}
+        />
+      )}
+      {tiktokUrl && (
+        <ProfileExternalLink
+          href={tiktokUrl.startsWith("http") ? tiktokUrl : `https://www.tiktok.com/@${tiktokUrl.replace(/^@/, "")}`}
+          icon={<TikTokIcon size={13} />}
+          label={tiktokUrl.startsWith("@") || !tiktokUrl.startsWith("http") ? `@${tiktokUrl.replace(/^@/, "")}` : "TikTok"}
         />
       )}
     </div>

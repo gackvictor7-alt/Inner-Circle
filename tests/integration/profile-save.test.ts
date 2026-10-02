@@ -64,7 +64,7 @@ afterAll(async () => {
 });
 
 describe("profile save", () => {
-  it("stores every field incl. website, X and Instagram – and the next save really clears them", async () => {
+  it("stores every field incl. website, X, Instagram and TikTok – and the next save really clears them", async () => {
     const id = await createTestUser({ firstName: "Paula", lastName: "Profil" });
     created.push(id);
     currentUserId = id;
@@ -77,6 +77,7 @@ describe("profile save", () => {
         website: "paula.example",
         xHandle: "@paula",
         instagram: "@paula.ig",
+        tiktok: "@paula.tt",
       }),
     );
     expect(saved.status).toBe("success");
@@ -84,18 +85,20 @@ describe("profile save", () => {
     expect(row.websiteUrl).toBe("paula.example");
     expect(row.xUrl).toBe("@paula");
     expect(row.instagramUrl).toBe("@paula.ig");
+    expect(row.tiktokUrl).toBe("@paula.tt");
     expect(row.avatarUrl).toBe("https://images.example/paula.jpg");
     expect(JSON.parse(row.lookingForJson)).toEqual(["Pilotkunden", "Mentoring"]);
     expect(JSON.parse(row.offeringJson)).toEqual(["Go-to-Market-Beratung"]);
     expect(row.company).toBe("Testfirma GmbH (fiktiv)");
 
-    const cleared = await updateProfileAction(initialActionState, form({ ...base, avatarUrl: "", website: "", xHandle: "", instagram: "" }));
+    const cleared = await updateProfileAction(initialActionState, form({ ...base, avatarUrl: "", website: "", xHandle: "", instagram: "", tiktok: "" }));
     expect(cleared.status).toBe("success");
     [row] = await db.select().from(profiles).where(eq(profiles.userId, id));
     expect(row.avatarUrl).toBeNull();
     expect(row.websiteUrl).toBeNull();
     expect(row.xUrl).toBeNull();
     expect(row.instagramUrl).toBeNull();
+    expect(row.tiktokUrl).toBeNull();
   });
 
   it("only the name is required – everything else can be completed later", async () => {

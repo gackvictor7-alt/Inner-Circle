@@ -225,7 +225,7 @@ export default async function MemberProfilePage({
       ? trust.summary.score10 / 10
       : null;
 
-  const hasContactLinks = Boolean(profile.websiteUrl || profile.xUrl || profile.instagramUrl);
+  const hasContactLinks = Boolean(profile.websiteUrl || profile.xUrl || profile.instagramUrl || profile.tiktokUrl);
   const shareUrl = getPublicUrl(`/app/people/${encodeURIComponent(profile.handle)}`);
 
   return (
@@ -261,6 +261,7 @@ export default async function MemberProfilePage({
             websiteUrl={profile.websiteUrl}
             xUrl={profile.xUrl}
             instagramUrl={profile.instagramUrl}
+            tiktokUrl={profile.tiktokUrl}
           />
         ) : null
       }

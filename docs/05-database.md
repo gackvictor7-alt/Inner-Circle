@@ -1,8 +1,8 @@
 # 05 – Datenbank (Cloudflare D1 / Drizzle)
 
-**Stand:** 2026-09-30 (Post-Bilder + expliziter Nachrichten-Lesestatus) · Basis:
+**Stand:** 2026-10-02 (Profil-Social-Link TikTok; davor Badge-Verifizierungszentrum) · Basis:
 `src/db/schema.ts` und Migrationen `drizzle/0000_init.sql` bis
-`drizzle/0006_message_read_state.sql`.
+`drizzle/0009_profile_tiktok_link.sql`.
 
 - **Dialekt:** SQLite. In Produktion **Cloudflare D1** über das Binding `DB`
   (`database_name: inner-circle-db`), lokal/testweise **libSQL**
@@ -11,7 +11,12 @@
   Profil-/Discover-Spalten; `0002` Beta und Direktchat-Schlüssel; `0003`
   Trust-Bewertungen; `0004` Deal-Records; `0005` Impact/Badges; `0006` ergänzt
   `Message.readAt` und backfilled den bisherigen
-  `ConversationParticipant.lastReadAt`-Stand. Der bestehende
+  `ConversationParticipant.lastReadAt`-Stand; `0007` Badge-Verifizierungszentrum
+  (`BadgeApplication.identityConfirmedAt`, `User.foundingMemberNumber` unique +
+  Backfill nach Beitrittsdatum, `User.suspensionEndsAt`/`suspensionReason`);
+  `0008` neue Tabelle `BadgeApplicationEvent` (lückenlose Antragshistorie);
+  `0009` ergänzt `Profile.tiktokUrl` (Social-Link-Feld, nullbar, kein
+  Backfill – bestehende Profile bleiben unverändert). Der bestehende
   `message_conversation_idx` unterstützt den Conversation-Filter. Die
   Korrektheit braucht keinen Zusatzindex; ohne gemessene Performance-
   Notwendigkeit wird kein weiterer Index angelegt. Insgesamt 57 Tabellen;
@@ -47,7 +52,7 @@
 
 | Tabelle | Zweck | Status |
 | ------- | ----- | ------ |
-| `Profile` | `userId` (unique), `headline`, `bio`, `location`, `company`, `jobTitle`, Links (`websiteUrl`, `linkedinUrl` [DEPRECATED in UI], `xUrl`, `instagramUrl`), `avatarUrl` (Sprint 13: hochgeladene Fotos liegen im R2 `MEDIA`-Bucket, die Spalte speichert nur die URL `/api/media/avatars/<userId>/<zufall>.<ext>` bzw. eine externe Bild-URL – **nie** Base64), `rolesJson`, `skillsJson`, `lookingForJson`, **`offeringJson` (Sprint 3, „Ich biete")**, `profileVisibility`, `onboardingCompletedAt` | **aktiv** (Avatar/Cover nur als URL; `linkedinUrl` in sichtbarer UI entfernt und deprecated, Spalte für Migrationssicherheit in DB erhalten) |
+| `Profile` | `userId` (unique), `headline`, `bio`, `location`, `company`, `jobTitle`, Links (`websiteUrl`, `linkedinUrl` [DEPRECATED in UI], `xUrl`, `instagramUrl`, **`tiktokUrl` (Sprint 2026-10-02)**), `avatarUrl` (Sprint 13: hochgeladene Fotos liegen im R2 `MEDIA`-Bucket, die Spalte speichert nur die URL `/api/media/avatars/<userId>/<zufall>.<ext>` bzw. eine externe Bild-URL – **nie** Base64), `rolesJson`, `skillsJson`, `lookingForJson`, **`offeringJson` (Sprint 3, „Ich biete")**, `profileVisibility`, `onboardingCompletedAt` | **aktiv** (Avatar/Cover nur als URL; `linkedinUrl` in sichtbarer UI entfernt und deprecated, Spalte für Migrationssicherheit in DB erhalten) |
 | `Interest` / `Goal` | Taxonomie mit DE/EN-Labels und `position` | **aktiv** (Bootstrap per Seed/D1-Bootstrap) |
 | `UserInterest` / `UserGoal` | n:m-Zuordnungen, eindeutig je Paar | **aktiv** |
 | `PrivacySettings` | `profileVisibility`, `performanceVisibility`, `contactVisibility`, `showLocation`, `discoverable`, `allowConnectionRequests`, **`metricsVisibilityJson` (Sprint 3)** | teilweise erzwungen (K-06); `metricsVisibilityJson` in `/app/profile?tab=performance` erzwungen |
@@ -297,3 +302,18 @@ Production angewendet**.
 
 **Regel:** Migrationen sind additiv. Destruktive Änderungen nur mit Backup und
 ausdrücklicher Freigabe. Jede Schemaänderung aktualisiert dieses Dokument.
+
+## Sprint Profile/Badges/Mobile – Migration `0009` (2026-10-02)
+
+- **Inhalt:** `ALTER TABLE Profile ADD tiktokUrl text;` – genau ein
+  nullbares Social-Link-Feld neben `websiteUrl`/`xUrl`/`instagramUrl`.
+  Kein Backfill, keine Datenänderung, keine Downtime (additive Spalte).
+- **Nutzung:** Profil-Bearbeitung (`updateProfileAction`, Feld `tiktok`,
+  max. 120 Zeichen, geleertes Feld wird wirklich gelöscht) und die
+  Kontakt-Chips in der einheitlichen `ProfileView` (Handle `@name` →
+  `https://www.tiktok.com/@name`, volle URLs bleiben unverändert;
+  Sichtbarkeit fremder Kontakte weiter über `contactVisibility`,
+  §3d in `06-permissions.md`).
+- **Status:** lokal generiert und gegen libSQL/Worker-Tests geprüft
+  (`npm test`, `drizzle-kit check`); **nicht** auf die Produktions-D1
+  angewendet (kein Deploy in diesem Sprint).

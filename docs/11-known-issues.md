@@ -654,6 +654,10 @@ nicht angefasst:
   (nach)verifiziert. Für die lokale Badge-Darstellungsprüfung wurden in
   `dev.db` (nur lokal, nicht committet) zwei verifizierte Badges für
   `lena.hartmann` gesetzt. Produktion/Seed-Logik unverändert.
+- **Migration `0009` (`Profile.tiktokUrl`) ist nur lokal generiert/geprüft:**
+  bewusst keine Anwendung auf die Produktions-D1 (kein Deploy in diesem
+  Sprint). Vor dem nächsten Production-Deploy muss `0009` wie üblich
+  über den Migrationspfad angewendet werden (`docs/05-database.md`).
 - **Admin-Routen `/admin/trust` und `/admin/audit` existieren nicht** (404 im
   Smoke-Sweep) – Trust-Review bzw. Auditlog leben innerhalb bestehender
   Admin-Seiten; kein Befund dieses Sprints, nur dokumentiert.

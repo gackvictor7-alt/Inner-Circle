@@ -803,6 +803,11 @@ Eintrag hier:
   (Pflicht) + optionaler Zeitraum; jeder Grant wird audit-loggiert
   (`badge.granted`). Antrags-Selbstgenehmigungsschutz bleibt getrennt
   unangetastet.
+- **Profil-Kontakt-Chips:** Website · X · Instagram · **TikTok**
+  (Sprint 2026-10-02) als ruhige Chips mit 13-px-Stroke-Icons unter dem
+  Profilkopf – identisch auf eigenem und fremdem Profil; TikTok-Handle
+  wird zu `https://www.tiktok.com/@…` normalisiert, volle URLs bleiben
+  unverändert; `rel="noopener noreferrer nofollow"`, `target="_blank"`.
 - **Mobile-Typografie systematisch:** geteilte Seiten-H1s mobil `text-xl`
   (ab `sm` unverändert `text-3xl`); Seiten-Wrapper-Abstände mobil
   `space-y-5`/`space-y-4` (ab `sm` `space-y-8`/`space-y-6`); Bottom-Bar,

@@ -137,6 +137,21 @@ export function InstagramIcon(props: IconProps) {
   );
 }
 
+/**
+ * TikTok – stroked music-note glyph in the same 24px/1.8 line style as the
+ * other social icons (Profile/Badges/Mobile sprint 2026-10-02).
+ */
+export function TikTokIcon(props: IconProps) {
+  const p = base(undefined, props);
+  return (
+    <svg {...p}>
+      <path d="M9 18V5l12-2v13" />
+      <circle cx="6" cy="18" r="3" />
+      <circle cx="18" cy="16" r="3" />
+    </svg>
+  );
+}
+
 export function XSocialIcon(props: IconProps) {
   const p = base(undefined, props);
   return (
