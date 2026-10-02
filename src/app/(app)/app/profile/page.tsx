@@ -276,6 +276,45 @@ export default async function OwnProfilePage({
                 <Tr k="app.settings.title" />
               </Button>
             </div>
+
+            <div className="mt-5 grid w-full grid-cols-3 divide-x divide-border border-y border-border bg-surface-muted/30 px-0 py-3 sm:py-4">
+              <div className="min-w-0 px-1 sm:px-3">
+                <ProfilePeopleModal
+                  locale={user.locale === "en" ? "en" : "de"}
+                  label={dict.app.profile.metricFollowers}
+                  count={stats.followers}
+                  members={visibleFollowers}
+                  openProfileLabel={dict.app.profile.relationshipOpenProfile}
+                  emptyLabel={dict.app.profile.relationshipEmpty}
+                  closeLabel={dict.app.common.close}
+                  triggerClassName="w-full text-center sm:min-w-0"
+                />
+              </div>
+              <div className="min-w-0 px-1 sm:px-3">
+                <ProfilePeopleModal
+                  locale={user.locale === "en" ? "en" : "de"}
+                  label={dict.app.profile.statsFollowing}
+                  count={stats.following}
+                  members={visibleFollowing}
+                  openProfileLabel={dict.app.profile.relationshipOpenProfile}
+                  emptyLabel={dict.app.profile.relationshipEmpty}
+                  closeLabel={dict.app.common.close}
+                  triggerClassName="w-full text-center sm:min-w-0"
+                />
+              </div>
+              <div className="min-w-0 px-1 sm:px-3">
+                <ProfilePeopleModal
+                  locale={user.locale === "en" ? "en" : "de"}
+                  label={dict.app.profile.metricConnections}
+                  count={stats.connections}
+                  members={visibleConnections}
+                  openProfileLabel={dict.app.profile.relationshipOpenProfile}
+                  emptyLabel={dict.app.profile.relationshipEmpty}
+                  closeLabel={dict.app.common.close}
+                  triggerClassName="w-full text-center sm:min-w-0"
+                />
+              </div>
+            </div>
           </section>
 
           <section
@@ -313,46 +352,7 @@ export default async function OwnProfilePage({
           </section>
         </div>
 
-        <div className="grid grid-cols-3 divide-x divide-border border-y border-border bg-surface-muted/30 px-1 py-3 sm:px-5 sm:py-4">
-          <div className="min-w-0 px-1 sm:px-3">
-            <ProfilePeopleModal
-              locale={user.locale === "en" ? "en" : "de"}
-              label={dict.app.profile.metricFollowers}
-              count={stats.followers}
-              members={visibleFollowers}
-              openProfileLabel={dict.app.profile.relationshipOpenProfile}
-              emptyLabel={dict.app.profile.relationshipEmpty}
-              closeLabel={dict.app.common.close}
-              triggerClassName="w-full text-center sm:min-w-0"
-            />
-          </div>
-          <div className="min-w-0 px-1 sm:px-3">
-            <ProfilePeopleModal
-              locale={user.locale === "en" ? "en" : "de"}
-              label={dict.app.profile.statsFollowing}
-              count={stats.following}
-              members={visibleFollowing}
-              openProfileLabel={dict.app.profile.relationshipOpenProfile}
-              emptyLabel={dict.app.profile.relationshipEmpty}
-              closeLabel={dict.app.common.close}
-              triggerClassName="w-full text-center sm:min-w-0"
-            />
-          </div>
-          <div className="min-w-0 px-1 sm:px-3">
-            <ProfilePeopleModal
-              locale={user.locale === "en" ? "en" : "de"}
-              label={dict.app.profile.metricConnections}
-              count={stats.connections}
-              members={visibleConnections}
-              openProfileLabel={dict.app.profile.relationshipOpenProfile}
-              emptyLabel={dict.app.profile.relationshipEmpty}
-              closeLabel={dict.app.common.close}
-              triggerClassName="w-full text-center sm:min-w-0"
-            />
-          </div>
-        </div>
-
-        <nav aria-label={dict.app.profile.title} className="border-t border-border">
+        <nav aria-label={dict.app.profile.title} className="w-full border-t border-border">
           <div className="grid w-full grid-cols-4">
             {tabs.map((item) => (
               <Link
